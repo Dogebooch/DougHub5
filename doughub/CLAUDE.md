@@ -1,3 +1,25 @@
+# Global Instructions
+
+## Code Generation Standards
+- Generate complete, working code—no placeholders or TODOs
+- Include error handling for all edge cases
+- Add comments for complex logic
+- Prefer simple solutions over clever ones
+
+## Behavior
+- Ask clarifying questions before large changes
+- Explain architectural decisions briefly
+- Run tests after implementation when available
+- Commit frequently with conventional commit format
+- Delete temporary files
+
+## Style
+- TypeScript strict mode
+- ES modules (import/export)
+- Functional patterns over classes
+
+---
+
 # DougHub
 
 Flashcard app for medical residents with ADHD. Eliminates decision paralysis through AI-guided concept extraction + FSRS spaced repetition.
