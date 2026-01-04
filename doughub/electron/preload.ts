@@ -6,25 +6,32 @@ import { ipcRenderer, contextBridge } from 'electron'
 
 const api = {
   cards: {
-    getAll: () => ipcRenderer.invoke('cards:getAll'),
-    getById: (id: string) => ipcRenderer.invoke('cards:getById', id),
-    getDueToday: () => ipcRenderer.invoke('cards:getDueToday'),
-    create: (card: unknown) => ipcRenderer.invoke('cards:create', card),
-    update: (id: string, updates: unknown) => ipcRenderer.invoke('cards:update', id, updates),
-    remove: (id: string) => ipcRenderer.invoke('cards:remove', id),
+    getAll: () => ipcRenderer.invoke("cards:getAll"),
+    getById: (id: string) => ipcRenderer.invoke("cards:getById", id),
+    getDueToday: () => ipcRenderer.invoke("cards:getDueToday"),
+    create: (card: unknown) => ipcRenderer.invoke("cards:create", card),
+    update: (id: string, updates: unknown) =>
+      ipcRenderer.invoke("cards:update", id, updates),
+    remove: (id: string) => ipcRenderer.invoke("cards:remove", id),
   },
   notes: {
-    getAll: () => ipcRenderer.invoke('notes:getAll'),
-    getById: (id: string) => ipcRenderer.invoke('notes:getById', id),
-    create: (note: unknown) => ipcRenderer.invoke('notes:create', note),
-    update: (id: string, updates: unknown) => ipcRenderer.invoke('notes:update', id, updates),
-    remove: (id: string) => ipcRenderer.invoke('notes:remove', id),
+    getAll: () => ipcRenderer.invoke("notes:getAll"),
+    getById: (id: string) => ipcRenderer.invoke("notes:getById", id),
+    create: (note: unknown) => ipcRenderer.invoke("notes:create", note),
+    update: (id: string, updates: unknown) =>
+      ipcRenderer.invoke("notes:update", id, updates),
+    remove: (id: string) => ipcRenderer.invoke("notes:remove", id),
   },
   reviews: {
-    log: (review: unknown) => ipcRenderer.invoke('reviews:log', review),
-    getByCard: (cardId: string) => ipcRenderer.invoke('reviews:getByCard', cardId),
+    log: (review: unknown) => ipcRenderer.invoke("reviews:log", review),
+    getByCard: (cardId: string) =>
+      ipcRenderer.invoke("reviews:getByCard", cardId),
+    schedule: (cardId: string, rating: number) =>
+      ipcRenderer.invoke("reviews:schedule", cardId, rating),
+    getIntervals: (cardId: string) =>
+      ipcRenderer.invoke("reviews:getIntervals", cardId),
   },
-}
+};
 
 // Expose typed API to renderer
 contextBridge.exposeInMainWorld('api', api)

@@ -32,6 +32,12 @@ export function AppLayout() {
       case "review":
         return <ReviewInterface />;
       case "settings":
+        // TODO: Create a SettingsInterface component with sections for:
+        // - FSRS Algorithm Parameters: Allow user to view and customize their
+        //   personalized learning algorithm settings (retention target, weights,
+        //   learning steps, maximum interval, etc.)
+        // - Review Statistics: Display retrievability curves, review history
+        // - Data Management: Export/import, reset progress
         return (
           <div className="p-8 text-center">
             <h1 className="text-2xl font-semibold mb-4">Settings</h1>

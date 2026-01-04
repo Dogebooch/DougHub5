@@ -18,7 +18,9 @@ const api = {
   },
   reviews: {
     log: (review) => electron.ipcRenderer.invoke("reviews:log", review),
-    getByCard: (cardId) => electron.ipcRenderer.invoke("reviews:getByCard", cardId)
+    getByCard: (cardId) => electron.ipcRenderer.invoke("reviews:getByCard", cardId),
+    schedule: (cardId, rating) => electron.ipcRenderer.invoke("reviews:schedule", cardId, rating),
+    getIntervals: (cardId) => electron.ipcRenderer.invoke("reviews:getIntervals", cardId)
   }
 };
 electron.contextBridge.exposeInMainWorld("api", api);

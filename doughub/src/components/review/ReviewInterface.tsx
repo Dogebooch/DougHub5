@@ -1,77 +1,205 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { useAppStore } from '@/stores/useAppStore';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { ArrowLeft, RotateCcw } from "lucide-react";
+import { useAppStore } from "@/stores/useAppStore";
+import { Button } from "@/components/ui/button";
+import { Rating, FormattedIntervals } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 export function ReviewInterface() {
-  const { cards, notes, isHydrated, setCurrentView } = useAppStore();
+  const { cards, notes, isHydrated, setCurrentView, scheduleCardReview } =
+    useAppStore();
+  const { toast } = useToast();
 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // Session queue: card IDs in review order
+  const [reviewQueue, setReviewQueue] = useState<string[]>([]);
+  const [currentQueueIndex, setCurrentQueueIndex] = useState(0);
   const [answerVisible, setAnswerVisible] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [intervals, setIntervals] = useState<FormattedIntervals | null>(null);
+  const [reviewedCount, setReviewedCount] = useState(0);
 
-  const dueCards = cards.filter((card) => {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const cardDate = card.dueDate.split('T')[0];
-    return cardDate <= todayStr;
-  });
+  // Initialize session queue with due cards
+  const initialDueCards = useMemo(() => {
+    const now = new Date();
+    return cards.filter((card) => {
+      const cardDue = new Date(card.dueDate);
+      return cardDue <= now;
+    });
+  }, [cards]);
 
-  const currentCard = dueCards[currentIndex];
-  const totalCards = dueCards.length;
-  const progressPercent = totalCards > 0 ? Math.round(((currentIndex + 1) / totalCards) * 100) : 0;
+  // Initialize queue on mount or when cards change
+  useEffect(() => {
+    if (reviewQueue.length === 0 && initialDueCards.length > 0) {
+      setReviewQueue(initialDueCards.map((c) => c.id));
+    }
+  }, [initialDueCards, reviewQueue.length]);
 
-  const currentNote = currentCard ? notes.find((note) => note.id === currentCard.noteId) : null;
+  // Get current card from queue
+  const currentCardId = reviewQueue[currentQueueIndex];
+  const currentCard = cards.find((c) => c.id === currentCardId);
+  const totalInQueue = reviewQueue.length;
+  const progressPercent =
+    totalInQueue > 0
+      ? Math.round(((currentQueueIndex + 1) / totalInQueue) * 100)
+      : 0;
+
+  const currentNote = currentCard
+    ? notes.find((note) => note.id === currentCard.noteId)
+    : null;
+
+  // Fetch intervals when answer is shown
+  useEffect(() => {
+    const fetchIntervals = async () => {
+      if (answerVisible && currentCard && window.api) {
+        try {
+          const result = await window.api.reviews.getIntervals(currentCard.id);
+          if (result.data) {
+            setIntervals(result.data);
+          }
+        } catch (error) {
+          console.error("[Review] Failed to fetch intervals:", error);
+        }
+      }
+    };
+    fetchIntervals();
+  }, [answerVisible, currentCard]);
 
   const handleShowAnswer = useCallback(() => {
     setAnswerVisible(true);
   }, []);
 
   const navigateToCapture = useCallback(() => {
-    setCurrentView('capture');
+    setCurrentView("capture");
   }, [setCurrentView]);
 
-  const handleContinue = useCallback(() => {
-    if (currentIndex < totalCards - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setAnswerVisible(false);
-    } else {
-      setSessionComplete(true);
-      setTimeout(() => {
-        setCurrentView('capture');
-      }, 2000);
-    }
-  }, [currentIndex, totalCards, setCurrentView]);
+  const handleRating = useCallback(
+    async (rating: (typeof Rating)[keyof typeof Rating]) => {
+      if (!currentCard || isSubmitting) return;
 
+      setIsSubmitting(true);
+      try {
+        const result = await scheduleCardReview(currentCard.id, rating);
+
+        if (!result.success) {
+          toast({
+            title: "Review Failed",
+            description: result.error || "Failed to save review",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        setReviewedCount((prev) => prev + 1);
+
+        // Handle learning cards: if rated Again, re-add to end of queue
+        if (rating === Rating.Again && result.data) {
+          // Card rated Again - add back to queue for re-review this session
+          setReviewQueue((prev) => [...prev, currentCard.id]);
+        }
+
+        // Move to next card
+        if (currentQueueIndex < totalInQueue - 1) {
+          setCurrentQueueIndex((prev) => prev + 1);
+          setAnswerVisible(false);
+          setIntervals(null);
+        } else {
+          // Check if there are more cards added to queue (from Again ratings)
+          if (reviewQueue.length > currentQueueIndex + 1) {
+            setCurrentQueueIndex((prev) => prev + 1);
+            setAnswerVisible(false);
+            setIntervals(null);
+          } else {
+            setSessionComplete(true);
+            setTimeout(() => {
+              setCurrentView("capture");
+            }, 2000);
+          }
+        }
+      } catch (error) {
+        console.error("[Review] Error submitting rating:", error);
+        toast({
+          title: "Review Failed",
+          description: "An unexpected error occurred",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [
+      currentCard,
+      currentQueueIndex,
+      totalInQueue,
+      reviewQueue.length,
+      isSubmitting,
+      scheduleCardReview,
+      setCurrentView,
+      toast,
+    ]
+  );
+
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
       if (e.key === " ") {
         e.preventDefault();
         if (!answerVisible) {
           handleShowAnswer();
-        } else {
-          handleContinue();
         }
       } else if (e.key === "Escape") {
         navigateToCapture();
+      } else if (answerVisible && !isSubmitting) {
+        // Rating hotkeys: 1=Again, 2=Hard, 3=Good, 4=Easy
+        switch (e.key) {
+          case "1":
+            handleRating(Rating.Again);
+            break;
+          case "2":
+            handleRating(Rating.Hard);
+            break;
+          case "3":
+            handleRating(Rating.Good);
+            break;
+          case "4":
+            handleRating(Rating.Easy);
+            break;
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [answerVisible, handleShowAnswer, handleContinue, navigateToCapture]);
+  }, [
+    answerVisible,
+    handleShowAnswer,
+    handleRating,
+    navigateToCapture,
+    isSubmitting,
+  ]);
 
   if (!isHydrated) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-pulse text-lg text-muted-foreground">Loading...</div>
+          <div className="animate-pulse text-lg text-muted-foreground">
+            Loading...
+          </div>
         </div>
       </div>
     );
   }
 
-  if (totalCards === 0) {
+  if (initialDueCards.length === 0 && reviewQueue.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-2">
@@ -97,8 +225,25 @@ export function ReviewInterface() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-semibold text-foreground">Session complete!</h1>
-          <p className="text-muted-foreground">Redirecting to Capture page...</p>
+          <h1 className="text-4xl font-semibold text-foreground">
+            Session complete!
+          </h1>
+          <p className="text-muted-foreground">
+            Reviewed {reviewedCount} card{reviewedCount !== 1 ? "s" : ""}.
+            Redirecting to Capture page...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentCard) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-pulse text-lg text-muted-foreground">
+            Loading card...
+          </div>
         </div>
       </div>
     );
@@ -106,11 +251,16 @@ export function ReviewInterface() {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 space-y-8">
+      {/* Progress bar */}
       <div className="space-y-4">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            Card {currentIndex + 1} of {totalCards} - {progressPercent}%
+            Card {currentQueueIndex + 1} of {totalInQueue} - {progressPercent}%
             complete
+          </span>
+          <span className="flex items-center gap-1">
+            <RotateCcw className="h-3 w-3" />
+            {reviewedCount} reviewed
           </span>
         </div>
         <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
@@ -121,6 +271,7 @@ export function ReviewInterface() {
         </div>
       </div>
 
+      {/* Card display */}
       <div className="bg-card border rounded-lg p-12 space-y-8">
         <div className="text-center space-y-6">
           <div className="text-3xl font-medium leading-relaxed">
@@ -138,9 +289,16 @@ export function ReviewInterface() {
 
         <div className="text-center text-sm text-muted-foreground pt-4 border-t">
           From: {currentNote ? currentNote.title : "Unknown source"}
+          {currentCard.state > 0 && (
+            <span className="ml-2">
+              • Stability: {currentCard.stability.toFixed(1)} • Reps:{" "}
+              {currentCard.reps}
+            </span>
+          )}
         </div>
       </div>
 
+      {/* Action buttons */}
       <div className="flex justify-center">
         {!answerVisible ? (
           <Button
@@ -149,14 +307,81 @@ export function ReviewInterface() {
             className="min-w-[200px]"
           >
             Show Answer
+            <span className="ml-2 text-xs opacity-70">(Space)</span>
           </Button>
         ) : (
-          <Button size="lg" onClick={handleContinue} className="min-w-[200px]">
-            Continue
-          </Button>
+          <div className="flex gap-3 flex-wrap justify-center">
+            <Button
+              size="lg"
+              variant="destructive"
+              onClick={() => handleRating(Rating.Again)}
+              disabled={isSubmitting}
+              className="min-w-[100px]"
+            >
+              <span className="flex flex-col items-center">
+                <span>Again</span>
+                <span className="text-xs opacity-70">
+                  {intervals?.again || "..."}
+                </span>
+              </span>
+            </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={() => handleRating(Rating.Hard)}
+              disabled={isSubmitting}
+              className="min-w-[100px]"
+            >
+              <span className="flex flex-col items-center">
+                <span>Hard</span>
+                <span className="text-xs opacity-70">
+                  {intervals?.hard || "..."}
+                </span>
+              </span>
+            </Button>
+            <Button
+              size="lg"
+              variant="default"
+              onClick={() => handleRating(Rating.Good)}
+              disabled={isSubmitting}
+              className="min-w-[100px]"
+            >
+              <span className="flex flex-col items-center">
+                <span>Good</span>
+                <span className="text-xs opacity-70">
+                  {intervals?.good || "..."}
+                </span>
+              </span>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => handleRating(Rating.Easy)}
+              disabled={isSubmitting}
+              className="min-w-[100px] border-green-500 text-green-600 hover:bg-green-50"
+            >
+              <span className="flex flex-col items-center">
+                <span>Easy</span>
+                <span className="text-xs opacity-70">
+                  {intervals?.easy || "..."}
+                </span>
+              </span>
+            </Button>
+          </div>
         )}
       </div>
 
+      {/* Keyboard hints */}
+      {answerVisible && (
+        <div className="text-center text-xs text-muted-foreground">
+          Keyboard: <kbd className="px-1 py-0.5 bg-muted rounded">1</kbd> Again{" "}
+          <kbd className="px-1 py-0.5 bg-muted rounded">2</kbd> Hard{" "}
+          <kbd className="px-1 py-0.5 bg-muted rounded">3</kbd> Good{" "}
+          <kbd className="px-1 py-0.5 bg-muted rounded">4</kbd> Easy
+        </div>
+      )}
+
+      {/* Back navigation */}
       <div className="text-center pt-8">
         <button
           onClick={navigateToCapture}

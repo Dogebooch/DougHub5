@@ -1,7 +1,25 @@
-import type { Card, Note, ReviewLog, CardWithFSRS, IpcResult } from './index';
+import type {
+  Card,
+  Note,
+  ReviewLog,
+  CardWithFSRS,
+  IpcResult,
+  ScheduleResult,
+  FormattedIntervals,
+  RatingValue,
+} from "./index";
 
 // Re-export database types for convenience
-export type { Card, Note, ReviewLog, CardWithFSRS, IpcResult };
+export type {
+  Card,
+  Note,
+  ReviewLog,
+  CardWithFSRS,
+  IpcResult,
+  ScheduleResult,
+  FormattedIntervals,
+  RatingValue,
+};
 
 // API interface exposed via preload script
 export interface ElectronAPI {
@@ -10,7 +28,10 @@ export interface ElectronAPI {
     getById: (id: string) => Promise<IpcResult<CardWithFSRS | null>>;
     getDueToday: () => Promise<IpcResult<CardWithFSRS[]>>;
     create: (card: CardWithFSRS) => Promise<IpcResult<CardWithFSRS>>;
-    update: (id: string, updates: Partial<CardWithFSRS>) => Promise<IpcResult<void>>;
+    update: (
+      id: string,
+      updates: Partial<CardWithFSRS>
+    ) => Promise<IpcResult<void>>;
     remove: (id: string) => Promise<IpcResult<void>>;
   };
   notes: {
@@ -23,6 +44,11 @@ export interface ElectronAPI {
   reviews: {
     log: (review: ReviewLog) => Promise<IpcResult<ReviewLog>>;
     getByCard: (cardId: string) => Promise<IpcResult<ReviewLog[]>>;
+    schedule: (
+      cardId: string,
+      rating: RatingValue
+    ) => Promise<IpcResult<ScheduleResult>>;
+    getIntervals: (cardId: string) => Promise<IpcResult<FormattedIntervals>>;
   };
 }
 

@@ -47,3 +47,33 @@ export interface CardWithFSRS extends Card, CardFSRS {}
 export type IpcResult<T> =
   | { data: T; error: null }
   | { data: null; error: string };
+
+// Rating enum matching ts-fsrs (for renderer use)
+export const Rating = {
+  Again: 1,
+  Hard: 2,
+  Good: 3,
+  Easy: 4,
+} as const;
+
+export type RatingValue = typeof Rating[keyof typeof Rating];
+
+// FSRS schedule result returned from IPC
+export interface ScheduleResult {
+  card: CardWithFSRS;
+  reviewLog: ReviewLog;
+  intervals: {
+    again: number;
+    hard: number;
+    good: number;
+    easy: number;
+  };
+}
+
+// Formatted intervals for display
+export interface FormattedIntervals {
+  again: string;
+  hard: string;
+  good: string;
+  easy: string;
+}
