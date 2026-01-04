@@ -1,15 +1,10 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useAppStore } from '@/stores/useAppStore';
 import { Button } from '@/components/ui/button';
 
 export function ReviewInterface() {
-  const router = useRouter();
-  const { cards, notes, isHydrated } = useAppStore();
+  const { cards, notes, isHydrated, setCurrentView } = useAppStore();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answerVisible, setAnswerVisible] = useState(false);
@@ -28,39 +23,43 @@ export function ReviewInterface() {
 
   const currentNote = currentCard ? notes.find((note) => note.id === currentCard.noteId) : null;
 
-  const handleShowAnswer = () => {
+  const handleShowAnswer = useCallback(() => {
     setAnswerVisible(true);
-  };
+  }, []);
 
-  const handleContinue = () => {
+  const navigateToCapture = useCallback(() => {
+    setCurrentView('capture');
+  }, [setCurrentView]);
+
+  const handleContinue = useCallback(() => {
     if (currentIndex < totalCards - 1) {
       setCurrentIndex(currentIndex + 1);
       setAnswerVisible(false);
     } else {
       setSessionComplete(true);
       setTimeout(() => {
-        router.push('/');
+        setCurrentView('capture');
       }, 2000);
     }
-  };
+  }, [currentIndex, totalCards, setCurrentView]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === ' ') {
+      if (e.key === " ") {
         e.preventDefault();
         if (!answerVisible) {
           handleShowAnswer();
         } else {
           handleContinue();
         }
-      } else if (e.key === 'Escape') {
-        router.push('/');
+      } else if (e.key === "Escape") {
+        navigateToCapture();
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [answerVisible, currentIndex, totalCards, router]);
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [answerVisible, handleShowAnswer, handleContinue, navigateToCapture]);
 
   if (!isHydrated) {
     return (
@@ -76,13 +75,20 @@ export function ReviewInterface() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-semibold text-foreground">All caught up!</h1>
-          <p className="text-muted-foreground">No cards are due for review right now.</p>
+          <h1 className="text-4xl font-semibold text-foreground">
+            All caught up!
+          </h1>
+          <p className="text-muted-foreground">
+            No cards are due for review right now.
+          </p>
         </div>
-        <Link href="/" className="text-primary hover:underline flex items-center gap-2">
+        <button
+          onClick={navigateToCapture}
+          className="text-primary hover:underline flex items-center gap-2"
+        >
           <ArrowLeft className="h-4 w-4" />
           Back to Capture
-        </Link>
+        </button>
       </div>
     );
   }
@@ -102,7 +108,10 @@ export function ReviewInterface() {
     <div className="max-w-4xl mx-auto py-8 px-4 space-y-8">
       <div className="space-y-4">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Card {currentIndex + 1} of {totalCards} • {progressPercent}% complete</span>
+          <span>
+            Card {currentIndex + 1} of {totalCards} - {progressPercent}%
+            complete
+          </span>
         </div>
         <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
           <div
@@ -128,13 +137,17 @@ export function ReviewInterface() {
         </div>
 
         <div className="text-center text-sm text-muted-foreground pt-4 border-t">
-          From: {currentNote ? currentNote.title : 'Unknown source'}
+          From: {currentNote ? currentNote.title : "Unknown source"}
         </div>
       </div>
 
       <div className="flex justify-center">
         {!answerVisible ? (
-          <Button size="lg" onClick={handleShowAnswer} className="min-w-[200px]">
+          <Button
+            size="lg"
+            onClick={handleShowAnswer}
+            className="min-w-[200px]"
+          >
             Show Answer
           </Button>
         ) : (
@@ -145,10 +158,13 @@ export function ReviewInterface() {
       </div>
 
       <div className="text-center pt-8">
-        <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2">
+        <button
+          onClick={navigateToCapture}
+          className="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2"
+        >
           <ArrowLeft className="h-4 w-4" />
           Back to Capture
-        </Link>
+        </button>
       </div>
     </div>
   );

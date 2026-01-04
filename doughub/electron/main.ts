@@ -2,6 +2,8 @@ import { app, BrowserWindow } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { initDatabase, closeDatabase } from './database'
+import { registerIpcHandlers } from './ipc-handlers'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -65,4 +67,21 @@ app.on('activate', () => {
   }
 })
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  // Initialize SQLite database before creating window
+  const dbPath = path.join(app.getPath('userData'), 'doughub.db')
+  initDatabase(dbPath)
+  console.log('[Database] Initialized at:', dbPath)
+
+  // Register IPC handlers for renderer communication
+  registerIpcHandlers()
+
+  // Create the main window
+  createWindow()
+})
+
+// Clean up database connection on quit
+app.on('before-quit', () => {
+  closeDatabase()
+  console.log('[Database] Connection closed')
+})

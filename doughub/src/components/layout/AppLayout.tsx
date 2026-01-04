@@ -1,43 +1,56 @@
-'use client';
+import { useState, useEffect } from "react";
+import { Header } from "./Header";
+import { QuickActionsBar } from "./QuickActionsBar";
+import { CommandPalette } from "@/components/modals/CommandPalette";
+import { QuickDumpModal } from "@/components/modals/QuickDumpModal";
+import { CaptureInterface } from "@/components/capture/CaptureInterface";
+import { ReviewInterface } from "@/components/review/ReviewInterface";
+import { useAppStore } from "@/stores/useAppStore";
 
-import { useState, useEffect } from 'react';
-import { Header } from './Header';
-import { QuickActionsBar } from './QuickActionsBar';
-import { CommandPalette } from '@/components/modals/CommandPalette';
-import { QuickDumpModal } from '@/components/modals/QuickDumpModal';
-
-interface AppLayoutProps {
-  children: React.ReactNode;
-}
-
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout() {
+  const currentView = useAppStore((state) => state.currentView);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isQuickDumpOpen, setIsQuickDumpOpen] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setIsCommandPaletteOpen(true);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const openQuickDump = () => setIsQuickDumpOpen(true);
   const closeQuickDump = () => setIsQuickDumpOpen(false);
 
-  const handleQuickDumpSave = async (content: string) => {
-    console.log('Quick Dump content:', content);
+  const renderView = () => {
+    switch (currentView) {
+      case "review":
+        return <ReviewInterface />;
+      case "settings":
+        return (
+          <div className="p-8 text-center">
+            <h1 className="text-2xl font-semibold mb-4">Settings</h1>
+            <p className="text-muted-foreground">
+              Settings page coming soon...
+            </p>
+          </div>
+        );
+      case "capture":
+      default:
+        return <CaptureInterface />;
+    }
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <QuickActionsBar onOpenQuickDump={openQuickDump} />
-      <main className="mx-auto max-w-7xl px-6 py-12">{children}</main>
+      <main className="mx-auto max-w-7xl px-6 py-12">{renderView()}</main>
 
       <CommandPalette
         isOpen={isCommandPaletteOpen}
@@ -45,11 +58,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         onOpenQuickDump={openQuickDump}
       />
 
-      <QuickDumpModal
-        isOpen={isQuickDumpOpen}
-        onClose={closeQuickDump}
-        onSave={handleQuickDumpSave}
-      />
+      <QuickDumpModal isOpen={isQuickDumpOpen} onClose={closeQuickDump} />
     </div>
   );
 }

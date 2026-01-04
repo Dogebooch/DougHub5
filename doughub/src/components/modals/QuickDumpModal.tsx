@@ -1,28 +1,24 @@
-'use client';
-
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface QuickDumpModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (content: string) => void;
 }
 
-export function QuickDumpModal({ isOpen, onClose, onSave }: QuickDumpModalProps) {
-  const [content, setContent] = useState('');
+export function QuickDumpModal({ isOpen, onClose }: QuickDumpModalProps) {
+  const [content, setContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
@@ -31,20 +27,20 @@ export function QuickDumpModal({ isOpen, onClose, onSave }: QuickDumpModalProps)
       }, 100);
       return () => clearTimeout(timer);
     } else {
-      setContent('');
+      setContent("");
     }
   }, [isOpen]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         handleCancel();
       }
     };
 
     if (isOpen) {
-      window.addEventListener('keydown', handleEscape);
-      return () => window.removeEventListener('keydown', handleEscape);
+      window.addEventListener("keydown", handleEscape);
+      return () => window.removeEventListener("keydown", handleEscape);
     }
   }, [isOpen]);
 
@@ -56,20 +52,45 @@ export function QuickDumpModal({ isOpen, onClose, onSave }: QuickDumpModalProps)
 
     setIsSaving(true);
     try {
-      await onSave(trimmedContent);
-      toast({
-        description: '✓ Saved to queue',
-        duration: 2000,
-      });
-      setContent('');
+      // Create a Note from the quick dump
+      if (typeof window !== "undefined" && window.api) {
+        const now = new Date();
+        const timestamp = now.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        });
+
+        const note = {
+          id: crypto.randomUUID(),
+          title: `Quick Dump - ${timestamp}`,
+          content: trimmedContent,
+          cardIds: [],
+          tags: ["quick-dump"],
+          createdAt: now.toISOString(),
+        };
+
+        const result = await window.api.notes.create(note);
+        if (result.error) {
+          toast.error(`Failed to save: ${result.error}`);
+          return;
+        }
+      }
+
+      toast.success("Saved to queue");
+      setContent("");
       onClose();
+    } catch (error) {
+      toast.error("Failed to save quick dump");
+      console.error("[QuickDump] Save error:", error);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
-    setContent('');
+    setContent("");
     onClose();
   };
 

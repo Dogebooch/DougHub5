@@ -1,6 +1,35 @@
 import { ipcRenderer, contextBridge } from 'electron'
 
-// --------- Expose some API to the Renderer process ---------
+// ============================================================================
+// Typed API for renderer process
+// ============================================================================
+
+const api = {
+  cards: {
+    getAll: () => ipcRenderer.invoke('cards:getAll'),
+    getById: (id: string) => ipcRenderer.invoke('cards:getById', id),
+    getDueToday: () => ipcRenderer.invoke('cards:getDueToday'),
+    create: (card: unknown) => ipcRenderer.invoke('cards:create', card),
+    update: (id: string, updates: unknown) => ipcRenderer.invoke('cards:update', id, updates),
+    remove: (id: string) => ipcRenderer.invoke('cards:remove', id),
+  },
+  notes: {
+    getAll: () => ipcRenderer.invoke('notes:getAll'),
+    getById: (id: string) => ipcRenderer.invoke('notes:getById', id),
+    create: (note: unknown) => ipcRenderer.invoke('notes:create', note),
+    update: (id: string, updates: unknown) => ipcRenderer.invoke('notes:update', id, updates),
+    remove: (id: string) => ipcRenderer.invoke('notes:remove', id),
+  },
+  reviews: {
+    log: (review: unknown) => ipcRenderer.invoke('reviews:log', review),
+    getByCard: (cardId: string) => ipcRenderer.invoke('reviews:getByCard', cardId),
+  },
+}
+
+// Expose typed API to renderer
+contextBridge.exposeInMainWorld('api', api)
+
+// Keep legacy ipcRenderer for backwards compatibility during migration
 contextBridge.exposeInMainWorld('ipcRenderer', {
   on(...args: Parameters<typeof ipcRenderer.on>) {
     const [channel, listener] = args
@@ -18,7 +47,4 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
     const [channel, ...omit] = args
     return ipcRenderer.invoke(channel, ...omit)
   },
-
-  // You can expose other APTs you need here.
-  // ...
 })

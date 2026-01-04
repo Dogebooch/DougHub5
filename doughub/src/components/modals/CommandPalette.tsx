@@ -1,13 +1,8 @@
-'use client';
-
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Home, Eye, Zap, Settings } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Home, Eye, Zap, Settings } from "lucide-react";
+import { useAppStore } from "@/stores/useAppStore";
 
 interface Command {
   id: string;
@@ -23,52 +18,56 @@ interface CommandPaletteProps {
   onOpenQuickDump: () => void;
 }
 
-export function CommandPalette({ isOpen, onClose, onOpenQuickDump }: CommandPaletteProps) {
-  const [search, setSearch] = useState('');
+export function CommandPalette({
+  isOpen,
+  onClose,
+  onOpenQuickDump,
+}: CommandPaletteProps) {
+  const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
+  const setCurrentView = useAppStore((state) => state.setCurrentView);
 
   const commands: Command[] = [
     {
-      id: 'capture',
-      label: 'Go to Capture',
+      id: "capture",
+      label: "Go to Capture",
       icon: <Home className="h-4 w-4" />,
       action: () => {
-        router.push('/');
+        setCurrentView("capture");
         onClose();
       },
-      keywords: ['capture', 'home', 'main'],
+      keywords: ["capture", "home", "main"],
     },
     {
-      id: 'review',
-      label: 'Go to Review',
+      id: "review",
+      label: "Go to Review",
       icon: <Eye className="h-4 w-4" />,
       action: () => {
-        router.push('/review');
+        setCurrentView("review");
         onClose();
       },
-      keywords: ['review', 'cards', 'study'],
+      keywords: ["review", "cards", "study"],
     },
     {
-      id: 'quick-dump',
-      label: 'Quick Dump',
+      id: "quick-dump",
+      label: "Quick Dump",
       icon: <Zap className="h-4 w-4" />,
       action: () => {
         onClose();
         setTimeout(() => onOpenQuickDump(), 100);
       },
-      keywords: ['quick', 'dump', 'capture', 'save'],
+      keywords: ["quick", "dump", "capture", "save"],
     },
     {
-      id: 'settings',
-      label: 'Settings',
+      id: "settings",
+      label: "Settings",
       icon: <Settings className="h-4 w-4" />,
       action: () => {
-        router.push('/settings');
+        setCurrentView("settings");
         onClose();
       },
-      keywords: ['settings', 'preferences', 'config'],
+      keywords: ["settings", "preferences", "config"],
     },
   ];
 
@@ -87,7 +86,7 @@ export function CommandPalette({ isOpen, onClose, onOpenQuickDump }: CommandPale
 
   useEffect(() => {
     if (isOpen) {
-      setSearch('');
+      setSearch("");
       setSelectedIndex(0);
       const timer = setTimeout(() => {
         inputRef.current?.focus();
@@ -105,23 +104,23 @@ export function CommandPalette({ isOpen, onClose, onOpenQuickDump }: CommandPale
       if (!isOpen) return;
 
       switch (e.key) {
-        case 'ArrowDown':
+        case "ArrowDown":
           e.preventDefault();
           setSelectedIndex((prev) =>
             prev < filteredCommands.length - 1 ? prev + 1 : prev
           );
           break;
-        case 'ArrowUp':
+        case "ArrowUp":
           e.preventDefault();
           setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
           break;
-        case 'Enter':
+        case "Enter":
           e.preventDefault();
           if (filteredCommands[selectedIndex]) {
             filteredCommands[selectedIndex].action();
           }
           break;
-        case 'Escape':
+        case "Escape":
           e.preventDefault();
           onClose();
           break;
@@ -129,8 +128,8 @@ export function CommandPalette({ isOpen, onClose, onOpenQuickDump }: CommandPale
     };
 
     if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
     }
   }, [isOpen, selectedIndex, filteredCommands, onClose]);
 
@@ -163,8 +162,8 @@ export function CommandPalette({ isOpen, onClose, onOpenQuickDump }: CommandPale
                   onClick={() => handleCommandClick(command)}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
                     index === selectedIndex
-                      ? 'bg-accent text-accent-foreground'
-                      : 'hover:bg-accent/50'
+                      ? "bg-accent text-accent-foreground"
+                      : "hover:bg-accent/50"
                   }`}
                   aria-selected={index === selectedIndex}
                 >

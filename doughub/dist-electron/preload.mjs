@@ -1,5 +1,27 @@
 "use strict";
 const electron = require("electron");
+const api = {
+  cards: {
+    getAll: () => electron.ipcRenderer.invoke("cards:getAll"),
+    getById: (id) => electron.ipcRenderer.invoke("cards:getById", id),
+    getDueToday: () => electron.ipcRenderer.invoke("cards:getDueToday"),
+    create: (card) => electron.ipcRenderer.invoke("cards:create", card),
+    update: (id, updates) => electron.ipcRenderer.invoke("cards:update", id, updates),
+    remove: (id) => electron.ipcRenderer.invoke("cards:remove", id)
+  },
+  notes: {
+    getAll: () => electron.ipcRenderer.invoke("notes:getAll"),
+    getById: (id) => electron.ipcRenderer.invoke("notes:getById", id),
+    create: (note) => electron.ipcRenderer.invoke("notes:create", note),
+    update: (id, updates) => electron.ipcRenderer.invoke("notes:update", id, updates),
+    remove: (id) => electron.ipcRenderer.invoke("notes:remove", id)
+  },
+  reviews: {
+    log: (review) => electron.ipcRenderer.invoke("reviews:log", review),
+    getByCard: (cardId) => electron.ipcRenderer.invoke("reviews:getByCard", cardId)
+  }
+};
+electron.contextBridge.exposeInMainWorld("api", api);
 electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   on(...args) {
     const [channel, listener] = args;
@@ -17,6 +39,4 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
     const [channel, ...omit] = args;
     return electron.ipcRenderer.invoke(channel, ...omit);
   }
-  // You can expose other APTs you need here.
-  // ...
 });

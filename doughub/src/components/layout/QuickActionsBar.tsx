@@ -1,11 +1,8 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useAppStore } from '@/stores/useAppStore';
+import { useEffect, useState } from "react";
+import { Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useAppStore } from "@/stores/useAppStore";
 
 interface QuickActionsBarProps {
   onOpenQuickDump: () => void;
@@ -15,6 +12,7 @@ export function QuickActionsBar({ onOpenQuickDump }: QuickActionsBarProps) {
   const [mounted, setMounted] = useState(false);
   const getCardsDueToday = useAppStore((state) => state.getCardsDueToday);
   const isHydrated = useAppStore((state) => state.isHydrated);
+  const setCurrentView = useAppStore((state) => state.setCurrentView);
 
   useEffect(() => {
     setMounted(true);
@@ -36,29 +34,25 @@ export function QuickActionsBar({ onOpenQuickDump }: QuickActionsBarProps) {
               Quick Dump
             </Button>
             <Button
-              asChild
               variant="secondary"
               size="lg"
               className="min-h-[44px] gap-2"
+              onClick={() => setCurrentView("review")}
             >
-              <Link href="/review">
-                <span>Due Today:</span>
-                <Badge variant="outline" className="ml-1 bg-background">
-                  {dueCount}
-                </Badge>
-              </Link>
+              <span>Due Today:</span>
+              <Badge variant="outline" className="ml-1 bg-background">
+                {dueCount}
+              </Badge>
             </Button>
           </div>
           <Button
-            asChild
             variant="ghost"
             size="icon"
             className="min-h-[44px] min-w-[44px]"
+            onClick={() => setCurrentView("settings")}
           >
-            <Link href="/settings">
-              <Settings className="h-5 w-5" />
-              <span className="sr-only">Settings</span>
-            </Link>
+            <Settings className="h-5 w-5" />
+            <span className="sr-only">Settings</span>
           </Button>
         </div>
       </div>
