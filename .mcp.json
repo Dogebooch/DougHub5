@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "taskmaster-ai": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "--package=task-master-ai", "task-master-ai"],
+      "env": {
+        "TASK_MASTER_TOOLS": "core"
+      }
+    },
+    "code-index": {
+      "command": "uvx",
+      "args": [
+        "code-index-mcp",
+        "--project-path", "."
+      ]
+    }
+  }
+}
