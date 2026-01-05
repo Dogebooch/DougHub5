@@ -17,6 +17,8 @@ import type {
   AIProviderStatus,
   ExtractedConcept,
   ValidationResult,
+  MedicalListDetection,
+  VignetteConversion,
 } from '../src/types/ai';
 import OpenAI from 'openai';
 
@@ -239,7 +241,298 @@ export async function getProviderStatus(): Promise<AIProviderStatus> {
 }
 
 // ============================================================================
+// System Prompts
+// ============================================================================
+
+/** System prompts for AI operations */
+const PROMPTS = {
+  conceptExtraction: `You are a medical education AI assistant specializing in flashcard creation.
+Your task is to extract key learning concepts from pasted medical content.
+
+For each concept, identify:
+1. The core fact, definition, mechanism, or relationship
+2. The type of concept (definition, mechanism, differential, treatment, diagnostic, epidemiology)
+3. Whether it's best as a Q&A card or cloze deletion
+4. Your confidence level (0-1) based on clarity and importance
+
+Guidelines:
+- Focus on testable, discrete facts
+- Prefer cloze for lists, sequences, and fill-in-the-blank content
+- Prefer Q&A for "why" questions, mechanisms, and comparisons
+- Extract 3-7 concepts per input, prioritizing high-yield content
+- Skip trivial or obvious information
+
+Respond with valid JSON only, no markdown formatting.`,
+
+  cardValidation: `You are a medical education AI assistant that validates flashcard quality.
+Evaluate cards based on the Minimum Information Principle:
+1. Each card should test ONE atomic piece of knowledge
+2. The question should be clear and unambiguous
+3. The answer should be concise and directly address the question
+4. Avoid compound questions or multiple answers
+
+Check for common issues:
+- Question too broad or vague
+- Answer too long (>50 words suggests multiple concepts)
+- Missing context needed for understanding
+- Cloze deletions that are too easy or ambiguous
+
+Respond with valid JSON only, no markdown formatting.`,
+} as const;
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Wrap a promise with a timeout.
+ *
+ * @param promise Promise to wrap
+ * @param ms Timeout in milliseconds
+ * @param errorMessage Error message for timeout
+ * @returns Promise result or throws on timeout
+ */
+async function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  errorMessage = 'Operation timed out'
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout>;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(errorMessage)), ms);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timeoutId!);
+  }
+}
+
+/**
+ * Retry a function with exponential backoff.
+ *
+ * @param fn Function to retry
+ * @param maxRetries Maximum number of retries
+ * @param baseDelayMs Base delay between retries
+ * @returns Function result or throws after all retries
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 2,
+  baseDelayMs = 500
+): Promise<T> {
+  let lastError: Error | undefined;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // Don't retry on timeout or if it's the last attempt
+      if (lastError.message.includes('timed out') || attempt === maxRetries) {
+        break;
+      }
+
+      // Exponential backoff
+      const delay = baseDelayMs * Math.pow(2, attempt);
+      await new Promise(resolve => setTimeout(resolve, delay));
+
+      console.log(`[AI Service] Retry ${attempt + 1}/${maxRetries} after ${delay}ms`);
+    }
+  }
+
+  throw lastError;
+}
+
+/**
+ * Make a chat completion request to the AI provider.
+ *
+ * @param systemPrompt System prompt for the AI
+ * @param userMessage User message/content to process
+ * @returns AI response text
+ */
+async function callAI(systemPrompt: string, userMessage: string): Promise<string> {
+  const client = await getClient();
+  const config = getCurrentConfig();
+
+  if (!config) {
+    throw new Error('AI client not initialized');
+  }
+
+  const response = await withTimeout(
+    client.chat.completions.create({
+      model: config.model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
+      temperature: 0.3, // Lower temperature for more consistent extraction
+      max_tokens: 2000,
+    }),
+    config.timeout,
+    `AI request timed out after ${config.timeout}ms`
+  );
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error('Empty response from AI provider');
+  }
+
+  return content;
+}
+
+/**
+ * Parse JSON from AI response, handling markdown code blocks.
+ *
+ * @param text AI response text
+ * @returns Parsed JSON object
+ */
+function parseAIResponse<T>(text: string): T {
+  // Remove markdown code blocks if present
+  let cleaned = text.trim();
+  if (cleaned.startsWith('```json')) {
+    cleaned = cleaned.slice(7);
+  } else if (cleaned.startsWith('```')) {
+    cleaned = cleaned.slice(3);
+  }
+  if (cleaned.endsWith('```')) {
+    cleaned = cleaned.slice(0, -3);
+  }
+  cleaned = cleaned.trim();
+
+  return JSON.parse(cleaned) as T;
+}
+
+// ============================================================================
+// Concept Extraction
+// ============================================================================
+
+/** Response format for concept extraction */
+interface ConceptExtractionResponse {
+  concepts: Array<{
+    text: string;
+    conceptType: string;
+    confidence: number;
+    suggestedFormat: 'qa' | 'cloze';
+  }>;
+}
+
+/**
+ * Extract learning concepts from pasted medical content.
+ *
+ * @param content Raw text content to analyze
+ * @returns Array of extracted concepts with metadata
+ */
+export async function extractConcepts(content: string): Promise<ExtractedConcept[]> {
+  if (!content.trim()) {
+    return [];
+  }
+
+  try {
+    const response = await withRetry(async () => {
+      return await callAI(
+        PROMPTS.conceptExtraction,
+        `Extract learning concepts from this medical content:\n\n${content}`
+      );
+    });
+
+    const parsed = parseAIResponse<ConceptExtractionResponse>(response);
+
+    // Add unique IDs and validate response
+    return parsed.concepts.map((concept, index) => ({
+      id: `concept-${Date.now()}-${index}`,
+      text: concept.text,
+      conceptType: concept.conceptType,
+      confidence: Math.min(1, Math.max(0, concept.confidence)), // Clamp to 0-1
+      suggestedFormat: concept.suggestedFormat === 'cloze' ? 'cloze' : 'qa',
+    }));
+  } catch (error) {
+    console.error('[AI Service] Concept extraction failed:', error);
+    throw error;
+  }
+}
+
+// ============================================================================
+// Card Validation
+// ============================================================================
+
+/** Response format for card validation */
+interface CardValidationResponse {
+  isValid: boolean;
+  warnings: string[];
+  suggestions: string[];
+}
+
+/**
+ * Validate a flashcard for quality and adherence to learning principles.
+ *
+ * @param front Card front (question or cloze text)
+ * @param back Card back (answer)
+ * @param cardType Type of card ('qa' or 'cloze')
+ * @returns Validation result with warnings and suggestions
+ */
+export async function validateCard(
+  front: string,
+  back: string,
+  cardType: 'qa' | 'cloze' = 'qa'
+): Promise<ValidationResult> {
+  if (!front.trim()) {
+    return {
+      isValid: false,
+      warnings: ['Card front is empty'],
+      suggestions: ['Add a question or cloze deletion text'],
+    };
+  }
+
+  if (!back.trim() && cardType === 'qa') {
+    return {
+      isValid: false,
+      warnings: ['Card back is empty'],
+      suggestions: ['Add an answer to the question'],
+    };
+  }
+
+  try {
+    const cardContent = cardType === 'cloze'
+      ? `Cloze card:\n${front}`
+      : `Question: ${front}\nAnswer: ${back}`;
+
+    const response = await withRetry(async () => {
+      return await callAI(
+        PROMPTS.cardValidation,
+        `Validate this ${cardType} flashcard:\n\n${cardContent}`
+      );
+    });
+
+    const parsed = parseAIResponse<CardValidationResponse>(response);
+
+    return {
+      isValid: parsed.isValid ?? true,
+      warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
+      suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
+    };
+  } catch (error) {
+    console.error('[AI Service] Card validation failed:', error);
+    // Return a permissive result on error - don't block card creation
+    return {
+      isValid: true,
+      warnings: ['AI validation unavailable'],
+      suggestions: [],
+    };
+  }
+}
+
+// ============================================================================
 // Exports
 // ============================================================================
 
-export { type AIProviderType, type AIProviderConfig, type AIProviderStatus } from '../src/types/ai';
+export {
+  type AIProviderType,
+  type AIProviderConfig,
+  type AIProviderStatus,
+  type ExtractedConcept,
+  type ValidationResult,
+} from '../src/types/ai';
