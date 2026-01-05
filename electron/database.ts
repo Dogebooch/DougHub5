@@ -8,6 +8,10 @@ import { createBackup, restoreBackup } from "./backup-service";
 export type CardType = "standard" | "qa" | "cloze" | "vignette" | "list-cloze";
 export type ExtractionStatus = "pending" | "processing" | "completed";
 
+// v3 Architecture types
+export type SourceType = 'qbank' | 'article' | 'pdf' | 'image' | 'audio' | 'quickcapture' | 'manual';
+export type SourceItemStatus = 'inbox' | 'processed' | 'curated';
+
 export interface DbCard {
   id: string;
   front: string;
@@ -70,6 +74,66 @@ export interface DbConnection {
   createdAt: string;
 }
 
+// v3 Architecture - Database interfaces
+export interface DbSourceItem {
+  id: string;
+  sourceType: SourceType;
+  sourceName: string;
+  sourceUrl?: string;
+  title: string;
+  rawContent: string;
+  mediaPath?: string;
+  transcription?: string;
+  canonicalTopicIds: string[];
+  tags: string[];
+  questionId?: string;
+  status: SourceItemStatus;
+  createdAt: string;
+  processedAt?: string;
+  updatedAt?: string;
+}
+
+export interface DbCanonicalTopic {
+  id: string;
+  canonicalName: string;
+  aliases: string[];
+  domain: string;
+  parentTopicId?: string;
+  createdAt: string;
+}
+
+export interface DbNotebookTopicPage {
+  id: string;
+  canonicalTopicId: string;
+  cardIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DbNotebookBlock {
+  id: string;
+  notebookTopicPageId: string;
+  sourceItemId: string;
+  content: string;
+  annotations?: string;
+  mediaPath?: string;
+  position: number;
+}
+
+export interface DbSmartView {
+  id: string;
+  name: string;
+  icon: string;
+  filter: {
+    status?: string[];
+    sourceType?: string[];
+    topicIds?: string[];
+    tags?: string[];
+  };
+  sortBy: string;
+  isSystem: boolean;
+}
+
 // Raw row types (JSON fields are strings in SQLite)
 interface CardRow {
   id: string;
@@ -130,6 +194,61 @@ interface ConnectionRow {
   targetNoteId: string;
   semanticScore: number;
   createdAt: string;
+}
+
+// v3 Architecture - Row types (JSON fields as strings)
+interface SourceItemRow {
+  id: string;
+  sourceType: string;
+  sourceName: string;
+  sourceUrl: string | null;
+  title: string;
+  rawContent: string;
+  mediaPath: string | null;
+  transcription: string | null;
+  canonicalTopicIds: string; // JSON
+  tags: string; // JSON
+  questionId: string | null;
+  status: string;
+  createdAt: string;
+  processedAt: string | null;
+  updatedAt: string | null;
+}
+
+interface CanonicalTopicRow {
+  id: string;
+  canonicalName: string;
+  aliases: string; // JSON
+  domain: string;
+  parentTopicId: string | null;
+  createdAt: string;
+}
+
+interface NotebookTopicPageRow {
+  id: string;
+  canonicalTopicId: string;
+  cardIds: string; // JSON
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface NotebookBlockRow {
+  id: string;
+  notebookTopicPageId: string;
+  sourceItemId: string;
+  content: string;
+  annotations: string | null;
+  mediaPath: string | null;
+  position: number;
+}
+
+interface SmartViewRow {
+  id: string;
+  name: string;
+  icon: string;
+  filter: string; // JSON
+  sortBy: string;
+  isSystem: number; // SQLite INTEGER for boolean
 }
 
 // ============================================================================
@@ -576,6 +695,11 @@ export function initDatabase(dbPath: string): Database.Database {
     migrateToV3(dbPath);
   }
 
+  // Seed system smart views (v3)
+  if (getSchemaVersion() >= 3) {
+    seedSystemSmartViews();
+  }
+
   return db;
 }
 
@@ -889,6 +1013,396 @@ export const connectionQueries = {
     stmt.run({ id });
   },
 };
+
+// ============================================================================
+// v3 Architecture - Source Item Queries
+// ============================================================================
+
+export const sourceItemQueries = {
+  getAll(): DbSourceItem[] {
+    const stmt = getDatabase().prepare("SELECT * FROM source_items ORDER BY createdAt DESC");
+    const rows = stmt.all() as SourceItemRow[];
+    return rows.map(parseSourceItemRow);
+  },
+
+  getByStatus(status: SourceItemStatus): DbSourceItem[] {
+    const stmt = getDatabase().prepare("SELECT * FROM source_items WHERE status = ? ORDER BY createdAt DESC");
+    const rows = stmt.all(status) as SourceItemRow[];
+    return rows.map(parseSourceItemRow);
+  },
+
+  getById(id: string): DbSourceItem | null {
+    const stmt = getDatabase().prepare("SELECT * FROM source_items WHERE id = ?");
+    const row = stmt.get(id) as SourceItemRow | undefined;
+    return row ? parseSourceItemRow(row) : null;
+  },
+
+  insert(item: DbSourceItem): void {
+    const stmt = getDatabase().prepare(`
+      INSERT INTO source_items (
+        id, sourceType, sourceName, sourceUrl, title, rawContent,
+        mediaPath, transcription, canonicalTopicIds, tags, questionId,
+        status, createdAt, processedAt, updatedAt
+      ) VALUES (
+        @id, @sourceType, @sourceName, @sourceUrl, @title, @rawContent,
+        @mediaPath, @transcription, @canonicalTopicIds, @tags, @questionId,
+        @status, @createdAt, @processedAt, @updatedAt
+      )
+    `);
+    stmt.run({
+      ...item,
+      sourceUrl: item.sourceUrl || null,
+      mediaPath: item.mediaPath || null,
+      transcription: item.transcription || null,
+      questionId: item.questionId || null,
+      processedAt: item.processedAt || null,
+      updatedAt: item.updatedAt || null,
+      canonicalTopicIds: JSON.stringify(item.canonicalTopicIds),
+      tags: JSON.stringify(item.tags),
+    });
+  },
+
+  update(id: string, updates: Partial<DbSourceItem>): void {
+    const current = sourceItemQueries.getById(id);
+    if (!current) {
+      throw new Error(`SourceItem not found: ${id}`);
+    }
+
+    const merged = { ...current, ...updates };
+    const stmt = getDatabase().prepare(`
+      UPDATE source_items SET
+        sourceType = @sourceType,
+        sourceName = @sourceName,
+        sourceUrl = @sourceUrl,
+        title = @title,
+        rawContent = @rawContent,
+        mediaPath = @mediaPath,
+        transcription = @transcription,
+        canonicalTopicIds = @canonicalTopicIds,
+        tags = @tags,
+        questionId = @questionId,
+        status = @status,
+        createdAt = @createdAt,
+        processedAt = @processedAt,
+        updatedAt = @updatedAt
+      WHERE id = @id
+    `);
+    stmt.run({
+      ...merged,
+      sourceUrl: merged.sourceUrl || null,
+      mediaPath: merged.mediaPath || null,
+      transcription: merged.transcription || null,
+      questionId: merged.questionId || null,
+      processedAt: merged.processedAt || null,
+      updatedAt: merged.updatedAt || null,
+      canonicalTopicIds: JSON.stringify(merged.canonicalTopicIds),
+      tags: JSON.stringify(merged.tags),
+    });
+  },
+
+  delete(id: string): void {
+    const stmt = getDatabase().prepare("DELETE FROM source_items WHERE id = @id");
+    stmt.run({ id });
+  },
+};
+
+function parseSourceItemRow(row: SourceItemRow): DbSourceItem {
+  return {
+    id: row.id,
+    sourceType: row.sourceType as SourceType,
+    sourceName: row.sourceName,
+    sourceUrl: row.sourceUrl || undefined,
+    title: row.title,
+    rawContent: row.rawContent,
+    mediaPath: row.mediaPath || undefined,
+    transcription: row.transcription || undefined,
+    canonicalTopicIds: JSON.parse(row.canonicalTopicIds),
+    tags: JSON.parse(row.tags),
+    questionId: row.questionId || undefined,
+    status: row.status as SourceItemStatus,
+    createdAt: row.createdAt,
+    processedAt: row.processedAt || undefined,
+    updatedAt: row.updatedAt || undefined,
+  };
+}
+
+// ============================================================================
+// v3 Architecture - Canonical Topic Queries (Read-only)
+// ============================================================================
+
+export const canonicalTopicQueries = {
+  getAll(): DbCanonicalTopic[] {
+    const stmt = getDatabase().prepare("SELECT * FROM canonical_topics ORDER BY canonicalName");
+    const rows = stmt.all() as CanonicalTopicRow[];
+    return rows.map(parseCanonicalTopicRow);
+  },
+
+  getById(id: string): DbCanonicalTopic | null {
+    const stmt = getDatabase().prepare("SELECT * FROM canonical_topics WHERE id = ?");
+    const row = stmt.get(id) as CanonicalTopicRow | undefined;
+    return row ? parseCanonicalTopicRow(row) : null;
+  },
+
+  getByDomain(domain: string): DbCanonicalTopic[] {
+    const stmt = getDatabase().prepare("SELECT * FROM canonical_topics WHERE domain = ? ORDER BY canonicalName");
+    const rows = stmt.all(domain) as CanonicalTopicRow[];
+    return rows.map(parseCanonicalTopicRow);
+  },
+};
+
+function parseCanonicalTopicRow(row: CanonicalTopicRow): DbCanonicalTopic {
+  return {
+    id: row.id,
+    canonicalName: row.canonicalName,
+    aliases: JSON.parse(row.aliases),
+    domain: row.domain,
+    parentTopicId: row.parentTopicId || undefined,
+    createdAt: row.createdAt,
+  };
+}
+
+// ============================================================================
+// v3 Architecture - Notebook Topic Page Queries
+// ============================================================================
+
+export const notebookTopicPageQueries = {
+  getAll(): DbNotebookTopicPage[] {
+    const stmt = getDatabase().prepare("SELECT * FROM notebook_topic_pages ORDER BY updatedAt DESC");
+    const rows = stmt.all() as NotebookTopicPageRow[];
+    return rows.map(parseNotebookTopicPageRow);
+  },
+
+  getById(id: string): DbNotebookTopicPage | null {
+    const stmt = getDatabase().prepare("SELECT * FROM notebook_topic_pages WHERE id = ?");
+    const row = stmt.get(id) as NotebookTopicPageRow | undefined;
+    return row ? parseNotebookTopicPageRow(row) : null;
+  },
+
+  insert(page: DbNotebookTopicPage): void {
+    const stmt = getDatabase().prepare(`
+      INSERT INTO notebook_topic_pages (id, canonicalTopicId, cardIds, createdAt, updatedAt)
+      VALUES (@id, @canonicalTopicId, @cardIds, @createdAt, @updatedAt)
+    `);
+    stmt.run({
+      ...page,
+      cardIds: JSON.stringify(page.cardIds),
+    });
+  },
+
+  update(id: string, updates: Partial<DbNotebookTopicPage>): void {
+    const current = notebookTopicPageQueries.getById(id);
+    if (!current) {
+      throw new Error(`NotebookTopicPage not found: ${id}`);
+    }
+
+    const merged = { ...current, ...updates };
+    const stmt = getDatabase().prepare(`
+      UPDATE notebook_topic_pages SET
+        canonicalTopicId = @canonicalTopicId,
+        cardIds = @cardIds,
+        createdAt = @createdAt,
+        updatedAt = @updatedAt
+      WHERE id = @id
+    `);
+    stmt.run({
+      ...merged,
+      cardIds: JSON.stringify(merged.cardIds),
+    });
+  },
+};
+
+function parseNotebookTopicPageRow(row: NotebookTopicPageRow): DbNotebookTopicPage {
+  return {
+    ...row,
+    cardIds: JSON.parse(row.cardIds),
+  };
+}
+
+// ============================================================================
+// v3 Architecture - Notebook Block Queries
+// ============================================================================
+
+export const notebookBlockQueries = {
+  getByPage(pageId: string): DbNotebookBlock[] {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM notebook_blocks WHERE notebookTopicPageId = ? ORDER BY position"
+    );
+    const rows = stmt.all(pageId) as NotebookBlockRow[];
+    return rows.map(parseNotebookBlockRow);
+  },
+
+  insert(block: DbNotebookBlock): void {
+    const stmt = getDatabase().prepare(`
+      INSERT INTO notebook_blocks (id, notebookTopicPageId, sourceItemId, content, annotations, mediaPath, position)
+      VALUES (@id, @notebookTopicPageId, @sourceItemId, @content, @annotations, @mediaPath, @position)
+    `);
+    stmt.run({
+      ...block,
+      annotations: block.annotations || null,
+      mediaPath: block.mediaPath || null,
+    });
+  },
+
+  update(id: string, updates: Partial<DbNotebookBlock>): void {
+    const stmt = getDatabase().prepare("SELECT * FROM notebook_blocks WHERE id = ?");
+    const current = stmt.get(id) as NotebookBlockRow | undefined;
+    if (!current) {
+      throw new Error(`NotebookBlock not found: ${id}`);
+    }
+
+    const merged = { ...parseNotebookBlockRow(current), ...updates };
+    const updateStmt = getDatabase().prepare(`
+      UPDATE notebook_blocks SET
+        notebookTopicPageId = @notebookTopicPageId,
+        sourceItemId = @sourceItemId,
+        content = @content,
+        annotations = @annotations,
+        mediaPath = @mediaPath,
+        position = @position
+      WHERE id = @id
+    `);
+    updateStmt.run({
+      ...merged,
+      annotations: merged.annotations || null,
+      mediaPath: merged.mediaPath || null,
+    });
+  },
+
+  delete(id: string): void {
+    const stmt = getDatabase().prepare("DELETE FROM notebook_blocks WHERE id = @id");
+    stmt.run({ id });
+  },
+};
+
+function parseNotebookBlockRow(row: NotebookBlockRow): DbNotebookBlock {
+  return {
+    id: row.id,
+    notebookTopicPageId: row.notebookTopicPageId,
+    sourceItemId: row.sourceItemId,
+    content: row.content,
+    annotations: row.annotations || undefined,
+    mediaPath: row.mediaPath || undefined,
+    position: row.position,
+  };
+}
+
+// ============================================================================
+// v3 Architecture - Smart View Queries
+// ============================================================================
+
+export const smartViewQueries = {
+  getAll(): DbSmartView[] {
+    const stmt = getDatabase().prepare("SELECT * FROM smart_views ORDER BY isSystem DESC, name");
+    const rows = stmt.all() as SmartViewRow[];
+    return rows.map(parseSmartViewRow);
+  },
+
+  getSystemViews(): DbSmartView[] {
+    const stmt = getDatabase().prepare("SELECT * FROM smart_views WHERE isSystem = 1 ORDER BY name");
+    const rows = stmt.all() as SmartViewRow[];
+    return rows.map(parseSmartViewRow);
+  },
+};
+
+function parseSmartViewRow(row: SmartViewRow): DbSmartView {
+  return {
+    id: row.id,
+    name: row.name,
+    icon: row.icon,
+    filter: JSON.parse(row.filter),
+    sortBy: row.sortBy,
+    isSystem: row.isSystem === 1,
+  };
+}
+
+// ============================================================================
+// v3 Architecture - Seed System Smart Views
+// ============================================================================
+
+function seedSystemSmartViews(): void {
+  const db = getDatabase();
+  
+  // Check if system views already exist
+  const existingCount = (
+    db.prepare("SELECT COUNT(*) as count FROM smart_views WHERE isSystem = 1").get() as { count: number }
+  ).count;
+
+  if (existingCount > 0) {
+    return; // Already seeded
+  }
+
+  console.log("[Database] Seeding system smart views...");
+
+  const systemViews: Array<Omit<DbSmartView, 'isSystem' | 'filter'> & { isSystem: number; filter: string }> = [
+    {
+      id: 'system-inbox',
+      name: 'Inbox',
+      icon: 'inbox',
+      filter: JSON.stringify({ status: ['inbox'] }),
+      sortBy: 'createdAt',
+      isSystem: 1,
+    },
+    {
+      id: 'system-today',
+      name: 'Today',
+      icon: 'calendar',
+      filter: JSON.stringify({}), // Filtered by dueDate in app layer
+      sortBy: 'dueDate',
+      isSystem: 1,
+    },
+    {
+      id: 'system-queue',
+      name: 'Queue',
+      icon: 'list',
+      filter: JSON.stringify({ status: ['processed'] }),
+      sortBy: 'processedAt',
+      isSystem: 1,
+    },
+    {
+      id: 'system-notebook',
+      name: 'Notebook',
+      icon: 'book-open',
+      filter: JSON.stringify({ status: ['curated'] }),
+      sortBy: 'updatedAt',
+      isSystem: 1,
+    },
+    {
+      id: 'system-topics',
+      name: 'Topics',
+      icon: 'tags',
+      filter: JSON.stringify({}),
+      sortBy: 'canonicalName',
+      isSystem: 1,
+    },
+    {
+      id: 'system-stats',
+      name: 'Stats',
+      icon: 'bar-chart-3',
+      filter: JSON.stringify({}),
+      sortBy: 'createdAt',
+      isSystem: 1,
+    },
+    {
+      id: 'system-weak-topics',
+      name: 'Weak Topics',
+      icon: 'alert-triangle',
+      filter: JSON.stringify({}), // Filtered by FSRS difficulty in app layer
+      sortBy: 'difficulty',
+      isSystem: 1,
+    },
+  ];
+
+  const stmt = db.prepare(`
+    INSERT INTO smart_views (id, name, icon, filter, sortBy, isSystem)
+    VALUES (@id, @name, @icon, @filter, @sortBy, @isSystem)
+  `);
+
+  for (const view of systemViews) {
+    stmt.run(view);
+  }
+
+  console.log(`[Database] Seeded ${systemViews.length} system smart views`);
+}
 
 // ============================================================================
 // Database Status
