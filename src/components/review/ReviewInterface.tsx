@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { ArrowLeft, RotateCcw } from "lucide-react";
+import {
+  ArrowLeft,
+  RotateCcw,
+  XCircle,
+  AlertTriangle,
+  Circle,
+  CheckCircle2,
+} from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { Button } from "@/components/ui/button";
 import { Rating } from "@/types";
@@ -22,6 +29,10 @@ export function ReviewInterface() {
   const [sessionComplete, setSessionComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
+
+  // Task 5.6: Feedback state
+  const [showingFeedback, setShowingFeedback] = useState(false);
+  const [currentGrade, setCurrentGrade] = useState<number | null>(null);
 
   // Redirect timeout for session completion
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -180,8 +191,32 @@ export function ReviewInterface() {
     ]
   );
 
+  const executeRating = useCallback(
+    async (rating: number, responseTimeMs: number | null = null) => {
+      if (isSubmitting || showingFeedback) return;
+
+      setCurrentGrade(rating);
+      setShowingFeedback(true);
+
+      setTimeout(async () => {
+        const success = await submitReview(rating as any, responseTimeMs);
+
+        if (isMounted.current) {
+          setShowingFeedback(false);
+          setCurrentGrade(null);
+          if (success) {
+            setResponseStartTime(null);
+            setIsPaused(false);
+            setShowManualGradeSelector(false);
+          }
+        }
+      }, 1000);
+    },
+    [isSubmitting, showingFeedback, submitReview]
+  );
+
   const handleContinue = useCallback(async () => {
-    if (!responseStartTime || isSubmitting) return;
+    if (!responseStartTime || isSubmitting || showingFeedback) return;
 
     const rawResponseTimeMs = Date.now() - responseStartTime;
 
@@ -196,46 +231,22 @@ export function ReviewInterface() {
     const responseTimeMs = rawResponseTimeMs;
     const rating = calculateAutoRating(responseTimeMs);
 
-    const success = await submitReview(rating, responseTimeMs);
-
-    if (success && isMounted.current) {
-      // Reset for next card
-      setResponseStartTime(null);
-      setIsPaused(false);
-      setShowManualGradeSelector(false);
-    }
+    await executeRating(rating, responseTimeMs);
   }, [
     responseStartTime,
     isPaused,
-    submitReview,
     isSubmitting,
+    showingFeedback,
     calculateAutoRating,
+    executeRating,
   ]);
-
-  const handleForgot = useCallback(async () => {
-    if (isSubmitting) return;
-
-    // Explicitly forced Again rating, no response time (manual failure)
-    const success = await submitReview(Rating.Again, null);
-
-    if (success && isMounted.current) {
-      // Reset for next card
-      setResponseStartTime(null);
-      setIsPaused(false);
-      setShowManualGradeSelector(false);
-    }
-  }, [submitReview, isSubmitting]);
 
   const handleManualGrade = useCallback(
     async (rating: (typeof Rating)[keyof typeof Rating]) => {
-      const success = await submitReview(rating, null);
-      if (success && isMounted.current) {
-        setResponseStartTime(null);
-        setIsPaused(false);
-        setShowManualGradeSelector(false);
-      }
+      if (isSubmitting || showingFeedback) return;
+      await executeRating(rating, null);
     },
-    [submitReview]
+    [executeRating, isSubmitting, showingFeedback]
   );
 
   // Keyboard shortcuts
@@ -251,12 +262,18 @@ export function ReviewInterface() {
 
       if (e.key === " ") {
         e.preventDefault();
+        if (showingFeedback) return;
         if (!answerVisible) {
           handleShowAnswer();
         } else if (!isSubmitting) {
           handleContinue();
         }
-      } else if (e.key === "Enter" && answerVisible && !isSubmitting) {
+      } else if (
+        e.key === "Enter" &&
+        answerVisible &&
+        !isSubmitting &&
+        !showingFeedback
+      ) {
         handleContinue();
       } else if (e.key === "Escape") {
         navigateToCapture();
@@ -404,8 +421,43 @@ export function ReviewInterface() {
       </div>
 
       {/* Action buttons */}
-      <div className="flex justify-center">
-        {!answerVisible ? (
+      <div className="flex justify-center min-h-[160px] items-center">
+        {showingFeedback ? (
+          <div className="flex flex-col items-center gap-3 animate-in fade-in zoom-in-95 duration-300">
+            {currentGrade === Rating.Again && (
+              <>
+                <XCircle className="h-16 w-16 text-destructive" />
+                <span className="text-2xl font-bold text-destructive">
+                  Forgot
+                </span>
+              </>
+            )}
+            {currentGrade === Rating.Hard && (
+              <>
+                <AlertTriangle className="h-16 w-16 text-orange-500" />
+                <span className="text-2xl font-bold text-orange-500">
+                  Struggled
+                </span>
+              </>
+            )}
+            {currentGrade === Rating.Good && (
+              <>
+                <Circle className="h-16 w-16 text-blue-500" />
+                <span className="text-2xl font-bold text-blue-500">
+                  Recalled
+                </span>
+              </>
+            )}
+            {currentGrade === Rating.Easy && (
+              <>
+                <CheckCircle2 className="h-16 w-16 text-green-500" />
+                <span className="text-2xl font-bold text-green-500">
+                  Mastered
+                </span>
+              </>
+            )}
+          </div>
+        ) : !answerVisible ? (
           <Button
             size="lg"
             onClick={handleShowAnswer}
@@ -414,71 +466,65 @@ export function ReviewInterface() {
             Show Answer
             <span className="ml-2 text-xs opacity-70">(Space)</span>
           </Button>
-        ) : showManualGradeSelector ? (
+        ) : (
           <div className="flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="text-center space-y-2">
-              <p className="font-medium text-foreground">
-                Looks like you stepped away. How did this feel?
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Auto-rating is disabled for interrupted sessions.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
+            {!isPaused && (
               <Button
-                variant="destructive"
+                size="lg"
+                onClick={handleContinue}
+                disabled={isSubmitting}
+                className="min-w-[240px]"
+              >
+                Continue
+                <span className="ml-2 text-xs opacity-70">(Space)</span>
+              </Button>
+            )}
+
+            {isPaused && (
+              <div className="text-center space-y-1">
+                <p className="font-medium text-foreground">
+                  Session Interrupted
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Please select your recall quality manually.
+                </p>
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button
+                variant="outline"
                 onClick={() => handleManualGrade(Rating.Again)}
                 disabled={isSubmitting}
-                className="min-w-[100px]"
+                className="min-w-[110px] text-destructive border-destructive/20 hover:bg-destructive/10"
               >
-                Again
+                Forgot
               </Button>
               <Button
                 variant="outline"
                 onClick={() => handleManualGrade(Rating.Hard)}
                 disabled={isSubmitting}
-                className="min-w-[100px] text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-300"
+                className="min-w-[110px] text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-300"
               >
-                Hard
+                Struggled
               </Button>
               <Button
                 variant="outline"
                 onClick={() => handleManualGrade(Rating.Good)}
                 disabled={isSubmitting}
-                className="min-w-[100px] text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
+                className="min-w-[110px] text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
               >
-                Good
+                Recalled
               </Button>
               <Button
                 variant="outline"
                 onClick={() => handleManualGrade(Rating.Easy)}
                 disabled={isSubmitting}
-                className="min-w-[100px] text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 hover:border-green-300"
+                className="min-w-[110px] text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 hover:border-green-300"
               >
-                Easy
+                Mastered
               </Button>
             </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-4">
-            <Button
-              size="lg"
-              onClick={handleContinue}
-              disabled={isSubmitting}
-              className="min-w-[200px]"
-            >
-              Continue
-              <span className="ml-2 text-xs opacity-70">(Space)</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleForgot}
-              disabled={isSubmitting}
-              className="text-muted-foreground hover:text-destructive"
-            >
-              I forgot this
-            </Button>
           </div>
         )}
       </div>
