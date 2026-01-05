@@ -12,6 +12,12 @@ import type {
   BackupInfo,
   DbStatus,
   ExtractionStatus,
+  SourceItem,
+  SourceItemStatus,
+  CanonicalTopic,
+  NotebookTopicPage,
+  NotebookBlock,
+  SmartView,
 } from "./index";
 import type {
   AIProviderStatus,
@@ -37,6 +43,12 @@ export type {
   BackupInfo,
   DbStatus,
   ExtractionStatus,
+  SourceItem,
+  SourceItemStatus,
+  CanonicalTopic,
+  NotebookTopicPage,
+  NotebookBlock,
+  SmartView,
 };
 
 // Re-export AI types
@@ -94,6 +106,44 @@ export interface ElectronAPI {
     getByNote: (noteId: string) => Promise<IpcResult<Connection[]>>;
     create: (connection: Connection) => Promise<IpcResult<Connection>>;
     remove: (id: string) => Promise<IpcResult<void>>;
+  };
+  sourceItems: {
+    getAll: () => Promise<IpcResult<SourceItem[]>>;
+    getByStatus: (status: SourceItemStatus) => Promise<IpcResult<SourceItem[]>>;
+    getById: (id: string) => Promise<IpcResult<SourceItem | null>>;
+    create: (item: SourceItem) => Promise<IpcResult<SourceItem>>;
+    update: (
+      id: string,
+      updates: Partial<SourceItem>
+    ) => Promise<IpcResult<void>>;
+    delete: (id: string) => Promise<IpcResult<void>>;
+  };
+  canonicalTopics: {
+    getAll: () => Promise<IpcResult<CanonicalTopic[]>>;
+    getById: (id: string) => Promise<IpcResult<CanonicalTopic | null>>;
+    getByDomain: (domain: string) => Promise<IpcResult<CanonicalTopic[]>>;
+  };
+  notebookPages: {
+    getAll: () => Promise<IpcResult<NotebookTopicPage[]>>;
+    getById: (id: string) => Promise<IpcResult<NotebookTopicPage | null>>;
+    create: (page: NotebookTopicPage) => Promise<IpcResult<NotebookTopicPage>>;
+    update: (
+      id: string,
+      updates: Partial<NotebookTopicPage>
+    ) => Promise<IpcResult<void>>;
+  };
+  notebookBlocks: {
+    getByPage: (pageId: string) => Promise<IpcResult<NotebookBlock[]>>;
+    create: (block: NotebookBlock) => Promise<IpcResult<NotebookBlock>>;
+    update: (
+      id: string,
+      updates: Partial<NotebookBlock>
+    ) => Promise<IpcResult<void>>;
+    delete: (id: string) => Promise<IpcResult<void>>;
+  };
+  smartViews: {
+    getAll: () => Promise<IpcResult<SmartView[]>>;
+    getSystem: () => Promise<IpcResult<SmartView[]>>;
   };
   backup: {
     list: () => Promise<IpcResult<BackupInfo[]>>;

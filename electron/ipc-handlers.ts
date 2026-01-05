@@ -6,6 +6,11 @@ import {
   reviewLogQueries,
   quickDumpQueries,
   connectionQueries,
+  sourceItemQueries,
+  canonicalTopicQueries,
+  notebookTopicPageQueries,
+  notebookBlockQueries,
+  smartViewQueries,
   getDatabaseStatus,
   getDbPath,
   DbCard,
@@ -13,7 +18,13 @@ import {
   DbReviewLog,
   DbQuickDump,
   DbConnection,
+  DbSourceItem,
+  DbCanonicalTopic,
+  DbNotebookTopicPage,
+  DbNotebookBlock,
+  DbSmartView,
   ExtractionStatus,
+  SourceItemStatus,
   DbStatus,
 } from "./database";
 import {
@@ -416,6 +427,269 @@ export function registerIpcHandlers(): void {
       try {
         connectionQueries.delete(id);
         return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // Source Item Handlers (v3)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "sourceItems:getAll",
+    async (): Promise<IpcResult<DbSourceItem[]>> => {
+      try {
+        const items = sourceItemQueries.getAll();
+        return success(items);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "sourceItems:getByStatus",
+    async (_, status: SourceItemStatus): Promise<IpcResult<DbSourceItem[]>> => {
+      try {
+        const items = sourceItemQueries.getByStatus(status);
+        return success(items);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "sourceItems:getById",
+    async (_, id: string): Promise<IpcResult<DbSourceItem | null>> => {
+      try {
+        const item = sourceItemQueries.getById(id);
+        return success(item);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "sourceItems:create",
+    async (_, item: DbSourceItem): Promise<IpcResult<DbSourceItem>> => {
+      try {
+        sourceItemQueries.insert(item);
+        return success(item);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "sourceItems:update",
+    async (
+      _,
+      id: string,
+      updates: Partial<DbSourceItem>
+    ): Promise<IpcResult<void>> => {
+      try {
+        sourceItemQueries.update(id, updates);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "sourceItems:delete",
+    async (_, id: string): Promise<IpcResult<void>> => {
+      try {
+        sourceItemQueries.delete(id);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // Canonical Topic Handlers (v3)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "canonicalTopics:getAll",
+    async (): Promise<IpcResult<DbCanonicalTopic[]>> => {
+      try {
+        const topics = canonicalTopicQueries.getAll();
+        return success(topics);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "canonicalTopics:getById",
+    async (_, id: string): Promise<IpcResult<DbCanonicalTopic | null>> => {
+      try {
+        const topic = canonicalTopicQueries.getById(id);
+        return success(topic);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "canonicalTopics:getByDomain",
+    async (_, domain: string): Promise<IpcResult<DbCanonicalTopic[]>> => {
+      try {
+        const topics = canonicalTopicQueries.getByDomain(domain);
+        return success(topics);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // Notebook Topic Page Handlers (v3)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "notebookPages:getAll",
+    async (): Promise<IpcResult<DbNotebookTopicPage[]>> => {
+      try {
+        const pages = notebookTopicPageQueries.getAll();
+        return success(pages);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "notebookPages:getById",
+    async (_, id: string): Promise<IpcResult<DbNotebookTopicPage | null>> => {
+      try {
+        const page = notebookTopicPageQueries.getById(id);
+        return success(page);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "notebookPages:create",
+    async (
+      _,
+      page: DbNotebookTopicPage
+    ): Promise<IpcResult<DbNotebookTopicPage>> => {
+      try {
+        notebookTopicPageQueries.insert(page);
+        return success(page);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "notebookPages:update",
+    async (
+      _,
+      id: string,
+      updates: Partial<DbNotebookTopicPage>
+    ): Promise<IpcResult<void>> => {
+      try {
+        notebookTopicPageQueries.update(id, updates);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // Notebook Block Handlers (v3)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "notebookBlocks:getByPage",
+    async (_, pageId: string): Promise<IpcResult<DbNotebookBlock[]>> => {
+      try {
+        const blocks = notebookBlockQueries.getByPage(pageId);
+        return success(blocks);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "notebookBlocks:create",
+    async (_, block: DbNotebookBlock): Promise<IpcResult<DbNotebookBlock>> => {
+      try {
+        notebookBlockQueries.insert(block);
+        return success(block);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "notebookBlocks:update",
+    async (
+      _,
+      id: string,
+      updates: Partial<DbNotebookBlock>
+    ): Promise<IpcResult<void>> => {
+      try {
+        notebookBlockQueries.update(id, updates);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "notebookBlocks:delete",
+    async (_, id: string): Promise<IpcResult<void>> => {
+      try {
+        notebookBlockQueries.delete(id);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // Smart View Handlers (v3)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "smartViews:getAll",
+    async (): Promise<IpcResult<DbSmartView[]>> => {
+      try {
+        const views = smartViewQueries.getAll();
+        return success(views);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "smartViews:getSystem",
+    async (): Promise<IpcResult<DbSmartView[]>> => {
+      try {
+        const views = smartViewQueries.getSystemViews();
+        return success(views);
       } catch (error) {
         return failure(error);
       }

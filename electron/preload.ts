@@ -48,6 +48,42 @@ const api = {
       ipcRenderer.invoke("connections:create", connection),
     remove: (id: string) => ipcRenderer.invoke("connections:remove", id),
   },
+  sourceItems: {
+    getAll: () => ipcRenderer.invoke("sourceItems:getAll"),
+    getByStatus: (status: string) =>
+      ipcRenderer.invoke("sourceItems:getByStatus", status),
+    getById: (id: string) => ipcRenderer.invoke("sourceItems:getById", id),
+    create: (item: unknown) => ipcRenderer.invoke("sourceItems:create", item),
+    update: (id: string, updates: unknown) =>
+      ipcRenderer.invoke("sourceItems:update", id, updates),
+    delete: (id: string) => ipcRenderer.invoke("sourceItems:delete", id),
+  },
+  canonicalTopics: {
+    getAll: () => ipcRenderer.invoke("canonicalTopics:getAll"),
+    getById: (id: string) => ipcRenderer.invoke("canonicalTopics:getById", id),
+    getByDomain: (domain: string) =>
+      ipcRenderer.invoke("canonicalTopics:getByDomain", domain),
+  },
+  notebookPages: {
+    getAll: () => ipcRenderer.invoke("notebookPages:getAll"),
+    getById: (id: string) => ipcRenderer.invoke("notebookPages:getById", id),
+    create: (page: unknown) => ipcRenderer.invoke("notebookPages:create", page),
+    update: (id: string, updates: unknown) =>
+      ipcRenderer.invoke("notebookPages:update", id, updates),
+  },
+  notebookBlocks: {
+    getByPage: (pageId: string) =>
+      ipcRenderer.invoke("notebookBlocks:getByPage", pageId),
+    create: (block: unknown) =>
+      ipcRenderer.invoke("notebookBlocks:create", block),
+    update: (id: string, updates: unknown) =>
+      ipcRenderer.invoke("notebookBlocks:update", id, updates),
+    delete: (id: string) => ipcRenderer.invoke("notebookBlocks:delete", id),
+  },
+  smartViews: {
+    getAll: () => ipcRenderer.invoke("smartViews:getAll"),
+    getSystem: () => ipcRenderer.invoke("smartViews:getSystem"),
+  },
   backup: {
     list: () => ipcRenderer.invoke("backup:list"),
     create: () => ipcRenderer.invoke("backup:create"),
