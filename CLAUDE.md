@@ -3,6 +3,7 @@
 - Ask before large changes, explain decisions briefly
 - TypeScript strict, ES modules, functional patterns
 - Simple solutions over clever ones
+- The User gets distracted, so keep him on task to finish the MVP. If deviation occurs, let him know.
 
 ---
 

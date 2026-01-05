@@ -1,0 +1,131 @@
+{
+  "medicalLists": [
+    {
+      "id": "list-acute-liver-failure",
+      "title": "5 Causes of Acute Liver Failure",
+      "rawContent": "1. Acetaminophen toxicity\n2. Viral hepatitis (A, B, E)\n3. Autoimmune hepatitis\n4. Wilson's disease\n5. Budd-Chiari syndrome",
+      "expectedCards": [
+        {
+          "cardType": "vignette",
+          "front": "45yo F with confusion, jaundice, and elevated LFTs. History of taking multiple Tylenol for headache over 3 days. Most likely diagnosis?",
+          "back": "Acetaminophen-induced acute liver failure",
+          "tags": ["gastroenterology", "toxicology", "emergency-medicine"]
+        },
+        {
+          "cardType": "vignette",
+          "front": "28yo M from endemic area presents with jaundice, fever, RUQ pain. Anti-HAV IgM positive. Diagnosis?",
+          "back": "Acute hepatitis A causing acute liver failure",
+          "tags": ["gastroenterology", "infectious-disease"]
+        },
+        {
+          "cardType": "vignette",
+          "front": "35yo F with jaundice, ascites, confusion. Labs show elevated ANA, anti-smooth muscle antibodies. Diagnosis?",
+          "back": "Autoimmune hepatitis with acute liver failure",
+          "tags": ["gastroenterology", "rheumatology"]
+        },
+        {
+          "cardType": "vignette",
+          "front": "22yo M with psychiatric symptoms, jaundice, Kayser-Fleischer rings on slit lamp. Low ceruloplasmin. Diagnosis?",
+          "back": "Wilson's disease presenting as acute liver failure",
+          "tags": ["gastroenterology", "neurology"]
+        },
+        {
+          "cardType": "vignette",
+          "front": "40yo F with hepatomegaly, ascites, and severe RUQ pain. Doppler shows hepatic vein thrombosis. Diagnosis?",
+          "back": "Budd-Chiari syndrome (hepatic vein thrombosis) causing acute liver failure",
+          "tags": ["gastroenterology", "hematology"]
+        }
+      ]
+    },
+    {
+      "id": "list-causes-hyponatremia",
+      "title": "Causes of Hyponatremia by Volume Status",
+      "rawContent": "Hypovolemic: Diuretics, GI losses, third-spacing\nEuvolemic: SIADH, hypothyroidism, psychogenic polydipsia\nHypervolemic: CHF, cirrhosis, nephrotic syndrome",
+      "expectedCards": [
+        {
+          "cardType": "vignette",
+          "front": "72yo M on furosemide presents with weakness, dizziness. Na 125, dry mucous membranes. Volume status and cause?",
+          "back": "Hypovolemic hyponatremia due to diuretic use",
+          "tags": ["nephrology", "pharmacology"]
+        },
+        {
+          "cardType": "vignette",
+          "front": "55yo M with small cell lung cancer, Na 122, euvolemic on exam. Urine osmolality inappropriately high. Diagnosis?",
+          "back": "SIADH (euvolemic hyponatremia, common in SCLC)",
+          "tags": ["nephrology", "oncology", "endocrinology"]
+        },
+        {
+          "cardType": "vignette",
+          "front": "65yo F with CHF, bilateral leg edema, ascites. Na 128. Volume status and mechanism?",
+          "back": "Hypervolemic hyponatremia due to CHF (excess total body water despite low effective arterial volume)",
+          "tags": ["nephrology", "cardiology"]
+        }
+      ]
+    },
+    {
+      "id": "list-heart-sounds",
+      "title": "Cardiac Auscultation Findings",
+      "rawContent": "S3: Ventricular filling (CHF, dilated ventricle)\nS4: Atrial contraction against stiff ventricle (HTN, AS)\nMidsystolic click: Mitral valve prolapse\nOpening snap: Mitral stenosis",
+      "expectedCards": [
+        {
+          "cardType": "vignette",
+          "front": "58yo M with dyspnea, JVD, extra heart sound after S2. Echo shows dilated LV. What sound and diagnosis?",
+          "back": "S3 gallop indicating volume overload/CHF with reduced EF",
+          "tags": ["cardiology", "physical-exam"]
+        },
+        {
+          "cardType": "vignette",
+          "front": "70yo F with long-standing HTN. Extra heart sound before S1, heard best at apex. Significance?",
+          "back": "S4 gallop indicating stiff/hypertrophied LV from chronic HTN",
+          "tags": ["cardiology", "physical-exam"]
+        },
+        {
+          "cardType": "vignette",
+          "front": "28yo F with palpitations. Mid-systolic click followed by late systolic murmur. Most likely diagnosis?",
+          "back": "Mitral valve prolapse (midsystolic click is hallmark finding)",
+          "tags": ["cardiology", "physical-exam"]
+        }
+      ]
+    }
+  ],
+  "clinicalScenarios": [
+    {
+      "id": "scenario-chest-pain-001",
+      "domain": "cardiology",
+      "presentation": "58yo M with sudden chest pain radiating to back, BP 180/110 in R arm, 130/85 in L arm",
+      "diagnosis": "Aortic dissection (Type A if ascending aorta)",
+      "keyFindings": ["sudden onset", "tearing pain to back", "BP differential between arms"],
+      "tags": ["cardiology", "emergency-medicine", "vascular"]
+    },
+    {
+      "id": "scenario-headache-001",
+      "domain": "neurology",
+      "presentation": "45yo F with worst headache of life, sudden onset during exercise. CT shows hyperdensity in basal cisterns.",
+      "diagnosis": "Subarachnoid hemorrhage (likely from ruptured aneurysm)",
+      "keyFindings": ["thunderclap headache", "sudden onset", "basal cisterns involvement"],
+      "tags": ["neurology", "emergency-medicine"]
+    },
+    {
+      "id": "scenario-dyspnea-001",
+      "domain": "pulmonology",
+      "presentation": "65yo M smoker with progressive dyspnea. PFTs show FEV1/FVC <0.7, no reversibility with bronchodilators.",
+      "diagnosis": "COPD (obstructive lung disease)",
+      "keyFindings": ["smoking history", "obstructive pattern", "no reversibility"],
+      "tags": ["pulmonology", "diagnostics"]
+    }
+  ],
+  "overlappingCloze": [
+    {
+      "id": "cloze-hocm-management",
+      "title": "HOCM Management Steps",
+      "content": "Treatment for HOCM: {{c1::Avoid dehydration}} → {{c2::Beta-blockers or verapamil}} → {{c3::Consider septal reduction therapy}} if medical therapy fails",
+      "tags": ["cardiology", "pharmacology"]
+    },
+    {
+      "id": "cloze-stroke-workup",
+      "title": "Acute Stroke Workup",
+      "content": "Stroke protocol: {{c1::Non-contrast head CT}} → {{c2::Check time of symptom onset}} → {{c3::tPA if <4.5 hours}} and no contraindications → {{c4::Neurology consult}}",
+      "tags": ["neurology", "emergency-medicine"]
+    }
+  ]
+}

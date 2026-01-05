@@ -7,6 +7,11 @@ import type {
   ScheduleResult,
   FormattedIntervals,
   RatingValue,
+  QuickDump,
+  Connection,
+  BackupInfo,
+  DbStatus,
+  ExtractionStatus,
 } from "./index";
 
 // Re-export database types for convenience
@@ -19,6 +24,11 @@ export type {
   ScheduleResult,
   FormattedIntervals,
   RatingValue,
+  QuickDump,
+  Connection,
+  BackupInfo,
+  DbStatus,
+  ExtractionStatus,
 };
 
 // API interface exposed via preload script
@@ -49,6 +59,31 @@ export interface ElectronAPI {
       rating: RatingValue
     ) => Promise<IpcResult<ScheduleResult>>;
     getIntervals: (cardId: string) => Promise<IpcResult<FormattedIntervals>>;
+  };
+  quickDumps: {
+    getAll: () => Promise<IpcResult<QuickDump[]>>;
+    getByStatus: (status: ExtractionStatus) => Promise<IpcResult<QuickDump[]>>;
+    create: (dump: QuickDump) => Promise<IpcResult<QuickDump>>;
+    update: (
+      id: string,
+      updates: Partial<QuickDump>
+    ) => Promise<IpcResult<void>>;
+    remove: (id: string) => Promise<IpcResult<void>>;
+  };
+  connections: {
+    getAll: () => Promise<IpcResult<Connection[]>>;
+    getByNote: (noteId: string) => Promise<IpcResult<Connection[]>>;
+    create: (connection: Connection) => Promise<IpcResult<Connection>>;
+    remove: (id: string) => Promise<IpcResult<void>>;
+  };
+  backup: {
+    list: () => Promise<IpcResult<BackupInfo[]>>;
+    create: () => Promise<IpcResult<string>>;
+    restore: (filename: string) => Promise<IpcResult<void>>;
+    cleanup: (retentionDays?: number) => Promise<IpcResult<number>>;
+  };
+  db: {
+    status: () => Promise<IpcResult<DbStatus>>;
   };
 }
 

@@ -1,8 +1,10 @@
 import { SearchBar } from "./SearchBar";
 import { useAppStore } from "@/stores/useAppStore";
+import { Badge } from "@/components/ui/badge";
 
 export function Header() {
   const setCurrentView = useAppStore((state) => state.setCurrentView);
+  const isBrowserMode = typeof window !== "undefined" && !window.api;
 
   return (
     <header className="border-b border-border bg-card">
@@ -14,6 +16,11 @@ export function Header() {
           >
             DougHub
           </button>
+          {isBrowserMode && (
+            <Badge variant="outline" className="text-xs">
+              Browser Mode (In-Memory)
+            </Badge>
+          )}
         </div>
         <SearchBar />
       </div>

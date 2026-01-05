@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { initDatabase, closeDatabase } from "./database";
 import { registerIpcHandlers } from "./ipc-handlers";
+import { ensureBackupsDir, cleanupOldBackups } from "./backup-service";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -68,6 +69,16 @@ app.on("activate", () => {
 });
 
 app.whenReady().then(() => {
+  // Ensure backups directory exists
+  ensureBackupsDir();
+  console.log("[Backup] Backups directory ready");
+
+  // Cleanup old backups (keep 7 days by default)
+  const deleted = cleanupOldBackups(7);
+  if (deleted > 0) {
+    console.log(`[Backup] Cleaned up ${deleted} old backup(s)`);
+  }
+
   // Initialize SQLite database before creating window
   const dbPath = path.join(app.getPath("userData"), "doughub.db");
   initDatabase(dbPath);

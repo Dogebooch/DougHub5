@@ -136,6 +136,8 @@ export function scheduleReview(
     elapsedDays: scheduled.log.elapsed_days,
     review: reviewTime.toISOString(),
     createdAt: new Date().toISOString(),
+    responseTimeMs: null, // Can be populated by caller if needed
+    partialCreditScore: null, // Can be populated by caller if needed
   };
 
   // Execute update + log insert in a transaction

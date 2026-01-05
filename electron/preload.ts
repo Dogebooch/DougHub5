@@ -31,6 +31,34 @@ const api = {
     getIntervals: (cardId: string) =>
       ipcRenderer.invoke("reviews:getIntervals", cardId),
   },
+  quickDumps: {
+    getAll: () => ipcRenderer.invoke("quickDumps:getAll"),
+    getByStatus: (status: string) =>
+      ipcRenderer.invoke("quickDumps:getByStatus", status),
+    create: (dump: unknown) => ipcRenderer.invoke("quickDumps:create", dump),
+    update: (id: string, updates: unknown) =>
+      ipcRenderer.invoke("quickDumps:update", id, updates),
+    remove: (id: string) => ipcRenderer.invoke("quickDumps:remove", id),
+  },
+  connections: {
+    getAll: () => ipcRenderer.invoke("connections:getAll"),
+    getByNote: (noteId: string) =>
+      ipcRenderer.invoke("connections:getByNote", noteId),
+    create: (connection: unknown) =>
+      ipcRenderer.invoke("connections:create", connection),
+    remove: (id: string) => ipcRenderer.invoke("connections:remove", id),
+  },
+  backup: {
+    list: () => ipcRenderer.invoke("backup:list"),
+    create: () => ipcRenderer.invoke("backup:create"),
+    restore: (filename: string) =>
+      ipcRenderer.invoke("backup:restore", filename),
+    cleanup: (retentionDays?: number) =>
+      ipcRenderer.invoke("backup:cleanup", retentionDays),
+  },
+  db: {
+    status: () => ipcRenderer.invoke("db:status"),
+  },
 };
 
 // Expose typed API to renderer

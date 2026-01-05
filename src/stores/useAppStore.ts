@@ -309,7 +309,33 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         return { success: true, data: result.data! };
       }
 
-      return { success: false, error: "API not available" };
+      // Browser mode: simulate scheduling with updated due date
+      console.log("[Store] Browser mode: simulating review schedule");
+      const card = get().cards.find((c) => c.id === cardId);
+      if (!card) {
+        return { success: false, error: "Card not found" };
+      }
+
+      // Simple browser mode scheduling - just push due date forward
+      const daysToAdd = rating >= 3 ? 3 : 1;
+      const newDueDate = new Date();
+      newDueDate.setDate(newDueDate.getDate() + daysToAdd);
+
+      const updatedCard: CardWithFSRS = {
+        ...card,
+        dueDate: newDueDate.toISOString(),
+        reps: card.reps + 1,
+        lastReview: new Date().toISOString(),
+      };
+
+      set((state) => ({
+        cards: state.cards.map((c) => (c.id === cardId ? updatedCard : c)),
+      }));
+
+      return {
+        success: true,
+        data: { card: updatedCard, log: null },
+      };
     } catch (error) {
       console.error("[Store] Error scheduling review:", error);
       return { success: false, error: String(error) };

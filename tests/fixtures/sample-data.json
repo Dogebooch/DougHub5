@@ -1,0 +1,72 @@
+{
+  "notes": [
+    {
+      "id": "note-acs-001",
+      "title": "Acute Coronary Syndrome",
+      "content": "ACS encompasses unstable angina, NSTEMI, and STEMI. STEMI requires ST elevation ≥1mm in 2 contiguous leads or ≥2mm in precordial leads. Troponins rise 3-4 hours post-injury, peak at 24-48 hours, and remain elevated for 7-14 days.",
+      "tags": ["cardiology", "emergency", "diagnostics"],
+      "cardIds": ["card-stemi-001", "card-troponin-001"],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "note-hf-001",
+      "title": "Heart Failure Basics",
+      "content": "BNP >100 pg/mL suggests heart failure. Ejection fraction classification: HFpEF (≥50%), mildly reduced (41-49%), moderately reduced (31-40%), HFrEF (≤30%). HFrEF is systolic dysfunction with dilated ventricle. HFpEF is diastolic dysfunction with stiff ventricle.",
+      "tags": ["cardiology", "lab-values"],
+      "cardIds": ["card-bnp-001", "card-ef-001"],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "cards": [
+    {
+      "id": "card-stemi-001",
+      "front": "What are the ECG criteria for STEMI diagnosis?",
+      "back": "≥1mm ST elevation in 2 contiguous leads OR ≥2mm in precordial leads OR new LBBB in clinical context",
+      "noteId": "note-acs-001",
+      "tags": ["cardiology", "diagnostics"],
+      "cardType": "qa",
+      "parentListId": null,
+      "listPosition": null,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "card-troponin-001",
+      "front": "When do troponins peak after myocardial injury?",
+      "back": "Peak at 24-48 hours (rise at 3-4 hours, remain elevated 7-14 days)",
+      "noteId": "note-acs-001",
+      "tags": ["cardiology", "lab-values"],
+      "cardType": "qa",
+      "parentListId": null,
+      "listPosition": null,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "card-bnp-001",
+      "front": "What BNP level suggests heart failure?",
+      "back": "BNP >100 pg/mL (or NT-proBNP >125 pg/mL)",
+      "noteId": "note-hf-001",
+      "tags": ["cardiology", "lab-values"],
+      "cardType": "qa",
+      "parentListId": null,
+      "listPosition": null,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "card-ef-001",
+      "front": "What ejection fraction defines HFrEF?",
+      "back": "EF ≤40% (some guidelines use ≤30% for severe HFrEF)",
+      "noteId": "note-hf-001",
+      "tags": ["cardiology"],
+      "cardType": "qa",
+      "parentListId": null,
+      "listPosition": null,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    }
+  ]
+}

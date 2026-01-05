@@ -5,15 +5,16 @@
             "Edit",
             "Write(src/**)",
             "Write(docs/**)",
-            "Bash(npm run *)",
-            "Bash(npm test *)",
-            "Bash(npm install *)",
-            "Bash(npx *)",
+            "Bash(npm run:*)",
+            "Bash(npm test:*)",
+            "Bash(npm install:*)",
+            "Bash(npx:*)",
             "Bash(git status)",
-            "Bash(git diff *)",
-            "Bash(git log *)",
-            "Bash(git add *)",
-            "Bash(git commit *)"
+            "Bash(git diff:*)",
+            "Bash(git log:*)",
+            "Bash(git add:*)",
+            "Bash(git commit:*)",
+            "mcp__code-index__*"
         ]
     }
 }

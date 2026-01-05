@@ -1,63 +1,248 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { ipcMain, app, BrowserWindow } from "electron";
+import { app, ipcMain, BrowserWindow } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import Database from "better-sqlite3";
+import fs from "node:fs";
 import { randomUUID } from "crypto";
+function getBackupsDir() {
+  return path.join(app.getPath("userData"), "backups");
+}
+function ensureBackupsDir() {
+  const dir = getBackupsDir();
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+function createBackup(dbPath) {
+  ensureBackupsDir();
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
+  const backupFilename = `doughub-${timestamp}.db`;
+  const backupPath = path.join(getBackupsDir(), backupFilename);
+  fs.copyFileSync(dbPath, backupPath);
+  console.log(`[Backup] Created: ${backupPath}`);
+  return backupPath;
+}
+function restoreBackup(backupPath, dbPath) {
+  if (!fs.existsSync(backupPath)) {
+    throw new Error(`Backup not found: ${backupPath}`);
+  }
+  fs.copyFileSync(backupPath, dbPath);
+  console.log(`[Backup] Restored from: ${backupPath}`);
+}
+function listBackups() {
+  const dir = getBackupsDir();
+  if (!fs.existsSync(dir)) {
+    return [];
+  }
+  return fs.readdirSync(dir).filter((f) => f.startsWith("doughub-") && f.endsWith(".db")).map((filename) => {
+    const filePath = path.join(dir, filename);
+    const stats = fs.statSync(filePath);
+    const timestampStr = filename.replace("doughub-", "").replace(".db", "").replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/, "T$1:$2:$3.$4Z");
+    let timestamp;
+    try {
+      timestamp = new Date(timestampStr);
+      if (isNaN(timestamp.getTime())) {
+        timestamp = stats.mtime;
+      }
+    } catch {
+      timestamp = stats.mtime;
+    }
+    return {
+      filename,
+      timestamp,
+      size: stats.size
+    };
+  }).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+}
+function cleanupOldBackups(retentionDays = 7) {
+  const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1e3;
+  const backups = listBackups();
+  let deleted = 0;
+  for (const backup of backups) {
+    if (backup.timestamp.getTime() < cutoff) {
+      const backupPath = path.join(getBackupsDir(), backup.filename);
+      fs.unlinkSync(backupPath);
+      console.log(`[Backup] Deleted old backup: ${backup.filename}`);
+      deleted++;
+    }
+  }
+  if (deleted > 0) {
+    console.log(`[Backup] Cleaned up ${deleted} old backup(s)`);
+  }
+  return deleted;
+}
 let db = null;
+let currentDbPath = null;
+function getSchemaVersion() {
+  return getDatabase().pragma("user_version", { simple: true });
+}
+function setSchemaVersion(version) {
+  getDatabase().pragma(`user_version = ${version}`);
+}
+function columnExists(table, column) {
+  const columns = getDatabase().prepare(`PRAGMA table_info(${table})`).all();
+  return columns.some((c) => c.name === column);
+}
+function tableExists(table) {
+  const result = getDatabase().prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`).get(table);
+  return result !== void 0;
+}
+function migrateToV2(dbPath) {
+  console.log("[Migration] Starting migration to schema version 2...");
+  const backupPath = createBackup(dbPath);
+  console.log(`[Migration] Backup created: ${backupPath}`);
+  const database = getDatabase();
+  try {
+    database.transaction(() => {
+      if (!columnExists("cards", "cardType")) {
+        database.exec(
+          "ALTER TABLE cards ADD COLUMN cardType TEXT DEFAULT 'standard'"
+        );
+        console.log("[Migration] Added cards.cardType column");
+      }
+      if (!columnExists("cards", "parentListId")) {
+        database.exec("ALTER TABLE cards ADD COLUMN parentListId TEXT");
+        console.log("[Migration] Added cards.parentListId column");
+      }
+      if (!columnExists("cards", "listPosition")) {
+        database.exec("ALTER TABLE cards ADD COLUMN listPosition INTEGER");
+        console.log("[Migration] Added cards.listPosition column");
+      }
+      if (!columnExists("review_logs", "responseTimeMs")) {
+        database.exec(
+          "ALTER TABLE review_logs ADD COLUMN responseTimeMs INTEGER"
+        );
+        console.log("[Migration] Added review_logs.responseTimeMs column");
+      }
+      if (!columnExists("review_logs", "partialCreditScore")) {
+        database.exec(
+          "ALTER TABLE review_logs ADD COLUMN partialCreditScore REAL"
+        );
+        console.log("[Migration] Added review_logs.partialCreditScore column");
+      }
+      if (!tableExists("quick_dumps")) {
+        database.exec(`
+          CREATE TABLE quick_dumps (
+            id TEXT PRIMARY KEY,
+            content TEXT NOT NULL,
+            extractionStatus TEXT NOT NULL DEFAULT 'pending',
+            createdAt TEXT NOT NULL,
+            processedAt TEXT
+          )
+        `);
+        database.exec(
+          `CREATE INDEX idx_quick_dumps_status ON quick_dumps(extractionStatus)`
+        );
+        console.log("[Migration] Created quick_dumps table");
+      }
+      if (!tableExists("connections")) {
+        database.exec(`
+          CREATE TABLE connections (
+            id TEXT PRIMARY KEY,
+            sourceNoteId TEXT NOT NULL,
+            targetNoteId TEXT NOT NULL,
+            semanticScore REAL NOT NULL,
+            createdAt TEXT NOT NULL,
+            FOREIGN KEY (sourceNoteId) REFERENCES notes(id) ON DELETE CASCADE,
+            FOREIGN KEY (targetNoteId) REFERENCES notes(id) ON DELETE CASCADE
+          )
+        `);
+        database.exec(
+          `CREATE INDEX idx_connections_sourceNoteId ON connections(sourceNoteId)`
+        );
+        database.exec(
+          `CREATE INDEX idx_connections_targetNoteId ON connections(targetNoteId)`
+        );
+        database.exec(
+          `CREATE INDEX idx_connections_semanticScore ON connections(semanticScore)`
+        );
+        console.log("[Migration] Created connections table");
+      }
+      database.exec(
+        `CREATE INDEX IF NOT EXISTS idx_cards_cardType ON cards(cardType)`
+      );
+      database.exec(
+        `CREATE INDEX IF NOT EXISTS idx_cards_parentListId ON cards(parentListId)`
+      );
+      setSchemaVersion(2);
+    })();
+    console.log("[Migration] Successfully migrated to schema version 2");
+  } catch (error) {
+    console.error("[Migration] Failed, restoring backup:", error);
+    database.close();
+    db = null;
+    restoreBackup(backupPath, dbPath);
+    db = new Database(dbPath);
+    db.pragma("journal_mode = WAL");
+    db.pragma("foreign_keys = ON");
+    throw error;
+  }
+}
 function initDatabase(dbPath) {
   if (db) {
     return db;
   }
   db = new Database(dbPath);
+  currentDbPath = dbPath;
   db.pragma("journal_mode = WAL");
-  db.pragma("user_version = 1");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS cards (
-      id TEXT PRIMARY KEY,
-      front TEXT NOT NULL,
-      back TEXT NOT NULL,
-      noteId TEXT NOT NULL,
-      tags TEXT NOT NULL DEFAULT '[]',
-      dueDate TEXT NOT NULL,
-      createdAt TEXT NOT NULL,
-      stability REAL DEFAULT 0,
-      difficulty REAL DEFAULT 0,
-      elapsedDays REAL DEFAULT 0,
-      scheduledDays REAL DEFAULT 0,
-      reps INTEGER DEFAULT 0,
-      lapses INTEGER DEFAULT 0,
-      state INTEGER DEFAULT 0,
-      lastReview TEXT
-    );
+  db.pragma("foreign_keys = ON");
+  const version = getSchemaVersion();
+  console.log(`[Database] Current schema version: ${version}`);
+  if (version === 0) {
+    console.log("[Database] Creating initial schema (v1)...");
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS cards (
+        id TEXT PRIMARY KEY,
+        front TEXT NOT NULL,
+        back TEXT NOT NULL,
+        noteId TEXT NOT NULL,
+        tags TEXT NOT NULL DEFAULT '[]',
+        dueDate TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        stability REAL DEFAULT 0,
+        difficulty REAL DEFAULT 0,
+        elapsedDays REAL DEFAULT 0,
+        scheduledDays REAL DEFAULT 0,
+        reps INTEGER DEFAULT 0,
+        lapses INTEGER DEFAULT 0,
+        state INTEGER DEFAULT 0,
+        lastReview TEXT
+      );
 
-    CREATE TABLE IF NOT EXISTS notes (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      content TEXT NOT NULL,
-      cardIds TEXT NOT NULL DEFAULT '[]',
-      tags TEXT NOT NULL DEFAULT '[]',
-      createdAt TEXT NOT NULL
-    );
+      CREATE TABLE IF NOT EXISTS notes (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        cardIds TEXT NOT NULL DEFAULT '[]',
+        tags TEXT NOT NULL DEFAULT '[]',
+        createdAt TEXT NOT NULL
+      );
 
-    CREATE TABLE IF NOT EXISTS review_logs (
-      id TEXT PRIMARY KEY,
-      cardId TEXT NOT NULL,
-      rating INTEGER NOT NULL,
-      state INTEGER NOT NULL,
-      scheduledDays REAL NOT NULL,
-      elapsedDays REAL NOT NULL,
-      review TEXT NOT NULL,
-      createdAt TEXT NOT NULL
-    );
+      CREATE TABLE IF NOT EXISTS review_logs (
+        id TEXT PRIMARY KEY,
+        cardId TEXT NOT NULL,
+        rating INTEGER NOT NULL,
+        state INTEGER NOT NULL,
+        scheduledDays REAL NOT NULL,
+        elapsedDays REAL NOT NULL,
+        review TEXT NOT NULL,
+        createdAt TEXT NOT NULL
+      );
 
-    CREATE INDEX IF NOT EXISTS idx_cards_noteId ON cards(noteId);
-    CREATE INDEX IF NOT EXISTS idx_cards_dueDate ON cards(dueDate);
-    CREATE INDEX IF NOT EXISTS idx_cards_state ON cards(state);
-    CREATE INDEX IF NOT EXISTS idx_review_logs_cardId ON review_logs(cardId);
-  `);
+      CREATE INDEX IF NOT EXISTS idx_cards_noteId ON cards(noteId);
+      CREATE INDEX IF NOT EXISTS idx_cards_dueDate ON cards(dueDate);
+      CREATE INDEX IF NOT EXISTS idx_cards_state ON cards(state);
+      CREATE INDEX IF NOT EXISTS idx_review_logs_cardId ON review_logs(cardId);
+    `);
+    setSchemaVersion(1);
+    console.log("[Database] Initial schema created (v1)");
+  }
+  if (getSchemaVersion() < 2) {
+    migrateToV2(dbPath);
+  }
   return db;
 }
 function getDatabase() {
@@ -70,7 +255,11 @@ function closeDatabase() {
   if (db) {
     db.close();
     db = null;
+    currentDbPath = null;
   }
+}
+function getDbPath() {
+  return currentDbPath;
 }
 const cardQueries = {
   getAll() {
@@ -83,11 +272,13 @@ const cardQueries = {
       INSERT INTO cards (
         id, front, back, noteId, tags, dueDate, createdAt,
         stability, difficulty, elapsedDays, scheduledDays,
-        reps, lapses, state, lastReview
+        reps, lapses, state, lastReview,
+        cardType, parentListId, listPosition
       ) VALUES (
         @id, @front, @back, @noteId, @tags, @dueDate, @createdAt,
         @stability, @difficulty, @elapsedDays, @scheduledDays,
-        @reps, @lapses, @state, @lastReview
+        @reps, @lapses, @state, @lastReview,
+        @cardType, @parentListId, @listPosition
       )
     `);
     stmt.run({
@@ -116,7 +307,10 @@ const cardQueries = {
         reps = @reps,
         lapses = @lapses,
         state = @state,
-        lastReview = @lastReview
+        lastReview = @lastReview,
+        cardType = @cardType,
+        parentListId = @parentListId,
+        listPosition = @listPosition
       WHERE id = @id
     `);
     stmt.run({
@@ -132,7 +326,10 @@ const cardQueries = {
 function parseCardRow(row) {
   return {
     ...row,
-    tags: JSON.parse(row.tags)
+    tags: JSON.parse(row.tags),
+    cardType: row.cardType || "standard",
+    parentListId: row.parentListId,
+    listPosition: row.listPosition
   };
 }
 const noteQueries = {
@@ -187,21 +384,134 @@ function parseNoteRow(row) {
 }
 const reviewLogQueries = {
   getAll() {
-    const stmt = getDatabase().prepare("SELECT * FROM review_logs ORDER BY createdAt DESC");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM review_logs ORDER BY createdAt DESC"
+    );
     const rows = stmt.all();
-    return rows;
+    return rows.map(parseReviewLogRow);
   },
   insert(log) {
     const stmt = getDatabase().prepare(`
       INSERT INTO review_logs (
-        id, cardId, rating, state, scheduledDays, elapsedDays, review, createdAt
+        id, cardId, rating, state, scheduledDays, elapsedDays, review, createdAt,
+        responseTimeMs, partialCreditScore
       ) VALUES (
-        @id, @cardId, @rating, @state, @scheduledDays, @elapsedDays, @review, @createdAt
+        @id, @cardId, @rating, @state, @scheduledDays, @elapsedDays, @review, @createdAt,
+        @responseTimeMs, @partialCreditScore
       )
     `);
     stmt.run(log);
   }
 };
+function parseReviewLogRow(row) {
+  return {
+    ...row,
+    responseTimeMs: row.responseTimeMs,
+    partialCreditScore: row.partialCreditScore
+  };
+}
+const quickDumpQueries = {
+  getAll() {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM quick_dumps ORDER BY createdAt DESC"
+    );
+    const rows = stmt.all();
+    return rows.map(parseQuickDumpRow);
+  },
+  getByStatus(status) {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM quick_dumps WHERE extractionStatus = ? ORDER BY createdAt DESC"
+    );
+    const rows = stmt.all(status);
+    return rows.map(parseQuickDumpRow);
+  },
+  insert(dump) {
+    const stmt = getDatabase().prepare(`
+      INSERT INTO quick_dumps (id, content, extractionStatus, createdAt, processedAt)
+      VALUES (@id, @content, @extractionStatus, @createdAt, @processedAt)
+    `);
+    stmt.run(dump);
+  },
+  update(id, updates) {
+    const current = quickDumpQueries.getAll().find((d) => d.id === id);
+    if (!current) {
+      throw new Error(`Quick dump not found: ${id}`);
+    }
+    const merged = { ...current, ...updates };
+    const stmt = getDatabase().prepare(`
+      UPDATE quick_dumps SET
+        content = @content,
+        extractionStatus = @extractionStatus,
+        createdAt = @createdAt,
+        processedAt = @processedAt
+      WHERE id = @id
+    `);
+    stmt.run(merged);
+  },
+  delete(id) {
+    const stmt = getDatabase().prepare(
+      "DELETE FROM quick_dumps WHERE id = @id"
+    );
+    stmt.run({ id });
+  }
+};
+function parseQuickDumpRow(row) {
+  return {
+    ...row,
+    extractionStatus: row.extractionStatus
+  };
+}
+const connectionQueries = {
+  getAll() {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM connections ORDER BY semanticScore DESC"
+    );
+    const rows = stmt.all();
+    return rows;
+  },
+  getBySourceNote(noteId) {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM connections WHERE sourceNoteId = ? ORDER BY semanticScore DESC"
+    );
+    const rows = stmt.all(noteId);
+    return rows;
+  },
+  getByTargetNote(noteId) {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM connections WHERE targetNoteId = ? ORDER BY semanticScore DESC"
+    );
+    const rows = stmt.all(noteId);
+    return rows;
+  },
+  insert(connection) {
+    const stmt = getDatabase().prepare(`
+      INSERT INTO connections (id, sourceNoteId, targetNoteId, semanticScore, createdAt)
+      VALUES (@id, @sourceNoteId, @targetNoteId, @semanticScore, @createdAt)
+    `);
+    stmt.run(connection);
+  },
+  delete(id) {
+    const stmt = getDatabase().prepare(
+      "DELETE FROM connections WHERE id = @id"
+    );
+    stmt.run({ id });
+  }
+};
+function getDatabaseStatus() {
+  const db2 = getDatabase();
+  const version = getSchemaVersion();
+  const cardCount = db2.prepare("SELECT COUNT(*) as count FROM cards").get().count;
+  const noteCount = db2.prepare("SELECT COUNT(*) as count FROM notes").get().count;
+  const quickDumpCount = db2.prepare("SELECT COUNT(*) as count FROM quick_dumps").get().count;
+  const connectionCount = db2.prepare("SELECT COUNT(*) as count FROM connections").get().count;
+  return {
+    version,
+    cardCount,
+    noteCount,
+    quickDumpCount,
+    connectionCount
+  };
+}
 var State = /* @__PURE__ */ ((State2) => {
   State2[State2["New"] = 0] = "New";
   State2[State2["Learning"] = 1] = "Learning";
@@ -2155,7 +2465,11 @@ function scheduleReview(cardId, rating, reviewTime = /* @__PURE__ */ new Date())
     scheduledDays: scheduled.log.scheduled_days,
     elapsedDays: scheduled.log.elapsed_days,
     review: reviewTime.toISOString(),
-    createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    responseTimeMs: null,
+    // Can be populated by caller if needed
+    partialCreditScore: null
+    // Can be populated by caller if needed
   };
   const transaction = db2.transaction(() => {
     cardQueries.update(cardId, fsrsUpdates);
@@ -2386,6 +2700,163 @@ function registerIpcHandlers() {
       }
     }
   );
+  ipcMain.handle(
+    "quickDumps:getAll",
+    async () => {
+      try {
+        const dumps = quickDumpQueries.getAll();
+        return success(dumps);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    "quickDumps:getByStatus",
+    async (_, status) => {
+      try {
+        const dumps = quickDumpQueries.getByStatus(status);
+        return success(dumps);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    "quickDumps:create",
+    async (_, dump) => {
+      try {
+        quickDumpQueries.insert(dump);
+        return success(dump);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    "quickDumps:update",
+    async (_, id, updates) => {
+      try {
+        quickDumpQueries.update(id, updates);
+        return success(void 0);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    "quickDumps:remove",
+    async (_, id) => {
+      try {
+        quickDumpQueries.delete(id);
+        return success(void 0);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    "connections:getAll",
+    async () => {
+      try {
+        const connections = connectionQueries.getAll();
+        return success(connections);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    "connections:getByNote",
+    async (_, noteId) => {
+      try {
+        const asSource = connectionQueries.getBySourceNote(noteId);
+        const asTarget = connectionQueries.getByTargetNote(noteId);
+        const all = [...asSource, ...asTarget];
+        const unique = Array.from(new Map(all.map((c) => [c.id, c])).values());
+        return success(unique);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    "connections:create",
+    async (_, connection) => {
+      try {
+        connectionQueries.insert(connection);
+        return success(connection);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    "connections:remove",
+    async (_, id) => {
+      try {
+        connectionQueries.delete(id);
+        return success(void 0);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+  ipcMain.handle("backup:list", async () => {
+    try {
+      const backups = listBackups();
+      return success(backups);
+    } catch (error) {
+      return failure(error);
+    }
+  });
+  ipcMain.handle("backup:create", async () => {
+    try {
+      const dbPath = getDbPath();
+      if (!dbPath) {
+        throw new Error("Database not initialized");
+      }
+      const backupPath = createBackup(dbPath);
+      return success(path.basename(backupPath));
+    } catch (error) {
+      return failure(error);
+    }
+  });
+  ipcMain.handle(
+    "backup:restore",
+    async (_, filename) => {
+      try {
+        const dbPath = getDbPath();
+        if (!dbPath) {
+          throw new Error("Database not initialized");
+        }
+        const backupPath = path.join(getBackupsDir(), filename);
+        restoreBackup(backupPath, dbPath);
+        return success(void 0);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    "backup:cleanup",
+    async (_, retentionDays) => {
+      try {
+        const deleted = cleanupOldBackups(retentionDays);
+        return success(deleted);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+  ipcMain.handle("db:status", async () => {
+    try {
+      const status = getDatabaseStatus();
+      return success(status);
+    } catch (error) {
+      return failure(error);
+    }
+  });
   console.log("[IPC] All handlers registered");
 }
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
@@ -2423,6 +2894,12 @@ app.on("activate", () => {
   }
 });
 app.whenReady().then(() => {
+  ensureBackupsDir();
+  console.log("[Backup] Backups directory ready");
+  const deleted = cleanupOldBackups(7);
+  if (deleted > 0) {
+    console.log(`[Backup] Cleaned up ${deleted} old backup(s)`);
+  }
   const dbPath = path.join(app.getPath("userData"), "doughub.db");
   initDatabase(dbPath);
   console.log("[Database] Initialized at:", dbPath);

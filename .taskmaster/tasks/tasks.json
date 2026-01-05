@@ -1,0 +1,651 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Database schema expansion for Quick Dump queue and medical features",
+        "description": "Add quick_dumps table and extend cards/notes tables to support medical list processing, partial credit, response time tracking, and connection suggestions",
+        "details": "Extend database.ts to add:\n- quick_dumps table: id (UUID), content (TEXT), extractionStatus (pending/processing/completed), createdAt, processedAt\n- cards table additions: cardType (enum: 'qa'|'cloze'|'vignette'), parentListId (for medical list items), listPosition (integer)\n- review_logs additions: responseTimeMs (INTEGER), partialCreditScore (REAL 0-1)\n- connections table: id, sourceNoteId, targetNoteId, semanticScore (REAL), createdAt\n- Add indexes: idx_quick_dumps_status, idx_cards_cardType, idx_connections_sourceNoteId\n- Update DbCard, DbNote, DbReviewLog interfaces\n- Add migration logic to update existing schema without data loss\n- Create new query functions: quickDumpQueries.{getAll, insert, update, delete}, connectionQueries.{getAll, insert}\n- Update IPC handlers in ipc-handlers.ts for new operations",
+        "testStrategy": "Verify schema creation with SQLite browser, test all CRUD operations, confirm indexes exist via EXPLAIN QUERY PLAN, validate migration preserves existing data",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create quick_dumps table schema and migration logic",
+            "description": "Add quick_dumps table to database.ts with proper schema, types, and version migration from user_version=1 to user_version=2",
+            "dependencies": [],
+            "details": "In electron/database.ts: Add DbQuickDump interface with id, content, extractionStatus, createdAt, processedAt fields. Add QuickDumpRow interface and parseQuickDumpRow helper. In initDatabase(), add schema version migration check. Migration creates quick_dumps table and idx_quick_dumps_status index. Update user_version to 2.",
+            "status": "pending",
+            "testStrategy": "Open existing database, verify migration runs only once, confirm quick_dumps table exists with correct columns using SQLite browser, verify index via EXPLAIN QUERY PLAN",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Extend cards table with medical feature columns",
+            "description": "Add cardType, parentListId, and listPosition columns to cards table through schema migration",
+            "dependencies": [
+              1
+            ],
+            "details": "In electron/database.ts: Update DbCard and CardRow interfaces to include cardType, parentListId, listPosition. In migration block, add ALTER TABLE statements for new columns. Create indexes idx_cards_cardType and idx_cards_parentListId. Update parseCardRow and cardQueries methods.",
+            "status": "pending",
+            "testStrategy": "Verify ALTER TABLE succeeds, confirm new columns exist with correct defaults, test cardQueries.insert with cardType='vignette', verify indexes via EXPLAIN QUERY PLAN",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Extend review_logs table with performance tracking columns",
+            "description": "Add responseTimeMs and partialCreditScore columns to review_logs table for tracking review performance metrics",
+            "dependencies": [
+              1
+            ],
+            "details": "In electron/database.ts: Update DbReviewLog and ReviewLogRow interfaces to include responseTimeMs and partialCreditScore. In migration block, add ALTER TABLE statements with CHECK constraint for partialCreditScore (0-1 range). Update reviewLogQueries.insert. Update src/types/index.ts ReviewLog interface.",
+            "status": "pending",
+            "testStrategy": "Verify ALTER TABLE succeeds, test reviewLogQueries.insert with responseTimeMs=1500 and partialCreditScore=0.75, verify CHECK constraint rejects invalid values",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Create connections table for semantic note relationships",
+            "description": "Add connections table to store semantic relationships between notes with similarity scores",
+            "dependencies": [
+              1
+            ],
+            "details": "In electron/database.ts: Add DbConnection and ConnectionRow interfaces and parseConnectionRow helper. In migration block, create connections table with foreign key constraints to notes table with CASCADE delete. Create three indexes: idx_connections_sourceNoteId, idx_connections_targetNoteId, idx_connections_semanticScore.",
+            "status": "pending",
+            "testStrategy": "Verify connections table created with foreign key constraints, test CASCADE delete, confirm all indexes exist via EXPLAIN QUERY PLAN, verify semanticScore accepts REAL values",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement query functions and IPC handlers for new tables",
+            "description": "Create quickDumpQueries and connectionQueries objects, add corresponding IPC handlers in ipc-handlers.ts, and expose via preload.ts",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "In electron/database.ts: Add quickDumpQueries with getAll, getByStatus, insert, update, delete methods. Add connectionQueries with getAll, getBySourceNote, getByTargetNote, insert, delete methods. In electron/ipc-handlers.ts: Add IPC handlers for quickDumps and connections operations. In electron/preload.ts: Expose quickDumps and connections API. In src/types/electron.d.ts: Add QuickDump and Connection interfaces and extend ElectronAPI.",
+            "status": "pending",
+            "testStrategy": "Test quickDumpQueries operations, verify IPC roundtrip from renderer, test connectionQueries methods, verify all handlers return IpcResult format, test error handling",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-01-05T00:05:06.017Z"
+      },
+      {
+        "id": "2",
+        "title": "AI service integration layer",
+        "description": "Create AI service module for concept extraction, card format suggestions, and medical content processing using OpenAI/Anthropic API",
+        "details": "Create electron/ai-service.ts:\n- API client configuration (support OpenAI/Anthropic, configurable via environment)\n- extractConcepts(content: string): Promise<ExtractedConcept[]> - analyzes pasted content, returns array of {text, conceptType, confidence, suggestedFormat: 'qa'|'cloze'}\n- validateCard(card: {front, back}): Promise<ValidationResult> - checks minimum information principle, pattern-matching detection, multi-fact warnings\n- detectMedicalList(content: string): Promise<{isList: boolean, listType: 'differential'|'procedure'|'algorithm', items: string[]}>\n- convertToVignette(listItem: string, context: string): Promise<{vignette: string, cloze: string}>\n- suggestTags(content: string): Promise<string[]> - medical domain tag suggestions\n- findRelatedNotes(content: string, existingNotes: DbNote[]): Promise<{noteId: string, similarity: number}[]> - semantic similarity\n- Implement rate limiting, error handling, timeout (3s requirement)\n- Add retry logic with exponential backoff\n- Cache results for 5 minutes to reduce API costs\n- Create types/ai.ts for all AI-related interfaces",
+        "testStrategy": "Unit tests with mock API responses, integration tests with real API (dev key), verify <3s response time, test error handling and fallbacks, validate medical terminology recognition",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create AI service type definitions and API client configuration",
+            "description": "Set up the foundational types and API client configuration for OpenAI/Anthropic integration",
+            "dependencies": [],
+            "details": "Create src/types/ai.ts with interfaces: ExtractedConcept {text, conceptType, confidence, suggestedFormat}, ValidationResult {isValid, warnings[], suggestions[]}, MedicalListDetection {isList, listType, items[]}, VignetteConversion {vignette, cloze}, SemanticMatch {noteId, similarity}. Create electron/ai-service.ts with API client configuration supporting both OpenAI and Anthropic via environment variables (OPENAI_API_KEY, ANTHROPIC_API_KEY, AI_PROVIDER). Follow existing patterns from fsrs-service.ts for modular exports and error handling.",
+            "status": "pending",
+            "testStrategy": "Verify type definitions compile without errors. Test API client initialization with both providers using mock environment variables.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement concept extraction and card validation functions",
+            "description": "Build extractConcepts and validateCard functions with timeout and error handling",
+            "dependencies": [
+              1
+            ],
+            "details": "In electron/ai-service.ts, implement extractConcepts(content: string): Promise<ExtractedConcept[]> that analyzes medical content and suggests card formats (qa/cloze). Implement validateCard(card: {front, back}): Promise<ValidationResult> to check minimum information principle, detect pattern-matching, and warn about multi-fact cards. Both functions must complete within 3 seconds. Use Promise.race with timeout wrapper. Include retry logic with exponential backoff (3 attempts max). Follow IpcResult<T> pattern from ipc-handlers.ts for error handling.",
+            "status": "pending",
+            "testStrategy": "Unit tests with mock API responses for both OpenAI and Anthropic. Test timeout at 3s, verify retry logic with simulated failures. Test with medical content samples (differentials, procedures, clinical vignettes).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement medical list detection and vignette conversion",
+            "description": "Create functions to detect medical lists and convert list items to clinical vignettes",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "In electron/ai-service.ts, implement detectMedicalList(content: string): Promise<{isList: boolean, listType: 'differential'|'procedure'|'algorithm', items: string[]}> to identify medical lists. Implement convertToVignette(listItem: string, context: string): Promise<{vignette: string, cloze: string}> to transform list items into patient scenarios with demographics, presentation, and key findings. Each vignette must be independently answerable without sibling context. Follow the timeout and retry patterns established in subtask 2.",
+            "status": "pending",
+            "testStrategy": "Test with real medical lists: 'DDx for acute MI', '5 steps of BLS', 'Algorithm for trauma management'. Verify each vignette is clinically realistic and independently answerable. Validate list type detection accuracy.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement tag suggestions and semantic similarity search",
+            "description": "Build AI-powered tag suggestion and note similarity matching functions",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "In electron/ai-service.ts, implement suggestTags(content: string): Promise<string[]> for medical domain tag suggestions based on content analysis. Implement findRelatedNotes(content: string, existingNotes: DbNote[]): Promise<{noteId: string, similarity: number}[]> for semantic similarity matching to identify related existing notes. Use vector embeddings for similarity scoring. Both functions must respect the 3s timeout requirement and include retry logic.",
+            "status": "pending",
+            "testStrategy": "Test suggestTags with various medical content types (cardiology, procedures, pharmacology). Verify tags are relevant and specific. Test findRelatedNotes with a corpus of existing notes, verify similarity scores are meaningful (>0.7 for related content).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Add caching layer and IPC handlers for AI service",
+            "description": "Implement 5-minute result caching and integrate AI service with IPC layer",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Add in-memory caching to electron/ai-service.ts with 5-minute TTL to reduce API costs. Use Map<string, {result: T, timestamp: number}> with content hash as key. Create IPC handlers in electron/ipc-handlers.ts following existing pattern: ai:extractConcepts, ai:validateCard, ai:detectMedicalList, ai:convertToVignette, ai:suggestTags, ai:findRelatedNotes. Add corresponding preload API methods in electron/preload.ts and TypeScript definitions in src/types/electron.d.ts. Follow the IpcResult<T> wrapper pattern from existing handlers.",
+            "status": "pending",
+            "testStrategy": "Verify cache hit/miss behavior with identical requests within 5 minutes. Test cache expiration after 5 minutes. Integration tests with IPC handlers using mock AI responses. Verify all functions return IpcResult<T> format. Test concurrent requests to same content use cached results.",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "3",
+        "title": "AI-guided capture interface",
+        "description": "Replace manual capture interface with AI concept extraction workflow: paste → highlight → confirm → format suggestion → save",
+        "details": "Refactor src/components/capture/CaptureInterface.tsx:\n- Add state: pastedContent, extractedConcepts[], selectedConcepts (Set<id>), processingState\n- Phase 1: Paste area (Textarea) with auto-detect on paste\n- Phase 2: Call ai-service.extractConcepts, show loading (<3s), render concepts with checkboxes\n- Phase 3: For each selected concept, show AI format suggestion (cloze/Q&A) with reasoning, allow override\n- Phase 4: Real-time validation warnings using validateCard for each concept\n- Phase 5: Batch create cards + auto-create parent Note with source content\n- Medical list detection: if detectMedicalList returns true, show conversion prompt before proceeding\n- Add ConceptCheckbox component: displays concept text, checkbox, format badge, edit capability\n- Add ValidationWarning component: pattern-matching alert, minimum info violation, multi-fact warning\n- Update IPC to call window.api.ai.extractConcepts, window.api.ai.validateCard\n- Keyboard: Tab to navigate concepts, Space to toggle selection, Enter to proceed\n- Auto-save draft to localStorage every 5s (crash recovery)\n- Show 'Saved ✓' toast <500ms after successful save",
+        "testStrategy": "E2E test: paste medical content → verify concepts extracted → select/deselect → override format → save → verify cards created with correct FSRS defaults. Test validation warnings appear for problematic cards. Verify <20s total workflow time.",
+        "priority": "high",
+        "dependencies": [
+          "2"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add paste detection and content state management",
+            "description": "Implement paste area UI with auto-detection and state management for pasted content, extracted concepts, selected concepts, and processing state",
+            "dependencies": [],
+            "details": "Refactor CaptureInterface.tsx to add new state: pastedContent (string), extractedConcepts (array of ExtractedConcept objects), selectedConcepts (Set<string>), processingState (enum: 'idle'|'extracting'|'validating'|'saving'). Replace existing multi-card draft interface with a single Textarea for paste input. Add onPaste handler to auto-trigger concept extraction. Implement localStorage auto-save every 5s for crash recovery using useEffect with debounce. Add ExtractedConcept type definition in src/types/index.ts with fields: id, text, conceptType, confidence, suggestedFormat ('qa'|'cloze'), validationWarnings.",
+            "status": "pending",
+            "testStrategy": "Test paste event triggers extraction, verify state updates correctly, test localStorage recovery after simulated crash, verify debounced auto-save works within 5s window",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Create concept extraction display with checkboxes",
+            "description": "Build ConceptCheckbox component to display extracted concepts with selection, format badges, and edit capability",
+            "dependencies": [
+              1
+            ],
+            "details": "Create src/components/capture/ConceptCheckbox.tsx component that accepts props: concept (ExtractedConcept), isSelected (boolean), onToggle (callback), onEdit (callback). Display concept.text with checkbox, format badge showing 'Q&A' or 'Cloze' based on suggestedFormat, and confidence indicator. Add inline edit mode triggered by click or keyboard shortcut. Style with shadcn/ui components (Checkbox, Badge, Card). Implement keyboard navigation: Tab to move between concepts, Space to toggle selection. Update CaptureInterface to render list of ConceptCheckbox components after extraction completes, mapping extractedConcepts array.",
+            "status": "pending",
+            "testStrategy": "Test checkbox toggles selection state, verify Tab navigation works, test Space key toggles selection, verify inline edit updates concept text, test format badge displays correct type",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement AI concept extraction integration",
+            "description": "Wire up AI service calls for concept extraction with loading states and error handling",
+            "dependencies": [
+              1
+            ],
+            "details": "Update CaptureInterface to call window.api.ai.extractConcepts(pastedContent) when paste detected. Add AI API types to electron.d.ts: extend ElectronAPI interface with ai: { extractConcepts: (content: string) => Promise<IpcResult<ExtractedConcept[]>>, validateCard: (card: {front: string, back: string}) => Promise<IpcResult<ValidationResult>>, detectMedicalList: (content: string) => Promise<IpcResult<{isList: boolean}>> }. Show loading state with spinner and 'Extracting concepts...' message (<3s timeout). Handle errors gracefully with toast notification. Add medical list detection: call detectMedicalList before extractConcepts, if true show dialog prompting conversion to clinical vignettes or overlapping cloze format.",
+            "status": "pending",
+            "testStrategy": "Mock AI service responses, verify loading shows <3s, test error handling displays toast, verify medical list detection shows conversion prompt, test timeout behavior",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Add format suggestion display and validation warnings",
+            "description": "Create ValidationWarning component and integrate real-time card validation for each selected concept",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Create src/components/capture/ValidationWarning.tsx component displaying pattern-matching alerts, minimum information violations, multi-fact warnings with warning icon and descriptive text. For each selected concept in CaptureInterface, show AI format suggestion (cloze/Q&A) with reasoning text explaining why that format was chosen. Add override dropdown to allow user to change format. Call window.api.ai.validateCard for each selected concept, passing generated {front, back} based on current format. Display ValidationWarning components inline with each concept showing real-time validation results. Use Alert component from shadcn/ui for warnings. Update ExtractedConcept type to include formatReasoning: string field.",
+            "status": "pending",
+            "testStrategy": "Test validation warnings appear for problematic cards, verify format reasoning displays correctly, test format override changes validation results, verify real-time validation on concept selection changes",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement batch card creation and auto-note generation",
+            "description": "Create batch card creation flow with auto-generated parent Note and save feedback within 500ms",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Update CaptureInterface handleCreateCards function to: 1) Create parent Note with title from first 50 chars of pastedContent, content = full pastedContent, generate UUID noteId. 2) For each selected concept, create CardWithFSRS with proper FSRS defaults (stability=0, difficulty=0, state=0, reps=0, lapses=0, dueDate=now) and link to parent noteId. 3) Call useAppStore.addNote first, then batch call addCard for all selected concepts. 4) Show 'Saved ✓' toast with <500ms after successful save using toast.success. 5) Add Enter keyboard shortcut to proceed from concept selection to save. 6) Clear pastedContent and reset state after successful save. Ensure total workflow <20s from paste to save.",
+            "status": "pending",
+            "testStrategy": "E2E test: paste medical content → verify concepts extracted → select/deselect multiple → override format → save → verify cards created with correct FSRS defaults and parent Note. Test save feedback appears <500ms. Verify total workflow completes <20s.",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "4",
+        "title": "Medical list processing and clinical vignette generation",
+        "description": "Convert medical lists (differentials, procedures) into clinical vignettes and overlapping cloze cards to prevent sibling contamination",
+        "details": "Create src/lib/medical-processor.ts:\n- processMedicalList(content: string, listType): Promise<ProcessedCard[]>\n- For 'differential' type: generate individual clinical vignettes per item (e.g., '5 causes of chest pain' → 5 separate patient scenarios)\n- For 'procedure' type: create overlapping cloze deletions (step N shows context from N-1 and N+1)\n- For 'algorithm' type: similar to procedure with decision tree context\n- Each vignette includes: patient demographics, presentation, key findings\n- Use ai-service.convertToVignette for generation\n- Store parentListId to link related cards\n- Add MedicalListConverter component for preview before creation\n- Integration in CaptureInterface: detect list → show preview → confirm → batch create\n- Ensure zero sibling contamination: each card is independently answerable\n- Add cardType field to distinguish vignettes from standard Q&A",
+        "testStrategy": "Test with real medical lists: 'DDx for acute MI', '5 steps of BLS'. Verify each card is independently answerable without seeing siblings. Check overlapping cloze maintains context. Validate vignettes are clinically realistic.",
+        "priority": "high",
+        "dependencies": [
+          "2",
+          "3"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement list detection and parsing in medical processor",
+            "description": "Create src/lib/medical-processor.ts with list detection logic that identifies medical lists (differential diagnoses, procedures, algorithms) from pasted content and parses them into structured data",
+            "dependencies": [],
+            "details": "Create src/lib/medical-processor.ts with these functions:\n- detectListType(content: string): 'differential' | 'procedure' | 'algorithm' | null - Detect if content contains a medical list using pattern matching (e.g., numbered items, 'DDx', 'steps', 'causes')\n- parseListItems(content: string): string[] - Extract individual list items from the content\n- Add TypeScript types: MedicalListType, ParsedListItem { text: string, order: number }\n- Handle various list formats: numbered (1., 2.), bulleted (-, *), implicit lists\n- Return null for non-list content to bypass medical processing",
+            "status": "pending",
+            "testStrategy": "Test with medical list samples: '5 causes of chest pain:\\n1. MI\\n2. PE\\n3. Pneumothorax\\n4. GERD\\n5. Costochondritis'. Verify detectListType returns 'differential'. Test procedure steps, algorithm content. Verify non-list content returns null.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Build differential diagnosis to clinical vignette converter",
+            "description": "Implement processDifferentialList function that converts each differential diagnosis item into an independent clinical vignette with patient demographics, presentation, and key findings",
+            "dependencies": [
+              1
+            ],
+            "details": "In src/lib/medical-processor.ts, add:\n- processDifferentialList(items: string[], parentTitle: string): ProcessedCard[] - Generate clinical vignette for each diagnosis\n- Each ProcessedCard contains: { front: string (clinical scenario), back: string (diagnosis), cardType: 'vignette', parentListId: string (UUID for grouping), metadata: { demographics, presentation, keyFindings } }\n- Vignette structure: 'A [age] [gender] presents with [symptoms]. Exam shows [findings]. Most likely diagnosis?'\n- Back contains the diagnosis item text\n- Use placeholder text for now (AI integration in next task dependency)\n- Generate parentListId once per list to link all derived cards\n- Ensure each vignette is independently answerable (no 'not X from previous card' patterns)",
+            "status": "pending",
+            "testStrategy": "Test with '5 causes of chest pain' list. Verify 5 separate ProcessedCard objects generated. Check each has unique clinical vignette front, diagnosis back, same parentListId, cardType='vignette'. Verify vignettes don't reference each other (sibling independence).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Create overlapping cloze generator for procedures and algorithms",
+            "description": "Implement processProcedureList and processAlgorithmList functions that create overlapping cloze deletions where step N shows context from steps N-1 and N+1 to maintain procedural flow",
+            "dependencies": [
+              1
+            ],
+            "details": "In src/lib/medical-processor.ts, add:\n- processProcedureList(items: string[], parentTitle: string): ProcessedCard[] - Create overlapping cloze for procedures\n- processAlgorithmList(items: string[], parentTitle: string): ProcessedCard[] - Similar with decision tree context\n- Overlapping cloze format: front shows step N-1 (if exists) + '[...blank...]' + step N+1 (if exists), back shows step N\n- Example: Step 2 of BLS -> front: '1. Check responsiveness\\n[...?...]\\n3. Call for help', back: '2. Open airway'\n- Edge cases: first step shows only N+1, last step shows only N-1\n- Each card has cardType='cloze', parentListId for grouping\n- Ensure contextual continuity prevents 'naked' questions",
+            "status": "pending",
+            "testStrategy": "Test with '5 steps of BLS' procedure list. Verify 5 cloze cards generated with overlapping context. Check step 1 shows step 2 context, step 3 shows steps 2 and 4, step 5 shows step 4. Verify cardType='cloze' and consistent parentListId.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Build MedicalListConverter preview component with batch creation",
+            "description": "Create src/components/capture/MedicalListConverter.tsx component that displays preview of generated cards before creation, allows editing/removal, and handles batch card creation with parentListId tracking",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Create MedicalListConverter component:\n- Props: { content: string, listType: MedicalListType, onConfirm: (cards: ProcessedCard[]) => void, onCancel: () => void }\n- Use medical-processor to generate preview cards on mount\n- Display cards in grid/list with Card component from shadcn/ui\n- Show card type badge (Vignette/Cloze), front preview (truncated), edit/remove buttons\n- Allow inline editing of front/back text before confirmation\n- Confirm button calls onConfirm with final ProcessedCard[] array\n- Show parentListId indicator to visualize card relationships\n- Use existing UI components: Card, Button, Badge, ScrollArea from src/components/ui/",
+            "status": "pending",
+            "testStrategy": "Render MedicalListConverter with differential list. Verify preview shows 5 vignette cards with front/back preview. Test edit functionality updates card text. Test remove reduces card count. Click confirm, verify onConfirm receives ProcessedCard[] with all edits applied.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Integrate medical list workflow into CaptureInterface with database schema updates",
+            "description": "Extend CaptureInterface to detect medical lists on paste, show MedicalListConverter preview, batch create cards with new cardType and parentListId fields, and update database schema to support these fields",
+            "dependencies": [
+              4
+            ],
+            "details": "Update multiple files:\n1. src/types/index.ts: Add cardType?: 'standard' | 'vignette' | 'cloze' and parentListId?: string to Card interface\n2. electron/database.ts: Add cardType and parentListId columns to cards table schema (nullable for backward compatibility)\n3. src/components/capture/CaptureInterface.tsx:\n   - Add state: detectedListType, showMedicalConverter (boolean)\n   - On paste event, call medical-processor.detectListType\n   - If list detected, set detectedListType and show MedicalListConverter modal\n   - MedicalListConverter onConfirm: batch create cards via useAppStore.addCard with cardType and parentListId fields\n   - Update handleCreateCards to preserve cardType/parentListId when provided\n   - Add parentListId to CardWithFSRS construction in CaptureInterface.tsx:63-80\n4. electron/database.ts DbCard interface: Add cardType and parentListId fields\n5. Maintain backward compatibility: cardType defaults to 'standard', parentListId defaults to null for non-list cards",
+            "status": "pending",
+            "testStrategy": "E2E test: Paste 'DDx for MI: 1. Unstable angina 2. PE 3. Aortic dissection' into CaptureInterface. Verify MedicalListConverter modal appears. Review generated vignettes, confirm creation. Query database, verify 3 cards created with cardType='vignette' and matching parentListId. Test normal card creation still works (cardType='standard', parentListId=null).",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "5",
+        "title": "Zero-decision review interface (eliminate grading buttons)",
+        "description": "Replace 4-button grading (Again/Hard/Good/Easy) with Show Answer → Continue flow, letting FSRS auto-schedule based on response time",
+        "details": "Refactor src/components/review/ReviewInterface.tsx:\n- REMOVE: All 4 rating buttons (Again/Hard/Good/Easy), interval previews, keyboard shortcuts 1-4\n- NEW flow: Show Answer (Space) → Continue (Space/Enter)\n- Track response time: startTime when card shown, calculateResponseTime when Continue pressed\n- Auto-determine rating based on response time algorithm:\n  * <5s: Rating.Easy (immediate recall)\n  * 5-15s: Rating.Good (confident recall)\n  * 15-30s: Rating.Hard (struggled)\n  * >30s OR explicit 'Forgot' button: Rating.Again\n- Add optional 'I forgot this' button (visible after Show Answer) for explicit Again rating\n- Update scheduleCardReview to accept responseTimeMs instead of explicit rating\n- Store responseTimeMs in review_logs for future FSRS personalization\n- Update UI: remove all grading complexity, show only card content and single action button\n- Maintain progress bar, session stats, keyboard shortcuts (Space, Escape)\n- Update useAppStore.scheduleCardReview signature",
+        "testStrategy": "Review 10 cards with varying response times, verify correct auto-rating. Test 'I forgot' button forces Again rating. Confirm <100ms FSRS calculation. Verify cleaner UI with zero user decisions except Show/Continue.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Remove grading buttons and interval preview UI",
+            "description": "Remove the 4-button grading interface (Again/Hard/Good/Easy) and interval previews from ReviewInterface.tsx",
+            "dependencies": [],
+            "details": "In src/components/review/ReviewInterface.tsx (lines 313-371): Remove the 4 rating buttons and their interval previews. Remove the keyboard hints section (lines 375-382) showing kbd shortcuts 1-4. Remove the intervals state (line 19) and the useEffect that fetches intervals (lines 52-66). Clean up the FormattedIntervals import from types (line 5). This simplifies the UI to prepare for the zero-decision flow.",
+            "status": "pending",
+            "testStrategy": "Verify ReviewInterface renders without grading buttons, intervals state is removed, and no interval fetching occurs on answer show",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Show Answer → Continue flow with response time tracking",
+            "description": "Replace grading buttons with single Continue button and add response time tracking from card shown to Continue pressed",
+            "dependencies": [
+              1
+            ],
+            "details": "In ReviewInterface.tsx: Add state for responseStartTime (timestamp when card shown). In handleShowAnswer (line 68), record start time. Replace the grading buttons section with: Show Answer button (when !answerVisible), then Continue button with Space/Enter shortcuts (when answerVisible). Add 'I forgot this' button (optional, visible after answer shown, styled as secondary/warning). Update keyboard shortcuts (lines 144-188): Keep Space for Show Answer, add Space/Enter for Continue when answer visible, remove 1-4 rating shortcuts. Calculate responseTimeMs = Date.now() - responseStartTime when Continue pressed.",
+            "status": "pending",
+            "testStrategy": "Test Space shows answer, Space/Enter continues to next card, response time is accurately measured from card display to Continue press",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement auto-rating algorithm based on response time",
+            "description": "Create algorithm to automatically determine Rating based on response time: <5s=Easy, 5-15s=Good, 15-30s=Hard, >30s=Again",
+            "dependencies": [
+              2
+            ],
+            "details": "In ReviewInterface.tsx, create calculateAutoRating function: takes responseTimeMs, returns Rating value. Algorithm: if (ms < 5000) return Rating.Easy; else if (ms < 15000) return Rating.Good; else if (ms < 30000) return Rating.Hard; else return Rating.Again. Handle 'I forgot' button override: if clicked, always return Rating.Again regardless of time. Integrate into Continue button handler: calculate rating, then call scheduleCardReview with auto-determined rating.",
+            "status": "pending",
+            "testStrategy": "Review cards with controlled response times: <5s confirms Easy, 5-15s confirms Good, 15-30s confirms Hard, >30s confirms Again. Test 'I forgot' button forces Again rating",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Update scheduleReview to accept and store responseTimeMs",
+            "description": "Modify scheduleReview function and review_logs table to accept and persist response time in milliseconds",
+            "dependencies": [
+              3
+            ],
+            "details": "In electron/fsrs-service.ts (line 82), update scheduleReview signature to accept optional responseTimeMs parameter. In electron/database.ts, update DbReviewLog interface to include responseTimeMs field. Update review_logs table schema to add responseTimeMs column (INTEGER). In reviewLogQueries.insert, store responseTimeMs. Update electron/ipc-handlers.ts reviews:schedule handler to accept responseTimeMs from renderer. Update src/stores/useAppStore.ts scheduleCardReview to accept and pass responseTimeMs. Update electron/preload.ts and src/types/electron.d.ts to reflect new signature.",
+            "status": "pending",
+            "testStrategy": "Verify review_logs table includes responseTimeMs column, scheduleCardReview persists response time, query review_logs confirms responseTimeMs stored correctly for future FSRS personalization",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Update UI to reflect zero-decision interface and verify FSRS performance",
+            "description": "Final UI polish: ensure clean single-action interface, maintain progress bar and session stats, verify <100ms FSRS calculation",
+            "dependencies": [
+              4
+            ],
+            "details": "In ReviewInterface.tsx: Verify progress bar (lines 254-272) and session stats (reviewedCount) remain functional. Ensure Continue button is prominent and clearly labeled. Remove all remaining references to manual grading complexity. Update handleRating to handleContinue for clarity. Verify session completion flow (lines 224-238) works with auto-rating. Test FSRS calculation performance: ensure scheduleReview completes in <100ms. Confirm Escape key navigation to capture view still works.",
+            "status": "pending",
+            "testStrategy": "Complete 10-card review session with varying response times, verify: auto-rating correct for each time range, FSRS calculation <100ms per card, progress bar updates, session stats accurate, UI clean with zero user decisions beyond Show/Continue/Forgot",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "6",
+        "title": "Auto note creation and bidirectional linking",
+        "description": "Automatically create Notes from extraction sessions and maintain bidirectional links between cards and source notes",
+        "details": "Update src/components/capture/CaptureInterface.tsx:\n- On card creation, auto-generate parent Note with: title (first line or 'Extraction - [timestamp]'), content (original pasted text), cardIds (all created card IDs), tags (AI-suggested + user tags)\n- Update all created cards with noteId referencing parent Note\n- Add NoteContext component in ReviewInterface: shows source note title, 'View source' link, related cards count\n- Create src/components/notes/NoteViewer.tsx: displays note content, derived cards list, metadata (created date, tags)\n- Add navigation: clicking noteId in review → opens NoteViewer modal\n- NoteViewer shows all cards derived from note with edit/delete actions\n- Update store: when deleting card, remove cardId from parent note.cardIds; when deleting note, orphan cards (noteId = '')\n- Ensure referential integrity: transactions for create/update/delete operations\n- Add 'View source' button in ReviewInterface below card content",
+        "testStrategy": "Create cards from paste → verify Note created with correct content and cardIds. Review card → click 'View source' → verify Note displayed with all derived cards. Delete card → verify cardIds updated in Note. Delete Note → verify cards orphaned.",
+        "priority": "medium",
+        "dependencies": [
+          "3"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "7",
+        "title": "Connection suggestions and semantic linking",
+        "description": "AI surfaces related notes during extraction based on semantic similarity to help build knowledge connections",
+        "details": "Create src/components/capture/ConnectionSuggestions.tsx:\n- During extraction, call ai-service.findRelatedNotes(pastedContent, existingNotes)\n- Display gentle highlight banner: 'Related notes found: [NoteTitle1], [NoteTitle2]' with similarity scores\n- Allow one-click linking: creates connection record in connections table\n- Show in ReviewInterface: 'Related cards' section below answer (if connections exist)\n- Implement semantic search using embeddings (OpenAI text-embedding-3-small or local model)\n- Cache embeddings in notes table (add embeddingVector TEXT field - JSON array)\n- Compute cosine similarity for matching (threshold: >0.7 for suggestions)\n- ConnectionSuggestions displays top 3 matches with preview snippet\n- Add 'Link' button to create bidirectional connection\n- Store semantic score for future ranking/filtering\n- Integration: non-intrusive, doesn't block workflow, dismissible",
+        "testStrategy": "Create note about 'Acute MI pathophysiology', then paste related content about 'Chest pain differential'. Verify suggestions appear with correct similarity scores. Link notes → verify connection in DB. Review card from linked note → verify 'Related cards' appears.",
+        "priority": "medium",
+        "dependencies": [
+          "2",
+          "3",
+          "6"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "8",
+        "title": "Extraction queue for Quick Dump processing",
+        "description": "Process Quick Dumps later with same AI-assisted extraction workflow, show queue indicator, batch processing support",
+        "details": "Create src/components/queue/ExtractionQueue.tsx:\n- Fetch all quick_dumps with extractionStatus='pending' on mount\n- Display list: title (first 50 chars), timestamp, 'Process' button\n- Clicking 'Process' opens guided extraction flow (same as CaptureInterface but pre-populated with quick_dump.content)\n- After successful extraction, update quick_dump.extractionStatus='completed', processedAt=now\n- Add queue indicator in Header: badge showing pending count, click to open ExtractionQueue\n- Support batch selection: checkboxes, 'Process all selected' button\n- Update QuickDumpModal to save to quick_dumps table instead of notes\n- Add IPC handlers: quickDumps:getAll, quickDumps:updateStatus\n- Integration in AppLayout: new route/view for queue\n- Queue view shows: content preview, creation date, actions (Process/Delete)\n- Empty state: 'No pending extractions. Use Quick Dump (Cmd+Shift+S) to capture content.'",
+        "testStrategy": "Save 3 Quick Dumps → verify queue shows 3 pending. Process one → verify AI extraction flow works. Complete extraction → verify count decreases. Test batch processing. Verify quick dumps don't interfere with normal notes.",
+        "priority": "medium",
+        "dependencies": [
+          "1",
+          "2",
+          "3"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "9",
+        "title": "Tag-based organization with AI suggestions",
+        "description": "Implement tag-only organization (no folders), AI suggests medical domain tags during capture, search/filter by tags",
+        "details": "Update CaptureInterface and types:\n- During extraction, call ai-service.suggestTags(content) to get medical domain tags\n- Display suggested tags as chips with '+' to add, show common tags: 'cardiology', 'pharmacology', 'pathophysiology', etc.\n- Allow manual tag entry: input field with autocomplete from existing tags\n- Create src/components/tags/TagManager.tsx: displays all tags with card counts, filter view\n- Add tag filtering to SearchBar: clicking tag shows all cards/notes with that tag\n- Store tags in cards.tags and notes.tags (JSON array)\n- Create tag index query: SELECT DISTINCT json_each.value as tag FROM cards, json_each(cards.tags)\n- Add TagChip component: displays tag with color based on domain (cardio=red, pharm=blue, etc.)\n- TagManager shows tag hierarchy (domain-based grouping)\n- No folder UI, purely tag-based navigation\n- Search supports tag:cardiology syntax",
+        "testStrategy": "Paste cardiology content → verify AI suggests 'cardiology', 'acute coronary syndrome'. Add custom tag → verify autocomplete. Filter by tag → verify only matching cards shown. Test tag persistence across sessions.",
+        "priority": "medium",
+        "dependencies": [
+          "2",
+          "3"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "10",
+        "title": "Global search with <200ms response time",
+        "description": "Implement fast unified search across cards and notes with FTS5 full-text search, Cmd+F shortcut, instant results",
+        "details": "Add to database.ts:\n- Create FTS5 virtual table: CREATE VIRTUAL TABLE cards_fts USING fts5(id, front, back, content=cards, content_rowid=rowid)\n- Create FTS5 for notes: CREATE VIRTUAL TABLE notes_fts USING fts5(id, title, content, content=notes, content_rowid=rowid)\n- Add triggers to keep FTS tables synchronized with cards/notes on INSERT/UPDATE/DELETE\n- Create searchQueries.search(query: string): {cards: DbCard[], notes: DbNote[], responseTimeMs: number}\n- Use FTS5 MATCH for fast search (ORDER BY rank)\n- Update src/components/layout/SearchBar.tsx:\n  * Real-time search as user types (debounced 150ms)\n  * Display unified results: cards (front snippet) + notes (title)\n  * Keyboard navigation: Up/Down arrows, Enter to open\n  * Cmd+F global shortcut to focus search\n  * Results dropdown with highlights, max 10 results\n  * Show 'View all X results' if >10 matches\n- Add search highlighting using FTS5 snippet() function\n- Log search performance, warn if >200ms\n- Support tag: prefix for tag filtering\n- Create SearchResults component for full results page",
+        "testStrategy": "Index 1000 cards, search 'acute MI', verify <200ms response. Test special chars, partial matches. Verify Cmd+F focuses search. Test keyboard navigation. Confirm FTS tables stay synchronized on card create/update/delete.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create FTS5 virtual tables and synchronization triggers",
+            "description": "Set up SQLite FTS5 full-text search infrastructure for cards and notes with automatic synchronization",
+            "dependencies": [],
+            "details": "In electron/database.ts, add FTS5 virtual tables in initDatabase(): CREATE VIRTUAL TABLE cards_fts USING fts5(id UNINDEXED, front, back, content=cards, content_rowid=rowid) and CREATE VIRTUAL TABLE notes_fts USING fts5(id UNINDEXED, title, content, content=notes, content_rowid=rowid). Create triggers for INSERT/UPDATE/DELETE on cards and notes tables to keep FTS tables synchronized using INSERT INTO cards_fts(rowid, id, front, back) VALUES(NEW.rowid, NEW.id, NEW.front, NEW.back) pattern. Test with SQLite browser to verify triggers fire correctly.",
+            "status": "pending",
+            "testStrategy": "Use SQLite browser to verify FTS5 tables exist. Insert test card via IPC, query cards_fts directly to confirm auto-sync. Update card content, verify FTS table reflects change. Delete card, verify FTS entry removed.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement searchQueries.search() function with performance tracking",
+            "description": "Create unified search function in database layer that queries FTS5 tables and returns results with response time metrics",
+            "dependencies": [
+              1
+            ],
+            "details": "In electron/database.ts, add searchQueries object with search(query: string): {cards: DbCard[], notes: DbNote[], responseTimeMs: number} method. Use performance.now() to track timing. Query both cards_fts and notes_fts using FTS5 MATCH syntax: SELECT cards.* FROM cards JOIN cards_fts ON cards.rowid = cards_fts.rowid WHERE cards_fts MATCH @query ORDER BY rank. Parse JSON fields (tags, cardIds) in results. Support tag: prefix filtering by checking if query starts with 'tag:' and modifying WHERE clause to filter tags JSON field. Log warning to console if responseTimeMs > 200.",
+            "status": "pending",
+            "testStrategy": "Index 1000+ cards, call searchQueries.search('acute MI'), verify responseTimeMs < 200ms. Test special characters (quotes, parentheses). Test partial matches. Test tag:cardiology prefix, verify only tagged cards returned. Test empty query handling.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Add search IPC handler and expose via preload/types",
+            "description": "Wire up search function through IPC layer and expose typed API to renderer process",
+            "dependencies": [
+              2
+            ],
+            "details": "In electron/ipc-handlers.ts, add ipcMain.handle('search:query', async (_, query: string) => { try { const result = searchQueries.search(query); return success(result); } catch (error) { return failure(error); } }). In electron/preload.ts, add search: { query: (q: string) => ipcRenderer.invoke('search:query', q) } to api object. In src/types/electron.d.ts, extend ElectronAPI interface with search: { query: (query: string) => Promise<IpcResult<{cards: CardWithFSRS[], notes: Note[], responseTimeMs: number}>> }. Follow existing IPC patterns for consistency.",
+            "status": "pending",
+            "testStrategy": "Call window.api.search.query('test') from React DevTools console, verify IpcResult returned with cards/notes/responseTimeMs. Test error handling with malformed query. Verify TypeScript compilation with no type errors.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Build real-time SearchBar UI with keyboard navigation and Cmd+F shortcut",
+            "description": "Transform SearchBar component into fully functional search interface with instant results, keyboard navigation, and global shortcut",
+            "dependencies": [
+              3
+            ],
+            "details": "Update src/components/layout/SearchBar.tsx: Add local state for query (useState), results (useState), focused index (useState). Implement debounced search with useMemo/useCallback (150ms debounce) calling window.api.search.query(). Display unified dropdown showing up to 10 results: cards show front text snippet with highlight, notes show title. Use Up/Down arrow keys to navigate (track focusedIndex), Enter to open selected item, Escape to close dropdown. Add global Cmd+F (Ctrl+F on Windows) keyboard listener using useEffect with document.addEventListener('keydown'). Highlight search terms in results using FTS5 snippet() function or client-side regex. Show 'View all X results' link if results.cards.length + results.notes.length > 10. Use existing shadcn/ui components for dropdown styling.",
+            "status": "pending",
+            "testStrategy": "Type 'acute' in SearchBar, verify results appear within 150ms of last keystroke. Press Down arrow twice, verify second result highlighted. Press Enter, verify navigation to card/note. Test Cmd+F, verify search input focused. Test 'View all results' link appears when >10 matches. Test Escape closes dropdown.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Create SearchResults full page component with highlighting",
+            "description": "Build dedicated full search results page for viewing all matches beyond the 10-result dropdown preview",
+            "dependencies": [
+              4
+            ],
+            "details": "Create src/components/search/SearchResults.tsx component that displays paginated full results from search query. Accept query prop from router/navigation state. Render separate sections for cards and notes with counts (e.g., 'Cards (45)' and 'Notes (12)'). For each card result, show front/back snippets with search term highlighting using <mark> tags or similar. For notes, show title + content preview. Support clicking tag chips to filter 'tag:cardiology' searches. Add 'Back to search' button. Use FTS5 snippet() function via additional IPC handler if needed, or implement client-side highlighting with regex. Integrate with app navigation (update useAppStore if needed for search view). Use shadcn/ui Card and Badge components for consistent styling.",
+            "status": "pending",
+            "testStrategy": "Click 'View all X results' from SearchBar dropdown, verify SearchResults page opens with full result set. Verify cards and notes separated into sections with accurate counts. Click card result, verify navigation to review. Test search term highlighting is visible and accurate. Test tag filtering from results page.",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "11",
+        "title": "Command palette (Cmd+K)",
+        "description": "Keyboard-first command palette for search, create, navigate with fuzzy matching and recent actions",
+        "details": "Update src/components/modals/CommandPalette.tsx:\n- Cmd+K global shortcut (prevent default browser behavior)\n- Fuzzy search using Fuse.js or similar\n- Command categories:\n  * Navigation: 'Go to Capture', 'Go to Review', 'Go to Queue', 'Go to Settings'\n  * Actions: 'Create new card', 'Quick Dump', 'Process queue item'\n  * Search: 'Search cards...', 'Search notes...', 'Filter by tag...'\n- Recent actions history (last 5), stored in localStorage\n- Keyboard-only operation: Up/Down to navigate, Enter to execute, Esc to close\n- Display keyboard shortcuts next to commands\n- Integrate with AppView navigation via useAppStore.setCurrentView\n- Add command execution handlers for each action\n- Show command descriptions and shortcuts\n- Support typeahead: typing narrows results\n- Visual: centered modal, 500px width, max 8 results visible",
+        "testStrategy": "Press Cmd+K → verify palette opens. Type 'cap' → verify 'Go to Capture' suggested. Press Enter → verify navigation. Test all commands execute correctly. Verify recent actions persist across sessions. Test keyboard navigation.",
+        "priority": "low",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "12",
+        "title": "Response time tracking and FSRS personalization",
+        "description": "Track response times during review, store in review_logs, use for interval adjustments and domain-specific scheduling",
+        "details": "Extend FSRS integration in electron/fsrs-service.ts:\n- Add responseTimeMs parameter to scheduleReview()\n- Store in DbReviewLog.responseTimeMs (already added in task 1)\n- Create analytics module: electron/fsrs-analytics.ts\n  * calculatePersonalParams(cardId: string): Promise<FSRSParams> - analyzes review history for card\n  * getDomainStats(domain: string): {avgResponseTime: number, accuracy: number}\n  * getOptimizedRetention(userId: string): number - personalized retention rate based on performance\n- Track domain from card tags (first tag = primary domain)\n- Implement forgetting curve optimization: adjust retention target per domain based on historical performance\n- Add settings UI to display stats: average response time by domain, accuracy trends\n- Use response time intelligence to detect cards needing reformulation (consistently >30s)\n- Create IPC handlers for analytics queries\n- Privacy: all data stays local, no external tracking",
+        "testStrategy": "Review 20 cards with varying response times. Query analytics → verify response times stored. Check domain stats → verify cardiology vs pharmacology tracked separately. Test personalized params applied to new reviews.",
+        "priority": "low",
+        "dependencies": [
+          "1",
+          "5"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "13",
+        "title": "Partial credit tracking for medical list cards",
+        "description": "Track individual list item recall for clinical vignettes (3/5 correct schedules differently than 1/5)",
+        "details": "Update ReviewInterface for cardType='vignette':\n- After showing answer, display checklist of list items (e.g., 5 causes)\n- User checks items they recalled correctly\n- Calculate partialCreditScore = recalled / total (0.0 to 1.0)\n- Store in review_logs.partialCreditScore\n- Modify FSRS rating calculation:\n  * score >= 0.8: Rating.Good\n  * score 0.5-0.79: Rating.Hard\n  * score < 0.5: Rating.Again\n- Add PartialCreditInput component: renders checkboxes for each list item\n- Extract list items from card.back (parse numbered list or use stored listItems metadata)\n- Update card update flow to preserve individual item scheduling\n- Alternative: split list cards into individual cards with parentListId for granular tracking\n- Add UI indicator in review: 'Recalled 3/5 items'\n- Store itemScores as JSON in review_log for detailed analytics",
+        "testStrategy": "Review vignette card with 5 causes. Check 3/5 recalled → verify score=0.6, rating=Hard. Review same card later → verify interval reflects partial credit. Test edge cases: 0/5, 5/5.",
+        "priority": "low",
+        "dependencies": [
+          "4",
+          "5"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "14",
+        "title": "Data persistence and crash recovery",
+        "description": "Auto-save on every action, session restoration, hourly backups retained 7 days, zero data loss guarantee",
+        "details": "Enhance electron/database.ts:\n- All mutations already use WAL mode (enabled in initDatabase)\n- Add backup system: electron/backup-service.ts\n  * Hourly backup: copy doughub.db → backups/doughub-[timestamp].db\n  * Retention: delete backups older than 7 days\n  * Use electron's app.getPath('userData') + '/backups/'\n  * Backup on app close (before quit)\n- Session state persistence:\n  * Store currentView, reviewQueue, currentQueueIndex in localStorage\n  * Restore on app launch via useAppStore.initialize()\n- Auto-save indicators:\n  * Show 'Saved ✓' toast <500ms after DB write\n  * Status bar indicator: 'Last saved: 2s ago'\n- Crash recovery:\n  * On app launch, check for incomplete transactions (SQLite handles this)\n  * Restore draft from localStorage if exists\n- Test data integrity: simulate crash (kill process), verify no data loss\n- Add 'Restore from backup' option in Settings",
+        "testStrategy": "Create card, kill app process immediately → restart → verify card saved. Simulate power loss during review → verify queue restored. Test hourly backup creation. Verify 7-day retention cleanup. Test restore from backup.",
+        "priority": "medium",
+        "dependencies": [
+          "1"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create backup-service.ts for automated database backups",
+            "description": "Implement hourly backup system with 7-day retention policy",
+            "dependencies": [],
+            "details": "Create electron/backup-service.ts module with functions for: 1) createBackup() - copies doughub.db to backups/doughub-[ISO timestamp].db using fs.copyFileSync, 2) cleanupOldBackups() - deletes backups older than 7 days using fs.readdirSync/fs.statSync/fs.unlinkSync, 3) initBackupService() - sets up hourly interval (setInterval 3600000ms) and returns cleanup function, 4) backupOnQuit() - one-time backup before app close. Use app.getPath('userData') for paths. Add proper error handling and logging for all operations.",
+            "status": "pending",
+            "testStrategy": "Unit tests: verify backup file creation with correct timestamp format, test retention cleanup removes files >7 days old while preserving recent ones. Integration test: run app for test period, verify hourly backups created, simulate 8-day period and verify only 7 days retained.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Integrate backup service into main.ts lifecycle",
+            "description": "Hook backup service into Electron app initialization and shutdown",
+            "dependencies": [
+              1
+            ],
+            "details": "Update electron/main.ts to: 1) Import initBackupService and backupOnQuit from backup-service.ts, 2) Call initBackupService() after database initialization in app.whenReady() and store cleanup function, 3) Add IPC handler 'backup:restore' in ipc-handlers.ts that takes backup filename, closes current DB, copies backup to doughub.db, and reinitializes DB, 4) Update preload.ts to expose backup.restore(filename) API, 5) Modify before-quit handler to call backupOnQuit() before closeDatabase(). Ensure proper sequencing and error handling.",
+            "status": "pending",
+            "testStrategy": "Test app startup creates hourly backup timer, verify before-quit creates final backup. Test restore: create backup, add test card, restore backup, verify card doesn't exist. Test error handling: attempt restore with invalid filename.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement session state persistence with localStorage",
+            "description": "Persist and restore currentView and review queue state across app restarts",
+            "dependencies": [],
+            "details": "Update src/stores/useAppStore.ts: 1) Add persistSessionState() function that saves currentView, current card ID during review to localStorage under 'doughub-session' key as JSON, 2) Add restoreSessionState() function to read from localStorage and return parsed session object or null, 3) Modify initialize() method to call restoreSessionState() and apply to store if exists, 4) Add middleware to useAppStore that calls persistSessionState() whenever currentView changes or review progresses, 5) Add clearSessionState() for clean shutdown. Use try-catch for localStorage access with fallback for quota errors.",
+            "status": "pending",
+            "testStrategy": "Test persistence: navigate to review, close app (kill process), restart, verify returns to review at same position. Test with no saved state (first launch). Test localStorage quota exceeded scenario. Test invalid JSON in localStorage handled gracefully.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Add auto-save toast indicators with <500ms feedback",
+            "description": "Show 'Saved ✓' toast after successful DB writes within 500ms",
+            "dependencies": [
+              3
+            ],
+            "details": "Update useAppStore.ts actions (addCard, updateCard, deleteCard, addNote, updateNote, deleteNote): 1) Import { toast } from '@/hooks/use-toast', 2) After successful DB operation (result.data exists), call toast({ title: 'Saved ✓', duration: 2000 }) - ensure this happens <500ms after write completes, 3) On error, show error toast with result.error message, 4) Optional: Add lastSaved timestamp to store state and display 'Last saved: Xs ago' in a status indicator component. Use performance.now() to measure DB operation timing in development mode and log warning if >500ms.",
+            "status": "pending",
+            "testStrategy": "Test toast appears within 500ms of card creation (use performance.now() to measure). Test error toast on DB failure (simulate by passing invalid data). Verify toast doesn't block UI interaction. Test rapid successive saves don't create toast spam (TOAST_LIMIT=1 helps).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Add Settings UI for backup restoration",
+            "description": "Create Settings interface with 'Restore from backup' functionality",
+            "dependencies": [
+              2
+            ],
+            "details": "Create src/components/settings/SettingsView.tsx (or update existing): 1) Add IPC handler 'backup:list' in ipc-handlers.ts that returns array of { filename, timestamp, size } from backups directory, 2) Expose window.api.backup.list() in preload.ts, 3) In Settings UI, create 'Data & Backup' section with: list of available backups (fetch via api.backup.list()), each showing formatted date/time and size, 'Restore' button per backup, 4) On restore click, show confirmation dialog (AlertDialog from shadcn/ui) warning data loss, 5) Call window.api.backup.restore(filename) and reload app state via store.initialize(), 6) Add currentView === 'settings' case in App.tsx router.",
+            "status": "pending",
+            "testStrategy": "Test backup list displays correctly with multiple backups. Test restore confirmation dialog appears. Test successful restore loads correct data (create card, backup, create another card, restore first backup, verify only first card exists). Test error handling for corrupted backup file.",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "15",
+        "title": "Evidence-based card validation system",
+        "description": "Real-time warnings for pattern-matching cards, multi-fact violations, and minimum information principle enforcement",
+        "details": "Create src/lib/card-validation.ts:\n- validateMinimumInformation(card): checks if card tests one concept only\n- detectPatternMatching(card): detects format recognition cues (e.g., 'Which of the following...', multiple choice artifacts)\n- detectMultiFact(card): warns if answer contains multiple independent facts\n- detectMedicalList(card): checks for list-style answers without clinical context\n- Create ValidationWarning component: displays warnings with explanation and fix suggestions\n- Integrate in CaptureInterface: show warnings as user confirms concepts\n- Use ai-service.validateCard for AI-powered detection\n- Validation categories:\n  * ERROR (blocks save): pattern-matching detected, empty fields\n  * WARNING (allows save with confirm): multi-fact, complex answer, list without context\n  * INFO: suggestions for improvement\n- Add 'Fix automatically' option for some violations (e.g., split multi-fact into multiple cards)\n- Store validation history for analytics (which warnings users dismiss most)\n- Settings: enable/disable specific validation rules",
+        "testStrategy": "Create card with 'What are the 5 causes of X?' → verify list warning. Create pattern-matching card → verify error blocks save. Create multi-fact card → verify warning with split suggestion. Test auto-fix splits card correctly.",
+        "priority": "medium",
+        "dependencies": [
+          "2",
+          "3"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "16",
+        "title": "Global floating capture window (Ctrl+Enter)",
+        "description": "Implement floating capture window accessible via Ctrl+Enter hotkey from anywhere in the app, allowing quick card creation without breaking workflow",
+        "details": "Create floating capture modal that can be triggered globally:\n- Global Ctrl+Enter keyboard shortcut that works from any view (Capture, Review, Queue, Settings)\n- Create src/components/modals/FloatingCaptureModal.tsx component\n- Modal contains full CaptureInterface with AI-guided extraction workflow\n- After successful card creation, modal automatically closes and returns user to previous view\n- Keyboard shortcuts:\n  * Ctrl+Enter: Open floating capture window\n  * Escape: Close modal without saving (with confirmation if content exists)\n  * Enter (after card creation): Save and close\n- Modal styling: centered overlay, 800px width, max-height 90vh, scrollable content\n- Preserve user's current context (e.g., review session continues where it left off)\n- Auto-focus on paste/input area when modal opens\n- Show subtle indicator in Header that Ctrl+Enter is available\n- Integration: Add global keyboard listener in App.tsx or AppLayout\n- State management: Add floatingCaptureOpen to useAppStore\n- Visual feedback: smooth fade-in/out transition (200ms)",
+        "testStrategy": "From Review view, press Ctrl+Enter → verify modal opens with focus on input. Paste content → create cards → verify modal closes and returns to review at same position. Test Escape cancellation. Verify works from all views. Test keyboard navigation within modal. Confirm no duplicate shortcuts conflict.",
+        "priority": "low",
+        "dependencies": [
+          "3"
+        ],
+        "status": "deferred",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-01-04T00:00:00.000Z",
+      "taskCount": 16,
+      "completedCount": 1,
+      "tags": [
+        "master"
+      ]
+    }
+  }
+}

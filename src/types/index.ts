@@ -1,20 +1,30 @@
+// Card type for medical list processing
+export type CardType = "standard" | "qa" | "cloze" | "vignette";
+
+// Quick dump extraction status
+export type ExtractionStatus = "pending" | "processing" | "completed";
+
 export interface Card {
-  id: string
-  front: string
-  back: string
-  noteId: string
-  tags: string[]
-  dueDate: string
-  createdAt: string
+  id: string;
+  front: string;
+  back: string;
+  noteId: string;
+  tags: string[];
+  dueDate: string;
+  createdAt: string;
+  // Card type fields (v2)
+  cardType?: CardType;
+  parentListId?: string | null; // UUID for grouping medical list cards
+  listPosition?: number | null; // Order within list
 }
 
 export interface Note {
-  id: string
-  title: string
-  content: string
-  cardIds: string[]
-  tags: string[]
-  createdAt: string
+  id: string;
+  title: string;
+  content: string;
+  cardIds: string[];
+  tags: string[];
+  createdAt: string;
 }
 
 export interface ReviewLog {
@@ -26,6 +36,43 @@ export interface ReviewLog {
   elapsedDays: number;
   review: string; // ISO timestamp of review
   createdAt: string;
+  // Response tracking fields (v2)
+  responseTimeMs?: number | null; // Milliseconds to answer
+  partialCreditScore?: number | null; // 0.0-1.0 for list partial recall
+}
+
+// Quick dump for emergency capture
+export interface QuickDump {
+  id: string;
+  content: string;
+  extractionStatus: ExtractionStatus;
+  createdAt: string;
+  processedAt: string | null;
+}
+
+// Semantic note connection
+export interface Connection {
+  id: string;
+  sourceNoteId: string;
+  targetNoteId: string;
+  semanticScore: number; // 0.0-1.0
+  createdAt: string;
+}
+
+// Backup info
+export interface BackupInfo {
+  filename: string;
+  timestamp: Date;
+  size: number;
+}
+
+// Database status
+export interface DbStatus {
+  version: number;
+  cardCount: number;
+  noteCount: number;
+  quickDumpCount: number;
+  connectionCount: number;
 }
 
 // FSRS fields for spaced repetition (extends Card in database layer)
@@ -56,7 +103,7 @@ export const Rating = {
   Easy: 4,
 } as const;
 
-export type RatingValue = typeof Rating[keyof typeof Rating];
+export type RatingValue = (typeof Rating)[keyof typeof Rating];
 
 // FSRS schedule result returned from IPC
 export interface ScheduleResult {

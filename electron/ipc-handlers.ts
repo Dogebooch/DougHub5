@@ -1,11 +1,35 @@
 import { ipcMain } from 'electron';
-import { cardQueries, noteQueries, reviewLogQueries, DbCard, DbNote, DbReviewLog } from './database';
+import path from "node:path";
+import {
+  cardQueries,
+  noteQueries,
+  reviewLogQueries,
+  quickDumpQueries,
+  connectionQueries,
+  getDatabaseStatus,
+  getDbPath,
+  DbCard,
+  DbNote,
+  DbReviewLog,
+  DbQuickDump,
+  DbConnection,
+  ExtractionStatus,
+  DbStatus,
+} from "./database";
 import {
   scheduleReview,
   getIntervalPreviews,
   formatInterval,
   Rating,
 } from "./fsrs-service";
+import {
+  createBackup,
+  restoreBackup,
+  listBackups,
+  cleanupOldBackups,
+  getBackupsDir,
+  BackupInfo,
+} from "./backup-service";
 
 // ============================================================================
 // IPC Result Wrapper
@@ -257,6 +281,200 @@ export function registerIpcHandlers(): void {
       }
     }
   );
+
+  // --------------------------------------------------------------------------
+  // Quick Dump Handlers
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "quickDumps:getAll",
+    async (): Promise<IpcResult<DbQuickDump[]>> => {
+      try {
+        const dumps = quickDumpQueries.getAll();
+        return success(dumps);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "quickDumps:getByStatus",
+    async (_, status: ExtractionStatus): Promise<IpcResult<DbQuickDump[]>> => {
+      try {
+        const dumps = quickDumpQueries.getByStatus(status);
+        return success(dumps);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "quickDumps:create",
+    async (_, dump: DbQuickDump): Promise<IpcResult<DbQuickDump>> => {
+      try {
+        quickDumpQueries.insert(dump);
+        return success(dump);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "quickDumps:update",
+    async (
+      _,
+      id: string,
+      updates: Partial<DbQuickDump>
+    ): Promise<IpcResult<void>> => {
+      try {
+        quickDumpQueries.update(id, updates);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "quickDumps:remove",
+    async (_, id: string): Promise<IpcResult<void>> => {
+      try {
+        quickDumpQueries.delete(id);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // Connection Handlers
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "connections:getAll",
+    async (): Promise<IpcResult<DbConnection[]>> => {
+      try {
+        const connections = connectionQueries.getAll();
+        return success(connections);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "connections:getByNote",
+    async (_, noteId: string): Promise<IpcResult<DbConnection[]>> => {
+      try {
+        // Get connections where note is either source or target
+        const asSource = connectionQueries.getBySourceNote(noteId);
+        const asTarget = connectionQueries.getByTargetNote(noteId);
+        // Combine and dedupe by id
+        const all = [...asSource, ...asTarget];
+        const unique = Array.from(new Map(all.map((c) => [c.id, c])).values());
+        return success(unique);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "connections:create",
+    async (_, connection: DbConnection): Promise<IpcResult<DbConnection>> => {
+      try {
+        connectionQueries.insert(connection);
+        return success(connection);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "connections:remove",
+    async (_, id: string): Promise<IpcResult<void>> => {
+      try {
+        connectionQueries.delete(id);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // Backup Handlers
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle("backup:list", async (): Promise<IpcResult<BackupInfo[]>> => {
+    try {
+      const backups = listBackups();
+      return success(backups);
+    } catch (error) {
+      return failure(error);
+    }
+  });
+
+  ipcMain.handle("backup:create", async (): Promise<IpcResult<string>> => {
+    try {
+      const dbPath = getDbPath();
+      if (!dbPath) {
+        throw new Error("Database not initialized");
+      }
+      const backupPath = createBackup(dbPath);
+      // Return just the filename for cleaner API
+      return success(path.basename(backupPath));
+    } catch (error) {
+      return failure(error);
+    }
+  });
+
+  ipcMain.handle(
+    "backup:restore",
+    async (_, filename: string): Promise<IpcResult<void>> => {
+      try {
+        const dbPath = getDbPath();
+        if (!dbPath) {
+          throw new Error("Database not initialized");
+        }
+        const backupPath = path.join(getBackupsDir(), filename);
+        restoreBackup(backupPath, dbPath);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "backup:cleanup",
+    async (_, retentionDays?: number): Promise<IpcResult<number>> => {
+      try {
+        const deleted = cleanupOldBackups(retentionDays);
+        return success(deleted);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // Database Status Handler
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle("db:status", async (): Promise<IpcResult<DbStatus>> => {
+    try {
+      const status = getDatabaseStatus();
+      return success(status);
+    } catch (error) {
+      return failure(error);
+    }
+  });
 
   console.log("[IPC] All handlers registered");
 }

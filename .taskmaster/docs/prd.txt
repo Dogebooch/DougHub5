@@ -1,0 +1,506 @@
+# DougHub - Medical Flashcard Application Product Requirements Document
+
+## 1. Introduction
+
+This Product Requirements Document (PRD) outlines the comprehensive requirements for DougHub, an evidence-based medical flashcard application designed specifically for medical residents with ADHD. DougHub eliminates the 10+ minutes of decision paralysis that prevents study sessions from starting by using AI-guided concept extraction with automatic FSRS scheduling.
+
+This document serves as the primary reference for development teams and the task management system to ensure successful product delivery. DougHub is built on the principle that extraction IS the learning moment—active recall during capture embeds knowledge better than passive saving.
+
+## 2. Product overview
+
+DougHub is a desktop-first Electron application that transforms how medical residents create and review flashcards. Unlike Anki, Notion, or RemNote, DougHub guides concept extraction with AI suggestions while preserving user agency, automatically handles all scheduling decisions via FSRS, and converts medical lists into clinical vignettes that build bedside reasoning.
+
+### Key value propositions:
+- AI-guided concept extraction with one-click confirmation
+- Zero scheduling decisions (FSRS handles everything automatically)
+- Medical list processing converts differentials to clinical scenarios
+- Quick Dump escape hatch for exhausted users
+- <20 second capture workflow
+- 20-30% daily review time reduction through FSRS
+
+### Core architecture:
+- Electron 29+ main process with better-sqlite3
+- React 18 + TypeScript 5.4 strict frontend
+- Zustand state management
+- TailwindCSS + shadcn/ui components
+- ts-fsrs scheduling library
+
+## 3. Goals and objectives
+
+### Primary goals:
+- Eliminate decision paralysis that prevents study sessions from starting
+- Deliver 20-30% reduction in daily review time through FSRS scheduling
+- Convert medical lists to clinical vignettes that improve bedside reasoning
+- Ensure <20 second capture workflow with ≤2 clicks
+
+### Success metrics:
+- Capture time: ≤20 seconds from paste to saved
+- Search latency: <200ms for any query across 1000+ cards
+- FSRS efficiency: 20-30% daily review time reduction vs SM-2
+- Medical retention: >85% accuracy on 6-month-old cards
+- Zero data loss on crash
+
+### Technical objectives:
+- App launch to usable: <3 seconds
+- Save confirmation feedback: <500ms
+- AI card generation: <3 seconds to process pasted content
+- FSRS scheduling calculation: <100ms
+
+## 4. Target audience
+
+### Primary user:
+- **Name:** Doug (representative persona)
+- **Role:** IM/EM resident with ADHD studying for licensing boards
+- **One-liner:** Medical resident who craves systematic learning but drowns in organizational overhead, especially when cognitively depleted post-shift
+
+### User characteristics:
+- Technical proficiency: Comfortable with keyboard shortcuts, desktop apps
+- Study windows: 3-4 hour blocks with 1-2 hours usable focus
+- Mental state: Decision-fatigued, post-shift exhausted, zero tolerance for admin
+- Content types: Differential diagnoses, pharmacology, pathophysiology, clinical reasoning
+- Learning preference: Clinical reasoning ("why") over rote memorization ("what")
+
+### User constraints:
+- Zero tolerance for organizational decisions during capture
+- No grading button decisions (Easy/Medium/Hard)
+- No manual scheduling adjustments
+- Must work when mentally exhausted post-shift
+
+## 5. Features and requirements
+
+### 5.1 Core features (already implemented)
+
+#### Development stack
+- [x] Electron 29+ with better-sqlite3 main process
+- [x] React 18 + TypeScript 5.4 strict mode
+- [x] Zustand state management
+- [x] TailwindCSS + shadcn/ui component library
+- [x] Basic app layout with Header, SearchBar, QuickActionsBar
+- [x] IPC communication pattern (invoke/handle)
+- [x] SQLite database with UUID primary keys
+
+### 5.2 Capture workflow features
+
+#### AI concept highlighting
+- [ ] Paste content, AI highlights extractable concepts
+- [ ] Uses minimum information principle (one concept per card)
+- [ ] Medical terminology understanding
+- [ ] Processing time: <3 seconds
+
+#### User extraction confirmation
+- [ ] Checkboxes to confirm/reject/edit AI suggestions
+- [ ] Individual review (no batch-approve)
+- [ ] Real-time warnings for pattern-matching cards
+- [ ] Minimum information principle validation
+
+#### AI card format suggestions
+- [ ] AI recommends cloze vs Q&A per concept
+- [ ] Based on medical content type
+- [ ] Shows reasoning for format choice
+- [ ] User can override suggestion
+
+#### Evidence-based card validation
+- [ ] Real-time warnings using SuperMemo principles
+- [ ] Minimum information enforcement
+- [ ] No pattern-matching cards detection
+- [ ] Medical list detection with conversion prompt
+
+### 5.3 Quick dump and queue features
+
+#### Quick dump modal
+- [ ] Raw save when too tired to extract
+- [ ] Zero-friction emergency capture
+- [ ] Global keyboard shortcut (Cmd+Shift+S)
+- [ ] Auto-save with confirmation toast
+
+#### Extraction queue
+- [ ] Process Quick Dumps later with guided workflow
+- [ ] Same AI-assisted extraction flow
+- [ ] Queue indicator showing pending items
+- [ ] Batch processing support
+
+### 5.4 Note and linking features
+
+#### Auto note creation
+- [ ] Notes created from extractions automatically
+- [ ] Source content preserved with metadata
+- [ ] Timestamp and domain tagging
+
+#### Bidirectional linking
+- [ ] Cards always link back to source note
+- [ ] Notes show all derived cards
+- [ ] Context available during review
+- [ ] One-click navigation between linked items
+
+#### Connection suggestions
+- [ ] AI surfaces related notes during extraction
+- [ ] Semantic similarity matching
+- [ ] Medical domain awareness
+- [ ] Gentle highlight of discoveries
+
+### 5.5 Organization features
+
+#### Tag-based organization
+- [ ] No folders, tags only
+- [ ] AI suggests medical domain tags
+- [ ] Search-first navigation
+
+#### Global search
+- [ ] <200ms response time
+- [ ] Searches cards and notes
+- [ ] Unified results display
+- [ ] Cmd+F keyboard shortcut
+
+### 5.6 Review features
+
+#### FSRS scheduling implementation
+- [ ] Complete ts-fsrs integration
+- [ ] Zero grading decisions (no Easy/Medium/Hard buttons)
+- [ ] 0.89 retention rate target
+- [ ] Automatic interval calculation
+- [ ] Response time tracking for personalization
+
+#### Review interface
+- [ ] Distraction-free card display
+- [ ] Show Answer → Continue flow
+- [ ] Source context always visible
+- [ ] Progress indicator (Card X of Y)
+- [ ] Auto-return to workspace after completion
+
+#### Medical list processing
+- [ ] Clinical context conversion for differentials
+- [ ] "5 causes of X" → 5 individual clinical vignettes
+- [ ] Overlapping cloze for procedures/algorithms
+- [ ] Zero sibling contamination during review
+
+### 5.7 Data and performance features
+
+#### Performance data foundation
+- [ ] Silent collection of response times
+- [ ] Domain-specific tracking (cardiology vs pharmacology)
+- [ ] Accuracy tracking with partial credit
+- [ ] All FSRS parameters captured
+- [ ] No user decisions required for tracking
+
+#### Data persistence
+- [ ] Auto-save on every action
+- [ ] Zero data loss on crash
+- [ ] Session restoration
+- [ ] Hourly backups retained 7 days
+
+## 6. User stories and acceptance criteria
+
+### 6.1 Capture workflow user stories
+
+**ST-101: Content paste and AI analysis**
+- **User story:** As a medical resident, I want to paste content and have AI highlight extractable concepts so that I don't waste time deciding what to capture
+- **Acceptance criteria:**
+  - Paste area accepts text content
+  - AI analysis completes in <3 seconds
+  - Concepts highlighted with checkboxes
+  - Minimum information principle enforced
+  - Medical terminology recognized
+
+**ST-102: Concept confirmation**
+- **User story:** As a user, I want to confirm/reject/edit AI suggestions individually so that I maintain control over what I learn
+- **Acceptance criteria:**
+  - Checkbox for each suggested concept
+  - Edit capability for each suggestion
+  - Real-time validation warnings
+  - No batch-approve (individual review)
+  - Shows AI reasoning for suggestions
+
+**ST-103: Card format suggestion**
+- **User story:** As a user, I want AI to recommend cloze vs Q&A format so that I don't have to decide card structure
+- **Acceptance criteria:**
+  - Format suggestion for each concept
+  - Based on medical content type
+  - Override capability
+  - Shows reasoning for format choice
+
+**ST-104: Evidence-based validation**
+- **User story:** As a user, I want real-time warnings for problematic cards so that I create effective study material
+- **Acceptance criteria:**
+  - Pattern-matching card detection
+  - Multi-fact card warnings
+  - Medical list conversion prompts
+  - Minimum information enforcement
+
+### 6.2 Quick dump user stories
+
+**ST-201: Emergency capture**
+- **User story:** As an exhausted user, I want to save content quickly without decisions so that I don't lose information when too tired to process
+- **Acceptance criteria:**
+  - One-click save to queue
+  - No format decisions required
+  - Confirmation toast within 500ms
+  - Global keyboard shortcut available
+  - Auto-save on paste
+
+**ST-202: Queue processing**
+- **User story:** As a rested user, I want to process saved dumps with AI guidance so that I can properly extract concepts later
+- **Acceptance criteria:**
+  - Queue indicator shows pending count
+  - Same AI extraction workflow
+  - Batch selection capability
+  - Clear queue when processed
+
+### 6.3 Note and linking user stories
+
+**ST-251: Auto note creation**
+- **User story:** As a user, I want notes created automatically from my extractions so that I have organized source material
+- **Acceptance criteria:**
+  - Note created for each extraction session
+  - Source content preserved with metadata
+  - Timestamp and domain tags applied
+  - No manual note creation required
+
+**ST-252: Bidirectional linking**
+- **User story:** As a user, I want cards and notes always linked so that I can navigate between them easily
+- **Acceptance criteria:**
+  - Every card links to its source note
+  - Notes display all derived cards
+  - One-click navigation between linked items
+  - Links never break or become orphaned
+
+**ST-253: Connection suggestions**
+- **User story:** As a user, I want AI to surface related notes during extraction so that I can build knowledge connections
+- **Acceptance criteria:**
+  - AI suggests related notes based on semantic similarity
+  - Medical domain awareness in matching
+  - Gentle highlight (not intrusive)
+  - Optional linking with one click
+
+### 6.4 Review user stories
+
+**ST-301: Daily review queue**
+- **User story:** As a user, I want my daily reviews to appear automatically so that I don't have to set up my study session
+- **Acceptance criteria:**
+  - Queue populated on app launch
+  - Shows total count in header
+  - One-click to start reviews
+  - FSRS-calculated due dates
+
+**ST-302: Zero-decision review**
+- **User story:** As a user, I want reviews without grading buttons so that I focus on content, not scheduling decisions
+- **Acceptance criteria:**
+  - No Easy/Medium/Hard buttons
+  - Show Answer → Continue flow only
+  - FSRS auto-calculates next interval
+  - Response time tracked silently
+
+**ST-303: Partial credit handling**
+- **User story:** As a user reviewing list cards, I want partial credit tracked automatically so that 3/5 correct schedules differently than 1/5
+- **Acceptance criteria:**
+  - Individual list items tracked
+  - Partial credit calculated automatically
+  - No user decision for partial recall
+  - Separate scheduling for each item
+
+**ST-304: Source context visibility**
+- **User story:** As a user, I want to see card source context during review so that I understand where information came from
+- **Acceptance criteria:**
+  - Source note displayed on card
+  - Related cards count shown
+  - One-click to view source
+  - Context never missing
+
+### 6.4 Medical list user stories
+
+**ST-401: Clinical context conversion**
+- **User story:** As a medical resident, I want lists converted to clinical scenarios so that I build bedside reasoning, not just recall lists
+- **Acceptance criteria:**
+  - "5 causes of X" → 5 clinical vignettes
+  - Patient presentation format
+  - Realistic clinical context
+  - No basic list cards created
+
+**ST-402: Overlapping cloze**
+- **User story:** As a user learning procedures, I want overlapping cloze format so that I learn sequential steps properly
+- **Acceptance criteria:**
+  - Procedures use overlapping format
+  - Algorithm steps connected
+  - Context maintained across deletions
+  - No sibling contamination
+
+### 6.5 Search and navigation user stories
+
+**ST-501: Global search**
+- **User story:** As a user, I want fast search across all content so that I find cards without browsing
+- **Acceptance criteria:**
+  - <200ms response time
+  - Searches cards and notes
+  - Unified result display
+  - Cmd+F keyboard shortcut
+
+**ST-502: Command palette**
+- **User story:** As a power user, I want keyboard-first navigation so that I work efficiently without mouse
+- **Acceptance criteria:**
+  - Cmd+K opens palette
+  - Search, create, navigate options
+  - Recent actions available
+  - Keyboard-only operation
+
+### 6.6 Data persistence user stories
+
+**ST-601: Auto-save reliability**
+- **User story:** As a user, I want all changes saved immediately so that I never lose work
+- **Acceptance criteria:**
+  - Save on every action
+  - "Saved ✓" feedback within 500ms
+  - No save button needed
+  - Works offline
+
+**ST-602: Crash recovery**
+- **User story:** As a user, I want automatic recovery after crash so that I resume without data loss
+- **Acceptance criteria:**
+  - Auto-restore from backup
+  - Zero user intervention
+  - Session state preserved
+  - No data loss ever
+
+**ST-603: FSRS data collection**
+- **User story:** As a user, I want silent performance tracking so that scheduling improves over time without my involvement
+- **Acceptance criteria:**
+  - Response time tracked
+  - Domain captured
+  - Accuracy recorded
+  - Stability parameters stored
+  - No user decisions required
+
+### 6.7 Database schema user stories
+
+**ST-701: Database modeling**
+- **User story:** As the system, I need proper database schema so that all entities and relationships are persisted correctly
+- **Acceptance criteria:**
+  - Cards table with FSRS parameters (21 fields)
+  - Notes table with content and metadata
+  - Tags table with many-to-many relationships
+  - Review history for performance tracking
+  - Quick dumps queue table
+  - UUID primary keys
+  - Transaction support for mutations
+
+## 7. Technical requirements / stack
+
+### 7.1 Frontend technology stack
+- **Framework:** Electron 29+ with React 18
+- **Language:** TypeScript 5.4 strict mode
+- **Styling:** TailwindCSS with shadcn/ui components
+- **State Management:** Zustand store
+- **Build Tool:** Vite
+
+### 7.2 Backend and database
+- **Runtime:** Electron main process (Node.js)
+- **Database:** SQLite via better-sqlite3
+- **IPC Pattern:** invoke/handle only (never sendSync)
+- **Data Format:** JSON for complex fields, UUID for IDs
+
+### 7.3 Scheduling system
+- **Library:** ts-fsrs (mandatory)
+- **Retention Target:** 0.89 (medical education optimal)
+- **Max Interval:** 36500 days
+- **Parameters:** All 21 FSRS parameters captured
+- **Integration:** fsrs-service.ts in electron folder
+
+### 7.4 AI integration
+- **Local Processing:** Where possible for speed
+- **API Integration:** For advanced features (concept extraction)
+- **Response Time:** <3 seconds for content analysis
+- **Accuracy Requirement:** >90% useful suggestions
+
+### 7.5 Performance requirements
+- **Search Response:** <200ms for any query
+- **Capture Workflow:** <20 seconds total
+- **Save Feedback:** <500ms confirmation
+- **App Launch:** <3 seconds to usable
+- **FSRS Calculation:** <100ms
+
+### 7.6 IPC communication pattern
+- **Add DB Operation:** database.ts → ipc-handlers.ts → preload.ts → electron.d.ts → useAppStore.ts
+- **Return Format:** `IpcResult<T>`: `{ data, error: null } | { data: null, error }`
+- **Transactions:** Required for all mutations
+
+## 8. Design and user interface
+
+### 8.1 Design principles
+- **Decision Elimination:** AI suggests, user confirms with minimal choices
+- **Exhaustion-Proof:** Works when cognitively depleted post-shift
+- **Speed-First:** <20 second capture, <200ms search
+- **Single Adaptive Screen:** Context switches within same workspace
+
+### 8.2 Screen architecture
+- **Screen 1:** Unified Workspace (capture, search, queue states)
+- **Screen 2:** Review Interface (distraction-free review)
+- **Overlays:** Quick Dump modal, Settings, Command Palette
+
+### 8.3 Layout structure
+- **Global Search Bar:** Always visible
+- **Quick Actions Row:** Quick Dump, Today's Reviews, Settings
+- **Main Content Area:** Context-sensitive (capture/search/queue)
+- **Status Bar:** Extraction count, connection suggestions, progress
+
+### 8.4 Visual design
+- **Color Scheme:** Medium-dark, neutral earthy tones
+- **Typography:** Inter font family, high contrast (4.5:1 minimum)
+- **Spacing:** Generous whitespace, large touch targets
+- **Feedback:** "Saved ✓" confirmation, AI processing indicators
+
+### 8.5 Keyboard shortcuts
+- **Cmd+K:** Command palette
+- **Cmd+F:** Global search
+- **Cmd+Shift+S:** Quick Dump
+- **Space:** Show answer / Continue in review
+- **Escape:** Back to capture / Cancel
+
+### 8.6 Interaction patterns
+- **Tab navigation:** Follows logical workflow
+- **Enter:** Always confirms or submits
+- **Escape:** Always cancels current operation
+- **Arrow keys:** Navigate lists and options
+- **Hover states:** Show shortcuts and descriptions
+
+## 9. Anti-patterns and prohibitions
+
+### Evidence-based prohibitions:
+- **No folder hierarchies:** Tags only, search-first navigation
+- **No grading buttons:** FSRS handles all scheduling decisions automatically
+- **No basic list cards:** All medical lists get clinical context conversion
+- **No pattern-matching cards:** AI validation prevents format recognition testing
+- **No complex onboarding:** Works immediately, learns through usage
+- **No feature decisions during capture:** AI suggests, user confirms
+- **No manual scheduling decisions:** Complete automation of review timing
+- **No sendSync IPC:** invoke/handle only
+
+## 10. Implementation phases
+
+### Phase 1: MVP core (Month 1)
+1. Complete capture workflow with AI assistance
+2. FSRS implementation with silent data collection
+3. Evidence-based card validation
+4. Medical list processing (clinical context conversion)
+5. Quick Dump and extraction queue
+6. Global search with <200ms response
+
+### Phase 2: Data-driven (Month 2)
+1. Response time intelligence for interval adjustment
+2. Advanced medical list formats based on content type
+3. Performance optimization using collected data
+4. Connection suggestions using semantic similarity
+
+### Phase 3: Personalization (Month 3+)
+1. Individual forgetting curve optimization
+2. Domain-specific scheduling (cardiology vs pharmacology)
+3. Semantic interference detection for similar medical terms
+
+## 11. Success validation
+
+### MVP is done when:
+- Doug uses this app daily for real studying instead of current fragmented workflow
+- Decision paralysis that prevented sessions from starting is eliminated
+- Medical lists are converted to clinical scenarios building bedside reasoning
+- FSRS delivers research-validated 20-30% efficiency improvement
+- Capture completes in <20 seconds with ≤2 clicks
+- Search responds in <200ms
+- Zero data loss on crash
+- All cards show source context during review

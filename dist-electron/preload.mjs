@@ -21,6 +21,28 @@ const api = {
     getByCard: (cardId) => electron.ipcRenderer.invoke("reviews:getByCard", cardId),
     schedule: (cardId, rating) => electron.ipcRenderer.invoke("reviews:schedule", cardId, rating),
     getIntervals: (cardId) => electron.ipcRenderer.invoke("reviews:getIntervals", cardId)
+  },
+  quickDumps: {
+    getAll: () => electron.ipcRenderer.invoke("quickDumps:getAll"),
+    getByStatus: (status) => electron.ipcRenderer.invoke("quickDumps:getByStatus", status),
+    create: (dump) => electron.ipcRenderer.invoke("quickDumps:create", dump),
+    update: (id, updates) => electron.ipcRenderer.invoke("quickDumps:update", id, updates),
+    remove: (id) => electron.ipcRenderer.invoke("quickDumps:remove", id)
+  },
+  connections: {
+    getAll: () => electron.ipcRenderer.invoke("connections:getAll"),
+    getByNote: (noteId) => electron.ipcRenderer.invoke("connections:getByNote", noteId),
+    create: (connection) => electron.ipcRenderer.invoke("connections:create", connection),
+    remove: (id) => electron.ipcRenderer.invoke("connections:remove", id)
+  },
+  backup: {
+    list: () => electron.ipcRenderer.invoke("backup:list"),
+    create: () => electron.ipcRenderer.invoke("backup:create"),
+    restore: (filename) => electron.ipcRenderer.invoke("backup:restore", filename),
+    cleanup: (retentionDays) => electron.ipcRenderer.invoke("backup:cleanup", retentionDays)
+  },
+  db: {
+    status: () => electron.ipcRenderer.invoke("db:status")
   }
 };
 electron.contextBridge.exposeInMainWorld("api", api);

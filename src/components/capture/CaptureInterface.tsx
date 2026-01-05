@@ -188,9 +188,10 @@ export function CaptureInterface() {
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">⌘</kbd>{" "}
-          + <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Enter</kbd>{" "}
-          to create cards
+          Press{" "}
+          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl</kbd> +{" "}
+          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Enter</kbd> to
+          create cards
         </p>
       </div>
     </div>
