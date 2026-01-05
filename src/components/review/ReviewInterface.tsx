@@ -1,15 +1,19 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { ArrowLeft, RotateCcw } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { Button } from "@/components/ui/button";
-import { Rating, FormattedIntervals } from "@/types";
+import { Rating } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { ClozeDisplay, ClozeAnswer } from "@/lib/cloze-renderer";
+
+const CONTINUE_LOCKOUT_MS = 400; // Prevent accidental double-taps
 
 export function ReviewInterface() {
   const { cards, notes, isHydrated, setCurrentView, scheduleCardReview } =
     useAppStore();
   const { toast } = useToast();
+
+  const isMounted = useRef(true);
 
   // Session queue: card IDs in review order
   const [reviewQueue, setReviewQueue] = useState<string[]>([]);
@@ -17,8 +21,21 @@ export function ReviewInterface() {
   const [answerVisible, setAnswerVisible] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [intervals, setIntervals] = useState<FormattedIntervals | null>(null);
   const [reviewedCount, setReviewedCount] = useState(0);
+
+  // Time tracking for response time and timeout (Task 5.2)
+  const [responseStartTime, setResponseStartTime] = useState<number | null>(
+    null
+  );
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Track mount status
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Initialize session queue with due cards
   const initialDueCards = useMemo(() => {
@@ -49,25 +66,24 @@ export function ReviewInterface() {
     ? notes.find((note) => note.id === currentCard.noteId)
     : null;
 
-  // Fetch intervals when answer is shown
+  // Timeout detection for interrupted sessions (60 seconds)
   useEffect(() => {
-    const fetchIntervals = async () => {
-      if (answerVisible && currentCard && window.api) {
-        try {
-          const result = await window.api.reviews.getIntervals(currentCard.id);
-          if (result.data) {
-            setIntervals(result.data);
-          }
-        } catch (error) {
-          console.error("[Review] Failed to fetch intervals:", error);
-        }
-      }
+    let timeoutId: NodeJS.Timeout;
+
+    if (answerVisible && responseStartTime && !isPaused) {
+      timeoutId = setTimeout(() => {
+        setIsPaused(true);
+      }, 60000);
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
     };
-    fetchIntervals();
-  }, [answerVisible, currentCard]);
+  }, [answerVisible, responseStartTime, isPaused]);
 
   const handleShowAnswer = useCallback(() => {
     setAnswerVisible(true);
+    setResponseStartTime(Date.now());
   }, []);
 
   const navigateToCapture = useCallback(() => {
@@ -75,8 +91,8 @@ export function ReviewInterface() {
   }, [setCurrentView]);
 
   const handleRating = useCallback(
-    async (rating: (typeof Rating)[keyof typeof Rating]) => {
-      if (!currentCard || isSubmitting) return;
+    async (rating: (typeof Rating)[keyof typeof Rating]): Promise<boolean> => {
+      if (!currentCard || isSubmitting) return false;
 
       setIsSubmitting(true);
       try {
@@ -88,36 +104,37 @@ export function ReviewInterface() {
             description: result.error || "Failed to save review",
             variant: "destructive",
           });
-          setIsSubmitting(false);
-          return;
+          if (isMounted.current) setIsSubmitting(false);
+          return false;
         }
 
-        setReviewedCount((prev) => prev + 1);
+        if (isMounted.current) {
+          setReviewedCount((prev) => prev + 1);
 
-        // Handle learning cards: if rated Again, re-add to end of queue
-        if (rating === Rating.Again && result.data) {
-          // Card rated Again - add back to queue for re-review this session
-          setReviewQueue((prev) => [...prev, currentCard.id]);
-        }
+          // Handle learning cards: if rated Again, re-add to end of queue
+          if (rating === Rating.Again && result.data) {
+            // Card rated Again - add back to queue for re-review this session
+            setReviewQueue((prev) => [...prev, currentCard.id]);
+          }
 
-        // Move to next card
-        if (currentQueueIndex < totalInQueue - 1) {
-          setCurrentQueueIndex((prev) => prev + 1);
-          setAnswerVisible(false);
-          setIntervals(null);
-        } else {
-          // Check if there are more cards added to queue (from Again ratings)
-          if (reviewQueue.length > currentQueueIndex + 1) {
+          // Move to next card
+          if (currentQueueIndex < totalInQueue - 1) {
             setCurrentQueueIndex((prev) => prev + 1);
             setAnswerVisible(false);
-            setIntervals(null);
           } else {
-            setSessionComplete(true);
-            setTimeout(() => {
-              setCurrentView("capture");
-            }, 2000);
+            // Check if there are more cards added to queue (from Again ratings)
+            if (reviewQueue.length > currentQueueIndex + 1) {
+              setCurrentQueueIndex((prev) => prev + 1);
+              setAnswerVisible(false);
+            } else {
+              setSessionComplete(true);
+              setTimeout(() => {
+                if (isMounted.current) setCurrentView("capture");
+              }, 2000);
+            }
           }
         }
+        return true;
       } catch (error) {
         console.error("[Review] Error submitting rating:", error);
         toast({
@@ -125,8 +142,9 @@ export function ReviewInterface() {
           description: "An unexpected error occurred",
           variant: "destructive",
         });
+        return false;
       } finally {
-        setIsSubmitting(false);
+        if (isMounted.current) setIsSubmitting(false);
       }
     },
     [
@@ -140,6 +158,42 @@ export function ReviewInterface() {
       toast,
     ]
   );
+
+  const handleContinue = useCallback(async () => {
+    if (!responseStartTime || isSubmitting) return;
+
+    const rawResponseTimeMs = Date.now() - responseStartTime;
+
+    // Prevent accidental double-taps/skipping answer
+    if (rawResponseTimeMs < CONTINUE_LOCKOUT_MS) return;
+
+    // -1 signals an interrupted session (user exceeded timeout)
+    const responseTimeMs = isPaused ? -1 : rawResponseTimeMs;
+
+    console.log(`[Review] Response time: ${responseTimeMs}ms`);
+
+    // Placeholder until 5.3's auto-rating logic
+    const success = await handleRating(Rating.Good);
+
+    if (success && isMounted.current) {
+      // Reset for next card
+      setResponseStartTime(null);
+      setIsPaused(false);
+    }
+  }, [responseStartTime, isPaused, handleRating, isSubmitting]);
+
+  const handleForgot = useCallback(async () => {
+    if (isSubmitting) return;
+
+    // Explicitly forced Again rating
+    const success = await handleRating(Rating.Again);
+
+    if (success && isMounted.current) {
+      // Reset for next card
+      setResponseStartTime(null);
+      setIsPaused(false);
+    }
+  }, [handleRating, isSubmitting]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -156,25 +210,13 @@ export function ReviewInterface() {
         e.preventDefault();
         if (!answerVisible) {
           handleShowAnswer();
+        } else if (!isSubmitting) {
+          handleContinue();
         }
+      } else if (e.key === "Enter" && answerVisible && !isSubmitting) {
+        handleContinue();
       } else if (e.key === "Escape") {
         navigateToCapture();
-      } else if (answerVisible && !isSubmitting) {
-        // Rating hotkeys: 1=Again, 2=Hard, 3=Good, 4=Easy
-        switch (e.key) {
-          case "1":
-            handleRating(Rating.Again);
-            break;
-          case "2":
-            handleRating(Rating.Hard);
-            break;
-          case "3":
-            handleRating(Rating.Good);
-            break;
-          case "4":
-            handleRating(Rating.Easy);
-            break;
-        }
       }
     };
 
@@ -183,7 +225,7 @@ export function ReviewInterface() {
   }, [
     answerVisible,
     handleShowAnswer,
-    handleRating,
+    handleContinue,
     navigateToCapture,
     isSubmitting,
   ]);
@@ -328,76 +370,28 @@ export function ReviewInterface() {
             <span className="ml-2 text-xs opacity-70">(Space)</span>
           </Button>
         ) : (
-          <div className="flex gap-3 flex-wrap justify-center">
+          <div className="flex flex-col items-center gap-4">
             <Button
               size="lg"
-              variant="destructive"
-              onClick={() => handleRating(Rating.Again)}
+              onClick={handleContinue}
               disabled={isSubmitting}
-              className="min-w-[100px]"
+              className="min-w-[200px]"
             >
-              <span className="flex flex-col items-center">
-                <span>Again</span>
-                <span className="text-xs opacity-70">
-                  {intervals?.again || "..."}
-                </span>
-              </span>
+              Continue
+              <span className="ml-2 text-xs opacity-70">(Space)</span>
             </Button>
             <Button
-              size="lg"
-              variant="secondary"
-              onClick={() => handleRating(Rating.Hard)}
+              variant="ghost"
+              size="sm"
+              onClick={handleForgot}
               disabled={isSubmitting}
-              className="min-w-[100px]"
+              className="text-muted-foreground hover:text-destructive"
             >
-              <span className="flex flex-col items-center">
-                <span>Hard</span>
-                <span className="text-xs opacity-70">
-                  {intervals?.hard || "..."}
-                </span>
-              </span>
-            </Button>
-            <Button
-              size="lg"
-              variant="default"
-              onClick={() => handleRating(Rating.Good)}
-              disabled={isSubmitting}
-              className="min-w-[100px]"
-            >
-              <span className="flex flex-col items-center">
-                <span>Good</span>
-                <span className="text-xs opacity-70">
-                  {intervals?.good || "..."}
-                </span>
-              </span>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => handleRating(Rating.Easy)}
-              disabled={isSubmitting}
-              className="min-w-[100px] border-success text-success-foreground hover:bg-success/10"
-            >
-              <span className="flex flex-col items-center">
-                <span>Easy</span>
-                <span className="text-xs opacity-70">
-                  {intervals?.easy || "..."}
-                </span>
-              </span>
+              I forgot this
             </Button>
           </div>
         )}
       </div>
-
-      {/* Keyboard hints */}
-      {answerVisible && (
-        <div className="text-center text-xs text-muted-foreground">
-          Keyboard: <kbd className="px-1 py-0.5 bg-muted rounded">1</kbd> Again{" "}
-          <kbd className="px-1 py-0.5 bg-muted rounded">2</kbd> Hard{" "}
-          <kbd className="px-1 py-0.5 bg-muted rounded">3</kbd> Good{" "}
-          <kbd className="px-1 py-0.5 bg-muted rounded">4</kbd> Easy
-        </div>
-      )}
 
       {/* Back navigation */}
       <div className="text-center pt-8">

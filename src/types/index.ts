@@ -190,10 +190,3 @@ export interface ScheduleResult {
   };
 }
 
-// Formatted intervals for display
-export interface FormattedIntervals {
-  again: string;
-  hard: string;
-  good: string;
-  easy: string;
-}

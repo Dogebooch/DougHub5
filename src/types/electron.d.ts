@@ -5,7 +5,6 @@ import type {
   CardWithFSRS,
   IpcResult,
   ScheduleResult,
-  FormattedIntervals,
   RatingValue,
   QuickDump,
   Connection,
@@ -36,7 +35,6 @@ export type {
   CardWithFSRS,
   IpcResult,
   ScheduleResult,
-  FormattedIntervals,
   RatingValue,
   QuickDump,
   Connection,
@@ -89,7 +87,6 @@ export interface ElectronAPI {
       cardId: string,
       rating: RatingValue
     ) => Promise<IpcResult<ScheduleResult>>;
-    getIntervals: (cardId: string) => Promise<IpcResult<FormattedIntervals>>;
   };
   quickDumps: {
     getAll: () => Promise<IpcResult<QuickDump[]>>;

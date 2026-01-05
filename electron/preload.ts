@@ -28,8 +28,6 @@ const api = {
       ipcRenderer.invoke("reviews:getByCard", cardId),
     schedule: (cardId: string, rating: number) =>
       ipcRenderer.invoke("reviews:schedule", cardId, rating),
-    getIntervals: (cardId: string) =>
-      ipcRenderer.invoke("reviews:getIntervals", cardId),
   },
   quickDumps: {
     getAll: () => ipcRenderer.invoke("quickDumps:getAll"),
