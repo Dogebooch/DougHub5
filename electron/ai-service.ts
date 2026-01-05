@@ -110,34 +110,34 @@ export const aiCache = new AICache();
 /** Preset configurations for supported AI providers */
 export const PROVIDER_PRESETS: Record<AIProviderType, AIProviderConfig> = {
   ollama: {
-    type: 'openai-compatible',
-    baseURL: 'http://localhost:11434/v1',
-    apiKey: 'ollama', // OpenAI SDK requires non-empty string; Ollama ignores it
-    model: 'llama3.2',
-    timeout: 10000, // 10s for local processing
+    type: "openai-compatible",
+    baseURL: "http://localhost:11434/v1",
+    apiKey: "ollama", // OpenAI SDK requires non-empty string; Ollama ignores it
+    model: "qwen2.5:32b-instruct-q4_K_M", // Using available model from user's Ollama
+    timeout: 30000, // 30s for local processing (larger models need more time)
     isLocal: true,
   },
   openai: {
-    type: 'openai-compatible',
-    baseURL: 'https://api.openai.com/v1',
-    apiKey: '', // Must be set via env var
-    model: 'gpt-4o-mini',
+    type: "openai-compatible",
+    baseURL: "https://api.openai.com/v1",
+    apiKey: "", // Must be set via env var
+    model: "gpt-4o-mini",
     timeout: 3000, // 3s for cloud API
     isLocal: false,
   },
   deepseek: {
-    type: 'openai-compatible',
-    baseURL: 'https://api.deepseek.com/v1',
-    apiKey: '', // Must be set via env var
-    model: 'deepseek-chat',
+    type: "openai-compatible",
+    baseURL: "https://api.deepseek.com/v1",
+    apiKey: "", // Must be set via env var
+    model: "deepseek-chat",
     timeout: 5000, // 5s for cloud API
     isLocal: false,
   },
   anthropic: {
-    type: 'anthropic',
-    baseURL: 'https://api.anthropic.com',
-    apiKey: '', // Must be set via env var
-    model: 'claude-3-haiku-20240307', // Fast, cheap model for card processing
+    type: "anthropic",
+    baseURL: "https://api.anthropic.com",
+    apiKey: "", // Must be set via env var
+    model: "claude-3-haiku-20240307", // Fast, cheap model for card processing
     timeout: 3000, // 3s for cloud API
     isLocal: false,
   },
@@ -149,46 +149,57 @@ export const PROVIDER_PRESETS: Record<AIProviderType, AIProviderConfig> = {
 
 /**
  * Auto-detect available AI provider.
- * 
+ *
  * 1. Try Ollama on localhost:11434 (preferred - free, private)
  * 2. Fall back to AI_PROVIDER env var
- * 3. Default to 'openai' if nothing configured
- * 
+ * 3. Default to 'ollama' if nothing configured (assume local-first)
+ *
  * @returns Detected provider type
  */
 export async function detectProvider(): Promise<AIProviderType> {
-  // Try Ollama auto-detection
+  // Try Ollama auto-detection using http module for better Node.js compatibility
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 500);
-    
-    const response = await fetch('http://localhost:11434/api/tags', {
-      signal: controller.signal,
+    const { default: http } = await import("node:http");
+
+    const isAvailable = await new Promise<boolean>((resolve) => {
+      const timeoutId = setTimeout(() => {
+        req.destroy();
+        resolve(false);
+      }, 1000);
+
+      const req = http.get("http://localhost:11434/api/tags", (res) => {
+        clearTimeout(timeoutId);
+        resolve(res.statusCode === 200);
+        res.resume(); // Consume response to free up socket
+      });
+
+      req.on("error", () => {
+        clearTimeout(timeoutId);
+        resolve(false);
+      });
     });
-    
-    clearTimeout(timeoutId);
-    
-    if (response.ok) {
-      console.log('[AI Service] Ollama detected on localhost:11434');
-      return 'ollama';
+
+    if (isAvailable) {
+      console.log("[AI Service] Ollama detected on localhost:11434");
+      return "ollama";
     }
   } catch (error) {
     // Ollama not available - silent fallback
-    if (error instanceof Error && error.name !== 'AbortError') {
-      console.log('[AI Service] Ollama not available:', error.message);
+    if (error instanceof Error) {
+      console.log("[AI Service] Ollama detection error:", error.message);
     }
   }
-  
+
   // Check environment variable
-  const envProvider = process.env['AI_PROVIDER'] as AIProviderType | undefined;
+  const envProvider = process.env["AI_PROVIDER"] as AIProviderType | undefined;
   if (envProvider && envProvider in PROVIDER_PRESETS) {
     console.log(`[AI Service] Using provider from env: ${envProvider}`);
     return envProvider;
   }
-  
-  // Default fallback
-  console.log('[AI Service] No provider detected, defaulting to openai');
-  return 'openai';
+
+  // Default to Ollama (assume local-first, will fail gracefully if not available)
+  console.log("[AI Service] No provider detected, defaulting to ollama");
+  return "ollama";
 }
 
 // ============================================================================
@@ -197,24 +208,26 @@ export async function detectProvider(): Promise<AIProviderType> {
 
 /**
  * Get provider configuration with environment variable overrides.
- * 
+ *
  * Priority: env vars > preset values
- * 
+ *
  * @param provider Optional provider type (auto-detects if not provided)
  * @returns Complete provider configuration
  */
-export async function getProviderConfig(provider?: AIProviderType): Promise<AIProviderConfig> {
-  const selectedProvider = provider ?? await detectProvider();
+export async function getProviderConfig(
+  provider?: AIProviderType
+): Promise<AIProviderConfig> {
+  const selectedProvider = provider ?? (await detectProvider());
   const preset = PROVIDER_PRESETS[selectedProvider];
-  
+
   // Merge preset with environment overrides
   const config: AIProviderConfig = {
     ...preset,
-    baseURL: process.env['AI_BASE_URL'] ?? preset.baseURL,
-    apiKey: process.env['AI_API_KEY'] ?? preset.apiKey,
-    model: process.env['AI_MODEL'] ?? preset.model,
+    baseURL: process.env["AI_BASE_URL"] ?? preset.baseURL,
+    apiKey: process.env["AI_API_KEY"] ?? preset.apiKey,
+    model: process.env["AI_MODEL"] ?? preset.model,
   };
-  
+
   return config;
 }
 
@@ -235,23 +248,30 @@ let currentConfig: AIProviderConfig | null = null;
  * @param config Optional provider configuration (auto-detects if not provided)
  * @returns OpenAI client instance
  */
-export async function initializeClient(config?: AIProviderConfig): Promise<OpenAI> {
-  const providerConfig = config ?? await getProviderConfig();
+export async function initializeClient(
+  config?: AIProviderConfig
+): Promise<OpenAI> {
+  const providerConfig = config ?? (await getProviderConfig());
 
   aiClient = new OpenAI({
     baseURL: providerConfig.baseURL,
-    apiKey: providerConfig.apiKey || 'ollama', // Ollama ignores this, SDK requires non-empty
+    apiKey: providerConfig.apiKey || "ollama", // Ollama ignores this, SDK requires non-empty
     timeout: providerConfig.timeout,
     maxRetries: 0, // We handle retries ourselves for better control
   });
 
   currentConfig = providerConfig;
 
-  console.log(`[AI Service] Initialized ${providerConfig.isLocal ? 'local' : 'cloud'} client:`, {
-    baseURL: providerConfig.baseURL,
-    model: providerConfig.model,
-    timeout: providerConfig.timeout,
-  });
+  console.log(
+    `[AI Service] Initialized ${
+      providerConfig.isLocal ? "local" : "cloud"
+    } client:`,
+    {
+      baseURL: providerConfig.baseURL,
+      model: providerConfig.model,
+      timeout: providerConfig.timeout,
+    }
+  );
 
   return aiClient;
 }
@@ -283,28 +303,41 @@ export function getCurrentConfig(): AIProviderConfig | null {
 
 /**
  * Get current provider status and connection state.
- * 
+ *
  * @returns Provider status information
  */
 export async function getProviderStatus(): Promise<AIProviderStatus> {
   const detectedProvider = await detectProvider();
   const config = await getProviderConfig(detectedProvider);
-  
+
   // Check connection by attempting a quick request
   let isConnected = false;
-  
+
   if (config.isLocal) {
-    // For local providers, check if API is reachable
+    // For local providers, check if API is reachable using http module
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 500);
-      
-      const response = await fetch(`${config.baseURL.replace('/v1', '')}/api/tags`, {
-        signal: controller.signal,
+      const { default: http } = await import("node:http");
+
+      isConnected = await new Promise<boolean>((resolve) => {
+        const timeoutId = setTimeout(() => {
+          req.destroy();
+          resolve(false);
+        }, 500);
+
+        const req = http.get(
+          `${config.baseURL.replace("/v1", "")}/api/tags`,
+          (res) => {
+            clearTimeout(timeoutId);
+            resolve(res.statusCode === 200);
+            res.resume();
+          }
+        );
+
+        req.on("error", () => {
+          clearTimeout(timeoutId);
+          resolve(false);
+        });
       });
-      
-      clearTimeout(timeoutId);
-      isConnected = response.ok;
     } catch {
       isConnected = false;
     }
@@ -312,7 +345,7 @@ export async function getProviderStatus(): Promise<AIProviderStatus> {
     // For cloud providers, assume connected if API key is present
     isConnected = config.apiKey.length > 0;
   }
-  
+
   return {
     provider: detectedProvider,
     model: config.model,
