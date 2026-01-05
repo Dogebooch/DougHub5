@@ -525,7 +525,7 @@ export function CaptureInterface() {
 
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Phase 1: Paste Area */}
-        <Card>
+        <Card className="bg-muted/40">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Step 1: Paste your content
@@ -537,7 +537,7 @@ export function CaptureInterface() {
               placeholder="Paste your medical notes, textbook excerpts, or lecture content here...
 
 Example: 'Aspirin irreversibly inhibits cyclooxygenase (COX-1 and COX-2), blocking prostaglandin synthesis. This reduces inflammation, fever, and platelet aggregation.'"
-              className="min-h-[150px] resize-none"
+              className="min-h-[150px] resize-none bg-background/80"
               value={pastedContent}
               onChange={(e) => setPastedContent(e.target.value)}
               onPaste={handlePaste}
