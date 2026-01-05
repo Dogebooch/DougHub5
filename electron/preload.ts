@@ -84,6 +84,7 @@ const api = {
       ),
     clearCache: () => ipcRenderer.invoke("ai:clearCache"),
   },
+  reloadApp: () => ipcRenderer.invoke("app:reload"),
 };
 
 // Expose typed API to renderer

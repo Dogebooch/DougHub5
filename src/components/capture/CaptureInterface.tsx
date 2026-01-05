@@ -78,6 +78,19 @@ export function CaptureInterface() {
     };
   }, [pastedContent]);
 
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && extractedConcepts.length > 0) {
+        if (document.activeElement?.closest('[role="listbox"]')) return;
+        setExtractedConcepts([]);
+        setSelectedConcepts(new Set());
+        textareaRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [extractedConcepts.length]);
+
   // Handle paste event - auto-trigger extraction
   const handlePaste = (e: React.ClipboardEvent) => {
     const text = e.clipboardData.getData("text");

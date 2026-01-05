@@ -58,7 +58,8 @@ const api = {
       maxResults
     ),
     clearCache: () => electron.ipcRenderer.invoke("ai:clearCache")
-  }
+  },
+  reloadApp: () => electron.ipcRenderer.invoke("app:reload")
 };
 electron.contextBridge.exposeInMainWorld("api", api);
 electron.contextBridge.exposeInMainWorld("ipcRenderer", {

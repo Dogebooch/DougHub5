@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, BrowserWindow } from "electron";
 import path from "node:path";
 import {
   cardQueries,
@@ -641,18 +641,19 @@ export function registerIpcHandlers(): void {
     }
   );
 
-  ipcMain.handle(
-    "ai:clearCache",
-    async (): Promise<IpcResult<void>> => {
-      try {
-        aiCache.clear();
-        console.log("[IPC] AI cache cleared");
-        return success(undefined);
-      } catch (error) {
-        return failure(error);
-      }
+  ipcMain.handle("ai:clearCache", async (): Promise<IpcResult<void>> => {
+    try {
+      aiCache.clear();
+      console.log("[IPC] AI cache cleared");
+      return success(undefined);
+    } catch (error) {
+      return failure(error);
     }
-  );
+  });
+
+  ipcMain.handle("app:reload", () => {
+    BrowserWindow.getFocusedWindow()?.webContents.reloadIgnoringCache();
+  });
 
   console.log("[IPC] All handlers registered");
 }

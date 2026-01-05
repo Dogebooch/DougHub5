@@ -105,7 +105,9 @@ export interface ElectronAPI {
   };
   ai: {
     getProviderStatus: () => Promise<IpcResult<AIProviderStatus>>;
-    extractConcepts: (content: string) => Promise<IpcResult<ExtractedConcept[]>>;
+    extractConcepts: (
+      content: string
+    ) => Promise<IpcResult<ExtractedConcept[]>>;
     validateCard: (
       front: string,
       back: string,
@@ -126,6 +128,7 @@ export interface ElectronAPI {
     ) => Promise<IpcResult<SemanticMatch[]>>;
     clearCache: () => Promise<IpcResult<void>>;
   };
+  reloadApp: () => Promise<void>;
 }
 
 // Extend the global Window interface
