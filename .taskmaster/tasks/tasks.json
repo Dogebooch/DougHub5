@@ -85,7 +85,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -106,9 +106,10 @@
               1
             ],
             "details": "In electron/ai-service.ts:\n\nHelper functions:\n- withTimeout<T>(promise, ms): Promise.race wrapper for enforcing timeouts\n- withRetry<T>(fn, maxRetries, backoffMs): exponential backoff retry wrapper\n- callAI(prompt, systemPrompt?): unified function that uses detected provider\n\nCore functions:\n- extractConcepts(content: string): Promise<ExtractedConcept[]> - send medical content to AI, parse JSON response into concept array with suggestedFormat (qa/cloze)\n- validateCard(card: {front, back}): Promise<ValidationResult> - check minimum information principle, detect pattern-matching cues, warn about multi-fact cards\n\nTimeout strategy:\n- Use provider.timeout from config (10s for Ollama, 3s for cloud)\n- Retry 3 times with exponential backoff (500ms, 1000ms, 2000ms)\n\nPrompts:\n- Create PROMPTS constant with system prompts for each function\n- Include medical context in prompts to help smaller local models",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests with mock responses for Ollama and cloud. Test timeout respects provider config. Test retry with simulated failures. Test with medical content samples. Verify JSON parsing handles malformed responses gracefully.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-05T01:15:33.268Z"
           },
           {
             "id": 3,
@@ -119,9 +120,10 @@
               2
             ],
             "details": "In electron/ai-service.ts, implement detectMedicalList(content: string): Promise<{isList: boolean, listType: 'differential'|'procedure'|'algorithm', items: string[]}> to identify medical lists. Implement convertToVignette(listItem: string, context: string): Promise<{vignette: string, cloze: string}> to transform list items into patient scenarios with demographics, presentation, and key findings. Each vignette must be independently answerable without sibling context. Follow the timeout and retry patterns established in subtask 2.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test with real medical lists: 'DDx for acute MI', '5 steps of BLS', 'Algorithm for trauma management'. Verify each vignette is clinically realistic and independently answerable. Validate list type detection accuracy.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-05T01:17:15.711Z"
           },
           {
             "id": 4,
@@ -132,9 +134,10 @@
               2
             ],
             "details": "In electron/ai-service.ts:\n\n- suggestTags(content: string): Promise<string[]> - analyze content and return medical domain tags (cardiology, pharmacology, pathophysiology, etc.). Use callAI helper with appropriate prompt.\n\n- findRelatedNotes(content: string, existingNotes: DbNote[]): Promise<SemanticMatch[]> - for MVP, use simple keyword/TF-IDF matching rather than vector embeddings (embeddings require separate API call or local model). Compare content against existing notes and return similarity scores.\n\nNote: Vector embeddings can be added post-MVP for better semantic matching. For now, keyword-based similarity is sufficient and works offline with Ollama.\n\nBoth functions use provider-aware timeout from subtask 1.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test suggestTags with cardiology, procedure, pharmacology content. Test findRelatedNotes returns meaningful matches. Verify functions work with both local and cloud providers.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-05T01:19:43.555Z"
           },
           {
             "id": 5,
@@ -146,12 +149,13 @@
               4
             ],
             "details": "Caching layer in electron/ai-service.ts:\n- AICache class with Map<string, {result: T, expires: number}>\n- hashContent(content: string): string - simple hash for cache key\n- getCached<T>(key): T | null - return if not expired\n- setCache<T>(key, result, ttlMs = 300000): void - 5 min default\n\nIPC handlers in electron/ipc-handlers.ts:\n- ai:getProviderStatus - returns {provider, model, isLocal, isConnected}\n- ai:extractConcepts\n- ai:validateCard\n- ai:detectMedicalList\n- ai:convertToVignette\n- ai:suggestTags\n- ai:findRelatedNotes\n\nPreload API in electron/preload.ts - add ai: {...} namespace\n\nTypes in src/types/electron.d.ts - extend ElectronAPI with ai methods\n\nFollow IpcResult<T> wrapper pattern from existing handlers.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test cache hit/miss with identical content. Test cache expiration after 5 min. Test ai:getProviderStatus returns correct provider info. Integration tests with mock AI. Verify all IPC returns IpcResult<T> format.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-05T01:22:53.351Z"
           }
         ],
-        "updatedAt": "2026-01-05T01:12:15.700Z"
+        "updatedAt": "2026-01-05T01:22:53.351Z"
       },
       {
         "id": "3",
@@ -642,9 +646,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-05T01:12:15.700Z",
+      "lastModified": "2026-01-05T01:22:53.351Z",
       "taskCount": 16,
-      "completedCount": 1,
+      "completedCount": 2,
       "tags": [
         "master"
       ]

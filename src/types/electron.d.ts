@@ -13,6 +13,14 @@ import type {
   DbStatus,
   ExtractionStatus,
 } from "./index";
+import type {
+  AIProviderStatus,
+  ExtractedConcept,
+  ValidationResult,
+  MedicalListDetection,
+  VignetteConversion,
+  SemanticMatch,
+} from "./ai";
 
 // Re-export database types for convenience
 export type {
@@ -29,6 +37,16 @@ export type {
   BackupInfo,
   DbStatus,
   ExtractionStatus,
+};
+
+// Re-export AI types
+export type {
+  AIProviderStatus,
+  ExtractedConcept,
+  ValidationResult,
+  MedicalListDetection,
+  VignetteConversion,
+  SemanticMatch,
 };
 
 // API interface exposed via preload script
@@ -84,6 +102,29 @@ export interface ElectronAPI {
   };
   db: {
     status: () => Promise<IpcResult<DbStatus>>;
+  };
+  ai: {
+    getProviderStatus: () => Promise<IpcResult<AIProviderStatus>>;
+    extractConcepts: (content: string) => Promise<IpcResult<ExtractedConcept[]>>;
+    validateCard: (
+      front: string,
+      back: string,
+      cardType: "qa" | "cloze"
+    ) => Promise<IpcResult<ValidationResult>>;
+    detectMedicalList: (
+      content: string
+    ) => Promise<IpcResult<MedicalListDetection>>;
+    convertToVignette: (
+      listItem: string,
+      context: string
+    ) => Promise<IpcResult<VignetteConversion>>;
+    suggestTags: (content: string) => Promise<IpcResult<string[]>>;
+    findRelatedNotes: (
+      content: string,
+      minSimilarity?: number,
+      maxResults?: number
+    ) => Promise<IpcResult<SemanticMatch[]>>;
+    clearCache: () => Promise<IpcResult<void>>;
   };
 }
 

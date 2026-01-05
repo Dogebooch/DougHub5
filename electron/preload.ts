@@ -59,6 +59,31 @@ const api = {
   db: {
     status: () => ipcRenderer.invoke("db:status"),
   },
+  ai: {
+    getProviderStatus: () => ipcRenderer.invoke("ai:getProviderStatus"),
+    extractConcepts: (content: string) =>
+      ipcRenderer.invoke("ai:extractConcepts", content),
+    validateCard: (front: string, back: string, cardType: "qa" | "cloze") =>
+      ipcRenderer.invoke("ai:validateCard", front, back, cardType),
+    detectMedicalList: (content: string) =>
+      ipcRenderer.invoke("ai:detectMedicalList", content),
+    convertToVignette: (listItem: string, context: string) =>
+      ipcRenderer.invoke("ai:convertToVignette", listItem, context),
+    suggestTags: (content: string) =>
+      ipcRenderer.invoke("ai:suggestTags", content),
+    findRelatedNotes: (
+      content: string,
+      minSimilarity?: number,
+      maxResults?: number
+    ) =>
+      ipcRenderer.invoke(
+        "ai:findRelatedNotes",
+        content,
+        minSimilarity,
+        maxResults
+      ),
+    clearCache: () => ipcRenderer.invoke("ai:clearCache"),
+  },
 };
 
 // Expose typed API to renderer

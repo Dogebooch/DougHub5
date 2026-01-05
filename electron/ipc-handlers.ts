@@ -30,6 +30,21 @@ import {
   getBackupsDir,
   BackupInfo,
 } from "./backup-service";
+import {
+  getProviderStatus,
+  extractConcepts,
+  validateCard,
+  detectMedicalList,
+  convertToVignette,
+  suggestTags,
+  findRelatedNotes,
+  aiCache,
+  type AIProviderStatus,
+  type ExtractedConcept,
+  type ValidationResult,
+  type MedicalListDetection,
+  type VignetteConversion,
+} from "./ai-service";
 
 // ============================================================================
 // IPC Result Wrapper
@@ -475,6 +490,169 @@ export function registerIpcHandlers(): void {
       return failure(error);
     }
   });
+
+  // --------------------------------------------------------------------------
+  // AI Service Handlers
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "ai:getProviderStatus",
+    async (): Promise<IpcResult<AIProviderStatus>> => {
+      try {
+        const status = await getProviderStatus();
+        return success(status);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "ai:extractConcepts",
+    async (_, content: string): Promise<IpcResult<ExtractedConcept[]>> => {
+      try {
+        // Check cache first
+        const cacheKey = aiCache.key("extractConcepts", content);
+        const cached = aiCache.get<ExtractedConcept[]>(cacheKey);
+        if (cached) {
+          console.log("[IPC] ai:extractConcepts cache hit");
+          return success(cached);
+        }
+
+        const concepts = await extractConcepts(content);
+        aiCache.set(cacheKey, concepts);
+        return success(concepts);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "ai:validateCard",
+    async (
+      _,
+      front: string,
+      back: string,
+      cardType: "qa" | "cloze"
+    ): Promise<IpcResult<ValidationResult>> => {
+      try {
+        const cacheKey = aiCache.key("validateCard", front, back, cardType);
+        const cached = aiCache.get<ValidationResult>(cacheKey);
+        if (cached) {
+          console.log("[IPC] ai:validateCard cache hit");
+          return success(cached);
+        }
+
+        const result = await validateCard(front, back, cardType);
+        aiCache.set(cacheKey, result);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "ai:detectMedicalList",
+    async (_, content: string): Promise<IpcResult<MedicalListDetection>> => {
+      try {
+        const cacheKey = aiCache.key("detectMedicalList", content);
+        const cached = aiCache.get<MedicalListDetection>(cacheKey);
+        if (cached) {
+          console.log("[IPC] ai:detectMedicalList cache hit");
+          return success(cached);
+        }
+
+        const result = await detectMedicalList(content);
+        aiCache.set(cacheKey, result);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "ai:convertToVignette",
+    async (
+      _,
+      listItem: string,
+      context: string
+    ): Promise<IpcResult<VignetteConversion>> => {
+      try {
+        const cacheKey = aiCache.key("convertToVignette", listItem, context);
+        const cached = aiCache.get<VignetteConversion>(cacheKey);
+        if (cached) {
+          console.log("[IPC] ai:convertToVignette cache hit");
+          return success(cached);
+        }
+
+        const result = await convertToVignette(listItem, context);
+        aiCache.set(cacheKey, result);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "ai:suggestTags",
+    async (_, content: string): Promise<IpcResult<string[]>> => {
+      try {
+        const cacheKey = aiCache.key("suggestTags", content);
+        const cached = aiCache.get<string[]>(cacheKey);
+        if (cached) {
+          console.log("[IPC] ai:suggestTags cache hit");
+          return success(cached);
+        }
+
+        const tags = await suggestTags(content);
+        aiCache.set(cacheKey, tags);
+        return success(tags);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "ai:findRelatedNotes",
+    async (
+      _,
+      content: string,
+      minSimilarity?: number,
+      maxResults?: number
+    ): Promise<IpcResult<Array<{ noteId: string; similarity: number }>>> => {
+      try {
+        // Get all notes for comparison
+        const notes = noteQueries.getAll();
+        const matches = findRelatedNotes(
+          content,
+          notes,
+          minSimilarity,
+          maxResults
+        );
+        return success(matches);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "ai:clearCache",
+    async (): Promise<IpcResult<void>> => {
+      try {
+        aiCache.clear();
+        console.log("[IPC] AI cache cleared");
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
 
   console.log("[IPC] All handlers registered");
 }

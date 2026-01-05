@@ -19,8 +19,89 @@ import type {
   ValidationResult,
   MedicalListDetection,
   VignetteConversion,
+  SemanticMatch,
 } from '../src/types/ai';
+import type { DbNote } from './database';
 import OpenAI from 'openai';
+
+// ============================================================================
+// AI Result Cache
+// ============================================================================
+
+/** Cache entry with expiration timestamp */
+interface CacheEntry<T> {
+  result: T;
+  expires: number;
+}
+
+/** Simple content hash for cache keys */
+function hashContent(content: string): string {
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return hash.toString(36);
+}
+
+/** AI result cache with TTL */
+class AICache {
+  private cache = new Map<string, CacheEntry<unknown>>();
+  private defaultTTL = 300000; // 5 minutes
+
+  /**
+   * Get cached result if not expired.
+   */
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) {
+      return null;
+    }
+    if (Date.now() > entry.expires) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.result as T;
+  }
+
+  /**
+   * Set cache entry with optional TTL.
+   */
+  set<T>(key: string, result: T, ttlMs = this.defaultTTL): void {
+    this.cache.set(key, {
+      result,
+      expires: Date.now() + ttlMs,
+    });
+  }
+
+  /**
+   * Generate cache key from operation name and content.
+   */
+  key(operation: string, ...args: string[]): string {
+    return `${operation}:${args.map(hashContent).join(':')}`;
+  }
+
+  /**
+   * Clear all cached entries.
+   */
+  clear(): void {
+    this.cache.clear();
+  }
+
+  /**
+   * Get cache statistics.
+   */
+  stats(): { size: number; keys: string[] } {
+    return {
+      size: this.cache.size,
+      keys: Array.from(this.cache.keys()),
+    };
+  }
+}
+
+/** Global cache instance */
+export const aiCache = new AICache();
 
 // ============================================================================
 // Provider Presets
@@ -278,6 +359,62 @@ Check for common issues:
 - Cloze deletions that are too easy or ambiguous
 
 Respond with valid JSON only, no markdown formatting.`,
+
+  medicalListDetection: `You are a medical education AI assistant that identifies structured medical lists.
+Analyze the content to determine if it's a medical list that would benefit from vignette conversion.
+
+Types of medical lists:
+1. Differential diagnosis lists (DDx) - conditions that could cause a symptom/finding
+2. Procedure lists - steps in a medical procedure or algorithm
+3. Algorithm lists - decision trees or treatment pathways
+
+Indicators of a medical list:
+- Numbered or bulleted items
+- Common list headers: "Causes of...", "DDx for...", "Steps to...", "Treatment of..."
+- Multiple related medical terms in a structured format
+- Mnemonic-based content
+
+Extract each item as a standalone entry suitable for flashcard conversion.
+
+Respond with valid JSON only, no markdown formatting.`,
+
+  vignetteConversion: `You are a medical education AI assistant that converts medical list items into clinical vignettes.
+Your task is to transform a list item into a realistic patient scenario that tests the same knowledge.
+
+Guidelines for vignette creation:
+1. Include realistic patient demographics (age, sex when relevant)
+2. Present clinical findings that logically point to the answer
+3. Use "A X-year-old patient presents with..." format
+4. Include key history, physical exam, or lab findings
+5. Make each vignette independently answerable without needing sibling context
+6. Avoid giving away the answer in the presentation
+7. Keep vignettes concise (2-4 sentences)
+
+For the cloze version:
+- Create a fill-in-the-blank statement using {{c1::answer}} format
+- The cloze should test the same concept as the vignette
+
+Respond with valid JSON only, no markdown formatting.`,
+
+  tagSuggestion: `You are a medical education AI assistant that suggests relevant tags for medical content.
+Analyze the content and suggest 2-5 tags from these categories:
+
+Medical Specialties:
+cardiology, pulmonology, gastroenterology, nephrology, neurology, endocrinology,
+rheumatology, hematology, oncology, infectious-disease, dermatology, psychiatry,
+emergency-medicine, critical-care, pediatrics, obstetrics, surgery
+
+Foundational Sciences:
+anatomy, physiology, pathology, pharmacology, biochemistry, microbiology, immunology
+
+Content Types:
+diagnosis, treatment, mechanism, epidemiology, pathophysiology, clinical-presentation,
+differential-diagnosis, procedure, algorithm, lab-interpretation
+
+Only suggest tags that are directly relevant to the content.
+Prefer specific tags over general ones (e.g., "cardiology" over "medicine").
+
+Respond with valid JSON only, no markdown formatting.`,
 } as const;
 
 // ============================================================================
@@ -526,6 +663,253 @@ export async function validateCard(
 }
 
 // ============================================================================
+// Medical List Detection
+// ============================================================================
+
+/** Response format for medical list detection */
+interface MedicalListDetectionResponse {
+  isList: boolean;
+  listType: 'differential' | 'procedure' | 'algorithm' | null;
+  items: string[];
+}
+
+/**
+ * Detect if content is a medical list that should be converted to vignettes.
+ *
+ * @param content Content to analyze
+ * @returns Detection result with list type and extracted items
+ */
+export async function detectMedicalList(content: string): Promise<MedicalListDetection> {
+  if (!content.trim()) {
+    return { isList: false, listType: null, items: [] };
+  }
+
+  // Quick heuristic check before calling AI
+  const hasListIndicators =
+    content.includes('\n-') ||
+    content.includes('\n•') ||
+    content.includes('\n1.') ||
+    content.includes('\n1)') ||
+    /\b(ddx|differential|causes of|steps|algorithm)\b/i.test(content);
+
+  if (!hasListIndicators) {
+    return { isList: false, listType: null, items: [] };
+  }
+
+  try {
+    const response = await withRetry(async () => {
+      return await callAI(
+        PROMPTS.medicalListDetection,
+        `Analyze this content to determine if it's a medical list:\n\n${content}`
+      );
+    });
+
+    const parsed = parseAIResponse<MedicalListDetectionResponse>(response);
+
+    return {
+      isList: parsed.isList ?? false,
+      listType: parsed.listType ?? null,
+      items: Array.isArray(parsed.items) ? parsed.items : [],
+    };
+  } catch (error) {
+    console.error('[AI Service] Medical list detection failed:', error);
+    // Return non-list on error to allow normal processing
+    return { isList: false, listType: null, items: [] };
+  }
+}
+
+// ============================================================================
+// Vignette Conversion
+// ============================================================================
+
+/** Response format for vignette conversion */
+interface VignetteConversionResponse {
+  vignette: string;
+  cloze: string;
+}
+
+/**
+ * Convert a medical list item to a clinical vignette and cloze deletion.
+ *
+ * @param listItem The list item to convert (e.g., "Acute MI")
+ * @param context Additional context about the list (e.g., "DDx for chest pain")
+ * @returns Vignette and cloze versions of the content
+ */
+export async function convertToVignette(
+  listItem: string,
+  context: string
+): Promise<VignetteConversion> {
+  if (!listItem.trim()) {
+    throw new Error('List item is required for vignette conversion');
+  }
+
+  try {
+    const prompt = context
+      ? `Convert this medical list item to a clinical vignette.\n\nContext: ${context}\nItem: ${listItem}`
+      : `Convert this medical list item to a clinical vignette.\n\nItem: ${listItem}`;
+
+    const response = await withRetry(async () => {
+      return await callAI(PROMPTS.vignetteConversion, prompt);
+    });
+
+    const parsed = parseAIResponse<VignetteConversionResponse>(response);
+
+    if (!parsed.vignette || !parsed.cloze) {
+      throw new Error('Invalid vignette conversion response');
+    }
+
+    return {
+      vignette: parsed.vignette,
+      cloze: parsed.cloze,
+    };
+  } catch (error) {
+    console.error('[AI Service] Vignette conversion failed:', error);
+    throw error;
+  }
+}
+
+// ============================================================================
+// Tag Suggestions
+// ============================================================================
+
+/** Response format for tag suggestions */
+interface TagSuggestionResponse {
+  tags: string[];
+}
+
+/**
+ * Suggest relevant medical domain tags for content.
+ *
+ * @param content Content to analyze for tags
+ * @returns Array of suggested tag strings
+ */
+export async function suggestTags(content: string): Promise<string[]> {
+  if (!content.trim()) {
+    return [];
+  }
+
+  try {
+    const response = await withRetry(async () => {
+      return await callAI(
+        PROMPTS.tagSuggestion,
+        `Suggest relevant medical tags for this content:\n\n${content}`
+      );
+    });
+
+    const parsed = parseAIResponse<TagSuggestionResponse>(response);
+
+    // Normalize tags: lowercase, trim, filter empty
+    const tags = Array.isArray(parsed.tags) ? parsed.tags : [];
+    return tags
+      .map(tag => tag.toLowerCase().trim())
+      .filter(tag => tag.length > 0)
+      .slice(0, 5); // Limit to 5 tags
+  } catch (error) {
+    console.error('[AI Service] Tag suggestion failed:', error);
+    // Return empty array on error - tags are optional
+    return [];
+  }
+}
+
+// ============================================================================
+// Semantic Similarity (Keyword-based for MVP)
+// ============================================================================
+
+/**
+ * Calculate simple term frequency for a text.
+ * Normalizes text and counts word occurrences.
+ */
+function getTermFrequency(text: string): Map<string, number> {
+  const words = text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 2); // Skip very short words
+
+  const freq = new Map<string, number>();
+  for (const word of words) {
+    freq.set(word, (freq.get(word) || 0) + 1);
+  }
+  return freq;
+}
+
+/**
+ * Calculate cosine similarity between two term frequency maps.
+ */
+function cosineSimilarity(
+  tf1: Map<string, number>,
+  tf2: Map<string, number>
+): number {
+  let dotProduct = 0;
+  let norm1 = 0;
+  let norm2 = 0;
+
+  // Calculate dot product and norm1
+  tf1.forEach((count, word) => {
+    norm1 += count * count;
+    if (tf2.has(word)) {
+      dotProduct += count * tf2.get(word)!;
+    }
+  });
+
+  // Calculate norm2
+  tf2.forEach((count) => {
+    norm2 += count * count;
+  });
+
+  if (norm1 === 0 || norm2 === 0) {
+    return 0;
+  }
+
+  return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+}
+
+/**
+ * Find notes semantically related to the given content.
+ * Uses TF-IDF-style keyword matching for MVP (vector embeddings post-MVP).
+ *
+ * @param content Content to find related notes for
+ * @param existingNotes Array of existing notes to search
+ * @param minSimilarity Minimum similarity threshold (default 0.1)
+ * @param maxResults Maximum number of results (default 5)
+ * @returns Array of semantic matches sorted by similarity
+ */
+export function findRelatedNotes(
+  content: string,
+  existingNotes: DbNote[],
+  minSimilarity = 0.1,
+  maxResults = 5
+): SemanticMatch[] {
+  if (!content.trim() || existingNotes.length === 0) {
+    return [];
+  }
+
+  const contentTF = getTermFrequency(content);
+
+  const matches: SemanticMatch[] = [];
+
+  for (const note of existingNotes) {
+    // Combine title and content for comparison
+    const noteText = `${note.title} ${note.content}`;
+    const noteTF = getTermFrequency(noteText);
+
+    const similarity = cosineSimilarity(contentTF, noteTF);
+
+    if (similarity >= minSimilarity) {
+      matches.push({
+        noteId: note.id,
+        similarity: Math.round(similarity * 1000) / 1000, // Round to 3 decimal places
+      });
+    }
+  }
+
+  // Sort by similarity descending and limit results
+  return matches
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, maxResults);
+}
+
+// ============================================================================
 // Exports
 // ============================================================================
 
@@ -535,4 +919,7 @@ export {
   type AIProviderStatus,
   type ExtractedConcept,
   type ValidationResult,
+  type MedicalListDetection,
+  type VignetteConversion,
+  type SemanticMatch,
 } from '../src/types/ai';
