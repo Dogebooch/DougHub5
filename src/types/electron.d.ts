@@ -85,7 +85,8 @@ export interface ElectronAPI {
     getByCard: (cardId: string) => Promise<IpcResult<ReviewLog[]>>;
     schedule: (
       cardId: string,
-      rating: RatingValue
+      rating: RatingValue,
+      responseTimeMs?: number | null
     ) => Promise<IpcResult<ScheduleResult>>;
   };
   quickDumps: {

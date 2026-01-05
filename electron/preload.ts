@@ -26,8 +26,11 @@ const api = {
     log: (review: unknown) => ipcRenderer.invoke("reviews:log", review),
     getByCard: (cardId: string) =>
       ipcRenderer.invoke("reviews:getByCard", cardId),
-    schedule: (cardId: string, rating: number) =>
-      ipcRenderer.invoke("reviews:schedule", cardId, rating),
+    schedule: (
+      cardId: string,
+      rating: number,
+      responseTimeMs?: number | null
+    ) => ipcRenderer.invoke("reviews:schedule", cardId, rating, responseTimeMs),
   },
   quickDumps: {
     getAll: () => ipcRenderer.invoke("quickDumps:getAll"),

@@ -290,10 +290,18 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     });
   },
 
-  scheduleCardReview: async (cardId: string, rating: RatingValue) => {
+  scheduleCardReview: async (
+    cardId: string,
+    rating: RatingValue,
+    responseTimeMs?: number | null
+  ) => {
     try {
       if (typeof window !== "undefined" && window.api) {
-        const result = await window.api.reviews.schedule(cardId, rating);
+        const result = await window.api.reviews.schedule(
+          cardId,
+          rating,
+          responseTimeMs
+        );
         if (result.error) {
           console.error("[Store] Failed to schedule review:", result.error);
           return { success: false, error: result.error };

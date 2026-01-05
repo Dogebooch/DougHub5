@@ -28,6 +28,7 @@ export function ReviewInterface() {
     null
   );
   const [isPaused, setIsPaused] = useState(false);
+  const [showManualGradeSelector, setShowManualGradeSelector] = useState(false);
 
   // Track mount status
   useEffect(() => {
@@ -90,13 +91,27 @@ export function ReviewInterface() {
     setCurrentView("capture");
   }, [setCurrentView]);
 
+  const calculateAutoRating = useCallback((responseTimeMs: number) => {
+    if (responseTimeMs < 5000) return Rating.Easy;
+    if (responseTimeMs < 15000) return Rating.Good;
+    if (responseTimeMs < 30000) return Rating.Hard;
+    return Rating.Again;
+  }, []);
+
   const handleRating = useCallback(
-    async (rating: (typeof Rating)[keyof typeof Rating]): Promise<boolean> => {
+    async (
+      rating: (typeof Rating)[keyof typeof Rating],
+      responseTimeMs?: number | null
+    ): Promise<boolean> => {
       if (!currentCard || isSubmitting) return false;
 
       setIsSubmitting(true);
       try {
-        const result = await scheduleCardReview(currentCard.id, rating);
+        const result = await scheduleCardReview(
+          currentCard.id,
+          rating,
+          responseTimeMs
+        );
 
         if (!result.success) {
           toast({
@@ -167,33 +182,57 @@ export function ReviewInterface() {
     // Prevent accidental double-taps/skipping answer
     if (rawResponseTimeMs < CONTINUE_LOCKOUT_MS) return;
 
-    // -1 signals an interrupted session (user exceeded timeout)
-    const responseTimeMs = isPaused ? -1 : rawResponseTimeMs;
+    if (isPaused) {
+      setShowManualGradeSelector(true);
+      return;
+    }
 
-    console.log(`[Review] Response time: ${responseTimeMs}ms`);
+    const responseTimeMs = rawResponseTimeMs;
+    const rating = calculateAutoRating(responseTimeMs);
 
-    // Placeholder until 5.3's auto-rating logic
-    const success = await handleRating(Rating.Good);
+    console.log(`[Review] Auto-rating: ${rating} (${responseTimeMs}ms)`);
+
+    const success = await handleRating(rating, responseTimeMs);
 
     if (success && isMounted.current) {
       // Reset for next card
       setResponseStartTime(null);
       setIsPaused(false);
+      setShowManualGradeSelector(false);
     }
-  }, [responseStartTime, isPaused, handleRating, isSubmitting]);
+  }, [
+    responseStartTime,
+    isPaused,
+    handleRating,
+    isSubmitting,
+    calculateAutoRating,
+  ]);
 
   const handleForgot = useCallback(async () => {
     if (isSubmitting) return;
 
-    // Explicitly forced Again rating
-    const success = await handleRating(Rating.Again);
+    // Explicitly forced Again rating, no response time (manual failure)
+    const success = await handleRating(Rating.Again, null);
 
     if (success && isMounted.current) {
       // Reset for next card
       setResponseStartTime(null);
       setIsPaused(false);
+      setShowManualGradeSelector(false);
     }
   }, [handleRating, isSubmitting]);
+
+  const handleManualGrade = useCallback(
+    async (rating: (typeof Rating)[keyof typeof Rating]) => {
+      const success = await handleRating(rating, null);
+      if (success && isMounted.current) {
+        setResponseStartTime(null);
+        setIsPaused(false);
+        setShowManualGradeSelector(false);
+      }
+    },
+    [handleRating]
+  );
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -228,6 +267,8 @@ export function ReviewInterface() {
     handleContinue,
     navigateToCapture,
     isSubmitting,
+    showManualGradeSelector,
+    isPaused,
   ]);
 
   if (!isHydrated) {
@@ -369,6 +410,51 @@ export function ReviewInterface() {
             Show Answer
             <span className="ml-2 text-xs opacity-70">(Space)</span>
           </Button>
+        ) : showManualGradeSelector ? (
+          <div className="flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="text-center space-y-2">
+              <p className="font-medium text-foreground">
+                Looks like you stepped away. How did this feel?
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Auto-rating is disabled for interrupted sessions.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="destructive"
+                onClick={() => handleManualGrade(Rating.Again)}
+                disabled={isSubmitting}
+                className="min-w-[100px]"
+              >
+                Again
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleManualGrade(Rating.Hard)}
+                disabled={isSubmitting}
+                className="min-w-[100px] text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-300"
+              >
+                Hard
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleManualGrade(Rating.Good)}
+                disabled={isSubmitting}
+                className="min-w-[100px] text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
+              >
+                Good
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleManualGrade(Rating.Easy)}
+                disabled={isSubmitting}
+                className="min-w-[100px] text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 hover:border-green-300"
+              >
+                Easy
+              </Button>
+            </div>
+          </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
             <Button

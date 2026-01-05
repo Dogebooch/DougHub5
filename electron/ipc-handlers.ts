@@ -265,7 +265,8 @@ export function registerIpcHandlers(): void {
     async (
       _,
       cardId: string,
-      rating: Rating
+      rating: Rating,
+      responseTimeMs?: number | null
     ): Promise<
       IpcResult<{
         card: DbCard;
@@ -274,7 +275,12 @@ export function registerIpcHandlers(): void {
       }>
     > => {
       try {
-        const result = scheduleReview(cardId, rating);
+        const result = scheduleReview(
+          cardId,
+          rating,
+          new Date(),
+          responseTimeMs
+        );
         return success(result);
       } catch (error) {
         return failure(error);

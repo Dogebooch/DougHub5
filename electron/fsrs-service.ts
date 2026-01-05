@@ -82,10 +82,11 @@ export interface ScheduleReviewResult {
 export function scheduleReview(
   cardId: string,
   rating: Rating,
-  reviewTime: Date = new Date()
+  reviewTime: Date = new Date(),
+  responseTimeMs: number | null = null
 ): ScheduleReviewResult {
   const db = getDatabase();
-  
+
   // Get current card from database
   const cards = cardQueries.getAll();
   const dbCard = cards.find((c) => c.id === cardId);
@@ -95,13 +96,12 @@ export function scheduleReview(
 
   // Convert to FSRS format
   // If state is 0 (New), create empty card; otherwise convert existing
-  const fsrsCard = dbCard.state === 0
-    ? createEmptyCard(reviewTime)
-    : toFSRSCard(dbCard);
+  const fsrsCard =
+    dbCard.state === 0 ? createEmptyCard(reviewTime) : toFSRSCard(dbCard);
 
   // Get scheduling for all ratings (for interval preview)
   const recordLog = fsrs.repeat(fsrsCard, reviewTime);
-  
+
   // Get the specific result for the user's rating
   // Use explicit indexing since ts-fsrs uses Rating enum as keys
   let scheduled: RecordLogItem;
@@ -121,7 +121,7 @@ export function scheduleReview(
     default:
       throw new Error(`Invalid rating: ${rating}`);
   }
-  
+
   // Convert back to our format
   const fsrsUpdates = fromFSRSCard(scheduled.card);
   const updatedCard: DbCard = { ...dbCard, ...fsrsUpdates };
@@ -136,7 +136,7 @@ export function scheduleReview(
     elapsedDays: scheduled.log.elapsed_days,
     review: reviewTime.toISOString(),
     createdAt: new Date().toISOString(),
-    responseTimeMs: null, // Can be populated by caller if needed
+    responseTimeMs,
     partialCreditScore: null, // Can be populated by caller if needed
   };
 
