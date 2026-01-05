@@ -167,7 +167,7 @@
         "dependencies": [
           "2"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -230,7 +230,8 @@
             "testStrategy": "E2E test: paste medical content → verify concepts extracted → select/deselect multiple → override format → save → verify cards created with correct FSRS defaults and parent Note. Test save feedback appears <500ms. Verify total workflow completes <20s.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-01-05T01:35:02.309Z"
       },
       {
         "id": "4",
@@ -646,9 +647,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-05T01:22:53.351Z",
+      "lastModified": "2026-01-05T01:35:02.310Z",
       "taskCount": 16,
-      "completedCount": 2,
+      "completedCount": 3,
       "tags": [
         "master"
       ]

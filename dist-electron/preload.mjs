@@ -43,6 +43,21 @@ const api = {
   },
   db: {
     status: () => electron.ipcRenderer.invoke("db:status")
+  },
+  ai: {
+    getProviderStatus: () => electron.ipcRenderer.invoke("ai:getProviderStatus"),
+    extractConcepts: (content) => electron.ipcRenderer.invoke("ai:extractConcepts", content),
+    validateCard: (front, back, cardType) => electron.ipcRenderer.invoke("ai:validateCard", front, back, cardType),
+    detectMedicalList: (content) => electron.ipcRenderer.invoke("ai:detectMedicalList", content),
+    convertToVignette: (listItem, context) => electron.ipcRenderer.invoke("ai:convertToVignette", listItem, context),
+    suggestTags: (content) => electron.ipcRenderer.invoke("ai:suggestTags", content),
+    findRelatedNotes: (content, minSimilarity, maxResults) => electron.ipcRenderer.invoke(
+      "ai:findRelatedNotes",
+      content,
+      minSimilarity,
+      maxResults
+    ),
+    clearCache: () => electron.ipcRenderer.invoke("ai:clearCache")
   }
 };
 electron.contextBridge.exposeInMainWorld("api", api);
