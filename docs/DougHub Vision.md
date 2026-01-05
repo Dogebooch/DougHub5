@@ -17,10 +17,45 @@ per session answering:
 These decisions prevent studying from starting.
 
 ## Core Insight
-Extraction IS the learning. Active recall during capture embeds knowledge better 
-than passive saving. AI reduces friction by suggesting concepts and formats—user 
-confirms, edits, or adds. Exhaustion escape hatch (Quick Dump) ensures capture 
+Extraction IS the learning. Active recall during capture embeds knowledge better
+than passive saving. AI reduces friction by suggesting concepts and formats—user
+confirms, edits, or adds. Exhaustion escape hatch (Quick Dump) ensures capture
 still happens when energy is zero.
+
+## v2 Architecture: 3-Layer System
+**Primary Anxiety Addressed:** Extracting information from multiple sources → compiling into one readable place → extracting high-yield content for boards/bedside → converting to effective flashcards.
+
+```
+LAYER 1: KNOWLEDGE BANK (Inbox/Library)
+├── SourceItems: Raw captures from any source (qbank, article, pdf, image, audio, quickcapture)
+├── Status flow: inbox → processed → curated
+├── AI auto-tags, user confirms/edits via single Save
+├── Searchable, filterable via Smart Views
+└── CANNOT create cards here (enforced)
+         ↓
+    User selects, adds to topic
+         ↓
+LAYER 2: PERSONAL NOTEBOOK (Curated Topics)
+├── NotebookTopicPages: User-created canonical topics
+├── Contains excerpts/blocks from SourceItems (deep-linked)
+├── Topic aliasing: HOCM = "Hypertrophic Cardiomyopathy"
+├── THIS is where flashcards are created
+└── Card-worthiness gate before creation
+         ↓
+    AI generates, user confirms
+         ↓
+LAYER 3: FLASHCARDS (Study Deck)
+├── Cards linked to NotebookTopicPage (provenance)
+├── FSRS scheduling, zero-decision review
+├── Low-ease detection → "fix card" flow
+└── Board-miss tracking → topic suggestions
+```
+
+### Key Principles
+- **Minimize card burden:** Card-worthiness gate evaluates every card before creation
+- **Notebook-only card creation:** Enforced constraint—prevents low-yield card anxiety
+- **Topic standardization:** CanonicalTopic with alias normalization (never raw strings)
+- **Deep links everywhere:** Card → Notebook → Source always traceable
 
 ## Target User
 IM/EM residents with ADHD studying for boards. Post-shift exhaustion, zero 
@@ -31,21 +66,30 @@ Achieve 20-30% reduction in daily flashcard workload while improving retention
 through AI-personalized scheduling—enabled by evidence-based design and data 
 collected from day one.
 
-## MVP Scope - Executive Final
-1. **AI concept highlighting** - Paste content, AI highlights extractable concepts using minimum information principle
-2. **User extraction confirmation** - Checkboxes to confirm/reject/edit AI suggestions
-3. **AI card format suggestions** - AI recommends cloze vs Q&A per concept based on medical content type
-4. **Evidence-based card validation** - Real-time warnings using SuperMemo principles (minimum information, no pattern-matching cards, medical list detection)
-5. **Quick Dump** - Raw save when too tired to extract
-6. **Extraction queue** - Process Quick Dumps later with same guided workflow
-7. **Auto note creation** - Notes created from extractions with bidirectional links
-8. **Bidirectional linking** - Cards ↔ Notes always connected, context always available
-9. **Connection suggestions** - AI surfaces related notes during extraction using semantic similarity
-10. **Tag-based organization** - No folders, tags only, AI suggests medical domain tags
-11. **Search-first navigation** - Global search <200ms across cards and notes
-12. **FSRS scheduling implementation** - Complete ts-fsrs integration, no grading decisions, 20-30% efficiency target
-13. **Medical list processing** - Clinical context conversion for differential diagnoses, overlapping cloze for procedures
-14. **Performance data foundation** - Silent collection of response times, domains, accuracy for future AI personalization
+## MVP Scope - v2 Architecture
+### Layer 1: Knowledge Bank
+1. **Capture pipeline** - Quick Dump → SourceItem (inbox), text + image support
+2. **Inbox UI** - Persistent indicator, count badge, batch triage actions
+3. **Knowledge Bank UI** - Vertical list grouped by status, search, filters
+4. **Smart Views** - System views (Inbox, Today, Queue, Weak Topics), filter engine
+5. **Single Save pattern** - No separate metadata confirm, AI formats consistently
+
+### Layer 2: Personal Notebook
+6. **Notebook UI** - Topic pages, add blocks from sources, enforce card-creation here only
+7. **Topic normalization** - CanonicalTopic with alias table, matching rules, dedupe prevention
+8. **Deep-linked excerpts** - Notebook blocks link back to SourceItems
+
+### Layer 3: Flashcards
+9. **Card generation from notebook** - AI suggests, card-worthiness gate evaluates
+10. **Card-worthiness gate** - Rubric (board-relevant? testable? discriminative?)
+11. **FSRS integration** - Scheduling fields, review UI, response time tracking
+12. **Low-ease detection** - Flag repeatedly-hard cards, route to fix flow
+13. **Board question tracking** - Ingest missed Q's, map to topics, suggest deep-dive
+
+### Cross-Cutting
+14. **Medical list processing** - Clinical vignettes or overlapping cloze (no basic lists)
+15. **Search-first navigation** - Global search <200ms via command palette
+16. **Performance data foundation** - Silent collection for future AI personalization
 
 ## Technical Stack Requirements - Executive Mandated
 - **Frontend:** Electron + React + TypeScript + TailwindCSS
@@ -77,51 +121,10 @@ collected from day one.
 - **No feature decisions during capture** - AI suggests, user confirms with minimal choices
 - **No manual scheduling decisions** - Complete automation of review timing
 
-## Success Metrics - Research-Based Targets
-### Primary Success (Evidence Required):
-- **FSRS efficiency:** 20-30% reduction in daily review time vs SM-2 baseline
-- **Capture speed:** <20 seconds from paste to saved (eliminates decision paralysis)
-- **Medical retention:** >85% accuracy on 6-month-old cards (medical education standard)
-- **Clinical application:** Medical lists converted to realistic bedside scenarios (>80% accuracy)
-
-### Technical Performance (Non-Negotiable):
-- **Search response:** <200ms for any query across 1000+ cards
-- **Data persistence:** Zero data loss on crash (auto-backup, recovery)
-- **Offline capability:** Core features work without internet
-- **Platform reliability:** Works on standard resident laptops without setup
-
-### User Adoption (Validation Targets):
-- **Daily usage:** Doug uses this instead of current workflow for 2+ weeks
-- **Cognitive load:** Can use effectively when post-shift exhausted
-- **Trust building:** Never loses work, always predictable behavior
-
 ## Medical Education Research Applied
 1. **Minimum Information Principle:** AI enforces one discrete fact per card
-2. **Clinical Context over Lists:** Transform "5 causes of X" into "Patient presents with Y, what's the diagnosis?"
+2. **Clinical Context over Lists:** Transform "5 causes of X" into "Patient presents with Y..."
 3. **FSRS Algorithm:** 99.6% superiority over SM-2, 20-30% workload reduction validated
 4. **Medical List Handling:** Overlapping cloze or clinical scenarios prevent sibling contamination
-5. **Response Time Intelligence:** Foundation for 2-5% retention improvements through personalization
 
-## Implementation Phases
-### Phase 1 (MVP Core - Month 1):
-- Complete capture workflow with AI assistance
-- FSRS implementation with silent data collection
-- Evidence-based card validation
-- Medical list processing (clinical context conversion)
-
-### Phase 2 (Data-Driven - Month 2):
-- Response time intelligence for interval adjustment
-- Advanced medical list formats based on content type
-- Performance optimization using collected data
-
-### Phase 3 (Personalization - Month 3+):
-- Individual forgetting curve optimization
-- Domain-specific scheduling (cardiology vs pharmacology)
-- Semantic interference detection for similar medical terms
-
-## Key Architectural Decisions
-1. **Local-First:** SQLite database, offline-capable, cloud sync later
-2. **Evidence-Based AI:** All suggestions follow medical flashcard research
-3. **Silent Intelligence:** Data collection and personalization happen transparently
-4. **Medical-Specific:** Content processing understands medical terminology and concepts
-5. **Exhaustion-Proof:** Every workflow designed for post-shift cognitive state
+*Detailed metrics in `docs/DougHub Success Metrics.md`. Implementation tasks in Taskmaster.*

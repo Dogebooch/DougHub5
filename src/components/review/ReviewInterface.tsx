@@ -376,7 +376,7 @@ export function ReviewInterface() {
               variant="outline"
               onClick={() => handleRating(Rating.Easy)}
               disabled={isSubmitting}
-              className="min-w-[100px] border-green-500 text-green-600 hover:bg-green-50"
+              className="min-w-[100px] border-success text-success-foreground hover:bg-success/10"
             >
               <span className="flex flex-col items-center">
                 <span>Easy</span>

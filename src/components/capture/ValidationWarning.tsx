@@ -29,9 +29,9 @@ export function ValidationWarning({ validation }: ValidationWarningProps) {
 
       {/* Suggestions */}
       {validation.suggestions.length > 0 && (
-        <Alert className="py-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50">
-          <Lightbulb className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertDescription className="text-xs text-blue-800 dark:text-blue-300">
+        <Alert className="py-2 border-info/30 bg-info/10">
+          <Lightbulb className="h-4 w-4 text-info-foreground" />
+          <AlertDescription className="text-xs text-info-foreground">
             <ul className="list-disc list-inside space-y-0.5">
               {validation.suggestions.map((suggestion, i) => (
                 <li key={i}>{suggestion}</li>

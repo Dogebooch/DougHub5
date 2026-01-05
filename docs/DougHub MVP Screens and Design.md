@@ -1,129 +1,218 @@
-# DougHub MVP Screens & Design - Final Specifications
+# DougHub MVP Screens & Design - v2 Architecture
 
 ## Design Philosophy & Research Foundation
 
 ### Core Design Principle
-**Eliminate 10+ minutes of decision paralysis per study session through AI suggestions + instant confirmation while preserving user agency.**
+**3-layer architecture (Knowledge Bank → Notebook → Cards) with enforced card-creation constraint and card-worthiness gating.**
 
 ### User Reality Constraints
 - **Post-shift exhaustion:** Zero tolerance for admin work, complex decisions
-- **<20 second capture requirement:** Hard constraint for session initiation  
+- **<20 second capture requirement:** Hard constraint for session initiation
 - **≤2 clicks maximum:** For any core workflow
-- **Decision fatigue:** Must work when cognitively depleted
+- **Card anxiety:** Minimize low-yield cards through AI gatekeeping
 
 ### Research-Based Design Insights
 - **5-7 navigation options max** to avoid overwhelming users
-- **Single adaptive screen** preferred over multiple separate screens
-- **Search-first interfaces** eliminate folder hierarchies  
-- **Command palette patterns** (Cmd+K) for power users
-- **Progressive disclosure** reveals complexity only when requested
+- **Smart Views** provide filtered access without manual organization
+- **Search-first interfaces** eliminate folder hierarchies
+- **Command palette patterns** (Ctrl+K) for power users
+- **Vertical list MVP** - grid deferred (research shows lists better for scanning)
 
 ---
 
 ## MVP Screen Architecture
 
-### DECISION: 2 Primary Screens + Overlay System
-*Based on Apple's design consolidation principles and exhausted user constraints*
+### DECISION: 2 Screens + Smart View Sidebar
+*Based on Linear UI patterns and Things 3 Smart Lists paradigm*
 
 ---
 
-## Screen 1: Unified Workspace (Primary Interface)
+## Screen 1: Unified Workspace
 
-### Layout Philosophy
-**Things 3 + Linear hybrid:** Single adaptive interface that changes context while maintaining consistent navigation
-
-### Screen Structure
+### Layout Structure
 ```
-┌─ Global Search Bar (Always Visible) ───────────────┐
-├─ Quick Actions Row ─────────────────────────────────┤
-│  [Quick Dump] [Today's Reviews: 5] [Settings]      │
-├─ Main Content Area (Context-Sensitive) ────────────┤
-│                                                     │
-│  DEFAULT STATE: Capture Interface                  │
-│  • Large paste area (prominent focus)              │
-│  • AI suggestions appear below paste               │
-│  • One-click confirmation workflow                 │
-│                                                     │
-│  SEARCH STATE: Unified Results                     │
-│  • Cards + Notes in single list                    │
-│  • Preview on hover, click to open                 │
-│                                                     │
-│  QUEUE STATE: Extraction Queue                     │
-│  • Batch process Quick Dumps                       │
-│  • Same guided capture flow                        │
-│                                                     │
-└─ Status Bar ───────────────────────────────────────┘
-   Extraction count • Connection suggestions • Progress
+┌─ DougHub ─────────────────────────────────────────────────────────┐
+│ [≡] [🔍 Search... Ctrl+K]                          [⚙️] [👤]      │
+├───────────────────┬───────────────────────────────────────────────┤
+│                   │                                               │
+│  SMART VIEWS      │  MAIN CONTENT AREA                           │
+│  ─────────────    │  (adapts to selected view)                   │
+│  📥 Inbox (5)     │                                               │
+│  📅 Today (12)    │  ┌─ INBOX ──────────────────────────────────┐ │
+│  📋 Queue         │  │                                          │ │
+│  📚 Notebook      │  │  [─ Today ─────────────────────────────] │ │
+│  🏷️ Topics        │  │  ┌────────────────────────────────────┐  │ │
+│  📊 Stats         │  │  │ 📄 UWorld Q#1234                   │  │ │
+│                   │  │  │    Cardiology • inbox              │  │ │
+│  ─────────────    │  │  │    [Add to Notebook ▼] [Open] [🗑️] │  │ │
+│  WEAK TOPICS      │  │  └────────────────────────────────────┘  │ │
+│  ⚠️ HOCM (3)      │  │  ┌────────────────────────────────────┐  │ │
+│  ⚠️ HF (2)        │  │  │ 🖼️ Anatomy - Knee                  │  │ │
+│                   │  │  │    Orthopedics • inbox             │  │ │
+│                   │  │  │    [Add to Notebook ▼] [Open] [🗑️] │  │ │
+│                   │  │  └────────────────────────────────────┘  │ │
+│                   │  │                                          │ │
+│                   │  └──────────────────────────────────────────┘ │
+├───────────────────┴───────────────────────────────────────────────┤
+│  ✓ Auto-saved • 847 cards • 156 sources     [⚡ Quick Dump Ctrl+⇧S]│
+└───────────────────────────────────────────────────────────────────┘
 ```
 
-### State Management & Transitions
-- **Default State:** Capture interface (80% of usage)
-- **Search State:** Global search overlays content area  
-- **Queue State:** Processing saved Quick Dumps
-- **All states preserve:** Search bar + Quick actions always accessible
-- **No tabs or complex navigation:** Context switches within same screen
+### Smart Views (Sidebar)
+| View | Filter | Badge |
+|------|--------|-------|
+| **Inbox** | status='inbox' | Count |
+| **Today** | Due cards + recent captures | Count |
+| **Queue** | Quick dumps pending | Count |
+| **Notebook** | All NotebookTopicPages | - |
+| **Topics** | CanonicalTopic browser | - |
+| **Stats** | Dashboard | - |
+| **Weak Topics** | Topics with low-ease cards | Count |
 
-### Navigation Patterns
-- **Search-first:** Global search from any state (Cmd+F)
-- **One-click Quick Dump:** Always accessible emergency capture
-- **Keyboard shortcuts:** Cmd+K command palette for power users
-- **Context preservation:** Never lose place when switching states
+### Source Item Row (Vertical List)
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ [📄] UWorld Q#1234 - Troponin in Acute MI                        │
+│      Cardiology • STEMI • inbox • 2 hours ago                    │
+│      [Add to Notebook ▼]  [Open]  [🗑️]                           │
+└──────────────────────────────────────────────────────────────────┘
+```
+- **Icon** indicates source type (📄 text, 🖼️ image, 🎤 audio, ⚡ quick)
+- **Primary action:** "Add to Notebook" (NOT "Create Card")
+- **Button hierarchy:** Primary (purple), Secondary (gray), Destructive (icon + confirm)
 
 ---
 
-## Screen 2: Review Interface (Secondary Focus)
+## Notebook Topic Page View
 
-### Layout Philosophy  
-**Dedicated distraction-free space** - no organizational decisions, pure focus on content
-
-### Screen Structure
+### Layout Structure
 ```
-┌─ Progress Indicator ─────────────────────────────────┐
-│  Card 3 of 15 • Cardiology • 47% Complete          │
-├─ Card Display Area ─────────────────────────────────┤
-│                                                      │
-│              [CARD CONTENT]                          │
-│                                                      │
-│         Front: "HOCM Causes"                         │
-│         Back: [Hidden until revealed]                │
-│                                                      │
-├─ Source Context (Subtle Reference) ─────────────────┤
-│  From: "Heart Failure Workup" note • 3 related cards│
-├─ Review Actions ────────────────────────────────────┤
-│  [Show Answer] [Continue] [Edit Source] [Skip]       │
-└─ Quick Return ──────────────────────────────────────┘
-   [← Back to Workspace]
+┌─ Topic: Acute MI ─────────────────────────────────────────────────┐
+│  Aliases: STEMI, Myocardial Infarction                           │
+│  Cards: 12 • Sources: 4 • Last updated: 2h ago                   │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌─ From: UWorld Q#1234 ───────────────────────────────────────┐ │
+│  │ "Troponin I is the most specific marker for myocardial      │ │
+│  │  injury, with levels rising 3-6 hours after onset..."       │ │
+│  │                                                              │ │
+│  │ [Edit] [→ Source] [Generate Card]                           │ │
+│  └──────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌─ From: UpToDate ────────────────────────────────────────────┐ │
+│  │ "Door-to-balloon time should be <90 minutes..."             │ │
+│  │                                                              │ │
+│  │ [Edit] [→ Source] [Generate Card]                           │ │
+│  └──────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│  [+ Add from Knowledge Bank]              [Generate All Cards]   │
+└──────────────────────────────────────────────────────────────────┘
+```
+- **Blocks** are excerpts from SourceItems (deep-linked)
+- **"Generate Card"** is ONLY available here (enforced constraint)
+- **Topic aliasing** shown at top (HOCM = "Hypertrophic Cardiomyopathy")
+
+---
+
+## Card-Worthiness Gate (Before Card Creation)
+
+```
+┌─ Card Quality Check ─────────────────────────────────────────────┐
+│                                                                  │
+│  "What is the most specific marker for myocardial injury?"       │
+│  → Troponin I                                                    │
+│                                                                  │
+│  ┌─ AI Assessment ──────────────────────────────────────────────┐│
+│  │ ✓ Board-relevant (high-yield for Step 2/3)                   ││
+│  │ ✓ Testable (clear right answer)                              ││
+│  │ ✓ Discriminative (distinguishes from similar concepts)       ││
+│  │ ⚠️ Consider: "Why troponin vs CK-MB?" for deeper learning    ││
+│  └──────────────────────────────────────────────────────────────┘│
+│                                                                  │
+│  Recommendation: ✅ CREATE CARD                                  │
+│                                                                  │
+│  [Create Card]  [Keep as Note Only]  [Edit First]  [Discard]    │
+└──────────────────────────────────────────────────────────────────┘
+```
+- **Rubric:** Board-relevant? Testable? Discriminative?
+- **AI suggestion** but user makes final decision
+- **Prevents low-yield card anxiety**
+
+---
+
+## Screen 2: Review Interface
+
+### Layout Structure
+```
+┌─ REVIEW ──────────────────────────────────────────────────────────┐
+│  Card 3/15 • #cardiology • ████████░░░░ 47%          [← Back]    │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│         ┌────────────────────────────────────────────┐           │
+│         │                                            │           │
+│         │  What causes LVOT obstruction in HOCM?     │           │
+│         │                                            │           │
+│         │           [ Show Answer ]                  │           │
+│         │               Space                        │           │
+│         │                                            │           │
+│         └────────────────────────────────────────────┘           │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│  📄 From: "HOCM Notes" • 🔗 4 related cards                      │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### After Answer Reveal
+```
+│         ┌────────────────────────────────────────────┐           │
+│         │  What causes LVOT obstruction in HOCM?     │           │
+│         │  ─────────────────────────────────────     │           │
+│         │  Systolic anterior motion (SAM) of the     │           │
+│         │  mitral valve leaflet due to Venturi       │           │
+│         │  effect from rapid ejection through        │           │
+│         │  narrowed outflow tract.                   │           │
+│         │                                            │           │
+│         │  [Continue]  [I Forgot]  [Edit]  [Skip]    │           │
+│         │    Enter       F          E        S       │           │
+│         └────────────────────────────────────────────┘           │
+│                                                                  │
+│  💡 FSRS handles scheduling automatically                        │
 ```
 
 ### Key Review Features
 - **No grading buttons:** FSRS handles all scheduling automatically
-- **Source context:** Always shows linked note for context
-- **Partial credit tracking:** Automatic for list cards (3/5, 1/5)
-- **Gesture support:** Swipe for next, tap to reveal (future mobile)
-- **One-click navigation:** Instant return to Workspace
+- **Source context:** Always shows linked NotebookTopicPage
+- **Provenance:** Card → Notebook → Source always traceable
+- **Low-ease flagging:** Cards with repeated failures flagged for fix
 
 ---
 
 ## Overlay System (Modal Context)
 
-### Quick Dump Modal
+### Quick Dump Modal (Ctrl+Shift+S)
 ```
-┌─ Quick Save ──────────────────┐
-│                               │
-│  Paste or type anything       │
-│  ┌─────────────────────────┐  │
-│  │                         │  │
-│  │  [Large content area]   │  │
-│  │                         │  │
-│  └─────────────────────────┘  │
-│                               │
-│  [Save for Later] [Cancel]    │
-│  ✓ Saved automatically       │
-└───────────────────────────────┘
+┌─ QUICK DUMP ─────────────────────────────────────────────────────┐
+│                                                          [×]     │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────────┐│
+│  │                                                              ││
+│  │  Paste anything here...                                      ││
+│  │                                                              ││
+│  │                                                              ││
+│  └──────────────────────────────────────────────────────────────┘│
+│                                                                  │
+│  Tags: #cardiology [×]  [+ Add]                                  │
+│                                                                  │
+│                    [ 💾 Save to Inbox ]                          │
+│                         Ctrl+Enter                               │
+│                                                                  │
+│  Zero decisions. Process later when rested.                      │
+└──────────────────────────────────────────────────────────────────┘
 ```
 **Purpose:** Zero-friction capture when exhausted
-**Trigger:** Global button, keyboard shortcut (Cmd+Shift+S)
-**Flow:** Paste → Auto-save → Adds to extraction queue → Close
+**Trigger:** Ctrl+Shift+S from anywhere
+**Flow:** Paste → Save to Inbox → Creates SourceItem (status: inbox) → Close
 
 ### Settings Overlay  
 ```
@@ -142,203 +231,104 @@
 **Philosophy:** Hidden by default, minimal configuration
 **Focus:** Doug's "zero tolerance for admin work"
 
-### Command Palette (Power Users)
+### Command Palette (Ctrl+K)
 ```
-┌─ Quick Actions ───────────────┐
-│ > search cardiac              │
-│                               │
-│ ○ Search cards: "cardiac"     │
-│ ○ Search notes: "cardiac"     │
-│ ○ Create card                 │
-│ ○ Quick Dump                  │
-│ ○ Settings                    │
-└───────────────────────────────┘
+┌─ Quick Actions ──────────────────────────────────────────────────┐
+│  > search cardiac                                                │
+│                                                                  │
+│  RECENT                                                          │
+│  ○ Open: HOCM Notes                               ↵              │
+│  ○ Review: Cardiology                             ↵              │
+│                                                                  │
+│  NAVIGATION                                                      │
+│  ○ Go to Inbox                                   Ctrl+1          │
+│  ○ Go to Today                                   Ctrl+2          │
+│  ○ Go to Notebook                                Ctrl+3          │
+│                                                                  │
+│  ACTIONS                                                         │
+│  ○ Quick Dump                                    Ctrl+Shift+S    │
+│  ○ Start Review                                  Ctrl+R          │
+│  ○ New Topic Page                                Ctrl+N          │
+│                                                                  │
+│  SEARCH RESULTS                                                  │
+│  ○ cardiac output calculation                    📄              │
+│  ○ cardiac tamponade                             📚              │
+└──────────────────────────────────────────────────────────────────┘
 ```
-**Trigger:** Cmd+K (universal shortcut)
-**Purpose:** Keyboard-first navigation for efficiency
+**Trigger:** Ctrl+K (universal shortcut)
+**Purpose:** Keyboard-first navigation, search across all entities
 
 ---
 
-## Primary User Journeys & Flow Mapping
+## Workflow Modes (v2 Architecture)
 
-### Journey 1: Standard Capture (80% of usage)
+### Mode 1: Capture (Zero Friction)
 ```
-Launch → Workspace (Capture State) 
-       → Paste content → AI analysis (2-3 seconds)
-       → AI suggestions appear → Review/confirm (checkboxes)
-       → Save (1 click) → Ready for next capture
-       → Stays in capture state
+Any source → Quick Dump OR Paste/Import
+         → SourceItem created (status: inbox)
+         → AI auto-suggests: title, topics, tags
+         → Single "Save" persists everything
+         → Appears in Inbox Smart View
 ```
-**Time Target:** <20 seconds total
-**Click Count:** ≤2 (paste=0, confirm=1)
+**Time Target:** <20 seconds
+**Outcome:** SourceItem in Knowledge Bank (inbox)
 
-### Journey 2: Daily Reviews  
+### Mode 2: Organize/Curate (When Rested)
 ```
-Launch → "Today's Reviews: 5" → Review Screen
-       → Card 1 → [Show Answer] → [Continue]
-       → Card 2 → ... → Card 5
-       → Auto-return to Workspace
+Browse Inbox → Select item → "Add to Notebook"
+           → Choose/create Topic
+           → Edit excerpt if needed
+           → Save to NotebookTopicPage
+           → Item status → curated
+           → Deep link preserved
 ```
-**Flow:** Sequential, no decisions, automatic return
+**When:** User has mental energy to curate
 
-### Journey 3: Exhaustion Safety Net
+### Mode 3: Create Cards (From Notebook Only)
 ```
-Any Screen → Quick Dump button → Paste → Auto-save
-          → Confirmation toast → Return to previous state
+Open Topic Page → Select block(s) → "Generate Card(s)"
+              → AI suggests card format
+              → Card-worthiness gate evaluates
+              → User confirms/edits/discards
+              → Card created with provenance links
 ```
-**Purpose:** Guarantee capture even when too tired to extract properly
+**Constraint:** Cards can ONLY be generated from NotebookTopicPage blocks
 
-### Journey 4: Queue Processing (When rested)
+### Mode 4: Review (Zero Decisions)
 ```
-Workspace → Search "unprocessed" OR queue indicator
-         → Queue State → Select dumps → Process like normal capture  
-         → Queue cleared → Return to default capture state
+Click "Today" or "Start Review" → Review queue
+                               → Show Answer (Space)
+                               → Continue (Enter) OR I Forgot (F)
+                               → FSRS auto-schedules
+                               → Low-ease flagged for fix
 ```
+**Flow:** Sequential, no grading decisions, automatic scheduling
 
 ---
 
 ## Visual Design System
 
-### Color Psychology for Medical Context
-- **Primary blues/grays:** Calm, reduce stress during high-pressure sessions
-- **Subtle success greens:** Positive reinforcement without overwhelm  
-- **Warning oranges:** Clear but non-alarming error states
-- **Medical familiar:** Colors appropriate for healthcare context
-- **High contrast:** Readable when tired/stressed
+### Palette
+- **Nature-inspired olive/sage:** Grounding earth tones reduce cognitive load for post-shift study
+- **Manila paper aesthetic:** Pastel olive backgrounds, analog study feel
+- **High contrast:** 4.5:1 min for readability when fatigued
 
-### Typography & Accessibility
-- **Font system:** Inter or similar for medical terminology readability
-- **High contrast ratios:** Minimum 4.5:1 for all text
-- **Consistent hierarchy:** Clear information prioritization  
-- **Medical terminology friendly:** Handles complex medical terms well
-- **Zoom tolerance:** Works well at various zoom levels
-
-### Spacing & Interaction Design
-- **Generous whitespace:** Reduces visual overwhelm for exhausted users
-- **Large touch targets:** Easy to hit when motor skills impaired by fatigue  
-- **Clear content boundaries:** Obvious sections prevent confusion
-- **Breathing room:** Interface doesn't feel cramped or aggressive
-
-### Microinteractions & Feedback
-- **Immediate feedback:** "Saved ✓" appears for 2 seconds after any action
-- **AI processing indicators:** Subtle animation while analyzing content
-- **Connection discoveries:** Gentle highlight when AI finds related notes
-- **Error prevention:** Real-time warnings for problematic card structures
-- **Progress indicators:** Clear status during multi-step processes
+### Typography & Layout
+- **Font:** Inter, medical terminology friendly
+- **Whitespace:** Generous—reduces visual overwhelm
+- **Feedback:** "Saved ✓" for 2s, subtle AI processing indicators
 
 ---
 
-## Desktop-Specific Interaction Patterns
+## Desktop Interaction Patterns
 
-### Keyboard-First Design
-- **Every mouse action** has keyboard equivalent
-- **Tab navigation** follows logical workflow  
-- **Escape always cancels** current operation
-- **Enter always confirms** or submits
-- **Arrow keys navigate** lists and options
+### Keyboard-First
+- Every mouse action has keyboard equivalent
+- Escape cancels, Enter confirms, Arrow keys navigate
 
-### Hover States for Discovery
-- **Sidebar items:** Show shortcuts and descriptions
-- **Note titles:** Preview first few lines of content
-- **Cards in review:** Show source note context  
-- **Tags:** Display related cards count
-- **Buttons:** Show keyboard shortcuts
+### Discovery
+- **Hover:** Show shortcuts, previews, context
+- **Right-click:** Edit, link, duplicate, convert actions
+- **Drag & drop:** Auto-extract from browser, images, files
 
-### Context Menus (Right-Click)
-- **Notes:** Edit, link, duplicate, convert to cards
-- **Cards:** Edit, disable, reschedule, show source
-- **Tags:** Rename, merge, show all cards
-- **Content areas:** Paste, select all, clear
-
-### Drag & Drop Intelligence
-- **Text from browser:** Auto-extract concepts, suggest tags
-- **Images:** OCR processing + concept extraction
-- **Files:** PDF text extraction + processing
-- **Internal:** Reorder, organize, connect content
-
----
-
-## Mobile Translation Principles (Future)
-
-While MVP is desktop-first, design patterns should translate:
-
-### Responsive Patterns
-- **Sidebar → Bottom tabs** for mobile navigation
-- **Hover states → Long press** for mobile discovery
-- **Keyboard shortcuts → Gesture shortcuts**  
-- **Command palette → Swipe-up quick actions**
-- **Multi-column → Single column** with maintained hierarchy
-
----
-
-## Performance Design Requirements
-
-### Speed & Responsiveness  
-- **Search results:** <200ms for any query
-- **State transitions:** <500ms between contexts
-- **Save confirmations:** <500ms visual feedback
-- **AI processing:** <3 seconds for content analysis
-- **App launch:** <3 seconds to usable state
-
-### Error Prevention & Recovery
-- **Auto-save:** Every keystroke, every action
-- **Session persistence:** Perfect continuation between sessions
-- **Crash recovery:** Auto-restore from backup, zero intervention
-- **Undo capability:** All destructive actions reversible
-- **Clear error messages:** Never silent failures
-
-### Scalability Considerations
-- **Search performance:** Sub-200ms with 1000+ cards
-- **Review queues:** Smooth with 100+ daily reviews  
-- **Note browsing:** No lag with extensive note collections
-- **Connection mapping:** Efficient with complex knowledge graphs
-
----
-
-## Validation Criteria
-
-### Exhaustion Test
-- **Works when Doug is mentally drained?** ✓
-- **No complex decisions required?** ✓  
-- **Clear next actions always visible?** ✓
-
-### Speed Test  
-- **Capture completes in <20 seconds?** ✓
-- **Search responds in <200ms?** ✓
-- **No waiting for system responses?** ✓
-
-### Decision Test
-- **Zero organizational choices during capture?** ✓
-- **AI suggests, user confirms only?** ✓
-- **No scheduling or grading decisions?** ✓
-
-### Recovery Test
-- **All actions easily undoable?** ✓
-- **Can resume seamlessly after interruption?** ✓
-- **Never lose work, even on crash?** ✓
-
-### Trust Test
-- **Completely reliable, predictable behavior?** ✓
-- **Clear feedback for all actions?** ✓
-- **Doug can rely on this vs. current fragmented workflow?** ✓
-
----
-
-## Implementation Priorities
-
-### Phase 1: Core Interface (Week 1-2)
-1. **Unified Workspace** - Capture interface with AI suggestions
-2. **Review Screen** - Basic FSRS-driven review flow  
-3. **Quick Dump Modal** - Emergency capture safety net
-
-### Phase 2: Polish & Performance (Week 3-4)  
-1. **Search overlay** - Global search within workspace
-2. **Queue processing** - Batch extraction workflow
-3. **Command palette** - Keyboard power user features
-
-### Phase 3: Enhancement (Month 2)
-1. **Advanced microinteractions** - Smooth feedback and transitions
-2. **Hover previews** - Content discovery without navigation
-3. **Keyboard shortcuts** - Full keyboard-first workflow
-
-This design architecture delivers maximum value with minimum complexity, perfectly aligned with Doug's cognitive constraints and evidence-based medical flashcard principles.
+*Performance requirements and validation criteria in `docs/DougHub Success Metrics.md`. Implementation tasks in Taskmaster.*

@@ -58,9 +58,9 @@ export function ConceptCheckbox({
 
   // Confidence indicator color
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return "text-green-600 dark:text-green-500";
-    if (confidence >= 0.5) return "text-yellow-600 dark:text-yellow-500";
-    return "text-red-600 dark:text-red-500";
+    if (confidence >= 0.8) return "text-success-foreground";
+    if (confidence >= 0.5) return "text-yellow-700";
+    return "text-destructive";
   };
 
   return (
@@ -103,7 +103,7 @@ export function ConceptCheckbox({
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8 text-green-600"
+              className="h-8 w-8 text-success-foreground"
               onClick={handleSaveEdit}
             >
               <Check className="h-4 w-4" />

@@ -18,6 +18,15 @@
 - One canonical, trusted source for all medical knowledge
 - **Achieve 20-30% study efficiency improvement through evidence-based FSRS scheduling**
 
+## Dual Intent (v2)
+- **Board-prep facts:** High-yield content for Step 2/3, practice questions
+- **Clinical practice pearls:** Bedside applicable knowledge, clinical reasoning
+
+## Card Anxiety (v2)
+- **Too many low-yield cards:** Anxious about creating cards that won't help
+- **Wants AI gatekeeping:** Card-worthiness evaluation before creation
+- **Prefers curation over volume:** Quality > quantity for flashcards
+
 ## Medical Education Context & Learning Preferences
 - **Current workflow:** Sketchy Medicine videos → Tier Prep/Mix App 19 practice questions → Fragmented capture across multiple tools
 - **Content types:** Differential diagnoses, pharmacology, pathophysiology, clinical reasoning
@@ -94,15 +103,6 @@
 | **Time Tolerance** | Will spend time getting extraction right | Wants to finish reviews quickly |
 | **Card Quality Focus** | Wants evidence-based, clinically accurate cards | Focuses on recall performance, not card editing |
 
-## Performance Data Collection Requirements (Silent & Automatic)
-- **Response time tracking:** Per card, per domain, per session (for FSRS interval optimization)
-- **Accuracy tracking:** Partial credit on lists, success rates by medical specialty
-- **Usage patterns:** Peak performance times, session length optimization
-- **Content analysis:** Which medical domains need different scheduling approaches
-- **Error patterns:** Common failure points for improved AI suggestions
-- **Clinical reasoning tracking:** Performance on "why" vs "what" question types
-- **All data collection:** Must happen silently without user decisions or notifications
-
 ## Core Conflict
 Doug needs systematic structure to retain medical knowledge long-term, but organizational structure creates the exact decision points that prevent him from starting study sessions when cognitively depleted. Additionally, he needs clinical reasoning skills for boards and bedside care, but traditional flashcards often test rote memorization instead of understanding.
 
@@ -113,10 +113,4 @@ Doug needs systematic structure to retain medical knowledge long-term, but organ
 
 3. **Review efficiency:** "When I'm reviewing flashcards, I want zero scheduling decisions so that I can focus entirely on medical content without cognitive overhead about tools, while getting the 20-30% efficiency improvement that evidence-based scheduling provides."
 
-## Success Validation
-- **Primary indicator:** Doug uses this app daily instead of his current fragmented workflow
-- **Failure signal:** If decision paralysis returns or he abandons the app, the design has failed
-- **Trust metric:** Doug stops worrying about data loss and completely relies on the app
-- **Performance metric:** Achieves 20-30% reduction in review time while improving medical knowledge retention
-- **Clinical reasoning metric:** Medical lists become clinical scenarios that improve bedside application
-- **Board preparation metric:** Practice question accuracy improves toward 76%+ target
+*Success metrics and validation criteria in `docs/DougHub Success Metrics.md`.*

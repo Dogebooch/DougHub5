@@ -1018,18 +1018,161 @@
         "dependencies": [],
         "status": "deferred",
         "subtasks": []
+      },
+      {
+        "id": 35,
+        "title": "[v2-T1] Data model v3: SourceItem, CanonicalTopic, NotebookTopicPage, SmartView schemas",
+        "description": "Implement the v2 architecture data model with new tables for 3-layer system: Knowledge Bank (SourceItem), Notebook (NotebookTopicPage, NotebookBlock), and enhanced Cards with provenance. Add CanonicalTopic for topic normalization and SmartView for filtered access.",
+        "details": "NEW TABLES IN electron/database.ts:\n\n1. source_items table:\n- id (UUID PRIMARY KEY)\n- sourceType ('qbank'|'article'|'pdf'|'image'|'audio'|'quickcapture'|'manual')\n- sourceName (TEXT) - e.g., 'UWorld', 'UpToDate'\n- sourceUrl (TEXT nullable)\n- title (TEXT) - AI-suggested, user-editable\n- rawContent (TEXT) - Original text/markdown\n- mediaPath (TEXT nullable) - For binary files\n- transcription (TEXT nullable) - OCR/audio deferred\n- canonicalTopicIds (TEXT) - JSON array of topic IDs\n- tags (TEXT) - JSON array\n- questionId (TEXT nullable) - For QBank sources\n- status ('inbox'|'processed'|'curated')\n- createdAt (TEXT)\n- processedAt (TEXT nullable)\n\n2. canonical_topics table:\n- id (UUID PRIMARY KEY)\n- canonicalName (TEXT UNIQUE) - e.g., 'Hypertrophic Cardiomyopathy'\n- aliases (TEXT) - JSON array ['HOCM', 'HCM']\n- domain (TEXT) - e.g., 'cardiology'\n- parentTopicId (TEXT nullable FK)\n- createdAt (TEXT)\n\n3. notebook_topic_pages table:\n- id (UUID PRIMARY KEY)\n- canonicalTopicId (TEXT FK to canonical_topics)\n- cardIds (TEXT) - JSON array of card IDs\n- createdAt (TEXT)\n- updatedAt (TEXT)\n\n4. notebook_blocks table:\n- id (UUID PRIMARY KEY)\n- notebookTopicPageId (TEXT FK)\n- sourceItemId (TEXT FK to source_items)\n- content (TEXT) - Excerpt text\n- annotations (TEXT nullable)\n- mediaPath (TEXT nullable)\n- position (INTEGER)\n\n5. smart_views table:\n- id (UUID PRIMARY KEY)\n- name (TEXT)\n- icon (TEXT)\n- filter (TEXT) - JSON SmartViewFilter\n- sortBy (TEXT)\n- isSystem (INTEGER boolean)\n\nUPDATE cards table:\n- ADD notebookTopicPageId (TEXT FK) - REQUIRED for new cards\n- ADD sourceBlockId (TEXT nullable FK to notebook_blocks)\n\nINDEXES:\n- idx_source_items_status\n- idx_source_items_sourceType\n- idx_canonical_topics_domain\n- idx_notebook_blocks_page\n- idx_cards_notebook_page\n\nTYPES in src/types/index.ts:\n- SourceItem, CanonicalTopic, NotebookTopicPage, NotebookBlock, SmartView, SmartViewFilter interfaces\n\nMIGRATION:\n- Increment user_version\n- Create all new tables\n- Add new columns to cards (nullable for existing cards)",
+        "testStrategy": "Verify all tables created via SQLite browser. Test CRUD for each table. Verify indexes via EXPLAIN QUERY PLAN. Test foreign key constraints. Verify existing cards unaffected by migration.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 36,
+        "title": "[v2-T1.1] Topic normalization: alias table, matching rules, dedupe prevention",
+        "description": "Implement topic alias matching system that normalizes user input to canonical topics. 'HOCM', 'HCM', 'hypertrophic cardiomyopathy' should all resolve to the same CanonicalTopic.",
+        "details": "CORE FUNCTIONS in electron/topic-service.ts:\n\n1. resolveTopicAlias(input: string): Promise<CanonicalTopic | null>\n- Normalize input (lowercase, trim)\n- Check canonicalName exact match first\n- Then check aliases array (case-insensitive)\n- Return matched CanonicalTopic or null\n\n2. createOrGetTopic(name: string, domain?: string): Promise<CanonicalTopic>\n- Try resolveTopicAlias first\n- If found, return existing topic\n- If not found, create new CanonicalTopic with name as canonicalName\n- Auto-generate common aliases (lowercase, acronyms)\n\n3. suggestTopicMatches(input: string): Promise<CanonicalTopic[]>\n- Fuzzy search across canonicalName and aliases\n- Return top 5 matches sorted by similarity\n- Use for autocomplete/typeahead\n\n4. addTopicAlias(topicId: string, alias: string): Promise<void>\n- Add alias to existing topic's aliases array\n- Prevent duplicates\n- Check alias doesn't belong to another topic\n\n5. mergeTopics(sourceId: string, targetId: string): Promise<void>\n- Move all aliases from source to target\n- Update all source_items referencing source topic\n- Update all notebook_topic_pages\n- Delete source topic\n\nIPC HANDLERS:\n- topic:resolve, topic:createOrGet, topic:suggest, topic:addAlias, topic:merge\n\nUI AUTOCOMPLETE:\n- When user types topic name, show suggestions\n- Allow creating new topic if no match\n- Show alias count/common aliases in dropdown",
+        "testStrategy": "Test 'HOCM' resolves to same topic as 'Hypertrophic Cardiomyopathy'. Test fuzzy search finds 'cardio' matches 'cardiology'. Test merge preserves all references. Test dedupe prevents same alias on multiple topics.",
+        "priority": "high",
+        "dependencies": [35],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 37,
+        "title": "[v2-T1.2] Metadata schema: minimal fields, AI templates per source type",
+        "description": "Define minimal required metadata fields per source type and create AI prompt templates for extracting/suggesting metadata from raw content.",
+        "details": "METADATA TEMPLATES per sourceType:\n\n1. qbank:\n- Required: questionId, sourceName (UWorld/AMBOSS/etc)\n- AI extract: topic, key concept, correct answer rationale\n\n2. article:\n- Required: title, sourceUrl or sourceName\n- AI extract: main topic, key takeaways, publication year\n\n3. pdf:\n- Required: title\n- AI extract: document type (textbook/guidelines/paper), main topics\n\n4. image:\n- Required: title (AI-suggested from context/filename)\n- AI extract: image type (diagram/photo/chart), labeled structures\n\n5. audio:\n- Required: title\n- AI extract: main topics from transcription (deferred)\n\n6. quickcapture:\n- Required: none (raw dump)\n- AI extract: auto-detect content type, suggest title, tags\n\n7. manual:\n- Required: title\n- AI extract: topic, format suggestions\n\nIMPLEMENTATION in electron/ai-service.ts:\n\n- Add function: suggestSourceMetadata(content: string, sourceType: SourceType): Promise<SuggestedMetadata>\n- SuggestedMetadata = { title, topics: string[], tags: string[], questionId?, sourceUrl? }\n- Use source-type-specific prompts\n- Return confidence scores for each suggestion\n\nUI INTEGRATION:\n- On paste/import, call suggestSourceMetadata\n- Pre-fill form with AI suggestions\n- User can edit before single Save",
+        "testStrategy": "Test qbank paste extracts questionId and topic. Test article URL extracts title. Test quick capture with mixed content gets reasonable title suggestion. Verify confidence scores help user decide whether to accept.",
+        "priority": "medium",
+        "dependencies": [35],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 38,
+        "title": "[v2-T2] Capture pipeline: Quick Dump → SourceItem (inbox), text + image support",
+        "description": "Implement capture flow that creates SourceItems in Knowledge Bank with inbox status. Support text paste and image paste/drop.",
+        "details": "CAPTURE FLOW:\n\n1. QUICK DUMP (Ctrl+Shift+S):\n- Open modal from anywhere\n- Paste text or image\n- Optional: add tags\n- Save creates SourceItem with status='inbox', sourceType='quickcapture'\n- Zero decisions, process later\n\n2. PASTE HANDLER:\n- Detect content type (text, image, URL)\n- For text: store in rawContent\n- For image: save to mediaPath, store path reference\n- For URL: attempt to extract title/content, store sourceUrl\n\n3. AI METADATA SUGGESTION:\n- On save, async call suggestSourceMetadata\n- Pre-populate title, topics, tags\n- Status remains 'inbox' until user processes\n\nCOMPONENTS:\n\n- src/components/capture/QuickDumpModal.tsx (update existing)\n  - Change from notes.create to sourceItems.create\n  - Add image paste/drop support\n  - Add optional tags input\n\n- src/components/capture/SourceItemForm.tsx (new)\n  - Full form for editing SourceItem metadata\n  - Used when processing inbox items\n  - Single Save button (no separate metadata confirm)\n\nIPC HANDLERS:\n- sourceItems:create, sourceItems:update, sourceItems:getByStatus, sourceItems:delete\n\nIMAGE HANDLING:\n- Save images to app data folder\n- Generate UUID-based filename\n- Store relative path in mediaPath\n- Display thumbnail in UI",
+        "testStrategy": "Quick Dump text → verify SourceItem in inbox. Quick Dump image → verify image saved and mediaPath populated. Verify AI suggestions populate on save. Verify status='inbox' for all new captures.",
+        "priority": "high",
+        "dependencies": [35, 37],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 39,
+        "title": "[v2-T2.1] Inbox UI: persistent indicator, count badge, batch triage actions",
+        "description": "Add persistent inbox indicator in sidebar showing count of unprocessed items. Enable batch selection and triage actions.",
+        "details": "SIDEBAR INBOX VIEW:\n\n1. INBOX COUNT BADGE:\n- Show count next to Inbox in Smart Views sidebar\n- Update in real-time when items added/processed\n- Visual emphasis when count > 0 (dot indicator)\n\n2. INBOX LIST VIEW:\n- Vertical list grouped by date (Today, Yesterday, Earlier)\n- Each row shows: icon, title, source type, tags, time ago\n- Primary action: 'Add to Notebook'\n- Secondary action: 'Open' (view full content)\n- Destructive: delete (icon + confirm)\n\n3. BATCH ACTIONS:\n- Checkbox selection for multiple items\n- Select all / deselect all\n- Batch 'Add to Notebook' (select topic for all)\n- Batch delete (with confirmation)\n- Batch tag assignment\n\n4. FILTER/SORT:\n- Filter by source type\n- Sort by date (newest/oldest)\n- Search within inbox\n\nCOMPONENTS:\n\n- src/components/knowledgebank/InboxView.tsx\n- src/components/knowledgebank/SourceItemRow.tsx\n- src/components/knowledgebank/BatchActions.tsx\n\nSTORE ACTIONS in useAppStore:\n- inboxCount: number (derived from sourceItems)\n- selectedInboxItems: Set<string>\n- toggleInboxSelection, selectAllInbox, clearInboxSelection\n- batchAddToNotebook, batchDeleteInbox",
+        "testStrategy": "Add 5 items via Quick Dump, verify inbox badge shows 5. Select 3 items, batch add to notebook, verify badge shows 2. Test batch delete. Test filter by source type.",
+        "priority": "high",
+        "dependencies": [38],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 40,
+        "title": "[v2-T3] Knowledge Bank UI: vertical list grouped by status, search, filters",
+        "description": "Build the main Knowledge Bank view showing all SourceItems organized by status with filtering and search capabilities.",
+        "details": "KNOWLEDGE BANK VIEW:\n\n1. STATUS GROUPS:\n- Inbox (status='inbox') - top priority, most prominent\n- Processed (status='processed') - middle section\n- Curated (status='curated') - items added to Notebook\n\n2. LIST LAYOUT (Vertical):\n- Icon by source type (📄 text, 🖼️ image, 🎤 audio, ⚡ quick)\n- Title (AI-generated or user-edited)\n- Tags as pills\n- Topic link (if assigned)\n- Relative time\n- Actions: [Add to Notebook ▼] [Open] [🗑️]\n\n3. SEARCH:\n- Search box at top\n- Searches: title, rawContent, tags, topic names\n- Real-time filtering as user types\n- <200ms response time\n\n4. FILTERS:\n- By status (multi-select)\n- By source type (multi-select)\n- By topic (dropdown)\n- By tag (dropdown)\n- By date range\n\n5. SORT OPTIONS:\n- Newest first (default)\n- Oldest first\n- Alphabetical\n- By topic\n\nCOMPONENTS:\n\n- src/components/knowledgebank/KnowledgeBankView.tsx (main view)\n- src/components/knowledgebank/StatusGroup.tsx\n- src/components/knowledgebank/FilterBar.tsx\n- src/components/knowledgebank/SourceItemRow.tsx (reuse from T2.1)\n\nNO CARD CREATION HERE:\n- 'Add to Notebook' is the only path to cards\n- No 'Create Card' button in Knowledge Bank",
+        "testStrategy": "Add items of various types and statuses. Verify grouping correct. Test search finds content in rawContent. Test filters narrow results correctly. Verify <200ms search response.",
+        "priority": "high",
+        "dependencies": [39],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 41,
+        "title": "[v2-T4] Notebook UI: topic pages, add blocks from sources, enforce card-creation here only",
+        "description": "Build the Notebook layer with topic pages containing blocks from Knowledge Bank. This is the ONLY place where cards can be created.",
+        "details": "NOTEBOOK VIEW:\n\n1. TOPIC PAGE LIST:\n- Sidebar or list showing all NotebookTopicPages\n- Show: topic name, aliases, card count, source count\n- Search/filter by topic name\n- 'New Topic Page' button\n\n2. TOPIC PAGE VIEW:\n- Header: Topic name, aliases, stats\n- Blocks section: excerpts from SourceItems\n- Each block shows:\n  - Source reference (clickable deep link)\n  - Content excerpt\n  - Annotations (user notes)\n  - Actions: [Edit] [→ Source] [Generate Card]\n- Footer: [+ Add from Knowledge Bank] [Generate All Cards]\n\n3. ADD BLOCK FLOW:\n- Click '+ Add from Knowledge Bank'\n- Modal shows Knowledge Bank filtered to curated/processed\n- Select source item\n- Select excerpt (highlight text) or use full content\n- Save creates NotebookBlock linked to source\n- SourceItem status → 'curated'\n\n4. BLOCK MANAGEMENT:\n- Drag to reorder blocks (position field)\n- Edit block content (excerpt)\n- Add annotations\n- Delete block (doesn't delete source)\n\nCARD CREATION ENFORCED:\n- 'Generate Card' button ONLY appears on blocks\n- No card creation in Knowledge Bank\n- No card creation from scratch\n- All cards have notebookTopicPageId (enforced)\n\nCOMPONENTS:\n\n- src/components/notebook/NotebookView.tsx\n- src/components/notebook/TopicPageList.tsx\n- src/components/notebook/TopicPageView.tsx\n- src/components/notebook/NotebookBlock.tsx\n- src/components/notebook/AddBlockModal.tsx",
+        "testStrategy": "Create topic page, add block from source, verify deep link works. Generate card from block, verify card has notebookTopicPageId. Verify no way to create card outside Notebook.",
+        "priority": "high",
+        "dependencies": [40, 36],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 42,
+        "title": "[v2-T4.1] Card generation from notebook: AI suggests, card-worthiness gate",
+        "description": "Implement AI-powered card generation from Notebook blocks with card-worthiness evaluation before creation.",
+        "details": "CARD GENERATION FLOW:\n\n1. USER INITIATES:\n- Click 'Generate Card' on a block\n- Or 'Generate All Cards' for entire topic page\n\n2. AI CARD SUGGESTION:\n- Call AI to analyze block content\n- Suggest card format (Q&A, cloze, vignette)\n- Generate front/back content\n- Return multiple card suggestions if content-rich\n\n3. CARD-WORTHINESS GATE (T5):\n- Before showing card to user, evaluate:\n  - Board-relevant? (high-yield for Step 2/3)\n  - Testable? (clear right answer)\n  - Discriminative? (distinguishes from similar concepts)\n- Show AI assessment with checkmarks/warnings\n- Recommendation: CREATE CARD / KEEP AS NOTE ONLY\n\n4. USER DECISION:\n- [Create Card] - proceeds with creation\n- [Keep as Note Only] - doesn't create card, marks block\n- [Edit First] - allows editing before creation\n- [Discard] - cancels without saving\n\n5. CARD CREATION:\n- Create card with:\n  - notebookTopicPageId (required)\n  - sourceBlockId (specific block)\n  - tags from topic\n  - FSRS defaults\n- Update NotebookTopicPage.cardIds array\n\nCOMPONENTS:\n\n- src/components/notebook/CardGenerationModal.tsx\n- src/components/notebook/CardWorthinessGate.tsx\n- src/components/notebook/CardSuggestionPreview.tsx\n\nAI FUNCTIONS in electron/ai-service.ts:\n- generateCardFromBlock(blockContent: string, topicContext: string): Promise<CardSuggestion[]>\n- evaluateCardWorthiness(card: CardSuggestion): Promise<WorthinessAssessment>",
+        "testStrategy": "Generate card from medical fact block, verify AI suggests appropriate format. Test worthiness gate shows correct assessments. Test 'Keep as Note Only' doesn't create card. Verify all created cards have required provenance fields.",
+        "priority": "high",
+        "dependencies": [41],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 43,
+        "title": "[v2-T5] Card-worthiness gate: rubric (board-relevant? testable? discriminative?), UI",
+        "description": "Implement the full card-worthiness evaluation rubric that gates all card creation to minimize low-yield cards.",
+        "details": "WORTHINESS RUBRIC:\n\n1. BOARD-RELEVANT:\n- Is this high-yield for Step 2/3 or specialty boards?\n- AI checks against known high-yield topics\n- Weight: High\n\n2. TESTABLE:\n- Does this have a clear, unambiguous answer?\n- Avoid opinion-based or 'it depends' content\n- Weight: High\n\n3. DISCRIMINATIVE:\n- Does this distinguish from similar concepts?\n- Avoid cards that could apply to multiple conditions\n- Weight: Medium\n\n4. MINIMUM INFORMATION:\n- Single concept per card?\n- Not testing multiple facts at once?\n- Weight: High\n\n5. NO PATTERN MATCHING:\n- Answer not giveaway from card format?\n- Could be rephrased and still work?\n- Weight: Medium\n\nSCORING:\n- Each criterion: Pass / Warning / Fail\n- Overall: CREATE / CONSIDER EDITING / NOT RECOMMENDED\n- Show reasoning for each criterion\n\nUI COMPONENT:\n\n```\n┌─ Card Quality Check ─────────────────────────────────┐\n│ \"What is the most specific marker for MI?\"           │\n│ → Troponin I                                         │\n│                                                      │\n│ ✓ Board-relevant (high-yield for Step 2/3)           │\n│ ✓ Testable (clear right answer)                      │\n│ ✓ Discriminative (distinguishes troponin vs CK-MB)   │\n│ ✓ Minimum information (single fact)                  │\n│ ⚠️ Consider: Add 'why' for deeper learning           │\n│                                                      │\n│ Recommendation: ✅ CREATE CARD                       │\n│                                                      │\n│ [Create] [Keep Note] [Edit] [Discard]                │\n└──────────────────────────────────────────────────────┘\n```\n\nAI IMPLEMENTATION:\n- evaluateCardWorthiness(card) returns WorthinessAssessment\n- WorthinessAssessment has criteria[], overallRecommendation, suggestions[]",
+        "testStrategy": "Test high-yield card passes all criteria. Test vague card gets warnings. Test multi-fact card fails minimum info. Test pattern-matching card gets warning. Verify recommendations match rubric logic.",
+        "priority": "high",
+        "dependencies": [42],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 44,
+        "title": "[v2-T8] Smart Views: system views (Inbox, Today, Queue, Weak Topics), filter engine",
+        "description": "Implement Smart Views system with preset system views and a reusable filter engine for dynamic list filtering.",
+        "details": "SYSTEM SMART VIEWS:\n\n1. INBOX (📥):\n- Filter: status='inbox'\n- Badge: count\n- Default sort: newest first\n\n2. TODAY (📅):\n- Filter: due cards (due <= today) + recent captures (createdAt = today)\n- Badge: combined count\n- Sections: 'Due for Review', 'Captured Today'\n\n3. QUEUE (📋):\n- Filter: sourceType='quickcapture' AND status='inbox'\n- Badge: count\n- Quick dumps pending processing\n\n4. NOTEBOOK (📚):\n- Shows all NotebookTopicPages\n- No filter, just different view type\n\n5. TOPICS (🏷️):\n- CanonicalTopic browser\n- Hierarchical if parentTopicId used\n- Show card counts per topic\n\n6. STATS (📊):\n- Dashboard view (deferred content)\n\n7. WEAK TOPICS (⚠️):\n- Topics where cards have low ease (< 2.0 average)\n- Badge: count of weak topics\n- Helps identify knowledge gaps\n\nFILTER ENGINE:\n\n```typescript\ninterface SmartViewFilter {\n  status?: string[];           // ['inbox', 'processed']\n  sourceType?: string[];       // ['qbank', 'article']\n  topicIds?: string[];         // specific topics\n  tags?: string[];             // tag matches\n  hasLowEase?: boolean;        // cards with ease < 2.0\n  isBoardMiss?: boolean;       // flagged board questions\n  dateRange?: { start, end };  // created/modified date\n}\n\nfunction applyFilter(items: any[], filter: SmartViewFilter): any[]\n```\n\nSIDEBAR COMPONENT:\n\n- src/components/layout/SmartViewSidebar.tsx\n- Show all system views with badges\n- Click to switch main content view\n- Highlight active view",
+        "testStrategy": "Test Inbox shows only inbox items. Test Today combines due cards and today's captures. Test Weak Topics finds low-ease topics. Test filter engine with complex multi-criteria filters.",
+        "priority": "high",
+        "dependencies": [35],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 45,
+        "title": "[v2-T6] FSRS integration: scheduling fields, review UI, response time tracking",
+        "description": "Ensure FSRS integration works with new card provenance model. Track response times for future personalization.",
+        "details": "FSRS FIELDS (already in cards table):\n- stability, difficulty, elapsedDays, scheduledDays\n- reps, lapses, state\n- dueDate, lastReview\n\nNEW TRACKING:\n- responseTimeMs in review_logs (already added in Task 1)\n- Track time from card shown to answer revealed\n- Track time from answer revealed to rating\n\nREVIEW UI UPDATES:\n\n1. PROVENANCE DISPLAY:\n- Show source: 'From: [Topic Name]'\n- Click to navigate to NotebookTopicPage\n- Show related cards count\n\n2. ZERO-DECISION FLOW:\n- Show Answer (Space)\n- Continue (Enter) = auto-grade based on response time\n- I Forgot (F) = grade as Again\n- Edit (E) = open card editor\n- Skip (S) = skip without grading\n\n3. LOW-EASE FLAGGING:\n- If card ease < 2.0 after review, flag for attention\n- Show in Weak Topics smart view\n- Suggest 'fix card' flow\n\nRESPONSE TIME LOGIC:\n- Fast correct (< 5s): increase ease slightly\n- Slow correct (> 15s): decrease ease slightly\n- Helps identify cards that need improvement\n\nCOMPONENTS:\n\n- Update src/components/review/ReviewInterface.tsx\n- Add response time tracking\n- Add provenance display\n- Connect to NotebookTopicPage navigation",
+        "testStrategy": "Review card, verify response time logged. Test fast answer increases ease. Test slow answer decreases ease. Test low-ease card appears in Weak Topics. Test provenance link navigates correctly.",
+        "priority": "high",
+        "dependencies": [41, 42],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 46,
+        "title": "[v2-T6.1] Low-ease detection: flag repeatedly-hard cards, route to fix flow",
+        "description": "Detect cards with consistently low ease scores and surface them for improvement through a 'fix card' workflow.",
+        "details": "LOW-EASE DETECTION:\n\n1. CRITERIA:\n- Ease factor < 2.0 (default is 2.5)\n- OR lapses > 3 in last 30 days\n- OR response time consistently > 15s\n\n2. FLAGGING:\n- Add lowEaseFlag boolean to cards table (or compute dynamically)\n- Update after each review\n- Clear flag when ease recovers above threshold\n\n3. WEAK TOPICS AGGREGATION:\n- Group flagged cards by topic\n- Count flagged cards per CanonicalTopic\n- Sort topics by flagged card count\n- Show in Weak Topics smart view\n\nFIX CARD FLOW:\n\n1. USER ENTRY:\n- Click 'Fix' on low-ease card during review\n- Or browse Weak Topics and select card\n\n2. FIX OPTIONS:\n- Edit card (simplify, clarify)\n- Split card (if testing multiple concepts)\n- Add context (link to more detailed note)\n- Mark as leech (suspend temporarily)\n- Delete and recreate from Notebook\n\n3. AFTER FIX:\n- Reset FSRS parameters (optional)\n- Card re-enters learning phase\n- Track if fix was successful (ease improvement)\n\nCOMPONENTS:\n\n- src/components/review/FixCardModal.tsx\n- Add 'Fix' button to review UI for low-ease cards\n- Weak Topics view shows fix suggestions",
+        "testStrategy": "Create card, fail it 4 times, verify low-ease flag set. Verify card appears in Weak Topics. Test fix flow resets card. Test ease recovery clears flag.",
+        "priority": "medium",
+        "dependencies": [45],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 47,
+        "title": "[v2-T9] UI/UX rules: button hierarchy, destructive confirmations, naming patterns",
+        "description": "Establish and enforce consistent UI/UX patterns across all v2 components for button styling, confirmations, and naming.",
+        "details": "BUTTON HIERARCHY:\n\n1. PRIMARY (Purple):\n- Main action on any screen\n- Examples: 'Save', 'Create Card', 'Add to Notebook'\n- shadcn: variant='default' with purple theme\n\n2. SECONDARY (Gray):\n- Alternative actions\n- Examples: 'Open', 'Edit', 'Skip'\n- shadcn: variant='outline' or 'secondary'\n\n3. DESTRUCTIVE (Icon + Confirm):\n- Delete operations\n- Icon-only button (🗑️) with hover tooltip\n- Click shows confirmation dialog\n- Never inline delete without confirm\n\n4. GHOST (Text only):\n- Subtle actions\n- Examples: 'Cancel', 'Back'\n- shadcn: variant='ghost'\n\nCONFIRMATION PATTERNS:\n\n- Delete SourceItem: 'Delete this source? Content will be lost.'\n- Delete Card: 'Delete this card? Review history will be lost.'\n- Delete Topic: 'Delete topic and X cards? This cannot be undone.'\n- Batch delete: 'Delete X items? This cannot be undone.'\n\nNAMING CONVENTIONS:\n\n- Use 'Knowledge Bank' not 'Sources' or 'Inbox'\n- Use 'Notebook' not 'Notes' or 'Pages'\n- Use 'Topic' not 'Subject' or 'Category'\n- Use 'Block' not 'Excerpt' or 'Snippet'\n- Use 'Generate Card' not 'Create Card' (implies AI assistance)\n\nKEYBOARD SHORTCUTS:\n\n- Ctrl+K: Command palette\n- Ctrl+Shift+S: Quick Dump\n- Ctrl+1-6: Navigate Smart Views\n- Space: Show answer / Continue\n- Enter: Confirm action\n- Escape: Cancel / Close modal\n- F: Mark as forgotten (review)\n- E: Edit current item\n- Delete/Backspace: Delete (with confirm)\n\nIMPLEMENTATION:\n\n- Create src/components/ui/button-variants.tsx with themed variants\n- Create src/components/ui/ConfirmDialog.tsx reusable component\n- Document patterns in src/styles/design-system.md",
+        "testStrategy": "Audit all buttons across app for consistency. Test all delete actions show confirmation. Test keyboard shortcuts work globally. Verify naming consistency in UI.",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-05T15:50:00.000Z",
-      "taskCount": 34,
+      "lastModified": "2026-01-05T16:30:00.000Z",
+      "taskCount": 47,
       "completedCount": 3,
       "tags": [
         "master"
       ],
       "created": "2026-01-05T15:44:27.372Z",
-      "description": "Tasks for master context"
+      "description": "Tasks for master context - includes v2 architecture (T35-T47)"
     }
   }
 }

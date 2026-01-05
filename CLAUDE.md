@@ -6,8 +6,7 @@
 - Simple solutions over clever ones
 - The User gets distracted, so keep him on task to finish the MVP. If deviation occurs, let him know.
 - If asked to make a prompt for Copilot Chat, explain it in plain english, but don't generate code snippets
-- Always use the Code Index MCP tool for searching working directory. No exceptions
-- ALWAYS USE THE CODE INDEX MCP TOOL FOR SEARCHING WORKING DIRECTORY.
+- ALWAYS use Code Index MCP tool for searching working directory. No exceptions.
 - Always be as token conscious as possible. Decrease the number of tokens you use, read or edit, wherever you can
 
 ---
@@ -47,6 +46,18 @@ database.ts → ipc-handlers.ts → preload.ts → electron.d.ts → useAppStore
 - No folder hierarchies—tags only, search-first
 - Medical lists → clinical vignettes or overlapping cloze
 - <200ms search, <20s capture, <500ms save feedback
+
+## v2 Architecture Rules (NEW)
+- **3-Layer System:** Knowledge Bank → Notebook → Cards (enforce this flow)
+- **Notebook-only card creation:** Cards ONLY generated from NotebookTopicPage blocks. No "Create Card" in Knowledge Bank
+- **Canonical Topics:** Use CanonicalTopic with alias normalization. Never store raw topic strings on cards
+- **Single Save pattern:** No separate "Confirm Metadata" step. User edits metadata + content together
+- **Vertical list MVP:** Knowledge Bank uses vertical list grouped by status. Grid deferred
+- **Button hierarchy:** Primary (purple), Secondary (gray), Destructive (icon-only + confirm dialog)
+- **Deep links always:** Notebook blocks → SourceItems. Cards → NotebookTopicPage + block. Provenance traceable
+- **Card-worthiness gate:** Every card evaluated before creation (board-relevant? testable? discriminative?)
+- **Smart Views over folders:** Tags + Smart Views provide filtered access without manual organization
+- **No PRD regeneration:** Add tasks manually, preserve existing schema where possible
 
 ## Shortcuts
 Ctrl+K: Command palette | Space: Answer/continue | Escape: Back to capture

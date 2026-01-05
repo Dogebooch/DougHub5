@@ -17,6 +17,16 @@ MVP - Minimally viable product that real users can test and Doug can use daily f
 | **AI card validation** | **>95% cards follow minimum information principle** | **Prevents pattern-matching, ensures concept testing** | **Audit: each card tests single concept, survives rephrasing** |
 | **FSRS efficiency target** | **20-30% reduction in daily review time vs SM-2** | **Core value proposition based on medical education research** | **Compare review time before/after 3 months usage** |
 
+## v2 Architecture Metrics (NEW)
+| Metric | Target | Why It Matters | How to Measure |
+|--------|--------|----------------|----------------|
+| **Time-to-capture** | <20s | Quick dump must be instant | Stopwatch: open app → saved to inbox |
+| **Inbox zero rate** | >80% processed weekly | Prevent inbox overwhelm | Count inbox items weekly |
+| **Cards created per curated hour** | Track baseline | Measure curation efficiency | Cards generated / time in Notebook |
+| **% low-ease cards resolved** | >50% resolved within 2 weeks | Fix broken cards quickly | Track low-ease flags cleared |
+| **Topic coverage** | All board topics tracked | No blind spots | Count CanonicalTopics vs curriculum |
+| **Weak-topic closure rate** | >70% addressed within 1 month | Focus on gaps | Track Weak Topics resolved |
+
 ## Performance Requirements
 - Search response: <200ms for any query across 1000+ cards
 - Save confirmation: "Saved ✓" visible within 500ms of any action
@@ -92,11 +102,4 @@ MVP - Minimally viable product that real users can test and Doug can use daily f
 - [ ] **No manual scheduling** (FSRS handles 100% of review timing)
 
 ## "MVP is Done" Test
-Doug uses this app daily for real studying instead of the current fragmented workflow. The decision paralysis that prevented sessions from starting is gone, medical lists are converted to clinical scenarios that build bedside reasoning, and FSRS delivers the research-validated 20-30% efficiency improvement. If friction returns or clinical reasoning doesn't improve, the design has failed.
-
-## Research Validation Targets
-- **Efficiency**: 20-30% daily review time reduction (FSRS research)
-- **Retention**: >85% accuracy on 6-month cards (medical education standard)
-- **Clinical application**: Medical lists become clinical vignettes (medical education best practice)
-- **Decision elimination**: Zero organizational/scheduling choices during use
-- **Trust**: Complete reliance on app vs. fragmented current workflow
+Doug uses this app daily for real studying instead of the current fragmented workflow. The decision paralysis that prevented sessions from starting is gone, medical lists are converted to clinical scenarios that build bedside reasoning, and FSRS delivers the research-validated 20-30% efficiency improvement.
