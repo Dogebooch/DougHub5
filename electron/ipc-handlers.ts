@@ -40,6 +40,7 @@ import {
   findRelatedNotes,
   aiCache,
   type AIProviderStatus,
+  type ConceptExtractionResult,
   type ExtractedConcept,
   type ValidationResult,
   type MedicalListDetection,
@@ -509,19 +510,19 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     "ai:extractConcepts",
-    async (_, content: string): Promise<IpcResult<ExtractedConcept[]>> => {
+    async (_, content: string): Promise<IpcResult<ConceptExtractionResult>> => {
       try {
         // Check cache first
         const cacheKey = aiCache.key("extractConcepts", content);
-        const cached = aiCache.get<ExtractedConcept[]>(cacheKey);
+        const cached = aiCache.get<ConceptExtractionResult>(cacheKey);
         if (cached) {
           console.log("[IPC] ai:extractConcepts cache hit");
           return success(cached);
         }
 
-        const concepts = await extractConcepts(content);
-        aiCache.set(cacheKey, concepts);
-        return success(concepts);
+        const result = await extractConcepts(content);
+        aiCache.set(cacheKey, result);
+        return success(result);
       } catch (error) {
         return failure(error);
       }

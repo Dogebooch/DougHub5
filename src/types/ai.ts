@@ -58,6 +58,14 @@ export interface ExtractedConcept {
   suggestedFormat: 'qa' | 'cloze';
 }
 
+/** Result from concept extraction including list detection */
+export interface ConceptExtractionResult {
+  /** Extracted concepts */
+  concepts: ExtractedConcept[];
+  /** Medical list detection result */
+  listDetection: MedicalListDetection;
+}
+
 // ============================================================================
 // Card Validation
 // ============================================================================

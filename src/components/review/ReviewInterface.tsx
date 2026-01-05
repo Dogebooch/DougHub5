@@ -4,6 +4,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import { Button } from "@/components/ui/button";
 import { Rating, FormattedIntervals } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { ClozeDisplay, ClozeAnswer } from "@/lib/cloze-renderer";
 
 export function ReviewInterface() {
   const { cards, notes, isHydrated, setCurrentView, scheduleCardReview } =
@@ -274,15 +275,32 @@ export function ReviewInterface() {
       {/* Card display */}
       <div className="bg-card border rounded-lg p-12 space-y-8">
         <div className="text-center space-y-6">
-          <div className="text-3xl font-medium leading-relaxed">
-            {currentCard.front}
-          </div>
+          {/* Front - Use cloze renderer for cloze and list-cloze types */}
+          {currentCard.cardType === "cloze" ||
+          currentCard.cardType === "list-cloze" ? (
+            <ClozeDisplay
+              front={currentCard.front}
+              revealed={answerVisible}
+              cardId={currentCard.id}
+              cardType={currentCard.cardType}
+            />
+          ) : (
+            <div className="text-3xl font-medium leading-relaxed">
+              {currentCard.front}
+            </div>
+          )}
 
           {answerVisible && (
             <div className="pt-6 border-t space-y-4">
-              <div className="text-2xl leading-relaxed text-foreground/90">
-                {currentCard.back}
-              </div>
+              {/* Back - Use cloze answer for cloze types */}
+              {currentCard.cardType === "cloze" ||
+              currentCard.cardType === "list-cloze" ? (
+                <ClozeAnswer back={currentCard.back} />
+              ) : (
+                <div className="text-2xl leading-relaxed text-foreground/90">
+                  {currentCard.back}
+                </div>
+              )}
             </div>
           )}
         </div>

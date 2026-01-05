@@ -43,6 +43,7 @@ export type {
 export type {
   AIProviderStatus,
   ExtractedConcept,
+  ConceptExtractionResult,
   ValidationResult,
   MedicalListDetection,
   VignetteConversion,
@@ -107,7 +108,7 @@ export interface ElectronAPI {
     getProviderStatus: () => Promise<IpcResult<AIProviderStatus>>;
     extractConcepts: (
       content: string
-    ) => Promise<IpcResult<ExtractedConcept[]>>;
+    ) => Promise<IpcResult<ConceptExtractionResult>>;
     validateCard: (
       front: string,
       back: string,

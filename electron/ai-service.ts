@@ -16,13 +16,14 @@ import type {
   AIProviderConfig,
   AIProviderStatus,
   ExtractedConcept,
+  ConceptExtractionResult,
   ValidationResult,
   MedicalListDetection,
   VignetteConversion,
   SemanticMatch,
-} from '../src/types/ai';
-import type { DbNote } from './database';
-import OpenAI from 'openai';
+} from "../src/types/ai";
+import type { DbNote } from "./database";
+import OpenAI from "openai";
 
 // ============================================================================
 // AI Result Cache
@@ -39,7 +40,7 @@ function hashContent(content: string): string {
   let hash = 0;
   for (let i = 0; i < content.length; i++) {
     const char = content.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
   return hash.toString(36);
@@ -79,7 +80,7 @@ class AICache {
    * Generate cache key from operation name and content.
    */
   key(operation: string, ...args: string[]): string {
-    return `${operation}:${args.map(hashContent).join(':')}`;
+    return `${operation}:${args.map(hashContent).join(":")}`;
   }
 
   /**
@@ -465,7 +466,7 @@ Respond with valid JSON only, no markdown formatting.`,
 async function withTimeout<T>(
   promise: Promise<T>,
   ms: number,
-  errorMessage = 'Operation timed out'
+  errorMessage = "Operation timed out"
 ): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout>;
 
@@ -502,15 +503,17 @@ async function withRetry<T>(
       lastError = error instanceof Error ? error : new Error(String(error));
 
       // Don't retry on timeout or if it's the last attempt
-      if (lastError.message.includes('timed out') || attempt === maxRetries) {
+      if (lastError.message.includes("timed out") || attempt === maxRetries) {
         break;
       }
 
       // Exponential backoff
       const delay = baseDelayMs * Math.pow(2, attempt);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
 
-      console.log(`[AI Service] Retry ${attempt + 1}/${maxRetries} after ${delay}ms`);
+      console.log(
+        `[AI Service] Retry ${attempt + 1}/${maxRetries} after ${delay}ms`
+      );
     }
   }
 
@@ -524,20 +527,23 @@ async function withRetry<T>(
  * @param userMessage User message/content to process
  * @returns AI response text
  */
-async function callAI(systemPrompt: string, userMessage: string): Promise<string> {
+async function callAI(
+  systemPrompt: string,
+  userMessage: string
+): Promise<string> {
   const client = await getClient();
   const config = getCurrentConfig();
 
   if (!config) {
-    throw new Error('AI client not initialized');
+    throw new Error("AI client not initialized");
   }
 
   const response = await withTimeout(
     client.chat.completions.create({
       model: config.model,
       messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
       ],
       temperature: 0.3, // Lower temperature for more consistent extraction
       max_tokens: 2000,
@@ -548,7 +554,7 @@ async function callAI(systemPrompt: string, userMessage: string): Promise<string
 
   const content = response.choices[0]?.message?.content;
   if (!content) {
-    throw new Error('Empty response from AI provider');
+    throw new Error("Empty response from AI provider");
   }
 
   return content;
@@ -563,12 +569,12 @@ async function callAI(systemPrompt: string, userMessage: string): Promise<string
 function parseAIResponse<T>(text: string): T {
   // Remove markdown code blocks if present
   let cleaned = text.trim();
-  if (cleaned.startsWith('```json')) {
+  if (cleaned.startsWith("```json")) {
     cleaned = cleaned.slice(7);
-  } else if (cleaned.startsWith('```')) {
+  } else if (cleaned.startsWith("```")) {
     cleaned = cleaned.slice(3);
   }
-  if (cleaned.endsWith('```')) {
+  if (cleaned.endsWith("```")) {
     cleaned = cleaned.slice(0, -3);
   }
   cleaned = cleaned.trim();
@@ -586,41 +592,56 @@ interface ConceptExtractionResponse {
     text: string;
     conceptType: string;
     confidence: number;
-    suggestedFormat: 'qa' | 'cloze';
+    suggestedFormat: "qa" | "cloze";
   }>;
 }
 
 /**
  * Extract learning concepts from pasted medical content.
+ * Also detects if content is a medical list.
  *
  * @param content Raw text content to analyze
- * @returns Array of extracted concepts with metadata
+ * @returns Concepts and list detection result
  */
-export async function extractConcepts(content: string): Promise<ExtractedConcept[]> {
+export async function extractConcepts(
+  content: string
+): Promise<ConceptExtractionResult> {
   if (!content.trim()) {
-    return [];
+    return {
+      concepts: [],
+      listDetection: { isList: false, listType: null, items: [] },
+    };
   }
 
   try {
-    const response = await withRetry(async () => {
-      return await callAI(
-        PROMPTS.conceptExtraction,
-        `Extract learning concepts from this medical content:\n\n${content}`
-      );
-    });
+    // Run concept extraction and list detection in parallel
+    const [conceptsResponse, listDetection] = await Promise.all([
+      withRetry(async () => {
+        return await callAI(
+          PROMPTS.conceptExtraction,
+          `Extract learning concepts from this medical content:\n\n${content}`
+        );
+      }),
+      detectMedicalList(content),
+    ]);
 
-    const parsed = parseAIResponse<ConceptExtractionResponse>(response);
+    const parsed = parseAIResponse<ConceptExtractionResponse>(conceptsResponse);
 
     // Add unique IDs and validate response
-    return parsed.concepts.map((concept, index) => ({
+    const concepts = parsed.concepts.map((concept, index) => ({
       id: `concept-${Date.now()}-${index}`,
       text: concept.text,
       conceptType: concept.conceptType,
       confidence: Math.min(1, Math.max(0, concept.confidence)), // Clamp to 0-1
-      suggestedFormat: concept.suggestedFormat === 'cloze' ? 'cloze' : 'qa',
+      suggestedFormat: concept.suggestedFormat === "cloze" ? "cloze" : "qa",
     }));
+
+    return {
+      concepts,
+      listDetection,
+    };
   } catch (error) {
-    console.error('[AI Service] Concept extraction failed:', error);
+    console.error("[AI Service] Concept extraction failed:", error);
     throw error;
   }
 }
@@ -647,28 +668,29 @@ interface CardValidationResponse {
 export async function validateCard(
   front: string,
   back: string,
-  cardType: 'qa' | 'cloze' = 'qa'
+  cardType: "qa" | "cloze" = "qa"
 ): Promise<ValidationResult> {
   if (!front.trim()) {
     return {
       isValid: false,
-      warnings: ['Card front is empty'],
-      suggestions: ['Add a question or cloze deletion text'],
+      warnings: ["Card front is empty"],
+      suggestions: ["Add a question or cloze deletion text"],
     };
   }
 
-  if (!back.trim() && cardType === 'qa') {
+  if (!back.trim() && cardType === "qa") {
     return {
       isValid: false,
-      warnings: ['Card back is empty'],
-      suggestions: ['Add an answer to the question'],
+      warnings: ["Card back is empty"],
+      suggestions: ["Add an answer to the question"],
     };
   }
 
   try {
-    const cardContent = cardType === 'cloze'
-      ? `Cloze card:\n${front}`
-      : `Question: ${front}\nAnswer: ${back}`;
+    const cardContent =
+      cardType === "cloze"
+        ? `Cloze card:\n${front}`
+        : `Question: ${front}\nAnswer: ${back}`;
 
     const response = await withRetry(async () => {
       return await callAI(
@@ -685,11 +707,11 @@ export async function validateCard(
       suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
     };
   } catch (error) {
-    console.error('[AI Service] Card validation failed:', error);
+    console.error("[AI Service] Card validation failed:", error);
     // Return a permissive result on error - don't block card creation
     return {
       isValid: true,
-      warnings: ['AI validation unavailable'],
+      warnings: ["AI validation unavailable"],
       suggestions: [],
     };
   }
@@ -702,7 +724,7 @@ export async function validateCard(
 /** Response format for medical list detection */
 interface MedicalListDetectionResponse {
   isList: boolean;
-  listType: 'differential' | 'procedure' | 'algorithm' | null;
+  listType: "differential" | "procedure" | "algorithm" | null;
   items: string[];
 }
 
@@ -712,17 +734,19 @@ interface MedicalListDetectionResponse {
  * @param content Content to analyze
  * @returns Detection result with list type and extracted items
  */
-export async function detectMedicalList(content: string): Promise<MedicalListDetection> {
+export async function detectMedicalList(
+  content: string
+): Promise<MedicalListDetection> {
   if (!content.trim()) {
     return { isList: false, listType: null, items: [] };
   }
 
   // Quick heuristic check before calling AI
   const hasListIndicators =
-    content.includes('\n-') ||
-    content.includes('\n•') ||
-    content.includes('\n1.') ||
-    content.includes('\n1)') ||
+    content.includes("\n-") ||
+    content.includes("\n•") ||
+    content.includes("\n1.") ||
+    content.includes("\n1)") ||
     /\b(ddx|differential|causes of|steps|algorithm)\b/i.test(content);
 
   if (!hasListIndicators) {
@@ -745,7 +769,7 @@ export async function detectMedicalList(content: string): Promise<MedicalListDet
       items: Array.isArray(parsed.items) ? parsed.items : [],
     };
   } catch (error) {
-    console.error('[AI Service] Medical list detection failed:', error);
+    console.error("[AI Service] Medical list detection failed:", error);
     // Return non-list on error to allow normal processing
     return { isList: false, listType: null, items: [] };
   }
@@ -773,7 +797,7 @@ export async function convertToVignette(
   context: string
 ): Promise<VignetteConversion> {
   if (!listItem.trim()) {
-    throw new Error('List item is required for vignette conversion');
+    throw new Error("List item is required for vignette conversion");
   }
 
   try {
@@ -788,7 +812,7 @@ export async function convertToVignette(
     const parsed = parseAIResponse<VignetteConversionResponse>(response);
 
     if (!parsed.vignette || !parsed.cloze) {
-      throw new Error('Invalid vignette conversion response');
+      throw new Error("Invalid vignette conversion response");
     }
 
     return {
@@ -796,7 +820,7 @@ export async function convertToVignette(
       cloze: parsed.cloze,
     };
   } catch (error) {
-    console.error('[AI Service] Vignette conversion failed:', error);
+    console.error("[AI Service] Vignette conversion failed:", error);
     throw error;
   }
 }
@@ -834,11 +858,11 @@ export async function suggestTags(content: string): Promise<string[]> {
     // Normalize tags: lowercase, trim, filter empty
     const tags = Array.isArray(parsed.tags) ? parsed.tags : [];
     return tags
-      .map(tag => tag.toLowerCase().trim())
-      .filter(tag => tag.length > 0)
+      .map((tag) => tag.toLowerCase().trim())
+      .filter((tag) => tag.length > 0)
       .slice(0, 5); // Limit to 5 tags
   } catch (error) {
-    console.error('[AI Service] Tag suggestion failed:', error);
+    console.error("[AI Service] Tag suggestion failed:", error);
     // Return empty array on error - tags are optional
     return [];
   }
@@ -855,9 +879,9 @@ export async function suggestTags(content: string): Promise<string[]> {
 function getTermFrequency(text: string): Map<string, number> {
   const words = text
     .toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
+    .replace(/[^\w\s]/g, " ")
     .split(/\s+/)
-    .filter(word => word.length > 2); // Skip very short words
+    .filter((word) => word.length > 2); // Skip very short words
 
   const freq = new Map<string, number>();
   for (const word of words) {
@@ -950,9 +974,10 @@ export {
   type AIProviderType,
   type AIProviderConfig,
   type AIProviderStatus,
+  type ConceptExtractionResult,
   type ExtractedConcept,
   type ValidationResult,
   type MedicalListDetection,
   type VignetteConversion,
   type SemanticMatch,
-} from '../src/types/ai';
+} from "../src/types/ai";

@@ -6,9 +6,15 @@ import { Loader2, Sparkles, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useAppStore } from "@/stores/useAppStore";
 import { CardWithFSRS, Note } from "@/types";
-import { ExtractedConcept, ValidationResult } from "@/types/ai";
+import {
+  ExtractedConcept,
+  ValidationResult,
+  MedicalListDetection,
+} from "@/types/ai";
 import { ConceptCheckbox } from "./ConceptCheckbox";
 import { ValidationWarning } from "./ValidationWarning";
+import { MedicalListConverter } from "./MedicalListConverter";
+import { processMedicalList, ProcessedListCard } from "@/lib/overlapping-cloze";
 
 /** Processing state for the capture workflow */
 type ProcessingState = "idle" | "extracting" | "validating" | "saving";
@@ -27,9 +33,22 @@ export function CaptureInterface() {
 
   // Core state for AI-guided workflow
   const [pastedContent, setPastedContent] = useState("");
-  const [extractedConcepts, setExtractedConcepts] = useState<ConceptWithValidation[]>([]);
-  const [selectedConcepts, setSelectedConcepts] = useState<Set<string>>(new Set());
-  const [processingState, setProcessingState] = useState<ProcessingState>("idle");
+  const [extractedConcepts, setExtractedConcepts] = useState<
+    ConceptWithValidation[]
+  >([]);
+  const [selectedConcepts, setSelectedConcepts] = useState<Set<string>>(
+    new Set()
+  );
+  const [processingState, setProcessingState] =
+    useState<ProcessingState>("idle");
+
+  // Medical list conversion state
+  const [showListConverter, setShowListConverter] = useState(false);
+  const [detectedListType, setDetectedListType] =
+    useState<MedicalListDetection["listType"]>(null);
+  const [processedListCards, setProcessedListCards] = useState<
+    ProcessedListCard[]
+  >([]);
 
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -91,13 +110,11 @@ export function CaptureInterface() {
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [extractedConcepts.length]);
 
-  // Handle paste event - auto-trigger extraction
+  // Handle paste event - just update content, no auto-extraction
   const handlePaste = (e: React.ClipboardEvent) => {
     const text = e.clipboardData.getData("text");
     if (text.trim()) {
-      setPastedContent(text);
-      // Auto-extract after paste (with small delay for state update)
-      setTimeout(() => handleExtractConcepts(text), 100);
+      setPastedContent((prev) => (prev ? prev + "\n\n" + text : text));
     }
   };
 
@@ -114,25 +131,37 @@ export function CaptureInterface() {
     setSelectedConcepts(new Set());
 
     try {
-      // First check for medical lists
-      const listResult = await window.api.ai.detectMedicalList(textToProcess);
-      if (listResult.data?.isList) {
-        toast.info(
-          `Detected ${listResult.data.listType} list with ${listResult.data.items.length} items`,
-          { description: "Consider using clinical vignettes for better recall" }
-        );
-      }
-
-      // Extract concepts
+      // Extract concepts (includes list detection)
       const result = await window.api.ai.extractConcepts(textToProcess);
 
       if (result.error) {
-        toast.error("Failed to extract concepts", { description: result.error });
+        toast.error("Failed to extract concepts", {
+          description: result.error,
+        });
         setProcessingState("idle");
         return;
       }
 
-      if (!result.data || result.data.length === 0) {
+      if (!result.data) {
+        toast.warning("No concepts extracted");
+        setProcessingState("idle");
+        return;
+      }
+
+      const { concepts, listDetection } = result.data;
+
+      // Check if content is a medical list - prioritize list processing
+      if (listDetection.isList && listDetection.items.length > 1) {
+        const processed = processMedicalList(textToProcess, listDetection);
+        setDetectedListType(listDetection.listType);
+        setProcessedListCards(processed);
+        setShowListConverter(true);
+        setProcessingState("idle");
+        return; // Don't proceed with normal concept extraction
+      }
+
+      // Continue with normal concept extraction for non-lists
+      if (concepts.length === 0) {
         toast.warning("No concepts extracted", {
           description: "Try pasting more specific medical content",
         });
@@ -141,17 +170,19 @@ export function CaptureInterface() {
       }
 
       // Set concepts and auto-select all
-      const conceptsWithValidation: ConceptWithValidation[] = result.data.map((c) => ({
-        ...c,
-        validation: undefined,
-        isValidating: false,
-      }));
+      const conceptsWithValidation: ConceptWithValidation[] = concepts.map(
+        (c) => ({
+          ...c,
+          validation: undefined,
+          isValidating: false,
+        })
+      );
 
       setExtractedConcepts(conceptsWithValidation);
-      setSelectedConcepts(new Set(result.data.map((c) => c.id)));
+      setSelectedConcepts(new Set(concepts.map((c) => c.id)));
       setProcessingState("idle");
 
-      toast.success(`Extracted ${result.data.length} concepts`);
+      toast.success(`Extracted ${concepts.length} concepts`);
 
       // Start validating selected concepts
       validateConcepts(conceptsWithValidation);
@@ -185,7 +216,11 @@ export function CaptureInterface() {
         setExtractedConcepts((prev) =>
           prev.map((c) =>
             c.id === concept.id
-              ? { ...c, validation: result.data ?? undefined, isValidating: false }
+              ? {
+                  ...c,
+                  validation: result.data ?? undefined,
+                  isValidating: false,
+                }
               : c
           )
         );
@@ -200,7 +235,9 @@ export function CaptureInterface() {
   };
 
   // Generate card front/back from concept
-  const generateCardContent = (concept: ConceptWithValidation): { front: string; back: string } => {
+  const generateCardContent = (
+    concept: ConceptWithValidation
+  ): { front: string; back: string } => {
     if (concept.suggestedFormat === "cloze") {
       // For cloze, text is the answer, create a question
       return {
@@ -229,15 +266,20 @@ export function CaptureInterface() {
   }, []);
 
   // Update concept content
-  const updateConcept = useCallback((id: string, updates: Partial<ExtractedConcept>) => {
-    setExtractedConcepts((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updates } : c))
-    );
-  }, []);
+  const updateConcept = useCallback(
+    (id: string, updates: Partial<ExtractedConcept>) => {
+      setExtractedConcepts((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, ...updates } : c))
+      );
+    },
+    []
+  );
 
   // Create cards from selected concepts
   const handleCreateCards = async () => {
-    const selected = extractedConcepts.filter((c) => selectedConcepts.has(c.id));
+    const selected = extractedConcepts.filter((c) =>
+      selectedConcepts.has(c.id)
+    );
 
     if (selected.length === 0) {
       toast.error("Please select at least one concept");
@@ -250,7 +292,8 @@ export function CaptureInterface() {
     try {
       // Create parent note with source content
       const noteId = crypto.randomUUID();
-      const noteTitle = pastedContent.slice(0, 50).trim() || "Extracted concepts";
+      const noteTitle =
+        pastedContent.slice(0, 50).trim() || "Extracted concepts";
       const now = new Date().toISOString();
 
       const note: Note = {
@@ -314,9 +357,13 @@ export function CaptureInterface() {
 
       if (successCount > 0) {
         // Show success within 500ms
-        toast.success(`Saved ${successCount} card${successCount > 1 ? "s" : ""}!`, {
-          description: saveTime < 500 ? undefined : `Took ${Math.round(saveTime)}ms`,
-        });
+        toast.success(
+          `Saved ${successCount} card${successCount > 1 ? "s" : ""}!`,
+          {
+            description:
+              saveTime < 500 ? undefined : `Took ${Math.round(saveTime)}ms`,
+          }
+        );
 
         // Clear draft from localStorage
         localStorage.removeItem(DRAFT_STORAGE_KEY);
@@ -328,11 +375,109 @@ export function CaptureInterface() {
       }
 
       if (errorCount > 0) {
-        toast.error(`Failed to create ${errorCount} card${errorCount > 1 ? "s" : ""}`);
+        toast.error(
+          `Failed to create ${errorCount} card${errorCount > 1 ? "s" : ""}`
+        );
       }
     } catch (error) {
       console.error("Save error:", error);
       toast.error("Failed to save cards");
+    } finally {
+      setProcessingState("idle");
+    }
+  };
+
+  // Handle medical list card creation
+  const handleListConvert = async (cards: ProcessedListCard[]) => {
+    setProcessingState("saving");
+    const saveStart = performance.now();
+
+    try {
+      // Create parent note with original content
+      const noteId = crypto.randomUUID();
+      const now = new Date().toISOString();
+
+      const note: Note = {
+        id: noteId,
+        title: cards[0]?.front.split(":")[0] || "Medical List",
+        content: pastedContent,
+        cardIds: [],
+        tags: [],
+        createdAt: now,
+      };
+
+      const noteResult = await addNote(note);
+      if (!noteResult.success) {
+        toast.error("Failed to create note", { description: noteResult.error });
+        setProcessingState("idle");
+        return;
+      }
+
+      // Create cards with partial failure handling
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const listCard of cards) {
+        const cardWithFSRS: CardWithFSRS = {
+          id: crypto.randomUUID(),
+          front: listCard.front,
+          back: listCard.back,
+          noteId,
+          tags: [],
+          dueDate: now,
+          createdAt: now,
+          cardType: "list-cloze",
+          parentListId: listCard.parentListId,
+          listPosition: listCard.listPosition,
+          // FSRS defaults
+          stability: 0,
+          difficulty: 0,
+          elapsedDays: 0,
+          scheduledDays: 0,
+          reps: 0,
+          lapses: 0,
+          state: 0,
+          lastReview: null,
+        };
+
+        const result = await addCard(cardWithFSRS);
+        if (result.success) {
+          successCount++;
+        } else {
+          errorCount++;
+          console.error(`Failed to create list card: ${result.error}`);
+        }
+      }
+
+      const saveTime = performance.now() - saveStart;
+
+      if (successCount > 0) {
+        toast.success(
+          `Saved ${successCount} list card${successCount > 1 ? "s" : ""}!`,
+          {
+            description:
+              errorCount > 0
+                ? `${errorCount} failed`
+                : saveTime < 500
+                ? undefined
+                : `Took ${Math.round(saveTime)}ms`,
+          }
+        );
+
+        // Clear draft and reset state
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setPastedContent("");
+        setShowListConverter(false);
+        setProcessedListCards([]);
+        setDetectedListType(null);
+      }
+
+      if (errorCount > 0 && successCount === 0) {
+        toast.error(`Failed to create all ${errorCount} cards`);
+      }
+    } catch (error) {
+      console.error("List save error:", error);
+      toast.error("Failed to save list cards");
     } finally {
       setProcessingState("idle");
     }
@@ -446,9 +591,11 @@ Example: 'Aspirin irreversibly inhibits cyclooxygenase (COX-1 and COX-2), blocki
                   />
 
                   {/* Validation warnings */}
-                  {concept.validation && !concept.validation.isValid && selectedConcepts.has(concept.id) && (
-                    <ValidationWarning validation={concept.validation} />
-                  )}
+                  {concept.validation &&
+                    !concept.validation.isValid &&
+                    selectedConcepts.has(concept.id) && (
+                      <ValidationWarning validation={concept.validation} />
+                    )}
                 </div>
               ))}
             </CardContent>
@@ -491,7 +638,9 @@ Example: 'Aspirin irreversibly inhibits cyclooxygenase (COX-1 and COX-2), blocki
                     Saving...
                   </>
                 ) : (
-                  `Create ${selectedConcepts.size} Card${selectedConcepts.size !== 1 ? "s" : ""}`
+                  `Create ${selectedConcepts.size} Card${
+                    selectedConcepts.size !== 1 ? "s" : ""
+                  }`
                 )}
               </Button>
             </div>
@@ -500,11 +649,31 @@ Example: 'Aspirin irreversibly inhibits cyclooxygenase (COX-1 and COX-2), blocki
 
         {/* Keyboard hints */}
         <p className="text-center text-sm text-muted-foreground">
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Tab</kbd> to navigate •{" "}
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Space</kbd> to toggle •{" "}
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Enter</kbd> to create
+          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Tab</kbd> to
+          navigate •{" "}
+          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Space</kbd> to
+          toggle •{" "}
+          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Enter</kbd> to
+          create
         </p>
       </div>
+
+      {/* Medical List Converter Modal */}
+      {showListConverter && processedListCards.length > 0 && (
+        <MedicalListConverter
+          listTitle={
+            processedListCards[0]?.front.split(":")[0] || "Medical List"
+          }
+          listType={detectedListType}
+          cards={processedListCards}
+          onConfirm={handleListConvert}
+          onCancel={() => {
+            setShowListConverter(false);
+            setProcessedListCards([]);
+            setDetectedListType(null);
+          }}
+        />
+      )}
     </div>
   );
 }

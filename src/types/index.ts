@@ -1,5 +1,5 @@
 // Card type for medical list processing
-export type CardType = "standard" | "qa" | "cloze" | "vignette";
+export type CardType = "standard" | "qa" | "cloze" | "vignette" | "list-cloze";
 
 // Quick dump extraction status
 export type ExtractionStatus = "pending" | "processing" | "completed";
@@ -12,10 +12,10 @@ export interface Card {
   tags: string[];
   dueDate: string;
   createdAt: string;
-  // Card type fields (v2)
-  cardType?: CardType;
-  parentListId?: string | null; // UUID for grouping medical list cards
-  listPosition?: number | null; // Order within list
+  // Card type fields (v2) - required to match database schema
+  cardType: CardType;
+  parentListId: string | null; // UUID for grouping medical list cards
+  listPosition: number | null; // Order within list
 }
 
 export interface Note {
