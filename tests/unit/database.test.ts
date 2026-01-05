@@ -65,7 +65,7 @@ describe('Database Schema & Initialization', () => {
   })
 
   describe('initDatabase()', () => {
-    it('creates all v2 tables on first run', () => {
+    it('creates all v3 tables on first run', () => {
       const database = initDatabase(dbPath)
       
       assertTablesExist(database, [
@@ -74,10 +74,15 @@ describe('Database Schema & Initialization', () => {
         'review_logs',
         'quick_dumps',
         'connections',
+        'source_items',
+        'canonical_topics',
+        'notebook_topic_pages',
+        'notebook_blocks',
+        'smart_views',
       ])
     })
 
-    it('creates all v2 indexes', () => {
+    it('creates all v3 indexes', () => {
       const database = initDatabase(dbPath)
       
       assertIndexesExist(database, [
@@ -91,6 +96,11 @@ describe('Database Schema & Initialization', () => {
         'idx_connections_sourceNoteId',
         'idx_connections_targetNoteId',
         'idx_connections_semanticScore',
+        'idx_source_items_status',
+        'idx_source_items_sourceType',
+        'idx_canonical_topics_domain',
+        'idx_notebook_blocks_page',
+        'idx_cards_notebook_page',
       ])
     })
 
@@ -106,10 +116,10 @@ describe('Database Schema & Initialization', () => {
       expect(result).toBe('wal')
     })
 
-    it('sets schema version to 2', () => {
+    it('sets schema version to 3', () => {
       const database = initDatabase(dbPath)
       const version = database.pragma('user_version', { simple: true })
-      expect(version).toBe(2)
+      expect(version).toBe(3)
     })
 
     it('is idempotent (can run multiple times safely)', () => {
@@ -121,19 +131,27 @@ describe('Database Schema & Initialization', () => {
       const version2 = db.pragma('user_version', { simple: true })
       
       expect(version1).toBe(version2)
-      expect(version2).toBe(2)
+      expect(version2).toBe(3)
+    })
+
+    it('seeds system smart views on initialization', () => {
+      const database = initDatabase(dbPath)
+      const result = database.prepare('SELECT COUNT(*) as count FROM smart_views WHERE isSystem = 1').get() as { count: number }
+      expect(result.count).toBe(7) // 7 system views seeded
     })
   })
 
   describe('Helper Functions', () => {
     beforeEach(() => {
-      createV2Schema(db)
+      createV3Schema(db)
     })
 
     it('tableExists() detects existing tables', () => {
       expect(tableExists('cards')).toBe(true)
       expect(tableExists('notes')).toBe(true)
       expect(tableExists('quick_dumps')).toBe(true)
+      expect(tableExists('source_items')).toBe(true)
+      expect(tableExists('canonical_topics')).toBe(true)
     })
 
     it('tableExists() returns false for missing tables', () => {
@@ -146,6 +164,8 @@ describe('Database Schema & Initialization', () => {
       expect(columnExists('cards', 'front')).toBe(true)
       expect(columnExists('cards', 'cardType')).toBe(true)
       expect(columnExists('cards', 'parentListId')).toBe(true)
+      expect(columnExists('cards', 'notebookTopicPageId')).toBe(true)
+      expect(columnExists('cards', 'sourceBlockId')).toBe(true)
     })
 
     it('columnExists() returns false for missing columns', () => {
@@ -155,12 +175,12 @@ describe('Database Schema & Initialization', () => {
 
     it('getSchemaVersion() returns correct version', () => {
       const version = db.pragma('user_version', { simple: true })
-      expect(version).toBe(2)
+      expect(version).toBe(3)
     })
   })
 })
 
-describe('Database Migration v1→v2', () => {
+describe('Database Migration v1→v2→v3', () => {
   let dbPath: string
   let db: Database.Database
 
@@ -179,15 +199,15 @@ describe('Database Migration v1→v2', () => {
     cleanupTestDb(dbPath)
   })
 
-  it('migrates from v1 to v2 successfully', () => {
+  it('migrates from v1 to v3 (through v2) successfully', () => {
     // Verify v1 schema
     expect(db.pragma('user_version', { simple: true })).toBe(1)
     
     // Run migration by initializing
     const database = initDatabase(dbPath)
     
-    // Verify v2 schema
-    expect(database.pragma('user_version', { simple: true })).toBe(2)
+    // Verify v3 schema (migrates through v2 automatically)
+    expect(database.pragma('user_version', { simple: true })).toBe(3)
   })
 
   it('adds cardType column to cards table', () => {
@@ -310,8 +330,8 @@ describe('Database Migration v1→v2', () => {
     initDatabase(dbPath)
     const version2 = getDatabase().pragma('user_version', { simple: true })
     
-    expect(version1).toBe(2)
-    expect(version2).toBe(2)
+    expect(version1).toBe(3)
+    expect(version2).toBe(3)
   })
 })
 
