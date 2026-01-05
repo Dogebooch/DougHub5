@@ -8,6 +8,7 @@ import Database from 'better-sqlite3'
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
+import { randomUUID } from 'crypto'
 import { expect } from 'vitest'
 
 // Type imports - these will be defined in actual application types
@@ -45,6 +46,52 @@ type Connection = {
   targetNoteId: string
   semanticScore: number
   createdAt: string
+}
+
+// v3 Architecture types
+type SourceItem = {
+  id: string
+  sourceType: 'qbank' | 'article' | 'pdf' | 'image' | 'audio' | 'quickcapture' | 'manual'
+  sourceName: string
+  sourceUrl?: string
+  title: string
+  rawContent: string
+  mediaPath?: string
+  transcription?: string
+  canonicalTopicIds: string[]
+  tags: string[]
+  questionId?: string
+  status: 'inbox' | 'processed' | 'curated'
+  createdAt: string
+  processedAt?: string
+  updatedAt?: string
+}
+
+type CanonicalTopic = {
+  id: string
+  canonicalName: string
+  aliases: string[]
+  domain: string
+  parentTopicId?: string
+  createdAt: string
+}
+
+type NotebookTopicPage = {
+  id: string
+  canonicalTopicId: string
+  cardIds: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+type NotebookBlock = {
+  id: string
+  notebookTopicPageId: string
+  sourceItemId: string
+  content: string
+  annotations?: string
+  mediaPath?: string
+  position: number
 }
 
 type CardWithFSRS = Card & {
@@ -222,6 +269,150 @@ export function createV2Schema(db: Database.Database) {
 }
 
 /**
+ * Create a v3 database schema (current with 3-layer architecture)
+ */
+export function createV3Schema(db: Database.Database) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS notes (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      tags TEXT NOT NULL DEFAULT '[]',
+      cardIds TEXT NOT NULL DEFAULT '[]',
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS cards (
+      id TEXT PRIMARY KEY,
+      front TEXT NOT NULL,
+      back TEXT NOT NULL,
+      noteId TEXT NOT NULL,
+      tags TEXT NOT NULL DEFAULT '[]',
+      cardType TEXT DEFAULT 'qa',
+      parentListId TEXT,
+      listPosition INTEGER,
+      notebookTopicPageId TEXT,
+      sourceBlockId TEXT,
+      stability REAL NOT NULL DEFAULT 0,
+      difficulty REAL NOT NULL DEFAULT 0,
+      elapsedDays INTEGER NOT NULL DEFAULT 0,
+      scheduledDays INTEGER NOT NULL DEFAULT 0,
+      reps INTEGER NOT NULL DEFAULT 0,
+      lapses INTEGER NOT NULL DEFAULT 0,
+      state INTEGER NOT NULL DEFAULT 0,
+      lastReview TEXT,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      FOREIGN KEY (noteId) REFERENCES notes(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS review_logs (
+      id TEXT PRIMARY KEY,
+      cardId TEXT NOT NULL,
+      rating INTEGER NOT NULL,
+      state INTEGER NOT NULL,
+      reviewedAt TEXT NOT NULL,
+      responseTimeMs INTEGER,
+      partialCreditScore REAL,
+      FOREIGN KEY (cardId) REFERENCES cards(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS quick_dumps (
+      id TEXT PRIMARY KEY,
+      content TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      createdAt TEXT NOT NULL,
+      processedAt TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS connections (
+      id TEXT PRIMARY KEY,
+      sourceNoteId TEXT NOT NULL,
+      targetNoteId TEXT NOT NULL,
+      semanticScore REAL NOT NULL,
+      createdAt TEXT NOT NULL,
+      FOREIGN KEY (sourceNoteId) REFERENCES notes(id) ON DELETE CASCADE,
+      FOREIGN KEY (targetNoteId) REFERENCES notes(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS source_items (
+      id TEXT PRIMARY KEY,
+      sourceType TEXT NOT NULL,
+      sourceName TEXT NOT NULL,
+      sourceUrl TEXT,
+      title TEXT NOT NULL,
+      rawContent TEXT NOT NULL,
+      mediaPath TEXT,
+      transcription TEXT,
+      canonicalTopicIds TEXT NOT NULL DEFAULT '[]',
+      tags TEXT NOT NULL DEFAULT '[]',
+      questionId TEXT,
+      status TEXT NOT NULL DEFAULT 'inbox',
+      createdAt TEXT NOT NULL,
+      processedAt TEXT,
+      updatedAt TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS canonical_topics (
+      id TEXT PRIMARY KEY,
+      canonicalName TEXT NOT NULL UNIQUE,
+      aliases TEXT NOT NULL DEFAULT '[]',
+      domain TEXT NOT NULL,
+      parentTopicId TEXT,
+      createdAt TEXT NOT NULL,
+      FOREIGN KEY (parentTopicId) REFERENCES canonical_topics(id) ON DELETE RESTRICT
+    );
+
+    CREATE TABLE IF NOT EXISTS notebook_topic_pages (
+      id TEXT PRIMARY KEY,
+      canonicalTopicId TEXT NOT NULL,
+      cardIds TEXT NOT NULL DEFAULT '[]',
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      FOREIGN KEY (canonicalTopicId) REFERENCES canonical_topics(id) ON DELETE RESTRICT
+    );
+
+    CREATE TABLE IF NOT EXISTS notebook_blocks (
+      id TEXT PRIMARY KEY,
+      notebookTopicPageId TEXT NOT NULL,
+      sourceItemId TEXT NOT NULL,
+      content TEXT NOT NULL,
+      annotations TEXT,
+      mediaPath TEXT,
+      position INTEGER NOT NULL,
+      FOREIGN KEY (notebookTopicPageId) REFERENCES notebook_topic_pages(id) ON DELETE RESTRICT,
+      FOREIGN KEY (sourceItemId) REFERENCES source_items(id) ON DELETE RESTRICT
+    );
+
+    CREATE TABLE IF NOT EXISTS smart_views (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      icon TEXT NOT NULL,
+      filter TEXT NOT NULL DEFAULT '{}',
+      sortBy TEXT NOT NULL,
+      isSystem INTEGER NOT NULL DEFAULT 0
+    );
+
+    -- v2 Indexes
+    CREATE INDEX IF NOT EXISTS idx_quick_dumps_status ON quick_dumps(status);
+    CREATE INDEX IF NOT EXISTS idx_cards_cardType ON cards(cardType);
+    CREATE INDEX IF NOT EXISTS idx_cards_parentListId ON cards(parentListId);
+    CREATE INDEX IF NOT EXISTS idx_connections_sourceNoteId ON connections(sourceNoteId);
+    CREATE INDEX IF NOT EXISTS idx_connections_targetNoteId ON connections(targetNoteId);
+
+    -- v3 Indexes
+    CREATE INDEX IF NOT EXISTS idx_source_items_status ON source_items(status);
+    CREATE INDEX IF NOT EXISTS idx_source_items_sourceType ON source_items(sourceType);
+    CREATE INDEX IF NOT EXISTS idx_canonical_topics_domain ON canonical_topics(domain);
+    CREATE INDEX IF NOT EXISTS idx_notebook_blocks_page ON notebook_blocks(notebookTopicPageId);
+    CREATE INDEX IF NOT EXISTS idx_cards_notebook_page ON cards(notebookTopicPageId);
+
+    PRAGMA user_version = 3;
+  `)
+}
+
+/**
  * Insert sample v1 data for migration testing
  */
 export function insertV1SampleData(db: Database.Database) {
@@ -363,6 +554,69 @@ export function createMockConnection(overrides: Partial<Connection> = {}): Conne
     targetNoteId: 'note-2',
     semanticScore: 0.85,
     createdAt: now,
+    ...overrides,
+  }
+}
+
+/**
+ * Create a test source item (v3)
+ */
+export function createTestSourceItem(overrides: Partial<SourceItem> = {}): SourceItem {
+  const now = new Date().toISOString()
+  return {
+    id: randomUUID(),
+    sourceType: 'quickcapture',
+    sourceName: 'Quick Capture',
+    title: 'Test Source Item',
+    rawContent: 'Test content for source item',
+    canonicalTopicIds: [],
+    tags: [],
+    status: 'inbox',
+    createdAt: now,
+    ...overrides,
+  }
+}
+
+/**
+ * Create a test canonical topic (v3)
+ */
+export function createTestCanonicalTopic(overrides: Partial<CanonicalTopic> = {}): CanonicalTopic {
+  const now = new Date().toISOString()
+  return {
+    id: randomUUID(),
+    canonicalName: 'Test Topic',
+    aliases: [],
+    domain: 'internal-medicine',
+    createdAt: now,
+    ...overrides,
+  }
+}
+
+/**
+ * Create a test notebook topic page (v3)
+ */
+export function createTestNotebookPage(overrides: Partial<NotebookTopicPage> = {}): NotebookTopicPage {
+  const now = new Date().toISOString()
+  return {
+    id: randomUUID(),
+    canonicalTopicId: 'topic-1', // Caller must provide valid ID
+    cardIds: [],
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  }
+}
+
+/**
+ * Create a test notebook block (v3)
+ */
+export function createTestNotebookBlock(overrides: Partial<NotebookBlock> = {}): NotebookBlock {
+  return {
+    id: randomUUID(),
+    notebookTopicPageId: 'page-1', // Caller must provide valid ID
+    sourceItemId: 'source-1', // Caller must provide valid ID
+    content: 'Test block content',
+    position: 0,
     ...overrides,
   }
 }
