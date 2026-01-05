@@ -23,6 +23,9 @@ export function ReviewInterface() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
 
+  // Redirect timeout for session completion
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Time tracking for response time and timeout (Task 5.2)
   const [responseStartTime, setResponseStartTime] = useState<number | null>(
     null
@@ -30,11 +33,14 @@ export function ReviewInterface() {
   const [isPaused, setIsPaused] = useState(false);
   const [showManualGradeSelector, setShowManualGradeSelector] = useState(false);
 
-  // Track mount status
+  // Track mount status and cleanup timeouts
   useEffect(() => {
     isMounted.current = true;
     return () => {
       isMounted.current = false;
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -98,7 +104,7 @@ export function ReviewInterface() {
     return Rating.Again;
   }, []);
 
-  const handleRating = useCallback(
+  const submitReview = useCallback(
     async (
       rating: (typeof Rating)[keyof typeof Rating],
       responseTimeMs?: number | null
@@ -143,7 +149,7 @@ export function ReviewInterface() {
               setAnswerVisible(false);
             } else {
               setSessionComplete(true);
-              setTimeout(() => {
+              redirectTimeoutRef.current = setTimeout(() => {
                 if (isMounted.current) setCurrentView("capture");
               }, 2000);
             }
@@ -151,7 +157,7 @@ export function ReviewInterface() {
         }
         return true;
       } catch (error) {
-        console.error("[Review] Error submitting rating:", error);
+        console.error("[Review] Error submitting review:", error);
         toast({
           title: "Review Failed",
           description: "An unexpected error occurred",
@@ -190,9 +196,7 @@ export function ReviewInterface() {
     const responseTimeMs = rawResponseTimeMs;
     const rating = calculateAutoRating(responseTimeMs);
 
-    console.log(`[Review] Auto-rating: ${rating} (${responseTimeMs}ms)`);
-
-    const success = await handleRating(rating, responseTimeMs);
+    const success = await submitReview(rating, responseTimeMs);
 
     if (success && isMounted.current) {
       // Reset for next card
@@ -203,7 +207,7 @@ export function ReviewInterface() {
   }, [
     responseStartTime,
     isPaused,
-    handleRating,
+    submitReview,
     isSubmitting,
     calculateAutoRating,
   ]);
@@ -212,7 +216,7 @@ export function ReviewInterface() {
     if (isSubmitting) return;
 
     // Explicitly forced Again rating, no response time (manual failure)
-    const success = await handleRating(Rating.Again, null);
+    const success = await submitReview(Rating.Again, null);
 
     if (success && isMounted.current) {
       // Reset for next card
@@ -220,18 +224,18 @@ export function ReviewInterface() {
       setIsPaused(false);
       setShowManualGradeSelector(false);
     }
-  }, [handleRating, isSubmitting]);
+  }, [submitReview, isSubmitting]);
 
   const handleManualGrade = useCallback(
     async (rating: (typeof Rating)[keyof typeof Rating]) => {
-      const success = await handleRating(rating, null);
+      const success = await submitReview(rating, null);
       if (success && isMounted.current) {
         setResponseStartTime(null);
         setIsPaused(false);
         setShowManualGradeSelector(false);
       }
     },
-    [handleRating]
+    [submitReview]
   );
 
   // Keyboard shortcuts
