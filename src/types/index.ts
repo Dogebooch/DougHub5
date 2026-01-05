@@ -4,6 +4,12 @@ export type CardType = "standard" | "qa" | "cloze" | "vignette" | "list-cloze";
 // Quick dump extraction status
 export type ExtractionStatus = "pending" | "processing" | "completed";
 
+// v2 Knowledge Bank - Source types
+export type SourceType = 'qbank' | 'article' | 'pdf' | 'image' | 'audio' | 'quickcapture' | 'manual';
+
+// v2 Knowledge Bank - Source processing status
+export type SourceItemStatus = 'inbox' | 'processed' | 'curated';
+
 export interface Card {
   id: string;
   front: string;
@@ -16,6 +22,9 @@ export interface Card {
   cardType: CardType;
   parentListId: string | null; // UUID for grouping medical list cards
   listPosition: number | null; // Order within list
+  // v2 Architecture - Notebook linking
+  notebookTopicPageId?: string;
+  sourceBlockId?: string;
 }
 
 export interface Note {
@@ -48,6 +57,70 @@ export interface QuickDump {
   extractionStatus: ExtractionStatus;
   createdAt: string;
   processedAt: string | null;
+}
+
+// v2 Architecture - Knowledge Bank Layer
+export interface SourceItem {
+  id: string;
+  sourceType: SourceType;
+  sourceName: string;
+  sourceUrl?: string;
+  title: string;
+  rawContent: string;
+  mediaPath?: string;
+  transcription?: string;
+  canonicalTopicIds: string[];
+  tags: string[];
+  questionId?: string; // For qbank sources
+  status: SourceItemStatus;
+  createdAt: string;
+  processedAt?: string;
+  updatedAt?: string;
+}
+
+// v2 Architecture - Notebook Layer
+export interface CanonicalTopic {
+  id: string;
+  canonicalName: string;
+  aliases: string[];
+  domain: string;
+  parentTopicId?: string;
+  createdAt: string;
+}
+
+export interface NotebookTopicPage {
+  id: string;
+  canonicalTopicId: string;
+  cardIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotebookBlock {
+  id: string;
+  notebookTopicPageId: string;
+  sourceItemId: string;
+  content: string;
+  annotations?: string;
+  mediaPath?: string;
+  position: number;
+}
+
+// v2 Architecture - Smart Views
+export interface SmartViewFilter {
+  status?: string[];
+  sourceType?: string[];
+  topicIds?: string[];
+  tags?: string[];
+}
+
+export interface SmartView {
+  id: string;
+  name: string;
+  icon: string;
+  filter: SmartViewFilter;
+  sortBy: string;
+  isSystem: boolean;
 }
 
 // Semantic note connection
