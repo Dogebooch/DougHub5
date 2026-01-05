@@ -996,12 +996,34 @@
         "dependencies": [],
         "status": "pending",
         "subtasks": []
+      },
+      {
+        "id": 33,
+        "title": "Back button with navigation history persistence",
+        "description": "Add a back button allowing users to return to their previous screen with state persistence",
+        "details": "REQUIREMENTS:\n- Add back button to header/navigation that returns user to previous view\n- Maintain navigation history stack in useAppStore\n- Persist navigation state so users can go back after actions\n\nIMPLEMENTATION:\n1. Add navigationHistory: ViewType[] to useAppStore\n2. Add pushView(view: ViewType) action that pushes current view before navigating\n3. Add goBack() action that pops and navigates to previous view\n4. Update setCurrentView to use pushView internally\n5. Add BackButton component to Header (src/components/layout/Header.tsx)\n6. Show back button only when history.length > 0\n7. Keyboard shortcut: Alt+Left or Backspace (when not in input)\n\nSTATE PERSISTENCE:\n- Consider persisting history to localStorage for session continuity\n- Clear history on app restart or limit to last 10 views\n- Don't persist if same view pushed twice consecutively\n\nEDGE CASES:\n- Review session in progress: going back should preserve review position\n- Unsaved changes in Capture: prompt before navigating away\n- Modal open: back should close modal first, not navigate",
+        "testStrategy": "Navigate Capture → Review → Settings, click back, verify returns to Review. Click back again, verify returns to Capture. Test keyboard shortcut. Test that review session position is preserved when returning.",
+        "priority": "low",
+        "dependencies": [],
+        "status": "deferred",
+        "subtasks": []
+      },
+      {
+        "id": 34,
+        "title": "Modern cloze UI with click-based creation and cleaner review display",
+        "description": "Replace {{c1::}} syntax with intuitive click/select-based cloze creation and modern review rendering",
+        "details": "PROBLEM:\n- Current cloze syntax {{c1::answer}} is clunky to type\n- Requires memorizing syntax format\n- Review display shows raw {{}} markers which look dated\n\nCLOZE CREATION UX:\n1. User selects text in capture textarea\n2. Click 'Make Cloze' button or press Ctrl+Shift+C\n3. Selected text is wrapped in cloze markers automatically\n4. Visual indicator shows cloze regions (highlight/underline)\n5. Multiple clozes: subsequent selections become c2, c3, etc.\n6. Click existing cloze to remove/edit\n\nCOMPONENTS:\n- src/components/capture/ClozeEditor.tsx - Rich text editor with cloze support\n- Toolbar with cloze button (or context menu on selection)\n- Visual preview showing blanks vs answers\n\nREVIEW DISPLAY:\n- Clean blank rendering: underlined space or pill-shaped blank\n- No visible {{}} markers during review\n- Answer reveal: smooth transition, highlighted answer\n- Already partially implemented in cloze-renderer.tsx\n\nSTORAGE:\n- Keep {{c1::}} format in database for compatibility\n- Transform on display only\n- ClozeEditor converts selection to syntax on save\n\nINSPIRATION:\n- Anki's cloze creation workflow\n- Notion's inline formatting\n- Modern quiz apps with tap-to-reveal",
+        "testStrategy": "Create card, select text 'mitochondria', click Make Cloze, verify {{c1::mitochondria}} in storage. Review card, verify clean blank display. Reveal answer, verify smooth highlight. Test multiple clozes per card.",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "deferred",
+        "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
       "lastModified": "2026-01-05T15:50:00.000Z",
-      "taskCount": 32,
+      "taskCount": 34,
       "completedCount": 3,
       "tags": [
         "master"

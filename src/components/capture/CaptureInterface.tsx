@@ -171,7 +171,7 @@ export function CaptureInterface() {
 
       // Set concepts and auto-select all
       const conceptsWithValidation: ConceptWithValidation[] = concepts.map(
-        (c) => ({
+        (c: ExtractedConcept) => ({
           ...c,
           validation: undefined,
           isValidating: false,
@@ -179,7 +179,7 @@ export function CaptureInterface() {
       );
 
       setExtractedConcepts(conceptsWithValidation);
-      setSelectedConcepts(new Set(concepts.map((c) => c.id)));
+      setSelectedConcepts(new Set(concepts.map((c: ExtractedConcept) => c.id)));
       setProcessingState("idle");
 
       toast.success(`Extracted ${concepts.length} concepts`);

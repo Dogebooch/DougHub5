@@ -5,7 +5,7 @@ import { createBackup, restoreBackup } from "./backup-service";
 // Types (local to database layer, will sync with types/index.ts in Phase 4)
 // ============================================================================
 
-export type CardType = "standard" | "qa" | "cloze" | "vignette";
+export type CardType = "standard" | "qa" | "cloze" | "vignette" | "list-cloze";
 export type ExtractionStatus = "pending" | "processing" | "completed";
 
 export interface DbCard {

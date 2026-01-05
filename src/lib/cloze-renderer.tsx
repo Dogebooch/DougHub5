@@ -176,5 +176,5 @@ export function clozeToPlainText(text: string): string {
  * Check if text contains cloze deletion syntax.
  */
 export function hasClozeMarkers(text: string): boolean {
-  return /\{\{c\d+::[^}]+\}\}/. test(text);
+  return /\{\{c\d+::[^}]+\}\}/.test(text);
 }

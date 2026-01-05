@@ -108,6 +108,9 @@ export const sampleCards: Card[] = [
     tags: ['cardiology', 'diagnostics', 'emergency', 'ECG'],
     dueDate: getTodayISO(),
     createdAt: getTodayISO(),
+    cardType: 'qa',
+    parentListId: null,
+    listPosition: null,
   },
   {
     id: card2Id,
@@ -127,6 +130,9 @@ export const sampleCards: Card[] = [
     tags: ['cardiology', 'diagnostics', 'lab-values'],
     dueDate: getTodayISO(),
     createdAt: getTodayISO(),
+    cardType: 'qa',
+    parentListId: null,
+    listPosition: null,
   },
   {
     id: card3Id,
@@ -148,6 +154,9 @@ export const sampleCards: Card[] = [
     tags: ['cardiology', 'diagnostics', 'lab-values'],
     dueDate: getTodayISO(),
     createdAt: getTodayISO(),
+    cardType: 'qa',
+    parentListId: null,
+    listPosition: null,
   },
   {
     id: card4Id,
@@ -167,5 +176,8 @@ export const sampleCards: Card[] = [
     tags: ['cardiology', 'diagnostics', 'imaging'],
     dueDate: getTodayISO(),
     createdAt: getTodayISO(),
+    cardType: 'qa',
+    parentListId: null,
+    listPosition: null,
   },
 ]

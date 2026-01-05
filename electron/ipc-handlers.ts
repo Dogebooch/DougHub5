@@ -41,7 +41,6 @@ import {
   aiCache,
   type AIProviderStatus,
   type ConceptExtractionResult,
-  type ExtractedConcept,
   type ValidationResult,
   type MedicalListDetection,
   type VignetteConversion,

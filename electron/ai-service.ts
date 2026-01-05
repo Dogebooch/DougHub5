@@ -633,7 +633,7 @@ export async function extractConcepts(
       text: concept.text,
       conceptType: concept.conceptType,
       confidence: Math.min(1, Math.max(0, concept.confidence)), // Clamp to 0-1
-      suggestedFormat: concept.suggestedFormat === "cloze" ? "cloze" : "qa",
+      suggestedFormat: (concept.suggestedFormat === "cloze" ? "cloze" : "qa") as "qa" | "cloze",
     }));
 
     return {
