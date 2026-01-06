@@ -1,11 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap');
 @import "tailwindcss";
 @config "../tailwind.config.ts";
 
-/* Modern Font Stacks */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap');
-
 :root, .dark {
-  --background: 120 12% 7%;
+  --background: 95 10% 9%;
   --foreground: 37 25% 88%;
   --card: 38 34% 86%;
   --card-foreground: 120 20% 10%;

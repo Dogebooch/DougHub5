@@ -22,7 +22,7 @@ export function QuickActionsBar({ onOpenQuickDump }: QuickActionsBarProps) {
 
   return (
     <div className="border-b border-black/30 bg-black/40 backdrop-blur-xl shadow-lg relative z-20">
-      <div className="mx-auto max-w-7xl px-6 py-6">
+      <div className="mx-auto max-w-7xl px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Button

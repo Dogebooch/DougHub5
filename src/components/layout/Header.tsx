@@ -10,8 +10,8 @@ export function Header() {
 
   return (
     <header className="border-b border-black/30 bg-black/40 backdrop-blur-xl sticky top-0 z-50 shadow-md">
-      <div className="mx-auto max-w-7xl px-6 py-4">
-        <div className="flex items-center justify-between gap-6 mb-4">
+      <div className="mx-auto max-w-7xl px-6 py-2">
+        <div className="flex items-center justify-between gap-6 mb-2">
           <div className="flex items-center gap-6">
             <button
               onClick={() => setCurrentView("capture")}

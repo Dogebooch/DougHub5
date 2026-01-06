@@ -1,0 +1,61 @@
+TITLE: Undo functionality (Ctrl+Z) for edits and review grades
+
+DESCRIPTION: Implement global undo system allowing users to reverse recent actions, especially card edits and review grades.
+
+DETAILS:
+PROBLEM:
+- Users accidentally grade cards incorrectly (fat-finger mistakes)
+- No way to undo card edits after saving
+- Medical content mistakes can't be quickly reversed
+- Causes anxiety about making mistakes during tired post-shift reviews
+
+KEY USE CASES:
+1. Review grade undo:
+   - User accidentally hits wrong grade button
+   - Ctrl+Z immediately reverts the grade and re-presents card
+   - Preserves review session state
+
+2. Card edit undo:
+   - User edits card content in Capture or card editor
+   - Saves changes but realizes mistake
+   - Ctrl+Z reverts to previous version
+
+3. Batch operation undo:
+   - User deletes multiple cards accidentally
+   - Ctrl+Z restores deleted cards
+
+IMPLEMENTATION:
+1. Action history stack:
+   - Store last 10-20 actions in memory
+   - Each action: { type, timestamp, before, after, revertFn }
+   - Types: 'review_grade', 'card_edit', 'card_delete', 'metadata_change'
+
+2. Database integration:
+   - For review grades: Update review_logs with new grade, restore FSRS state
+   - For edits: Keep edit_history table with timestamps, revert to previous version
+   - For deletes: Soft delete pattern (deleted_at column), restore on undo
+
+3. UI feedback:
+   - Toast notification: "Undone: [action description]"
+   - Keyboard shortcut: Ctrl+Z (Cmd+Z on Mac)
+   - Optional: Show "Undo" button in corner for 5 seconds after action
+   - Redo support: Ctrl+Shift+Z
+
+4. Scope limits:
+   - Only undo actions in current session (clear on app restart)
+   - Some actions can't be undone (bulk imports, database migrations)
+   - Show warning: "Cannot undo this action" when appropriate
+
+FILES TO CREATE/MODIFY:
+- src/stores/useAppStore.ts: Add undoStack, redoStack, undo(), redo() actions
+- src/hooks/useUndo.ts: Hook for keyboard shortcut and undo logic
+- electron/database.ts: Add edit_history table, soft delete support
+- src/components/layout/UndoToast.tsx: Undo notification component
+- src/components/review/ReviewInterface.tsx: Integrate undo for grades
+
+EDGE CASES:
+- Review session in progress: undo grade should re-present card
+- Multiple rapid undos: stack properly without race conditions
+- Offline/sync: undo should work with pending sync operations
+
+TAGS: ux, post-mvp, undo, quality-of-life

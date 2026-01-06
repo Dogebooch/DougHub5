@@ -1,0 +1,85 @@
+TITLE: Anki import functionality (.apkg file support)
+
+DESCRIPTION: Allow users to import existing Anki decks (.apkg files) to migrate their medical flashcard collections into DougHub.
+
+DETAILS:
+CRITICAL IMPORTANCE:
+- Medical students/residents have YEARS of Anki cards
+- Migration barrier is #1 blocker for adoption
+- Must preserve scheduling data (FSRS state, due dates)
+- Common use case: User has 5,000+ Step 1/2 cards in Anki
+
+ANKI .APKG FORMAT:
+- SQLite database in ZIP archive
+- Tables: cards, notes, revlog (review history), decks
+- Anki uses SM-2 algorithm (older) or FSRS-4.5 (newer)
+- Media files (images) stored in separate folder in archive
+
+IMPORT REQUIREMENTS:
+1. File handling:
+   - Accept .apkg file via drag-drop or file picker
+   - Extract ZIP to temp directory
+   - Read collection.anki2 or collection.anki21 SQLite database
+
+2. Data mapping:
+   - Anki notes → DougHub cards
+   - Anki tags → DougHub tags (preserve)
+   - Anki decks → DougHub topics or tags (flatten hierarchy)
+   - Review history → FSRS state migration
+
+3. FSRS migration:
+   - If Anki deck uses FSRS: preserve parameters
+   - If Anki deck uses SM-2: convert to FSRS initial state
+   - Preserve: ease, interval, due date, review count
+   - Map: Anki ratings (Again/Hard/Good/Easy) → DougHub auto-grade
+
+4. Media handling:
+   - Extract images from .apkg media folder
+   - Copy to DougHub media storage (electron user data)
+   - Update card HTML img src paths
+   - Preserve audio/video if present
+
+5. UI workflow:
+   - Settings → Import → "Import Anki Deck"
+   - File picker or drag-drop zone
+   - Preview: Show deck stats (X cards, Y images, Z tags)
+   - Options: 
+     * "Preserve scheduling data" (default: ON)
+     * "Import into topic: [select or create]"
+     * "Reset all cards to new" (ignore Anki history)
+   - Progress bar during import
+   - Summary: "Imported 5,234 cards, 1,456 images, 87 tags"
+
+6. Conflict handling:
+   - Duplicate detection (same front/back text)
+   - Option: Skip duplicates, merge, or import as separate
+   - Warn about unsupported features (Anki add-ons, custom note types)
+
+LIBRARIES TO USE:
+- adm-zip or yauzl: ZIP extraction
+- better-sqlite3: Read Anki SQLite database (already in project)
+- FSRS-rs or ts-fsrs: FSRS state conversion
+
+FILES TO CREATE:
+- electron/anki-importer.ts: Core import logic
+- electron/anki-parser.ts: Parse .apkg format
+- electron/media-migrator.ts: Handle image/media files
+- src/components/settings/AnkiImportModal.tsx: Import UI
+- src/components/settings/ImportPreview.tsx: Preview component
+- electron/ipc-handlers.ts: Add importAnkiDeck() handler
+
+EDGE CASES:
+- Very large decks (20,000+ cards): Stream import, show progress
+- Malformed .apkg files: Validate before import, show errors
+- Unsupported Anki features: Warn user, skip gracefully
+- Anki cloze deletions: Convert {{c1::}} to DougHub format
+- Anki image occlusion: May not be supported initially
+
+TEST STRATEGY:
+- Test with real Anki decks from AnkiWeb (e.g., Zanki, AnKing)
+- Verify FSRS state preservation
+- Check image paths render correctly
+- Confirm tags imported properly
+- Test with 10, 100, 1000, 10000 card decks
+
+TAGS: import, anki, migration, critical, post-mvp
