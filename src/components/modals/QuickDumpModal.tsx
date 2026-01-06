@@ -9,7 +9,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import type { QuickDump } from "@/types";
+import type { SourceItem } from "@/types";
 import { useAppStore } from "@/stores/useAppStore";
 
 interface QuickDumpModalProps {
@@ -56,15 +56,25 @@ export function QuickDumpModal({ isOpen, onClose }: QuickDumpModalProps) {
     setIsSaving(true);
     try {
       if (typeof window !== "undefined" && window.api) {
-        const quickDump: QuickDump = {
+        // Generate title from first 50 characters
+        const title = trimmedContent.length > 50
+          ? trimmedContent.slice(0, 50) + '...'
+          : trimmedContent;
+
+        const sourceItem: SourceItem = {
           id: crypto.randomUUID(),
-          content: trimmedContent,
-          extractionStatus: "pending",
+          sourceType: 'quickcapture',
+          sourceName: 'Quick Dump',
+          title,
+          rawContent: trimmedContent,
+          canonicalTopicIds: [],
+          tags: [],
+          status: 'inbox',
           createdAt: new Date().toISOString(),
-          processedAt: null,
+          updatedAt: new Date().toISOString(),
         };
 
-        const result = await window.api.quickDumps.create(quickDump);
+        const result = await window.api.sourceItems.create(sourceItem);
         if (result.error) {
           toast.error(`Failed to save: ${result.error}`);
           return;
