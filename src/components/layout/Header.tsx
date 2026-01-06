@@ -9,7 +9,7 @@ export function Header() {
   const isBrowserMode = typeof window !== "undefined" && !window.api;
 
   return (
-    <header className="border-b border-black/10 bg-black/20 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+    <header className="border-b border-black/20 bg-black/20 backdrop-blur-md sticky top-0 z-50 shadow-sm">
       <div className="mx-auto max-w-7xl px-6 py-4">
         <div className="flex items-center justify-between gap-6 mb-4">
           <div className="flex items-center gap-6">

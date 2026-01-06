@@ -10,7 +10,7 @@ export function SearchBar() {
       <Input
         type="search"
         placeholder="Search clinical topics... (Ctrl+K)"
-        className="w-full pl-12 h-14 bg-black/30 border-white/5 focus-visible:ring-primary/40 text-foreground placeholder:text-muted-foreground/40 transition-all font-serif italic text-lg rounded-xl shadow-inner"
+        className="w-full pl-12 h-14 bg-black/40 border-black/20 focus-visible:ring-primary/40 text-foreground placeholder:text-muted-foreground/40 transition-all font-serif italic text-lg rounded-xl shadow-inner"
       />
     </div>
   );

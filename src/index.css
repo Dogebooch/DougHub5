@@ -1,39 +1,39 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
 
-@layer base {
-  :root {
-    --background: 120 10% 6%;
-    --foreground: 35 25% 88%;
-    --card: 37 38% 84%;
-    --card-foreground: 120 25% 8%;
-    --popover: 120 12% 10%;
-    --popover-foreground: 35 25% 88%;
-    --primary: 175 30% 45%;
-    --primary-foreground: 120 10% 6%;
-    --secondary: 35 20% 14%;
-    --secondary-foreground: 35 25% 88%;
-    --muted: 120 8% 18%;
-    --muted-foreground: 35 15% 65%;
-    --accent: 38 45% 42%;
-    --accent-foreground: 35 25% 88%;
-    --destructive: 12 40% 48%;
-    --destructive-foreground: 35 25% 88%;
-    --border: 120 8% 14%;
-    --input: 120 8% 11%;
-    --ring: 175 30% 45%;
-    --success: 145 20% 42%;
-    --success-foreground: 35 25% 88%;
-    --info: 195 25% 48%;
-    --info-foreground: 35 25% 88%;
-    --radius: 1rem;
-    --chart-1: 175 30% 45%;
-    --chart-2: 145 20% 42%;
-    --chart-3: 38 45% 42%;
-    --chart-4: 195 25% 48%;
-    --chart-5: 12 40% 48%;
-  }
+:root, .dark {
+  --background: 120 12% 7%;
+  --foreground: 37 25% 88%;
+  --card: 38 34% 86%;
+  --card-foreground: 120 20% 10%;
+  --popover: 120 12% 10%;
+  --popover-foreground: 35 25% 88%;
+  --primary: 175 30% 45%;
+  --primary-foreground: 120 10% 6%;
+  --secondary: 35 20% 14%;
+  --secondary-foreground: 35 25% 88%;
+  --muted: 120 8% 18%;
+  --muted-foreground: 35 15% 65%;
+  --accent: 38 45% 42%;
+  --accent-foreground: 35 25% 88%;
+  --destructive: 12 40% 48%;
+  --destructive-foreground: 35 25% 88%;
+  --border: 120 8% 14%;
+  --input: 120 8% 11%;
+  --ring: 175 30% 45%;
+  --success: 145 20% 42%;
+  --success-foreground: 35 25% 88%;
+  --info: 195 25% 48%;
+  --info-foreground: 35 25% 88%;
+  --radius: 1rem;
+  --chart-1: 175 30% 45%;
+  --chart-2: 145 20% 42%;
+  --chart-3: 38 45% 42%;
+  --chart-4: 195 25% 48%;
+  --chart-5: 12 40% 48%;
+}
 
+@layer base {
   * {
     border-color: hsl(var(--border));
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

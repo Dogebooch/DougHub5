@@ -377,7 +377,7 @@ export function ReviewInterface() {
       </div>
 
       {/* Card display */}
-      <div className="bg-card border-none rounded-3xl p-16 space-y-10 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.6)] relative overflow-hidden group">
+      <div className="bg-card border border-black/10 rounded-3xl p-16 space-y-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] relative overflow-hidden group min-h-[400px] flex flex-col justify-center">
         {/* Subtle organic texture or accent */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-50" />
         
