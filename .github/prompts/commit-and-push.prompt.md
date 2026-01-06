@@ -25,6 +25,7 @@ Please commit and save the working directory with the following steps:
 
 3. **Commit** with an auto-generated message using current timestamp
 
-4. **Ask** if I want to push to remote
+
+4. **Push to remote** automatically after committing
 
 Show me what files are being committed and any large files that were excluded.

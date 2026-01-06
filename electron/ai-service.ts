@@ -154,11 +154,18 @@ export const PROVIDER_PRESETS: Record<AIProviderType, AIProviderConfig> = {
 let isStartingOllama = false;
 
 /**
+ * Reset Ollama startup state (primarily for testing).
+ */
+export function resetOllamaState(): void {
+  isStartingOllama = false;
+}
+
+/**
  * Check if Ollama is currently running and responding.
  *
  * @returns True if Ollama is reachable
  */
-async function isOllamaRunning(): Promise<boolean> {
+export async function isOllamaRunning(): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
     const req = http.get("http://localhost:11434/v1/models", (res) => {
       resolve(res.statusCode === 200);
@@ -181,7 +188,7 @@ async function isOllamaRunning(): Promise<boolean> {
  *
  * @returns Path to executable or 'ollama' if should rely on PATH
  */
-function findOllamaExecutable(): string {
+export function findOllamaExecutable(): string {
   if (os.platform() === "win32") {
     // Check common Windows location
     const localAppData = process.env["LOCALAPPDATA"] || "";
