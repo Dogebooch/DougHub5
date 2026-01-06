@@ -66,30 +66,50 @@ Achieve 20-30% reduction in daily flashcard workload while improving retention
 through AI-personalized scheduling—enabled by evidence-based design and data 
 collected from day one.
 
-## MVP Scope - v2 Architecture
-### Layer 1: Knowledge Bank
-1. **Capture pipeline** - Quick Dump → SourceItem (inbox), text + image support
-2. **Inbox UI** - Persistent indicator, count badge, batch triage actions
-3. **Knowledge Bank UI** - Vertical list grouped by status, search, filters
-4. **Smart Views** - System views (Inbox, Today, Queue, Weak Topics), filter engine
-5. **Single Save pattern** - No separate metadata confirm, AI formats consistently
+## MVP Scope - v2 Architecture (Revised Build Order)
 
-### Layer 2: Personal Notebook
-6. **Notebook UI** - Topic pages, add blocks from sources, enforce card-creation here only
-7. **Topic normalization** - CanonicalTopic with alias table, matching rules, dedupe prevention
-8. **Deep-linked excerpts** - Notebook blocks link back to SourceItems
+> **Build Philosophy:** Layer-by-layer, dependency-driven. Complete each layer before moving to the next.
 
-### Layer 3: Flashcards
-9. **Card generation from notebook** - AI suggests, card-worthiness gate evaluates
-10. **Card-worthiness gate** - Rubric (board-relevant? testable? discriminative?)
-11. **FSRS integration** - Scheduling fields, review UI, response time tracking
-12. **Low-ease detection** - Flag repeatedly-hard cards, route to fix flow
-13. **Board question tracking** - Ingest missed Q's, map to topics, suggest deep-dive
+### Phase 1: Foundation ✅ COMPLETE
+- Database schema v3 (SourceItem, CanonicalTopic, NotebookTopicPage, Card with provenance)
+- AI service integration layer
+- Zero-decision review interface (FSRS scheduling)
+- UI theme system (Midnight Teal)
+- Sidebar with Smart View navigation stubs
 
-### Cross-Cutting
-14. **Medical list processing** - Clinical vignettes or overlapping cloze (no basic lists)
-15. **Search-first navigation** - Global search <200ms via command palette
-16. **Performance data foundation** - Silent collection for future AI personalization
+### Phase 2: Layer 1 - Knowledge Bank (BUILD NEXT)
+| # | Feature | Task | Status |
+|---|---------|------|--------|
+| 1 | Capture pipeline | Quick Dump → SourceItem (inbox), text support | T38 |
+| 2 | Inbox UI | Persistent indicator, count badge, batch triage | T39 |
+| 3 | Knowledge Bank UI | Vertical list grouped by status, filters | T40 |
+| 4 | Smart Views engine | System views filter logic | T44 |
+
+### Phase 3: Layer 2 - Personal Notebook
+| # | Feature | Task | Status |
+|---|---------|------|--------|
+| 5 | Topic normalization | CanonicalTopic with alias table, matching rules | T36 |
+| 6 | Notebook UI | Topic pages, add blocks from sources | T41 |
+| 7 | Deep-linked excerpts | Notebook blocks link back to SourceItems | (in T41) |
+
+### Phase 4: Layer 3 - Card Generation
+| # | Feature | Task | Status |
+|---|---------|------|--------|
+| 8 | Card generation from notebook | AI suggests cards from Notebook blocks ONLY | T42 |
+| 9 | Card-worthiness gate | Rubric (board-relevant? testable? discriminative?) | T43 |
+| 10 | Low-ease detection | Flag repeatedly-hard cards, route to fix flow | T46 |
+
+### Phase 5: Cross-Cutting Polish
+| # | Feature | Task | Status |
+|---|---------|------|--------|
+| 11 | Global search | <200ms response via command palette | T10 |
+| 12 | Medical list processing | Clinical vignettes or overlapping cloze | T4 |
+| 13 | Ollama auto-start | Launch AI on first request | T17 |
+
+### Data Migration Note
+The `quick_dumps` table is superseded by `source_items` with `sourceType='quickcapture'`.
+Quick Dump modal should save to `source_items` table directly. Migration already handles
+existing data in `migrateToV3()`.
 
 ## Technical Stack Requirements - Executive Mandated
 - **Frontend:** Electron + React + TypeScript + TailwindCSS
@@ -111,6 +131,10 @@ collected from day one.
 - Import from Anki (clean start approach)
 - Progress dashboard / gamification
 - Multiple scheduler options (FSRS only)
+- **Browser extension / web clipper** (deferred to post-MVP, Task 82)
+- **Superhuman-style split view** (deferred, Task 79)
+- **Breadcrumb navigation** (deferred, Task 80)
+- **Badge pulse animations** (deferred, Task 81)
 
 ## Anti-Patterns - Evidence-Based Prohibitions
 - **No folder hierarchies** - Tags only, search-first navigation

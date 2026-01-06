@@ -9,6 +9,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import type { QuickDump } from "@/types";
+import { useAppStore } from "@/stores/useAppStore";
 
 interface QuickDumpModalProps {
   isOpen: boolean;
@@ -19,6 +21,7 @@ export function QuickDumpModal({ isOpen, onClose }: QuickDumpModalProps) {
   const [content, setContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const refreshCounts = useAppStore((state) => state.refreshCounts);
 
   useEffect(() => {
     if (isOpen) {
@@ -52,33 +55,29 @@ export function QuickDumpModal({ isOpen, onClose }: QuickDumpModalProps) {
 
     setIsSaving(true);
     try {
-      // Create a Note from the quick dump
       if (typeof window !== "undefined" && window.api) {
-        const now = new Date();
-        const timestamp = now.toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        });
-
-        const note = {
+        const quickDump: QuickDump = {
           id: crypto.randomUUID(),
-          title: `Quick Dump - ${timestamp}`,
           content: trimmedContent,
-          cardIds: [],
-          tags: ["quick-dump"],
-          createdAt: now.toISOString(),
+          extractionStatus: "pending",
+          createdAt: new Date().toISOString(),
+          processedAt: null,
         };
 
-        const result = await window.api.notes.create(note);
+        const result = await window.api.quickDumps.create(quickDump);
         if (result.error) {
           toast.error(`Failed to save: ${result.error}`);
           return;
         }
+
+        // Refresh counts in store
+        await refreshCounts();
       }
 
-      toast.success("Saved to queue");
+      toast("Saved to inbox", {
+        description: "Process when you're rested",
+        duration: 2000,
+      });
       setContent("");
       onClose();
     } catch (error) {

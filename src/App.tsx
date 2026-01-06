@@ -24,7 +24,7 @@ export default function App() {
   return (
     <>
       <AppLayout />
-      <Toaster position="bottom-right" richColors />
+      <Toaster position="bottom-center" richColors />
     </>
   );
 }

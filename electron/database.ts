@@ -911,54 +911,84 @@ function parseReviewLogRow(row: ReviewLogRow): DbReviewLog {
 // Quick Dump Queries
 // ============================================================================
 
+function mapSourceToQuickDump(item: DbSourceItem): DbQuickDump {
+  let extractionStatus: ExtractionStatus = "pending";
+  if (item.status === "processed" || item.status === "curated") {
+    extractionStatus = "completed";
+  }
+
+  return {
+    id: item.id,
+    content: item.rawContent,
+    extractionStatus,
+    createdAt: item.createdAt,
+    processedAt: item.processedAt || null,
+  };
+}
+
 export const quickDumpQueries = {
   getAll(): DbQuickDump[] {
-    const stmt = getDatabase().prepare(
-      "SELECT * FROM quick_dumps ORDER BY createdAt DESC"
-    );
-    const rows = stmt.all() as QuickDumpRow[];
-    return rows.map(parseQuickDumpRow);
+    const items = sourceItemQueries.getByType("quickcapture");
+    return items.map(mapSourceToQuickDump);
   },
 
   getByStatus(status: ExtractionStatus): DbQuickDump[] {
-    const stmt = getDatabase().prepare(
-      "SELECT * FROM quick_dumps WHERE extractionStatus = ? ORDER BY createdAt DESC"
-    );
-    const rows = stmt.all(status) as QuickDumpRow[];
-    return rows.map(parseQuickDumpRow);
+    const items = sourceItemQueries.getByType("quickcapture").filter((item) => {
+      const qd = mapSourceToQuickDump(item);
+      return qd.extractionStatus === status;
+    });
+    return items.map(mapSourceToQuickDump);
   },
 
   insert(dump: DbQuickDump): void {
-    const stmt = getDatabase().prepare(`
-      INSERT INTO quick_dumps (id, content, extractionStatus, createdAt, processedAt)
-      VALUES (@id, @content, @extractionStatus, @createdAt, @processedAt)
-    `);
-    stmt.run(dump);
+    const title =
+      dump.content.substring(0, 50).trim() +
+      (dump.content.length > 50 ? "..." : "");
+
+    const sourceItem: DbSourceItem = {
+      id: dump.id,
+      sourceType: "quickcapture",
+      sourceName: "Quick Dump",
+      title: title,
+      rawContent: dump.content,
+      canonicalTopicIds: [],
+      tags: [],
+      status: dump.extractionStatus === "completed" ? "processed" : "inbox",
+      createdAt: dump.createdAt,
+      processedAt: dump.processedAt || undefined,
+      updatedAt: dump.createdAt,
+    };
+    sourceItemQueries.insert(sourceItem);
   },
 
   update(id: string, updates: Partial<DbQuickDump>): void {
-    const current = quickDumpQueries.getAll().find((d) => d.id === id);
-    if (!current) {
+    const current = sourceItemQueries.getById(id);
+    if (!current || current.sourceType !== "quickcapture") {
       throw new Error(`Quick dump not found: ${id}`);
     }
 
-    const merged = { ...current, ...updates };
-    const stmt = getDatabase().prepare(`
-      UPDATE quick_dumps SET
-        content = @content,
-        extractionStatus = @extractionStatus,
-        createdAt = @createdAt,
-        processedAt = @processedAt
-      WHERE id = @id
-    `);
-    stmt.run(merged);
+    const sourceUpdates: Partial<DbSourceItem> = {};
+    if (updates.content !== undefined) {
+      sourceUpdates.rawContent = updates.content;
+      sourceUpdates.title =
+        updates.content.substring(0, 50).trim() +
+        (updates.content.length > 50 ? "..." : "");
+    }
+    if (updates.extractionStatus !== undefined) {
+      sourceUpdates.status =
+        updates.extractionStatus === "completed" ? "processed" : "inbox";
+    }
+    if (updates.processedAt !== undefined) {
+      sourceUpdates.processedAt = updates.processedAt || undefined;
+    }
+
+    sourceUpdates.updatedAt = new Date().toISOString();
+
+    sourceItemQueries.update(id, sourceUpdates);
   },
 
   delete(id: string): void {
-    const stmt = getDatabase().prepare(
-      "DELETE FROM quick_dumps WHERE id = @id"
-    );
-    stmt.run({ id });
+    sourceItemQueries.delete(id);
   },
 };
 
@@ -1020,19 +1050,33 @@ export const connectionQueries = {
 
 export const sourceItemQueries = {
   getAll(): DbSourceItem[] {
-    const stmt = getDatabase().prepare("SELECT * FROM source_items ORDER BY createdAt DESC");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM source_items ORDER BY createdAt DESC"
+    );
     const rows = stmt.all() as SourceItemRow[];
     return rows.map(parseSourceItemRow);
   },
 
   getByStatus(status: SourceItemStatus): DbSourceItem[] {
-    const stmt = getDatabase().prepare("SELECT * FROM source_items WHERE status = ? ORDER BY createdAt DESC");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM source_items WHERE status = ? ORDER BY createdAt DESC"
+    );
     const rows = stmt.all(status) as SourceItemRow[];
     return rows.map(parseSourceItemRow);
   },
 
+  getByType(type: SourceType): DbSourceItem[] {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM source_items WHERE sourceType = ? ORDER BY createdAt DESC"
+    );
+    const rows = stmt.all(type) as SourceItemRow[];
+    return rows.map(parseSourceItemRow);
+  },
+
   getById(id: string): DbSourceItem | null {
-    const stmt = getDatabase().prepare("SELECT * FROM source_items WHERE id = ?");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM source_items WHERE id = ?"
+    );
     const row = stmt.get(id) as SourceItemRow | undefined;
     return row ? parseSourceItemRow(row) : null;
   },
@@ -1101,7 +1145,9 @@ export const sourceItemQueries = {
   },
 
   delete(id: string): void {
-    const stmt = getDatabase().prepare("DELETE FROM source_items WHERE id = @id");
+    const stmt = getDatabase().prepare(
+      "DELETE FROM source_items WHERE id = @id"
+    );
     stmt.run({ id });
   },
 };
@@ -1132,19 +1178,25 @@ function parseSourceItemRow(row: SourceItemRow): DbSourceItem {
 
 export const canonicalTopicQueries = {
   getAll(): DbCanonicalTopic[] {
-    const stmt = getDatabase().prepare("SELECT * FROM canonical_topics ORDER BY canonicalName");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM canonical_topics ORDER BY canonicalName"
+    );
     const rows = stmt.all() as CanonicalTopicRow[];
     return rows.map(parseCanonicalTopicRow);
   },
 
   getById(id: string): DbCanonicalTopic | null {
-    const stmt = getDatabase().prepare("SELECT * FROM canonical_topics WHERE id = ?");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM canonical_topics WHERE id = ?"
+    );
     const row = stmt.get(id) as CanonicalTopicRow | undefined;
     return row ? parseCanonicalTopicRow(row) : null;
   },
 
   getByDomain(domain: string): DbCanonicalTopic[] {
-    const stmt = getDatabase().prepare("SELECT * FROM canonical_topics WHERE domain = ? ORDER BY canonicalName");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM canonical_topics WHERE domain = ? ORDER BY canonicalName"
+    );
     const rows = stmt.all(domain) as CanonicalTopicRow[];
     return rows.map(parseCanonicalTopicRow);
   },
@@ -1167,13 +1219,17 @@ function parseCanonicalTopicRow(row: CanonicalTopicRow): DbCanonicalTopic {
 
 export const notebookTopicPageQueries = {
   getAll(): DbNotebookTopicPage[] {
-    const stmt = getDatabase().prepare("SELECT * FROM notebook_topic_pages ORDER BY updatedAt DESC");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM notebook_topic_pages ORDER BY updatedAt DESC"
+    );
     const rows = stmt.all() as NotebookTopicPageRow[];
     return rows.map(parseNotebookTopicPageRow);
   },
 
   getById(id: string): DbNotebookTopicPage | null {
-    const stmt = getDatabase().prepare("SELECT * FROM notebook_topic_pages WHERE id = ?");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM notebook_topic_pages WHERE id = ?"
+    );
     const row = stmt.get(id) as NotebookTopicPageRow | undefined;
     return row ? parseNotebookTopicPageRow(row) : null;
   },
@@ -1211,7 +1267,9 @@ export const notebookTopicPageQueries = {
   },
 };
 
-function parseNotebookTopicPageRow(row: NotebookTopicPageRow): DbNotebookTopicPage {
+function parseNotebookTopicPageRow(
+  row: NotebookTopicPageRow
+): DbNotebookTopicPage {
   return {
     ...row,
     cardIds: JSON.parse(row.cardIds),
@@ -1244,7 +1302,9 @@ export const notebookBlockQueries = {
   },
 
   update(id: string, updates: Partial<DbNotebookBlock>): void {
-    const stmt = getDatabase().prepare("SELECT * FROM notebook_blocks WHERE id = ?");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM notebook_blocks WHERE id = ?"
+    );
     const current = stmt.get(id) as NotebookBlockRow | undefined;
     if (!current) {
       throw new Error(`NotebookBlock not found: ${id}`);
@@ -1269,7 +1329,9 @@ export const notebookBlockQueries = {
   },
 
   delete(id: string): void {
-    const stmt = getDatabase().prepare("DELETE FROM notebook_blocks WHERE id = @id");
+    const stmt = getDatabase().prepare(
+      "DELETE FROM notebook_blocks WHERE id = @id"
+    );
     stmt.run({ id });
   },
 };
@@ -1292,13 +1354,17 @@ function parseNotebookBlockRow(row: NotebookBlockRow): DbNotebookBlock {
 
 export const smartViewQueries = {
   getAll(): DbSmartView[] {
-    const stmt = getDatabase().prepare("SELECT * FROM smart_views ORDER BY isSystem DESC, name");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM smart_views ORDER BY isSystem DESC, name"
+    );
     const rows = stmt.all() as SmartViewRow[];
     return rows.map(parseSmartViewRow);
   },
 
   getSystemViews(): DbSmartView[] {
-    const stmt = getDatabase().prepare("SELECT * FROM smart_views WHERE isSystem = 1 ORDER BY name");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM smart_views WHERE isSystem = 1 ORDER BY name"
+    );
     const rows = stmt.all() as SmartViewRow[];
     return rows.map(parseSmartViewRow);
   },
@@ -1321,10 +1387,12 @@ function parseSmartViewRow(row: SmartViewRow): DbSmartView {
 
 function seedSystemSmartViews(): void {
   const db = getDatabase();
-  
+
   // Check if system views already exist
   const existingCount = (
-    db.prepare("SELECT COUNT(*) as count FROM smart_views WHERE isSystem = 1").get() as { count: number }
+    db
+      .prepare("SELECT COUNT(*) as count FROM smart_views WHERE isSystem = 1")
+      .get() as { count: number }
   ).count;
 
   if (existingCount > 0) {
@@ -1333,61 +1401,66 @@ function seedSystemSmartViews(): void {
 
   console.log("[Database] Seeding system smart views...");
 
-  const systemViews: Array<Omit<DbSmartView, 'isSystem' | 'filter'> & { isSystem: number; filter: string }> = [
+  const systemViews: Array<
+    Omit<DbSmartView, "isSystem" | "filter"> & {
+      isSystem: number;
+      filter: string;
+    }
+  > = [
     {
-      id: 'system-inbox',
-      name: 'Inbox',
-      icon: 'inbox',
-      filter: JSON.stringify({ status: ['inbox'] }),
-      sortBy: 'createdAt',
+      id: "system-inbox",
+      name: "Inbox",
+      icon: "inbox",
+      filter: JSON.stringify({ status: ["inbox"] }),
+      sortBy: "createdAt",
       isSystem: 1,
     },
     {
-      id: 'system-today',
-      name: 'Today',
-      icon: 'calendar',
+      id: "system-today",
+      name: "Today",
+      icon: "calendar",
       filter: JSON.stringify({}), // Filtered by dueDate in app layer
-      sortBy: 'dueDate',
+      sortBy: "dueDate",
       isSystem: 1,
     },
     {
-      id: 'system-queue',
-      name: 'Queue',
-      icon: 'list',
-      filter: JSON.stringify({ status: ['processed'] }),
-      sortBy: 'processedAt',
+      id: "system-queue",
+      name: "Queue",
+      icon: "list",
+      filter: JSON.stringify({ status: ["processed"] }),
+      sortBy: "processedAt",
       isSystem: 1,
     },
     {
-      id: 'system-notebook',
-      name: 'Notebook',
-      icon: 'book-open',
-      filter: JSON.stringify({ status: ['curated'] }),
-      sortBy: 'updatedAt',
+      id: "system-notebook",
+      name: "Notebook",
+      icon: "book-open",
+      filter: JSON.stringify({ status: ["curated"] }),
+      sortBy: "updatedAt",
       isSystem: 1,
     },
     {
-      id: 'system-topics',
-      name: 'Topics',
-      icon: 'tags',
+      id: "system-topics",
+      name: "Topics",
+      icon: "tags",
       filter: JSON.stringify({}),
-      sortBy: 'canonicalName',
+      sortBy: "canonicalName",
       isSystem: 1,
     },
     {
-      id: 'system-stats',
-      name: 'Stats',
-      icon: 'bar-chart-3',
+      id: "system-stats",
+      name: "Stats",
+      icon: "bar-chart-3",
       filter: JSON.stringify({}),
-      sortBy: 'createdAt',
+      sortBy: "createdAt",
       isSystem: 1,
     },
     {
-      id: 'system-weak-topics',
-      name: 'Weak Topics',
-      icon: 'alert-triangle',
+      id: "system-weak-topics",
+      name: "Weak Topics",
+      icon: "alert-triangle",
       filter: JSON.stringify({}), // Filtered by FSRS difficulty in app layer
-      sortBy: 'difficulty',
+      sortBy: "difficulty",
       isSystem: 1,
     },
   ];
@@ -1412,7 +1485,9 @@ export interface DbStatus {
   version: number;
   cardCount: number;
   noteCount: number;
-  quickDumpCount: number;
+  quickDumpCount: number; // Legacy/Compat
+  inboxCount: number;
+  queueCount: number;
   connectionCount: number;
 }
 
@@ -1425,11 +1500,41 @@ export function getDatabaseStatus(): DbStatus {
   const noteCount = (
     db.prepare("SELECT COUNT(*) as count FROM notes").get() as { count: number }
   ).count;
-  const quickDumpCount = (
-    db.prepare("SELECT COUNT(*) as count FROM quick_dumps").get() as {
+
+  // Backward compatibility: count quick_dumps if table exists, else 0
+  let quickDumpCount = 0;
+  try {
+    if (tableExists("quick_dumps")) {
+      quickDumpCount = (
+        db.prepare("SELECT COUNT(*) as count FROM quick_dumps").get() as {
+          count: number;
+        }
+      ).count;
+    }
+  } catch (e) {
+    // Ignore error if table doesn't exist
+  }
+
+  const inboxCount = (
+    db
+      .prepare(
+        "SELECT COUNT(*) as count FROM source_items WHERE status = 'inbox'"
+      )
+      .get() as {
       count: number;
     }
   ).count;
+
+  const queueCount = (
+    db
+      .prepare(
+        "SELECT COUNT(*) as count FROM source_items WHERE status = 'inbox' AND sourceType = 'quickcapture'"
+      )
+      .get() as {
+      count: number;
+    }
+  ).count;
+
   const connectionCount = (
     db.prepare("SELECT COUNT(*) as count FROM connections").get() as {
       count: number;
@@ -1441,6 +1546,8 @@ export function getDatabaseStatus(): DbStatus {
     cardCount,
     noteCount,
     quickDumpCount,
+    inboxCount,
+    queueCount,
     connectionCount,
   };
 }

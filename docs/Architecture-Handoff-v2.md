@@ -532,9 +532,22 @@ Add rules:
 ### Current Schema (electron/database.ts)
 - `cards` — With FSRS fields, cardType, parentListId
 - `notes` — Title, content, cardIds, tags
-- `quick_dumps` — Content, extractionStatus
+- `quick_dumps` — **DEPRECATED** - Superseded by source_items with sourceType='quickcapture'
+- `source_items` — v3 Knowledge Bank: sourceType, status, canonicalTopicIds, tags
+- `canonical_topics` — Topic normalization with aliases
+- `notebook_topic_pages` — Curated topic pages with blocks
 - `connections` — Semantic links between notes
 - `review_logs` — Rating, responseTimeMs, partialCreditScore
+
+### Data Migration Decision (2026-01-05)
+The `quick_dumps` table is superseded by `source_items`. Quick Dump saves should:
+1. Create a SourceItem with `sourceType: 'quickcapture'` and `status: 'inbox'`
+2. Generate title from first 50 chars of content
+3. The migration function `migrateToV3()` already handles existing quick_dumps data
+
+**Recommendation:** Keep `quick_dumps` table for backward compatibility during transition,
+but all new Quick Dumps should write to `source_items`. The Sidebar "Queue" count should
+query `source_items WHERE sourceType='quickcapture' AND status='inbox'`.
 
 ### Key Files to Modify
 - `electron/database.ts` — Add new tables

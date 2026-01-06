@@ -44,6 +44,8 @@ export function Sidebar({ className }: SidebarProps) {
   const setCurrentView = useAppStore((state) => state.setCurrentView);
   const getCardsDueToday = useAppStore((state) => state.getCardsDueToday);
   const isHydrated = useAppStore((state) => state.isHydrated);
+  const inboxCount = useAppStore((state) => state.inboxCount);
+  const queueCount = useAppStore((state) => state.queueCount);
 
   // Persist collapsed state
   useEffect(() => {
@@ -56,10 +58,6 @@ export function Sidebar({ className }: SidebarProps) {
   }, [collapsed]);
 
   const dueCount = isHydrated ? getCardsDueToday().length : 0;
-
-  // TODO: Implement actual counts for these views
-  const inboxCount = 0; // TODO: Count items with status='inbox'
-  const queueCount = 0; // TODO: Count quick dumps pending
 
   const mainNavItems: NavItem[] = [
     { id: "capture", label: "Capture", icon: Plus, implemented: true },

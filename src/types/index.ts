@@ -145,6 +145,8 @@ export interface DbStatus {
   cardCount: number;
   noteCount: number;
   quickDumpCount: number;
+  inboxCount: number;
+  queueCount: number;
   connectionCount: number;
 }
 

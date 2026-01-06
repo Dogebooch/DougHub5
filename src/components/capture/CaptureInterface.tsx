@@ -53,17 +53,45 @@ export function CaptureInterface() {
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasShownDraftRecovery = useRef(false);
+
+  // Helper to format relative time
+  const formatRelativeTime = (timestamp: number): string => {
+    const ageMs = Date.now() - timestamp;
+    const ageMinutes = Math.floor(ageMs / (1000 * 60));
+    const ageHours = Math.floor(ageMs / (1000 * 60 * 60));
+    const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+
+    if (ageMinutes < 1) return "just now";
+    if (ageMinutes < 60)
+      return `${ageMinutes} minute${ageMinutes > 1 ? "s" : ""} ago`;
+    if (ageHours < 24) return `${ageHours} hour${ageHours > 1 ? "s" : ""} ago`;
+    return `${ageDays} day${ageDays > 1 ? "s" : ""} ago`;
+  };
 
   // Restore draft from localStorage on mount
   useEffect(() => {
+    // Guard against React StrictMode double-mounting
+    if (hasShownDraftRecovery.current) return;
+
     try {
       const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (savedDraft) {
         const { content, timestamp } = JSON.parse(savedDraft);
-        // Only restore if less than 24 hours old
-        if (Date.now() - timestamp < 24 * 60 * 60 * 1000 && content) {
+        const ageMs = Date.now() - timestamp;
+
+        // Validate: must be < 24 hours old, valid timestamp, and meaningful content
+        const isValidAge = ageMs > 0 && ageMs < 24 * 60 * 60 * 1000;
+        const hasContent = content && content.trim().length >= 3;
+
+        if (isValidAge && hasContent) {
+          hasShownDraftRecovery.current = true;
           setPastedContent(content);
-          toast.info("Recovered unsaved draft");
+          toast("Previous session restored", {
+            id: "draft-recovery",
+            description: `Draft from ${formatRelativeTime(timestamp)}`,
+            duration: 3000,
+          });
         }
       }
     } catch {

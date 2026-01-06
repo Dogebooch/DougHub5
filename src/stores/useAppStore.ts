@@ -18,6 +18,8 @@ interface AppState {
   isSeeded: boolean;
   isLoading: boolean;
   currentView: AppView;
+  inboxCount: number;
+  queueCount: number;
 }
 
 interface AppActions {
@@ -40,6 +42,7 @@ interface AppActions {
   seedSampleData: () => void;
   setCurrentView: (view: AppView) => void;
   initialize: () => Promise<void>;
+  refreshCounts: () => Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -51,8 +54,22 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   isSeeded: false,
   isLoading: true,
   currentView: "capture",
+  inboxCount: 0,
+  queueCount: 0,
 
   setCurrentView: (view: AppView) => set({ currentView: view }),
+
+  refreshCounts: async () => {
+    if (typeof window !== "undefined" && window.api) {
+      const statusResult = await window.api.db.status();
+      if (!statusResult.error) {
+        set({
+          inboxCount: statusResult.data.inboxCount,
+          queueCount: statusResult.data.queueCount,
+        });
+      }
+    }
+  },
 
   setHydrated: () => set({ isHydrated: true }),
 
@@ -84,9 +101,16 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           console.error("[Store] Failed to load notes:", notesResult.error);
         }
 
+        // Refresh counts
+        const statusResult = await window.api.db.status();
+        const inboxCount = statusResult.data?.inboxCount ?? 0;
+        const queueCount = statusResult.data?.queueCount ?? 0;
+
         set({
           cards: cardsResult.data ?? [],
           notes: notesResult.data ?? [],
+          inboxCount,
+          queueCount,
           isSeeded: true,
           isHydrated: true,
           isLoading: false,
@@ -95,9 +119,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         console.log(
           "[Store] Initialized with",
           cardsResult.data?.length ?? 0,
-          "cards and",
+          "cards,",
           notesResult.data?.length ?? 0,
-          "notes"
+          "notes, and",
+          inboxCount,
+          "inbox items"
         );
       } else {
         // Fallback for non-Electron environment (dev/testing)
