@@ -4,25 +4,11 @@ import { useAppStore } from '@/stores/useAppStore';
 import { AppView } from '@/types';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-
-interface SmartViewItem {
-  id: string;
-  name: string;
-  icon: string;
-  viewKey: string; // maps to currentView in store
-}
-
-const SYSTEM_VIEWS: SmartViewItem[] = [
-  { id: 'inbox', name: 'Inbox', icon: '📥', viewKey: 'inbox' },
-  { id: 'today', name: 'Today', icon: '📅', viewKey: 'today' },
-  { id: 'queue', name: 'Queue', icon: '📋', viewKey: 'queue' },
-  { id: 'notebook', name: 'Notebook', icon: '📚', viewKey: 'notebook' },
-  { id: 'weak', name: 'Weak Topics', icon: '⚠️', viewKey: 'weak' },
-];
+import { SYSTEM_VIEWS } from "@/lib/system-views";
 
 export function SmartViewSidebar() {
-  const currentView = useAppStore(state => state.currentView);
-  const setCurrentView = useAppStore(state => state.setCurrentView);
+  const currentView = useAppStore((state) => state.currentView);
+  const setCurrentView = useAppStore((state) => state.setCurrentView);
   const smartViewCounts = useAppStore((state) => state.smartViewCounts);
 
   return (
@@ -32,11 +18,11 @@ export function SmartViewSidebar() {
           Smart Views
         </h3>
       </div>
-      
+
       <div className="space-y-1">
         {SYSTEM_VIEWS.map((view) => {
           const isActive = currentView === view.viewKey;
-          
+
           return (
             <button
               key={view.id}
@@ -46,24 +32,31 @@ export function SmartViewSidebar() {
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150",
                 "hover:bg-accent/50 group",
-                isActive 
-                  ? "bg-accent text-accent-foreground shadow-sm" 
+                isActive
+                  ? "bg-accent text-accent-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <span className="text-base flex-shrink-0 grayscale group-hover:grayscale-0 transition-all duration-150">
-                {view.icon}
+              <span className="flex-shrink-0 transition-all duration-150">
+                <view.icon
+                  className={cn(
+                    "h-4 w-4",
+                    isActive
+                      ? "text-accent-foreground"
+                      : "text-muted-foreground/70 group-hover:text-foreground"
+                  )}
+                />
               </span>
-              
-              <span className="flex-1 text-left">
-                {view.name}
-              </span>
-              
-              <Badge 
-                variant="secondary" 
+
+              <span className="flex-1 text-left">{view.name}</span>
+
+              <Badge
+                variant="secondary"
                 className={cn(
                   "h-5 min-w-[20px] px-1.5 text-[10px] font-bold transition-colors",
-                  isActive ? "bg-background/20 text-accent-foreground" : "bg-muted text-muted-foreground opacity-50"
+                  isActive
+                    ? "bg-background/20 text-accent-foreground"
+                    : "bg-muted text-muted-foreground opacity-50"
                 )}
               >
                 {smartViewCounts[view.viewKey] || 0}

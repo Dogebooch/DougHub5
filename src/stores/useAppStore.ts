@@ -88,9 +88,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       const itemsResult = await window.api.sourceItems.getAll();
       if (!itemsResult.error && itemsResult.data) {
         const items = itemsResult.data;
+        const todayStr = new Date().toDateString();
         const counts = {
           inbox: items.filter((i) => i.status === "inbox").length,
-          today: get().getCardsDueToday().length,
+          today: items.filter(
+            (i) => new Date(i.createdAt).toDateString() === todayStr
+          ).length,
           queue: items.filter(
             (i) => i.status === "inbox" && i.sourceType === "quickcapture"
           ).length,

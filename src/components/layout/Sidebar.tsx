@@ -1,15 +1,12 @@
 import { useState, useEffect } from "react";
 import {
-  Calendar,
-  Inbox,
-  List,
+  Database,
   Play,
   Plus,
   BookOpen,
   Tag,
   BarChart3,
   Settings,
-  // AlertTriangle, // TODO: Uncomment when weak topics section is implemented
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
@@ -43,7 +40,6 @@ export function Sidebar({ className }: SidebarProps) {
   const getCardsDueToday = useAppStore((state) => state.getCardsDueToday);
   const isHydrated = useAppStore((state) => state.isHydrated);
   const inboxCount = useAppStore((state) => state.inboxCount);
-  const queueCount = useAppStore((state) => state.queueCount);
 
   // Persist collapsed state
   useEffect(() => {
@@ -67,25 +63,11 @@ export function Sidebar({ className }: SidebarProps) {
       implemented: true,
     },
     {
-      id: "today",
-      label: "Today",
-      icon: Calendar,
-      badge: dueCount,
-      implemented: false,
-    },
-    {
-      id: "inbox",
-      label: "Inbox",
-      icon: Inbox,
+      id: "knowledgebank",
+      label: "Knowledge Bank",
+      icon: Database,
       badge: inboxCount,
       implemented: true,
-    },
-    {
-      id: "queue",
-      label: "Queue",
-      icon: List,
-      badge: queueCount,
-      implemented: false,
     },
   ];
 
@@ -173,7 +155,7 @@ export function Sidebar({ className }: SidebarProps) {
     <TooltipProvider>
       <aside
         className={cn(
-          "flex flex-col h-[calc(100vh-80px)] m-3 bg-muted/80 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl transition-all duration-200 z-20",
+          "flex flex-col h-[calc(100vh-80px)] m-3 bg-muted/20 backdrop-blur-md border border-border/40 rounded-xl shadow-2xl transition-all duration-200 z-20",
           collapsed ? "w-14" : "w-52",
           className
         )}
@@ -251,7 +233,7 @@ export function Sidebar({ className }: SidebarProps) {
         </nav>
 
         {/* Footer with settings */}
-        <div className="p-2 border-t border-white/5">
+        <div className="p-2 border-t border-border/20">
           <NavButton
             item={{
               id: "settings",

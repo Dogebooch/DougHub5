@@ -129,10 +129,10 @@ export function ClozeDisplay({ front, revealed = false, cardId, cardType }: Cloz
         return (
           <span
             key={index}
-            className="inline-block min-w-[3ch] px-3 py-1 mx-1 border-b-2 border-primary/50 text-primary/30"
+            className="inline-block min-w-[3ch] px-3 py-1 mx-1 border-b-2 border-primary/60 text-primary/70 bg-primary/5 rounded-t-sm"
             title={part.hint || undefined}
           >
-            {part.hint ? `[${part.hint}]` : '[...]'}
+            {part.hint ? `[${part.hint}]` : "[...]"}
           </span>
         );
       })}

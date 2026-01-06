@@ -3,29 +3,30 @@
 @config "../tailwind.config.ts";
 
 :root, .dark {
-  --background: 95 10% 9%;
-  --foreground: 37 25% 88%;
-  --card: 38 34% 86%;
-  --card-foreground: 120 20% 10%;
-  --popover: 120 12% 10%;
-  --popover-foreground: 35 25% 88%;
+  --background: 120 10% 8%;
+  --foreground: 40 10% 90%;
+  --card: 38 30% 84%;
+  --card-foreground: 120 25% 10%;
+  --card-muted-foreground: 38 15% 35%;
+  --popover: 120 12% 8%;
+  --popover-foreground: 40 10% 90%;
   --primary: 175 30% 45%;
   --primary-foreground: 120 10% 6%;
-  --secondary: 35 20% 14%;
-  --secondary-foreground: 35 25% 88%;
-  --muted: 120 8% 18%;
-  --muted-foreground: 35 15% 65%;
+  --secondary: 120 8% 12%;
+  --secondary-foreground: 40 10% 85%;
+  --muted: 120 8% 14%;
+  --muted-foreground: 40 5% 60%;
   --accent: 38 45% 42%;
-  --accent-foreground: 35 25% 88%;
+  --accent-foreground: 40 10% 90%;
   --destructive: 12 40% 48%;
-  --destructive-foreground: 35 25% 88%;
-  --border: 120 8% 14%;
-  --input: 120 8% 11%;
+  --destructive-foreground: 40 10% 90%;
+  --border: 120 8% 12%;
+  --input: 120 8% 10%;
   --ring: 175 30% 45%;
   --success: 145 20% 42%;
-  --success-foreground: 35 25% 88%;
+  --success-foreground: 40 10% 90%;
   --info: 195 25% 48%;
-  --info-foreground: 35 25% 88%;
+  --info-foreground: 40 10% 90%;
   --radius: 0.75rem;
   --chart-1: 175 30% 45%;
   --chart-2: 145 20% 42%;
@@ -37,6 +38,15 @@
   --transition-fast: 150ms ease-out;
   --transition-normal: 250ms ease-out;
   --transition-slow: 400ms ease-out;
+}
+
+/* Scoped Overrides for Manilla Cards */
+.bg-card {
+  --muted: 38 20% 80%;
+  --muted-foreground: var(--card-muted-foreground);
+  --border: 38 15% 76%; /* Defined edge for the paper */
+  --destructive-foreground: 12 45% 15%; /* Deep blood red */
+  --success-foreground: 145 35% 15%; /* Deep forest green */
 }
 
 @layer base {

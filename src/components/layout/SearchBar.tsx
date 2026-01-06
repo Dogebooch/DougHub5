@@ -164,7 +164,10 @@ export function SearchBar() {
           ref={inputRef}
           type="text"
           value={query}
-          onChange={e => { setQuery(e.target.value); setIsOpen(true); }}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setIsOpen(true);
+          }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search... (Ctrl+F)"
@@ -182,17 +185,17 @@ export function SearchBar() {
 
       {/* Dropdown */}
       {isOpen && query.trim() && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-black/10 rounded-lg shadow-xl z-50 overflow-hidden text-card-foreground">
           {/* Filter Chips */}
-          <div className="flex gap-1 p-2 border-b border-border bg-muted/30">
-            {FILTER_OPTIONS.map(opt => (
+          <div className="flex gap-1 p-2 border-b border-black/5 bg-black/5">
+            {FILTER_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => setFilter(opt.value)}
                 className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
                   filter === opt.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-black/10 hover:bg-black/20 text-card-muted"
                 }`}
               >
                 {opt.icon}
@@ -209,7 +212,7 @@ export function SearchBar() {
           {/* Results List */}
           <div className="max-h-80 overflow-y-auto">
             {isLoading ? (
-              <div className="p-4 text-center text-muted-foreground text-sm">
+              <div className="p-4 text-center text-card-muted text-sm">
                 Searching...
               </div>
             ) : results?.results.length ? (
@@ -219,21 +222,26 @@ export function SearchBar() {
                   onClick={() => handleResultClick(result)}
                   onMouseEnter={() => setSelectedIndex(index)}
                   className={`w-full text-left px-3 py-2 flex items-start gap-3 transition-colors ${
-                    index === selectedIndex ? 'bg-muted' : 'hover:bg-muted/50'
+                    index === selectedIndex ? "bg-black/10" : "hover:bg-black/5"
                   }`}
                 >
-                  <div className="mt-0.5">{getResultIcon(result.type)}</div>
+                  <div className="mt-0.5 text-card-muted">
+                    {getResultIcon(result.type)}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-foreground truncate">
+                    <div className="text-sm font-medium text-card-foreground truncate">
                       {result.title}
                     </div>
-                    <div className="text-xs text-muted-foreground line-clamp-2">
+                    <div className="text-xs text-card-muted/80 line-clamp-2">
                       {highlightSnippet(result.snippet)}
                     </div>
                     {result.tags && result.tags.length > 0 && (
                       <div className="flex gap-1 mt-1 flex-wrap">
-                        {result.tags.slice(0, 3).map(tag => (
-                          <span key={tag} className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                        {result.tags.slice(0, 3).map((tag) => (
+                          <span
+                            key={tag}
+                            className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded"
+                          >
                             #{tag}
                           </span>
                         ))}
@@ -243,7 +251,7 @@ export function SearchBar() {
                 </button>
               ))
             ) : (
-              <div className="p-4 text-center text-muted-foreground text-sm">
+              <div className="p-4 text-center text-card-muted text-sm">
                 No results found
               </div>
             )}

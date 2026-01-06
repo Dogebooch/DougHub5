@@ -339,6 +339,262 @@
 **Source:** TaskMaster AI setup docs (post-mvp-ui-enhancements.txt)
 **Notes:** Delightful detail. Pure polish.
 
+### Weak Topics in Sidebar
+**Description:** Add Weak Topics nav item to sidebar INSIGHTS section showing count of topics with low-ease cards (<2.0). Requires T46 (low-ease detection) to be complete first.
+**Priority:** Medium
+**Source:** UI/UX Sidebar Analysis (2026-01-06)
+**Notes:** Valuable diagnostic signal for Doug. Defer until T46 provides the underlying data. Add to sidebar after low-ease detection works.
+
+### Stats in Sidebar
+**Description:** Add Stats nav item to sidebar for review analytics dashboard. Currently not daily-use for exhausted user.
+**Priority:** Low
+**Source:** UI/UX Sidebar Analysis (2026-01-06)
+**Notes:** Move to Settings menu for now. Consider promoting to sidebar post-MVP if users want quick access to stats.
+
+### Sidebar Keyboard Navigation (j/k)
+**Description:** Add Vim-style keyboard navigation for sidebar: j/k to move between nav items, Enter to select. Matches Superhuman/Things 3 patterns.
+**Priority:** Low
+**Source:** UI/UX Sidebar Analysis (2026-01-06)
+**Notes:** Power user polish. Not blocking any workflow.
+
+### Collapsible Sidebar Sections
+**Description:** Allow DO NOW and LIBRARY sections to collapse/expand independently. Persist state in localStorage.
+**Priority:** Low
+**Source:** UI/UX Sidebar Analysis (2026-01-06)
+**Notes:** Nice-to-have. Current section headers are sufficient without collapse.
+
+---
+
+## Navigation & History
+
+### Global Floating Capture Window
+**Description:** Ctrl+Enter hotkey to open floating capture window from anywhere in app. Always-accessible quick dump.
+**Priority:** Low
+**Source:** Task T16 (Legacy)
+**Notes:** Current Quick Dump modal covers this. Floating window is UX polish.
+
+### Back Button with Navigation History
+**Description:** Persistent back button with navigation history stack. Remember previous views for natural back/forward.
+**Priority:** Low
+**Source:** Task T33 (Legacy)
+**Notes:** Escape key provides basic back. Full history stack is post-MVP.
+
+---
+
+## Cloze & Card Editing
+
+### Modern Cloze UI
+**Description:** Replace {{c1::text}} syntax with click-based cloze creation. Select text → click "Make Cloze" or use keyboard shortcut. Cleaner review display without curly braces.
+**Priority:** Medium
+**Source:** Task T34 (Legacy)
+**Notes:** Current syntax works but feels technical. Would improve capture UX significantly.
+
+---
+
+## AI Enhancements
+
+### AI Context Optimization (Lost in the Middle)
+**Description:** Research and fix "lost in the middle" problem where AI ignores context in long prompts. Optimize context window usage for extraction.
+**Priority:** Medium
+**Source:** Task T48 (Legacy)
+**Notes:** Affects extraction quality with long source content.
+
+### AI Agent / Jarvis Mode
+**Description:** Natural language interface for card retrieval. "Show me cards about heart failure" → filtered view. Voice or text input.
+**Priority:** Low
+**Source:** Task T51 (Legacy)
+**Notes:** Exploratory. Cool but not essential for core learning loop.
+
+### Procedural Simulation Mode
+**Description:** Interactive procedure review with equipment recall and sequential steps. "You're about to intubate—what equipment do you need?" before revealing steps.
+**Priority:** Low
+**Source:** Task T52 (Legacy)
+**Notes:** Requires medical list processing first. Advanced learning mode.
+
+---
+
+## Review UI Improvements
+
+### Manual Grade Button Contrast
+**Description:** Improve color contrast on manual grade override buttons for accessibility.
+**Priority:** Low
+**Source:** Task T53 (Legacy)
+**Notes:** Current colors work but could be more accessible.
+
+### First-Time Review Tutorial
+**Description:** Interactive tutorial explaining zero-decision review flow on first use. Show how timing affects auto-grade.
+**Priority:** Low
+**Source:** Task T55 (Legacy)
+**Notes:** Onboarding improvement. Users figure it out but tutorial would help.
+
+### Hide Grade Buttons Until Answer Shown
+**Description:** Don't show manual grade buttons until after answer is revealed. Prevents accidental pre-answer grading.
+**Priority:** Low
+**Source:** Task T56 (Legacy)
+**Notes:** Minor UX bug. Low priority.
+
+### Persistent Back Button in Review Header
+**Description:** Always-visible back button in review screen header for quick exit without keyboard.
+**Priority:** Low
+**Source:** Task T57 (Legacy)
+**Notes:** Escape works but button adds discoverability.
+
+---
+
+## Data Import/Export
+
+### Anki Import (.apkg)
+**Description:** Import Anki decks (.apkg files) into DougHub. Parse SQLite, map fields, preserve scheduling if possible.
+**Priority:** High
+**Source:** Task T73 (Legacy)
+**Notes:** Critical for users migrating from Anki. Major feature.
+
+### Undo Functionality (Ctrl+Z)
+**Description:** Global undo for edits and review grades. Undo stack with reasonable depth (10-20 actions).
+**Priority:** Medium
+**Source:** Task T72 (Legacy)
+**Notes:** Important safety net. Implement after core flows stable.
+
+---
+
+## Onboarding & Help
+
+### Queue Onboarding
+**Description:** Explain what Queue view is and how cards get there. Tooltip or first-time modal explaining FSRS scheduling.
+**Priority:** Low
+**Source:** Task T71 (Legacy)
+**Notes:** Users may not understand Queue vs Today distinction.
+
+---
+
+## Infrastructure
+
+### Expand Medical Acronym Database
+**Description:** Replace current 137-entry acronym list with ~2000+ entries from open-source medical abbreviation datasets.
+**Priority:** Low
+**Source:** Task T92 (Legacy)
+**Notes:** Current list covers common abbreviations. Expand if gaps found.
+
+### Close Ollama on App Exit
+**Description:** Gracefully terminate spawned Ollama process when Electron app closes. Prevent orphan processes.
+**Priority:** Low
+**Source:** Task T93 (Legacy)
+**Notes:** Currently Ollama may stay running. Minor cleanup issue.
+
+---
+
+## Learning Mode (Evidence-Based)
+
+> **Note:** This is a comprehensive evidence-based learning enhancement suite. Implement after core MVP is stable. Based on cognitive science research.
+
+### Post-Practice Review Trigger
+**Description:** After practice session, offer Quick/Deep review mode choice. Quick = standard FSRS. Deep = elaborated feedback.
+**Priority:** Medium
+**Source:** Task T94 (Legacy)
+**Notes:** Entry point for learning mode features.
+
+### 3-Button Confidence Rating
+**Description:** Replace auto-grade with Forgot/Struggled/Knew It buttons. Explicit confidence signal for scheduling.
+**Priority:** Medium
+**Source:** Task T95 (Legacy)
+**Notes:** More granular than time-based auto-grade. Research-backed.
+
+### Elaborated Feedback
+**Description:** Show why-right and why-wrong explanations after answer. AI-generated or author-written.
+**Priority:** Medium
+**Source:** Task T96 (Legacy)
+**Notes:** Improves learning vs simple correct/incorrect feedback.
+
+### Adaptive Gating Logic
+**Description:** Route cards based on confidence + correctness. Low confidence + correct → "lucky guess" path. High confidence + wrong → "misconception" path.
+**Priority:** Medium
+**Source:** Task T97 (Legacy)
+**Notes:** Sophisticated scheduling based on metacognition.
+
+### Discrimination Training
+**Description:** When user confuses similar concepts, surface comparison cards. "You said A but meant B—here's how they differ."
+**Priority:** Medium
+**Source:** Task T98 (Legacy)
+**Notes:** Addresses common medical confusion (e.g., similar drug names).
+
+### Transfer Practice Variants
+**Description:** Same concept in different clinical contexts. "You know X for adults—now try pediatric version."
+**Priority:** Low
+**Source:** Task T99 (Legacy)
+**Notes:** Promotes transfer learning. Requires card variants.
+
+### Response Time as Implicit Confidence
+**Description:** Use response latency as secondary confidence signal. Fast + correct = high confidence. Slow + correct = retrieval struggle.
+**Priority:** Low
+**Source:** Task T100 (Legacy)
+**Notes:** Already tracking time. This is about using it smarter.
+
+### Confidence-Weighted FSRS Adjustments
+**Description:** Multiply FSRS intervals by confidence factor. Low confidence → shorter intervals even if correct.
+**Priority:** Medium
+**Source:** Task T101 (Legacy)
+**Notes:** Research-backed modification to standard FSRS.
+
+### Pre-Test Diagnostic
+**Description:** Before generating cards from topic, run quick diagnostic. If >80% accuracy, skip or reduce card count.
+**Priority:** Low
+**Source:** Task T102 (Legacy)
+**Notes:** Saves time on already-known material. Efficiency feature.
+
+### Illness Script Template
+**Description:** Scaffold for medical content consolidation. Etiology → Risk Factors → Presentation → Diagnosis → Treatment structure.
+**Priority:** Medium
+**Source:** Task T103 (Legacy)
+**Notes:** Medical-specific organization pattern. Very useful for clinical reasoning.
+
+### Confusion Alert for Similar Terms
+**Description:** Detect when answer matches wrong but similar concept. "You answered Digoxin but that's for atrial fibrillation—this is asking about heart failure."
+**Priority:** Medium
+**Source:** Task T104 (Legacy)
+**Notes:** Powerful feedback for discrimination errors.
+
+### Session Fatigue Detection
+**Description:** Monitor accuracy drop during session. Suggest break when performance declines significantly.
+**Priority:** Low
+**Source:** Task T105 (Legacy)
+**Notes:** Evidence-based fatigue management. Nice-to-have.
+
+### Progress Bar UI
+**Description:** Thin progress bar at top of screen showing session progress. Duolingo-style motivation without distraction.
+**Priority:** Low
+**Source:** Task T106 (Legacy)
+**Notes:** Simple motivational element.
+
+### Card Maturity Tracking
+**Description:** Track which cards are "mature" (passed multiple reviews) vs "learning". Show exam readiness percentage.
+**Priority:** Medium
+**Source:** Task T107 (Legacy)
+**Notes:** Valuable for board prep timeline planning.
+
+---
+
+## Gamification
+
+> **Note:** Motivational features for consistent study habits. Implement after core learning loop is satisfying.
+
+### Daily Streak
+**Description:** Track consecutive study days. Visual indicator in sidebar or header. Streak freeze for sick days.
+**Priority:** Low
+**Source:** Task T108 (Legacy)
+**Notes:** Simple motivation. Duolingo-proven pattern.
+
+### XP System
+**Description:** Award XP for reviews, new cards, streaks. Session summaries show XP earned. Levels or milestones.
+**Priority:** Low
+**Source:** Task T109 (Legacy)
+**Notes:** Gamification layer. May feel cheesy—test with users.
+
+### Review Heatmap
+**Description:** GitHub-style activity calendar showing review history. Green squares for study days. Visualize consistency.
+**Priority:** Low
+**Source:** Task T110 (Legacy)
+**Notes:** Popular in Anki community. Good motivation/accountability.
+
 ---
 
 ## Archive (Completed or Obsolete)
@@ -347,4 +603,4 @@
 
 ---
 
-*Last updated: 2026-01-06*
+*Last updated: 2026-01-06 (TaskMaster cleanup - added 32 items from deferred tasks)*

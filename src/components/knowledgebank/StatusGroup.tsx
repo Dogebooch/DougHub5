@@ -53,31 +53,34 @@ export const StatusGroup = ({
     <Collapsible
       open={isExpanded}
       onOpenChange={onToggle}
-      className="w-full border-b"
+      className="w-full border-b border-black/5"
     >
       <CollapsibleTrigger asChild>
-        <div className="flex items-center justify-between p-3 hover:bg-muted/50 cursor-pointer transition-colors group">
+        <div className="flex items-center justify-between p-3 hover:bg-black/5 cursor-pointer transition-colors group text-card-foreground">
           <div className="flex items-center gap-2">
             <ChevronRight
               className={cn(
-                "h-4 w-4 transition-transform duration-200 text-muted-foreground",
+                "h-4 w-4 transition-transform duration-200 text-card-muted/70",
                 isExpanded && "rotate-90"
               )}
             />
-            <span className="font-medium text-sm capitalize">{title}</span>
+            <span className="font-semibold text-[11px] uppercase tracking-wider">
+              {title}
+            </span>
           </div>
-          <Badge 
-            variant={badgeConfig.variant} 
-            className={cn("px-2 py-0.5 text-xs font-semibold", badgeConfig.className)}
+          <Badge
+            variant={badgeConfig.variant}
+            className={cn(
+              "px-2 py-0.5 text-[10px] font-bold",
+              badgeConfig.className
+            )}
           >
             {count}
           </Badge>
         </div>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="flex flex-col">
-          {children}
-        </div>
+        <div className="flex flex-col bg-card">{children}</div>
       </CollapsibleContent>
     </Collapsible>
   );

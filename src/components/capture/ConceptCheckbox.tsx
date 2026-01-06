@@ -68,8 +68,8 @@ export function ConceptCheckbox({
       className={cn(
         "flex items-start gap-4 p-5 rounded-2xl border transition-all duration-300",
         isSelected
-          ? "bg-primary/10 border-primary/30 shadow-md"
-          : "bg-muted/40 border-border/50 hover:border-border/70 hover:bg-muted/60"
+          ? "bg-primary/15 border-primary/40 shadow-sm"
+          : "bg-black/5 border-black/5 hover:border-black/10 hover:bg-black/10"
       )}
       role="listitem"
       tabIndex={0}
@@ -97,7 +97,7 @@ export function ConceptCheckbox({
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="flex-1 bg-background border-border/60 text-foreground"
+              className="flex-1 bg-black/5 border-black/10 text-card-foreground focus-visible:ring-primary/20"
               autoFocus
             />
             <Button

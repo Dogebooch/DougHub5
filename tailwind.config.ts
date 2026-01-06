@@ -21,6 +21,7 @@ const config: Config = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+          muted: "hsl(var(--card-muted-foreground))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",

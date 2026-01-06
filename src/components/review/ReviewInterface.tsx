@@ -377,15 +377,15 @@ export function ReviewInterface() {
       </div>
 
       {/* Card display */}
-      <div className="bg-card border border-border/60 rounded-2xl p-8 space-y-6 shadow-lg relative overflow-hidden min-h-[320px] flex flex-col justify-center transition-all duration-300 hover:shadow-xl">
+      <div className="bg-card border border-border/60 rounded-2xl p-8 space-y-6 shadow-lg relative overflow-hidden min-h-[320px] flex flex-col justify-center transition-all duration-300 hover:shadow-xl text-card-foreground">
         {/* Subtle accent line */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
         <div className="text-center space-y-6">
           {/* Front - Use cloze renderer for cloze and list-cloze types */}
           {currentCard.cardType === "cloze" ||
           currentCard.cardType === "list-cloze" ? (
-            <div className="text-2xl font-serif leading-relaxed tracking-tight text-card-foreground/90">
+            <div className="text-2xl font-serif leading-relaxed tracking-tight text-card-foreground/95">
               <ClozeDisplay
                 front={currentCard.front}
                 revealed={answerVisible}
@@ -400,15 +400,15 @@ export function ReviewInterface() {
           )}
 
           {answerVisible && (
-            <div className="pt-6 border-t border-border/40 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="pt-6 border-t border-black/5 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
               {/* Back - Use cloze answer for cloze types */}
               {currentCard.cardType === "cloze" ||
               currentCard.cardType === "list-cloze" ? (
-                <div className="font-serif italic text-xl text-card-foreground/70">
+                <div className="font-serif italic text-xl text-card-muted/90">
                   <ClozeAnswer back={currentCard.back} />
                 </div>
               ) : (
-                <div className="text-xl leading-relaxed text-card-foreground/70 font-serif italic">
+                <div className="text-xl leading-relaxed text-card-muted/90 font-serif italic">
                   {currentCard.back}
                 </div>
               )}
@@ -416,9 +416,9 @@ export function ReviewInterface() {
           )}
         </div>
 
-        <div className="text-center text-[10px] text-muted-foreground/70 pt-6 border-t border-border/30 font-medium uppercase tracking-widest">
+        <div className="text-center text-[10px] text-card-muted/70 pt-6 border-t border-black/5 font-medium uppercase tracking-widest">
           <span className="opacity-50">Source:</span>{" "}
-          <span className="text-card-foreground/50">
+          <span className="text-card-foreground/70">
             {currentNote ? currentNote.title : "Unknown"}
           </span>
           {currentCard.state > 0 && (

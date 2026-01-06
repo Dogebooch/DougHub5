@@ -22,8 +22,8 @@
 
 ## MVP Screen Architecture
 
-### DECISION: 2 Screens + Smart View Sidebar
-*Based on Linear UI patterns and Things 3 Smart Lists paradigm*
+### DECISION: Single Unified Sidebar (Revised 2026-01-06)
+*Based on Things 3 "action vs reference" mental model. Reduces cognitive load for exhausted user.*
 
 ---
 
@@ -33,41 +33,47 @@
 ```
 ┌─ DougHub ─────────────────────────────────────────────────────────┐
 │ [≡] [🔍 Search... Ctrl+K]                          [⚙️] [👤]      │
-├───────────────────┬───────────────────────────────────────────────┤
-│                   │                                               │
-│  SMART VIEWS      │  MAIN CONTENT AREA                           │
-│  ─────────────    │  (adapts to selected view)                   │
-│  📥 Inbox (5)     │                                               │
-│  📅 Today (12)    │  ┌─ INBOX ──────────────────────────────────┐ │
-│  📋 Queue         │  │                                          │ │
-│  📚 Notebook      │  │  [─ Today ─────────────────────────────] │ │
-│  🏷️ Topics        │  │  ┌────────────────────────────────────┐  │ │
-│  📊 Stats         │  │  │ 📄 UWorld Q#1234                   │  │ │
-│                   │  │  │    Cardiology • inbox              │  │ │
-│  ─────────────    │  │  │    [Add to Notebook ▼] [Open] [🗑️] │  │ │
-│  WEAK TOPICS      │  │  └────────────────────────────────────┘  │ │
-│  ⚠️ HOCM (3)      │  │  ┌────────────────────────────────────┐  │ │
-│  ⚠️ HF (2)        │  │  │ 🖼️ Anatomy - Knee                  │  │ │
-│                   │  │  │    Orthopedics • inbox             │  │ │
-│                   │  │  │    [Add to Notebook ▼] [Open] [🗑️] │  │ │
-│                   │  │  └────────────────────────────────────┘  │ │
-│                   │  │                                          │ │
-│                   │  └──────────────────────────────────────────┘ │
-├───────────────────┴───────────────────────────────────────────────┤
+├──────────────────┬────────────────────────────────────────────────┤
+│                  │                                                │
+│  DO NOW          │  MAIN CONTENT AREA                            │
+│  ────────────    │  (adapts to selected view)                    │
+│  ▶ Review (12)   │                                                │
+│  📥 Inbox (5)    │  Knowledge Bank shows ALL items with inbox    │
+│                  │  items grouped at top. "Inbox" in DO NOW is   │
+│  LIBRARY         │  a pre-filtered shortcut to that same view.   │
+│  ────────────    │                                                │
+│  📓 Notebook     │  Same data, different entry point by intent.  │
+│  📚 Knowledge    │                                                │
+│                  │                                                │
+│  ────────────    │                                                │
+│  ⚙️ Settings     │                                                │
+│                  │                                                │
+├──────────────────┴────────────────────────────────────────────────┤
 │  ✓ Auto-saved • 847 cards • 156 sources     [⚡ Quick Capture Ctrl+⇧S]│
 └───────────────────────────────────────────────────────────────────┘
 ```
 
-### Smart Views (Sidebar)
-| View | Filter | Badge |
-|------|--------|-------|
-| **Inbox** | status='inbox' | Count |
-| **Today** | Due cards + recent captures | Count |
-| **Queue** | Quick Captures pending | Count |
-| **Notebook** | All NotebookTopicPages | - |
-| **Topics** | CanonicalTopic browser | - |
-| **Stats** | Dashboard | - |
-| **Weak Topics** | Topics with low-ease cards | Count |
+### Visual Hierarchy
+- **Review** = MOST prominent (primary color, larger/bolder) - Doug's main action
+- **Inbox** = Secondary emphasis (pre-filtered shortcut to KB inbox items)
+- **Library items** = Neutral/calm reference destinations
+
+### Sidebar (5 items total)
+| View | Purpose | Badge |
+|------|---------|-------|
+| **Review** | Due cards (FSRS) | Count |
+| **Inbox** | Shortcut to KB filtered by status='inbox' | Count |
+| **Notebook** | Topic pages, card generation | - |
+| **Knowledge Bank** | ALL items, inbox grouped at top | - |
+| **Settings** | Configuration | - |
+
+### Removed from Sidebar (MVP)
+- **Capture** → FAB + Ctrl+Shift+S sufficient
+- **Today** → Date grouping within Inbox/KB view
+- **Queue** → Filter chip within Inbox view
+- **Topics** → Browse within Notebook
+- **Stats** → Move to Settings (not daily-use)
+- **Weak Topics** → Deferred until T46 (low-ease detection)
 
 ### Source Item Row (Vertical List)
 ```

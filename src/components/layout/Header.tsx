@@ -9,7 +9,7 @@ export function Header() {
   const isBrowserMode = typeof window !== "undefined" && !window.api;
 
   return (
-    <header className="h-14 border-b border-white/10 bg-black/30 backdrop-blur-xl sticky top-0 z-50">
+    <header className="h-14 border-b border-border/60 bg-background/50 backdrop-blur-xl sticky top-0 z-50">
       <div className="h-full px-4 flex items-center justify-between gap-4">
         {/* Logo and title */}
         <button

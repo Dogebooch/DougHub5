@@ -26,21 +26,21 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
 }) => {
   const getIcon = () => {
     switch (sourceItem.sourceType) {
-      case 'qbank':
-        return <BookOpen className="h-4 w-4 text-muted-foreground" />;
-      case 'article':
-      case 'pdf':
-        return <FileText className="h-4 w-4 text-muted-foreground" />;
-      case 'image':
-        return <Image className="h-4 w-4 text-muted-foreground" />;
-      case 'audio':
-        return <Mic className="h-4 w-4 text-muted-foreground" />;
-      case 'quickcapture':
-        return <Zap className="h-4 w-4 text-muted-foreground" />;
-      case 'manual':
-        return <Edit className="h-4 w-4 text-muted-foreground" />;
+      case "qbank":
+        return <BookOpen className="h-4 w-4 text-card-muted" />;
+      case "article":
+      case "pdf":
+        return <FileText className="h-4 w-4 text-card-muted" />;
+      case "image":
+        return <Image className="h-4 w-4 text-card-muted" />;
+      case "audio":
+        return <Mic className="h-4 w-4 text-card-muted" />;
+      case "quickcapture":
+        return <Zap className="h-4 w-4 text-card-muted" />;
+      case "manual":
+        return <Edit className="h-4 w-4 text-card-muted" />;
       default:
-        return <FileText className="h-4 w-4 text-muted-foreground" />;
+        return <FileText className="h-4 w-4 text-card-muted" />;
     }
   };
 
@@ -51,17 +51,20 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
   return (
     <div
       className={cn(
-        'group flex items-center gap-4 p-4 border-b transition-colors hover:bg-muted/30',
-        isSelected && 'bg-primary/5 border-primary/20'
+        "group flex items-center gap-4 p-4 border-b transition-colors hover:bg-black/5 text-card-foreground",
+        isSelected && "bg-primary/10 border-primary/30"
       )}
     >
       <div className="flex items-center gap-4 shrink-0">
         <Checkbox
           checked={isSelected}
-          onCheckedChange={(checked) => onToggleSelect(sourceItem.id, !!checked)}
+          onCheckedChange={(checked) =>
+            onToggleSelect(sourceItem.id, !!checked)
+          }
           aria-label={`Select ${sourceItem.title}`}
+          className="border-card-muted/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
-        <div className="p-2 rounded-lg bg-muted flex items-center justify-center">
+        <div className="p-2 rounded-lg bg-black/5 flex items-center justify-center">
           {getIcon()}
         </div>
       </div>
@@ -71,19 +74,28 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
           <h3 className="font-medium text-sm truncate leading-none">
             {sourceItem.title}
           </h3>
-          <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-            {formatDistanceToNow(new Date(sourceItem.createdAt), { addSuffix: true })}
+          <span className="text-[10px] text-card-muted whitespace-nowrap">
+            {formatDistanceToNow(new Date(sourceItem.createdAt), {
+              addSuffix: true,
+            })}
           </span>
         </div>
-        
+
         <div className="flex flex-wrap gap-1.5">
           {displayedTags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="px-1.5 py-0 text-[10px] font-normal">
+            <Badge
+              key={tag}
+              variant="secondary"
+              className="px-1.5 py-0 text-[10px] font-normal bg-card-muted/10 text-card-muted border-none"
+            >
               {tag}
             </Badge>
           ))}
           {remainingTagsCount > 0 && (
-            <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-normal">
+            <Badge
+              variant="secondary"
+              className="px-1.5 py-0 text-[10px] font-normal bg-card-muted/10 text-card-muted border-none"
+            >
               +{remainingTagsCount}
             </Badge>
           )}
@@ -94,14 +106,14 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
         <Button
           size="sm"
           variant="outline"
-          className="h-8 text-xs font-medium"
+          className="h-8 text-xs font-medium border-card-muted/20 text-card-muted hover:bg-black/5 hover:text-card-foreground"
           onClick={() => onOpen(sourceItem)}
         >
           Open
         </Button>
         <Button
           size="sm"
-          className="h-8 text-xs font-medium bg-primary hover:bg-primary/90"
+          className="h-8 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
           onClick={() => onAddToNotebook(sourceItem)}
         >
           Add to Notebook
@@ -109,7 +121,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
         <Button
           size="icon"
           variant="ghost"
-          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          className="h-8 w-8 text-card-muted/70 hover:text-red-900 hover:bg-red-900/10"
           onClick={() => onDelete(sourceItem)}
         >
           <Trash2 className="h-4 w-4" />
