@@ -24,6 +24,11 @@ import type {
 } from "../src/types/ai";
 import type { DbNote } from "./database";
 import OpenAI from "openai";
+import * as http from "node:http";
+import { spawn } from "node:child_process";
+import * as path from "node:path";
+import * as os from "node:os";
+import * as fs from "node:fs";
 
 // ============================================================================
 // AI Result Cache
@@ -144,6 +149,107 @@ export const PROVIDER_PRESETS: Record<AIProviderType, AIProviderConfig> = {
   },
 };
 
+/** Flag to prevent multiple concurrent Ollama startup attempts */
+let isStartingOllama = false;
+
+/**
+ * Check if Ollama is currently running and responding.
+ *
+ * @returns True if Ollama is reachable
+ */
+async function isOllamaRunning(): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    const req = http.get("http://localhost:11434/v1/models", (res) => {
+      resolve(res.statusCode === 200);
+      res.resume();
+    });
+
+    req.on("error", () => resolve(false));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(false);
+    });
+
+    // 1s timeout for quick check
+    req.setTimeout(1000);
+  });
+}
+
+/**
+ * Locate the Ollama executable on the system.
+ *
+ * @returns Path to executable or 'ollama' if should rely on PATH
+ */
+function findOllamaExecutable(): string {
+  if (os.platform() === "win32") {
+    // Check common Windows location
+    const localAppData = process.env["LOCALAPPDATA"] || "";
+    const winPath = path.join(localAppData, "Programs", "Ollama", "ollama.exe");
+    if (fs.existsSync(winPath)) {
+      return winPath;
+    }
+  } else {
+    // Check common macOS/Linux location
+    const unixPath = "/usr/local/bin/ollama";
+    if (fs.existsSync(unixPath)) {
+      return unixPath;
+    }
+  }
+
+  // Fallback to PATH
+  return "ollama";
+}
+
+/**
+ * Ensures Ollama is running, starting it if necessary.
+ *
+ * @returns True if Ollama is running or was successfully started
+ */
+export async function ensureOllamaRunning(): Promise<boolean> {
+  if (isStartingOllama) {
+    // Already in the middle of a startup attempt
+    return false;
+  }
+
+  // 1. Check if already running
+  if (await isOllamaRunning()) {
+    console.log("[AI Service] Ollama already running");
+    return true;
+  }
+
+  isStartingOllama = true;
+  console.log("[AI Service] Starting Ollama...");
+
+  try {
+    const exe = findOllamaExecutable();
+
+    // 2. Spawn as detached background process
+    const ollamaProcess = spawn(exe, ["serve"], {
+      detached: true,
+      stdio: "ignore",
+      shell: true,
+    });
+
+    ollamaProcess.unref();
+
+    // 3. Retry connection check (10 times with 500ms delay)
+    for (let i = 0; i < 10; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (await isOllamaRunning()) {
+        console.log("[AI Service] Ollama started successfully");
+        isStartingOllama = false;
+        return true;
+      }
+    }
+  } catch (err) {
+    console.error("[AI Service] Failed to start Ollama:", err);
+  }
+
+  console.error("[AI Service] Failed to start Ollama after retries");
+  isStartingOllama = false;
+  return false;
+}
+
 // ============================================================================
 // Provider Detection
 // ============================================================================
@@ -158,37 +264,10 @@ export const PROVIDER_PRESETS: Record<AIProviderType, AIProviderConfig> = {
  * @returns Detected provider type
  */
 export async function detectProvider(): Promise<AIProviderType> {
-  // Try Ollama auto-detection using http module for better Node.js compatibility
-  try {
-    const { default: http } = await import("node:http");
-
-    const isAvailable = await new Promise<boolean>((resolve) => {
-      const timeoutId = setTimeout(() => {
-        req.destroy();
-        resolve(false);
-      }, 1000);
-
-      const req = http.get("http://localhost:11434/api/tags", (res) => {
-        clearTimeout(timeoutId);
-        resolve(res.statusCode === 200);
-        res.resume(); // Consume response to free up socket
-      });
-
-      req.on("error", () => {
-        clearTimeout(timeoutId);
-        resolve(false);
-      });
-    });
-
-    if (isAvailable) {
-      console.log("[AI Service] Ollama detected on localhost:11434");
-      return "ollama";
-    }
-  } catch (error) {
-    // Ollama not available - silent fallback
-    if (error instanceof Error) {
-      console.log("[AI Service] Ollama detection error:", error.message);
-    }
+  // Try Ollama auto-detection
+  if (await isOllamaRunning()) {
+    console.log("[AI Service] Ollama detected on localhost:11434");
+    return "ollama";
   }
 
   // Check environment variable
@@ -253,6 +332,16 @@ export async function initializeClient(
   config?: AIProviderConfig
 ): Promise<OpenAI> {
   const providerConfig = config ?? (await getProviderConfig());
+
+  // Ensure Ollama is running if using Ollama provider (determined by URL)
+  if (providerConfig.baseURL.includes("localhost:11434")) {
+    const isRunning = await ensureOllamaRunning();
+    if (!isRunning) {
+      console.warn(
+        "[AI Service] Ollama auto-start failed or timed out. Client initialization will proceed, but requests may fail."
+      );
+    }
+  }
 
   aiClient = new OpenAI({
     baseURL: providerConfig.baseURL,

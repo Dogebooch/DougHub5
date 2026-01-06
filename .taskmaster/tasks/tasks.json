@@ -485,7 +485,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -581,7 +581,8 @@
             "testStrategy": "Search query with 50 results, click 'View all 50 results' in dropdown. Verify navigation to /search?q=... page. Verify all 50 results displayed in sections. Click 'Cards' tab, verify filter applied and URL updates. Click browser back button, verify returns to previous view. Test pagination with 100+ results. Verify performance <200ms even on full results page. Test empty state with nonsense query.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-01-06T05:12:32.737Z"
       },
       {
         "id": "11",
@@ -1915,13 +1916,25 @@
         "status": "done",
         "subtasks": [],
         "updatedAt": "2026-01-06T04:58:26.652Z"
+      },
+      {
+        "id": "92",
+        "title": "Expand medical acronym database with open-source dataset",
+        "description": "Replace 137-entry acronym list with comprehensive dataset (~2000 entries) from imantsm/medical_abbreviations GitHub repo. Improves search recall for medical terminology.",
+        "details": "",
+        "testStrategy": "",
+        "priority": "low",
+        "dependencies": [],
+        "status": "deferred",
+        "subtasks": [],
+        "updatedAt": "2026-01-06T05:15:00.000Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-06T04:58:26.654Z",
-      "taskCount": 83,
-      "completedCount": 8,
+      "lastModified": "2026-01-06T05:12:32.738Z",
+      "taskCount": 84,
+      "completedCount": 9,
       "tags": [
         "master"
       ]
