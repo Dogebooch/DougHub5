@@ -191,7 +191,7 @@ interface SmartViewFilter {
 │                   │  └──────────────────────────────────────────┘ │
 │                   │                                               │
 ├───────────────────┴───────────────────────────────────────────────┤
-│  ✓ Auto-saved • 847 cards • 156 sources     [⚡ Quick Dump ⌘⇧S]  │
+│  ✓ Auto-saved • 847 cards • 156 sources     [⚡ Quick Capture ⌘⇧S]  │
 └───────────────────────────────────────────────────────────────────┘
 ```
 
@@ -201,7 +201,7 @@ interface SmartViewFilter {
 |------|--------|-------|
 | **Inbox** | status='inbox' | Count |
 | **Today** | Due cards + recent captures | Count |
-| **Queue** | Quick dumps pending | Count |
+| **Queue** | Quick Captures pending | Count |
 | **Notebook** | All topic pages | - |
 | **Topics** | CanonicalTopic browser | - |
 | **Stats** | Dashboard | - |
@@ -316,10 +316,10 @@ interface SmartViewFilter {
 │  💡 FSRS handles scheduling automatically                        │
 ```
 
-### Quick Dump Modal (⌘⇧S)
+### Quick Capture Modal (⌘⇧S)
 
 ```
-┌─ QUICK DUMP ─────────────────────────────────────────────────────┐
+┌─ Quick Capture ─────────────────────────────────────────────────────┐
 │                                                          [×]     │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐│
@@ -354,7 +354,7 @@ interface SmartViewFilter {
 │  ○ Go to Notebook                                ⌘3              │
 │                                                                  │
 │  ACTIONS                                                         │
-│  ○ Quick Dump                                    ⌘⇧S             │
+│  ○ Quick Capture                                    ⌘⇧S             │
 │  ○ Start Review                                  ⌘R              │
 │  ○ New Topic Page                                ⌘N              │
 │                                                                  │
@@ -371,7 +371,7 @@ interface SmartViewFilter {
 ### Mode 1: Capture (Zero Friction)
 
 ```
-Any source → Quick Dump OR Paste/Import
+Any source → Quick Capture OR Paste/Import
          → SourceItem created (status: inbox)
          → AI auto-suggests: title, topics, tags
          → Single "Save" persists everything
@@ -420,7 +420,7 @@ Click "Today" or "Start Review" → Review queue
 | **T1** | Data model v3: SourceItem, CanonicalTopic, NotebookTopicPage, SmartView schemas | High | None | Medium |
 | **T1.1** | Topic normalization: alias table, matching rules, dedupe prevention | High | T1 | Medium |
 | **T1.2** | Metadata schema: minimal fields, AI templates per source type | Medium | T1 | Low |
-| **T2** | Capture pipeline: Quick Dump → SourceItem (inbox), text + image support | High | T1 | Medium |
+| **T2** | Capture pipeline: Quick Capture → SourceItem (inbox), text + image support | High | T1 | Medium |
 | **T2.1** | Inbox UI: persistent indicator, count badge, batch triage actions | High | T2 | Medium |
 | **T3** | Knowledge Bank UI: vertical list grouped by status, search, filters | High | T2.1 | Medium |
 | **T3.1** | Node editor: single Save, deep-link support, metadata editing | Medium | T3 | Low |
@@ -540,13 +540,13 @@ Add rules:
 - `review_logs` — Rating, responseTimeMs, partialCreditScore
 
 ### Data Migration Decision (2026-01-05)
-The `quick_dumps` table is superseded by `source_items`. Quick Dump saves should:
+The `quick_dumps` table is superseded by `source_items`. Quick Capture saves should:
 1. Create a SourceItem with `sourceType: 'quickcapture'` and `status: 'inbox'`
 2. Generate title from first 50 chars of content
 3. The migration function `migrateToV3()` already handles existing quick_dumps data
 
 **Recommendation:** Keep `quick_dumps` table for backward compatibility during transition,
-but all new Quick Dumps should write to `source_items`. The Sidebar "Queue" count should
+but all new Quick Captures should write to `source_items`. The Sidebar "Queue" count should
 query `source_items WHERE sourceType='quickcapture' AND status='inbox'`.
 
 ### Key Files to Modify

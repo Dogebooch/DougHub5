@@ -54,7 +54,7 @@
 │                   │  │                                          │ │
 │                   │  └──────────────────────────────────────────┘ │
 ├───────────────────┴───────────────────────────────────────────────┤
-│  ✓ Auto-saved • 847 cards • 156 sources     [⚡ Quick Dump Ctrl+⇧S]│
+│  ✓ Auto-saved • 847 cards • 156 sources     [⚡ Quick Capture Ctrl+⇧S]│
 └───────────────────────────────────────────────────────────────────┘
 ```
 
@@ -63,7 +63,7 @@
 |------|--------|-------|
 | **Inbox** | status='inbox' | Count |
 | **Today** | Due cards + recent captures | Count |
-| **Queue** | Quick dumps pending | Count |
+| **Queue** | Quick Captures pending | Count |
 | **Notebook** | All NotebookTopicPages | - |
 | **Topics** | CanonicalTopic browser | - |
 | **Stats** | Dashboard | - |
@@ -190,9 +190,9 @@
 
 ## Overlay System (Modal Context)
 
-### Quick Dump Modal (Ctrl+Shift+S)
+### Quick Capture Modal (Ctrl+Shift+S)
 ```
-┌─ QUICK DUMP ─────────────────────────────────────────────────────┐
+┌─ Quick Capture ─────────────────────────────────────────────────────┐
 │                                                          [×]     │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐│
@@ -246,7 +246,7 @@
 │  ○ Go to Notebook                                Ctrl+3          │
 │                                                                  │
 │  ACTIONS                                                         │
-│  ○ Quick Dump                                    Ctrl+Shift+S    │
+│  ○ Quick Capture                                    Ctrl+Shift+S    │
 │  ○ Start Review                                  Ctrl+R          │
 │  ○ New Topic Page                                Ctrl+N          │
 │                                                                  │
@@ -264,7 +264,7 @@
 
 ### Mode 1: Capture (Zero Friction)
 ```
-Any source → Quick Dump OR Paste/Import
+Any source → Quick Capture OR Paste/Import
          → SourceItem created (status: inbox)
          → AI auto-suggests: title, topics, tags
          → Single "Save" persists everything

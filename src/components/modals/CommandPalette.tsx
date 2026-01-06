@@ -15,13 +15,13 @@ interface Command {
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
-  onOpenQuickDump: () => void;
+  onOpenQuickCapture: () => void;
 }
 
 export function CommandPalette({
   isOpen,
   onClose,
-  onOpenQuickDump,
+  onOpenQuickCapture,
 }: CommandPaletteProps) {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -50,14 +50,14 @@ export function CommandPalette({
       keywords: ["review", "cards", "study"],
     },
     {
-      id: "quick-dump",
-      label: "Quick Dump",
+      id: "quick-capture",
+      label: "Quick Capture",
       icon: <Zap className="h-4 w-4" />,
       action: () => {
         onClose();
-        setTimeout(() => onOpenQuickDump(), 100);
+        setTimeout(() => onOpenQuickCapture(), 100);
       },
-      keywords: ["quick", "dump", "capture", "save"],
+      keywords: ["quick", "capture", "dump", "save"],
     },
     {
       id: "settings",

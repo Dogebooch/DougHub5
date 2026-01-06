@@ -6,19 +6,20 @@ import {
   cardQueries,
   noteQueries,
   reviewLogQueries,
-  quickDumpQueries,
+  quickCaptureQueries,
   connectionQueries,
   sourceItemQueries,
   canonicalTopicQueries,
   notebookTopicPageQueries,
   notebookBlockQueries,
   smartViewQueries,
+  searchQueries,
   getDatabaseStatus,
   getDbPath,
   DbCard,
   DbNote,
   DbReviewLog,
-  DbQuickDump,
+  DbQuickCapture,
   DbConnection,
   DbSourceItem,
   DbCanonicalTopic,
@@ -28,6 +29,8 @@ import {
   ExtractionStatus,
   SourceItemStatus,
   DbStatus,
+  SearchFilter,
+  SearchResult,
 } from "./database";
 import {
   scheduleReview,
@@ -317,15 +320,15 @@ export function registerIpcHandlers(): void {
   );
 
   // --------------------------------------------------------------------------
-  // Quick Dump Handlers
+  // Quick Capture Handlers
   // --------------------------------------------------------------------------
 
   ipcMain.handle(
-    "quickDumps:getAll",
-    async (): Promise<IpcResult<DbQuickDump[]>> => {
+    "quickCaptures:getAll",
+    async (): Promise<IpcResult<DbQuickCapture[]>> => {
       try {
-        const dumps = quickDumpQueries.getAll();
-        return success(dumps);
+        const captures = quickCaptureQueries.getAll();
+        return success(captures);
       } catch (error) {
         return failure(error);
       }
@@ -333,11 +336,14 @@ export function registerIpcHandlers(): void {
   );
 
   ipcMain.handle(
-    "quickDumps:getByStatus",
-    async (_, status: ExtractionStatus): Promise<IpcResult<DbQuickDump[]>> => {
+    "quickCaptures:getByStatus",
+    async (
+      _,
+      status: ExtractionStatus
+    ): Promise<IpcResult<DbQuickCapture[]>> => {
       try {
-        const dumps = quickDumpQueries.getByStatus(status);
-        return success(dumps);
+        const captures = quickCaptureQueries.getByStatus(status);
+        return success(captures);
       } catch (error) {
         return failure(error);
       }
@@ -345,11 +351,11 @@ export function registerIpcHandlers(): void {
   );
 
   ipcMain.handle(
-    "quickDumps:create",
-    async (_, dump: DbQuickDump): Promise<IpcResult<DbQuickDump>> => {
+    "quickCaptures:create",
+    async (_, capture: DbQuickCapture): Promise<IpcResult<DbQuickCapture>> => {
       try {
-        quickDumpQueries.insert(dump);
-        return success(dump);
+        quickCaptureQueries.insert(capture);
+        return success(capture);
       } catch (error) {
         return failure(error);
       }
@@ -357,14 +363,14 @@ export function registerIpcHandlers(): void {
   );
 
   ipcMain.handle(
-    "quickDumps:update",
+    "quickCaptures:update",
     async (
       _,
       id: string,
-      updates: Partial<DbQuickDump>
+      updates: Partial<DbQuickCapture>
     ): Promise<IpcResult<void>> => {
       try {
-        quickDumpQueries.update(id, updates);
+        quickCaptureQueries.update(id, updates);
         return success(undefined);
       } catch (error) {
         return failure(error);
@@ -373,10 +379,10 @@ export function registerIpcHandlers(): void {
   );
 
   ipcMain.handle(
-    "quickDumps:remove",
+    "quickCaptures:remove",
     async (_, id: string): Promise<IpcResult<void>> => {
       try {
-        quickDumpQueries.delete(id);
+        quickCaptureQueries.delete(id);
         return success(undefined);
       } catch (error) {
         return failure(error);
@@ -698,6 +704,26 @@ export function registerIpcHandlers(): void {
       try {
         const views = smartViewQueries.getSystemViews();
         return success(views);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // Search Handlers
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "search:query",
+    async (
+      _,
+      query: string,
+      filter?: SearchFilter
+    ): Promise<IpcResult<SearchResult>> => {
+      try {
+        const result = searchQueries.search(query, filter || 'all');
+        return success(result);
       } catch (error) {
         return failure(error);
       }

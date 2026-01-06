@@ -1,7 +1,7 @@
 // Card type for medical list processing
 export type CardType = "standard" | "qa" | "cloze" | "vignette" | "list-cloze";
 
-// Quick dump extraction status
+// Quick capture extraction status
 export type ExtractionStatus = "pending" | "processing" | "completed";
 
 // v2 Knowledge Bank - Source types
@@ -50,8 +50,8 @@ export interface ReviewLog {
   partialCreditScore?: number | null; // 0.0-1.0 for list partial recall
 }
 
-// Quick dump for emergency capture
-export interface QuickDump {
+// Quick capture for emergency capture
+export interface QuickCapture {
   id: string;
   content: string;
   extractionStatus: ExtractionStatus;
@@ -145,7 +145,7 @@ export interface DbStatus {
   version: number;
   cardCount: number;
   noteCount: number;
-  quickDumpCount: number;
+  quickCaptureCount: number;
   inboxCount: number;
   queueCount: number;
   connectionCount: number;
@@ -191,5 +191,28 @@ export interface ScheduleResult {
     good: number;
     easy: number;
   };
+}
+
+// Search types
+export type SearchFilter = 'all' | 'cards' | 'notes' | 'inbox';
+
+export interface SearchResultItem {
+  id: string;
+  type: 'card' | 'note' | 'source_item';
+  title: string;
+  snippet: string;
+  createdAt: string;
+  tags?: string[];
+}
+
+export interface SearchResult {
+  results: SearchResultItem[];
+  counts: {
+    all: number;
+    cards: number;
+    notes: number;
+    inbox: number;
+  };
+  queryTimeMs: number;
 }
 

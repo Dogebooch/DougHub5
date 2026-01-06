@@ -502,49 +502,59 @@ export function ReviewInterface() {
               </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <Button
-                variant="destructive"
-                onClick={() => handleManualGrade(Rating.Again)}
-                disabled={isSubmitting}
-                className="min-w-[100px] h-12 shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all bg-[#8c3a2e] hover:bg-[#a64536] border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
-              >
-                <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
-                  Forgot
-                </span>
-                <span className="font-serif font-bold text-base italic">1</span>
-              </Button>
-              <Button
-                onClick={() => handleManualGrade(Rating.Hard)}
-                disabled={isSubmitting}
-                className="min-w-[100px] h-12 shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all bg-[#b58135] hover:bg-[#cf943c] text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
-              >
-                <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
-                  Struggled
-                </span>
-                <span className="font-serif font-bold text-base italic">2</span>
-              </Button>
-              <Button
-                onClick={() => handleManualGrade(Rating.Good)}
-                disabled={isSubmitting}
-                className="min-w-[100px] h-12 shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all bg-[#3d5e7a] hover:bg-[#4a7294] text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
-              >
-                <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
-                  Recalled
-                </span>
-                <span className="font-serif font-bold text-base italic">3</span>
-              </Button>
-              <Button
-                onClick={() => handleManualGrade(Rating.Easy)}
-                disabled={isSubmitting}
-                className="min-w-[100px] h-12 shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all bg-[#3e5e40] hover:bg-[#4b724e] text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
-              >
-                <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
-                  Mastered
-                </span>
-                <span className="font-serif font-bold text-base italic">4</span>
-              </Button>
-            </div>
+            {showManualGradeSelector && (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  variant="destructive"
+                  onClick={() => handleManualGrade(Rating.Again)}
+                  disabled={isSubmitting}
+                  className="min-w-[100px] h-12 shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all bg-[#8c3a2e] hover:bg-[#a64536] border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                >
+                  <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
+                    Forgot
+                  </span>
+                  <span className="font-serif font-bold text-base italic">
+                    1
+                  </span>
+                </Button>
+                <Button
+                  onClick={() => handleManualGrade(Rating.Hard)}
+                  disabled={isSubmitting}
+                  className="min-w-[100px] h-12 shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all bg-[#b58135] hover:bg-[#cf943c] text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                >
+                  <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
+                    Struggled
+                  </span>
+                  <span className="font-serif font-bold text-base italic">
+                    2
+                  </span>
+                </Button>
+                <Button
+                  onClick={() => handleManualGrade(Rating.Good)}
+                  disabled={isSubmitting}
+                  className="min-w-[100px] h-12 shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all bg-[#3d5e7a] hover:bg-[#4a7294] text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                >
+                  <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
+                    Recalled
+                  </span>
+                  <span className="font-serif font-bold text-base italic">
+                    3
+                  </span>
+                </Button>
+                <Button
+                  onClick={() => handleManualGrade(Rating.Easy)}
+                  disabled={isSubmitting}
+                  className="min-w-[100px] h-12 shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all bg-[#3e5e40] hover:bg-[#4b724e] text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                >
+                  <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
+                    Mastered
+                  </span>
+                  <span className="font-serif font-bold text-base italic">
+                    4
+                  </span>
+                </Button>
+              </div>
+            )}
             <p className="text-[9px] uppercase tracking-widest text-muted-foreground/40">
               Keys 1-4
             </p>

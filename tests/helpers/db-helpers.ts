@@ -32,109 +32,122 @@ type Note = {
   updatedAt: string
 }
 
-type QuickDump = {
-  id: string
-  content: string
-  status: string
-  createdAt: string
-  processedAt: string | null
-}
+type QuickCapture = {
+  id: string;
+  content: string;
+  status: string;
+  createdAt: string;
+  processedAt: string | null;
+};
 
 type Connection = {
-  id: string
-  sourceNoteId: string
-  targetNoteId: string
-  semanticScore: number
-  createdAt: string
-}
+  id: string;
+  sourceNoteId: string;
+  targetNoteId: string;
+  semanticScore: number;
+  createdAt: string;
+};
 
 // v3 Architecture types
 type SourceItem = {
-  id: string
-  sourceType: 'qbank' | 'article' | 'pdf' | 'image' | 'audio' | 'quickcapture' | 'manual'
-  sourceName: string
-  sourceUrl?: string
-  title: string
-  rawContent: string
-  mediaPath?: string
-  transcription?: string
-  canonicalTopicIds: string[]
-  tags: string[]
-  questionId?: string
-  status: 'inbox' | 'processed' | 'curated'
-  createdAt: string
-  processedAt?: string
-  updatedAt?: string
-}
+  id: string;
+  sourceType:
+    | "qbank"
+    | "article"
+    | "pdf"
+    | "image"
+    | "audio"
+    | "quickcapture"
+    | "manual";
+  sourceName: string;
+  sourceUrl?: string;
+  title: string;
+  rawContent: string;
+  mediaPath?: string;
+  transcription?: string;
+  canonicalTopicIds: string[];
+  tags: string[];
+  questionId?: string;
+  status: "inbox" | "processed" | "curated";
+  createdAt: string;
+  processedAt?: string;
+  updatedAt?: string;
+};
 
 type CanonicalTopic = {
-  id: string
-  canonicalName: string
-  aliases: string[]
-  domain: string
-  parentTopicId?: string
-  createdAt: string
-}
+  id: string;
+  canonicalName: string;
+  aliases: string[];
+  domain: string;
+  parentTopicId?: string;
+  createdAt: string;
+};
 
 type NotebookTopicPage = {
-  id: string
-  canonicalTopicId: string
-  cardIds: string[]
-  createdAt: string
-  updatedAt: string
-}
+  id: string;
+  canonicalTopicId: string;
+  cardIds: string[];
+  createdAt: string;
+  updatedAt: string;
+};
 
 type NotebookBlock = {
-  id: string
-  notebookTopicPageId: string
-  sourceItemId: string
-  content: string
-  annotations?: string
-  mediaPath?: string
-  position: number
-}
+  id: string;
+  notebookTopicPageId: string;
+  sourceItemId: string;
+  content: string;
+  annotations?: string;
+  mediaPath?: string;
+  position: number;
+};
 
 type CardWithFSRS = Card & {
-  cardType: string | null
-  parentListId: string | null
-  listPosition: number | null
-  stability: number
-  difficulty: number
-  elapsedDays: number
-  scheduledDays: number
-  reps: number
-  lapses: number
-  state: number
-  lastReview: string | null
-}
+  cardType: string | null;
+  parentListId: string | null;
+  listPosition: number | null;
+  stability: number;
+  difficulty: number;
+  elapsedDays: number;
+  scheduledDays: number;
+  reps: number;
+  lapses: number;
+  state: number;
+  lastReview: string | null;
+};
 
 /**
  * Create a unique test database file
  */
-export function createTestDb(name: string = 'test'): { db: Database.Database; dbPath: string } {
-  const dbPath = path.join(os.tmpdir(), `doughub-test-${name}-${Date.now()}.db`)
-  const db = new Database(dbPath)
-  
+export function createTestDb(name: string = "test"): {
+  db: Database.Database;
+  dbPath: string;
+} {
+  const dbPath = path.join(
+    os.tmpdir(),
+    `doughub-test-${name}-${Date.now()}.db`
+  );
+  const db = new Database(dbPath);
+
   // Enable foreign keys and WAL mode like production
-  db.pragma('foreign_keys = ON')
-  db.pragma('journal_mode = WAL')
-  
-  return { db, dbPath }
+  db.pragma("foreign_keys = ON");
+  db.pragma("journal_mode = WAL");
+
+  return { db, dbPath };
 }
 
 /**
  * Clean up test database file
  */
 export function cleanupTestDb(dbPath: string) {
-  const db = new Database(dbPath)
-  db.close()
-  
+  const db = new Database(dbPath);
+  db.close();
+
   // Remove all SQLite files (main, WAL, SHM)
-  ;[dbPath, `${dbPath}-wal`, `${dbPath}-shm`].forEach(file => {
+  [dbPath, `${dbPath}-wal`, `${dbPath}-shm`].forEach((file) => {
     if (fs.existsSync(file)) {
-      fs.unlinkSync(file)
+      fs.unlinkSync(file);
     }
-  })
+  });
 }
 
 /**
@@ -187,7 +200,7 @@ export function createV1Schema(db: Database.Database) {
 
     -- Set schema version to 1
     PRAGMA user_version = 1;
-  `)
+  `);
 }
 
 /**
@@ -265,7 +278,7 @@ export function createV2Schema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_connections_targetNoteId ON connections(targetNoteId);
 
     PRAGMA user_version = 2;
-  `)
+  `);
 }
 
 /**
@@ -409,92 +422,140 @@ export function createV3Schema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_cards_notebook_page ON cards(notebookTopicPageId);
 
     PRAGMA user_version = 3;
-  `)
+  `);
 }
 
 /**
  * Insert sample v1 data for migration testing
  */
 export function insertV1SampleData(db: Database.Database) {
-  const now = new Date().toISOString()
-  
+  const now = new Date().toISOString();
+
   // Insert note
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO notes (id, title, content, tags, cardIds, createdAt, updatedAt)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run('note-1', 'Heart Failure', 'Causes of HF', '["cardiology"]', '["card-1"]', now, now)
-  
+  `
+  ).run(
+    "note-1",
+    "Heart Failure",
+    "Causes of HF",
+    '["cardiology"]',
+    '["card-1"]',
+    now,
+    now
+  );
+
   // Insert card (v1 format - no cardType, parentListId, listPosition)
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO cards (id, front, back, noteId, tags, stability, difficulty, elapsedDays, scheduledDays, reps, lapses, state, lastReview, createdAt, updatedAt)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run('card-1', 'HOCM causes?', 'Genetic mutations', 'note-1', '["cardiology"]', 0, 0, 0, 0, 0, 0, 0, null, now, now)
-  
+  `
+  ).run(
+    "card-1",
+    "HOCM causes?",
+    "Genetic mutations",
+    "note-1",
+    '["cardiology"]',
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    null,
+    now,
+    now
+  );
+
   // Insert review log (v1 format - no responseTimeMs, partialCreditScore)
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO review_logs (id, cardId, rating, state, reviewedAt)
     VALUES (?, ?, ?, ?, ?)
-  `).run('log-1', 'card-1', 3, 1, now)
+  `
+  ).run("log-1", "card-1", 3, 1, now);
 }
 
 /**
  * Assert database has expected tables
  */
 export function assertTablesExist(db: Database.Database, tables: string[]) {
-  const result = db.prepare(`
+  const result = db
+    .prepare(
+      `
     SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'
-  `).all() as { name: string }[]
-  
-  const tableNames = result.map(r => r.name).sort()
-  const expected = tables.sort()
-  
-  expect(tableNames).toEqual(expected)
+  `
+    )
+    .all() as { name: string }[];
+
+  const tableNames = result.map((r) => r.name).sort();
+  const expected = tables.sort();
+
+  expect(tableNames).toEqual(expected);
 }
 
 /**
  * Assert database has expected indexes
  */
 export function assertIndexesExist(db: Database.Database, indexes: string[]) {
-  const result = db.prepare(`
+  const result = db
+    .prepare(
+      `
     SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'
-  `).all() as { name: string }[]
-  
-  const indexNames = result.map(r => r.name).sort()
-  const expected = indexes.sort()
-  
-  expect(indexNames).toEqual(expected)
+  `
+    )
+    .all() as { name: string }[];
+
+  const indexNames = result.map((r) => r.name).sort();
+  const expected = indexes.sort();
+
+  expect(indexNames).toEqual(expected);
 }
 
 /**
  * Assert column exists in table
  */
-export function assertColumnExists(db: Database.Database, table: string, column: string) {
-  const result = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>
-  const columns = result.map(r => r.name)
-  
-  expect(columns).toContain(column)
+export function assertColumnExists(
+  db: Database.Database,
+  table: string,
+  column: string
+) {
+  const result = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{
+    name: string;
+  }>;
+  const columns = result.map((r) => r.name);
+
+  expect(columns).toContain(column);
 }
 
 /**
  * Get row count for a table
  */
 export function getRowCount(db: Database.Database, table: string): number {
-  const result = db.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as { count: number }
-  return result.count
+  const result = db.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as {
+    count: number;
+  };
+  return result.count;
 }
 
 /**
  * Create a minimal card for testing
  */
-export function createMockCard(overrides: Partial<CardWithFSRS> = {}): CardWithFSRS {
-  const now = new Date().toISOString()
+export function createMockCard(
+  overrides: Partial<CardWithFSRS> = {}
+): CardWithFSRS {
+  const now = new Date().toISOString();
   return {
     id: `card-${Date.now()}`,
-    front: 'Test Question',
-    back: 'Test Answer',
-    noteId: 'note-1',
+    front: "Test Question",
+    back: "Test Answer",
+    noteId: "note-1",
     tags: [],
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
     stability: 0,
@@ -508,39 +569,41 @@ export function createMockCard(overrides: Partial<CardWithFSRS> = {}): CardWithF
     createdAt: now,
     updatedAt: now,
     ...overrides,
-  }
+  };
 }
 
 /**
  * Create a minimal note for testing
  */
 export function createMockNote(overrides: Partial<Note> = {}): Note {
-  const now = new Date().toISOString()
+  const now = new Date().toISOString();
   return {
     id: `note-${Date.now()}`,
-    title: 'Test Note',
-    content: 'Test content',
+    title: "Test Note",
+    content: "Test content",
     tags: [],
     cardIds: [],
     createdAt: now,
     updatedAt: now,
     ...overrides,
-  }
+  };
 }
 
 /**
- * Create a minimal quick dump for testing
+ * Create a minimal quick capture for testing
  */
-export function createMockQuickDump(overrides: Partial<QuickDump> = {}): QuickDump {
-  const now = new Date().toISOString()
+export function createMockQuickCapture(
+  overrides: Partial<QuickCapture> = {}
+): QuickCapture {
+  const now = new Date().toISOString();
   return {
-    id: `dump-${Date.now()}`,
-    content: 'Quick dump content',
-    status: 'pending',
+    id: `capture-${Date.now()}`,
+    content: "Quick capture content",
+    status: "pending",
     createdAt: now,
     processedAt: null,
     ...overrides,
-  }
+  };
 }
 
 /**

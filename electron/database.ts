@@ -58,7 +58,7 @@ export interface DbReviewLog {
   partialCreditScore: number | null; // 0.0-1.0 for list partial recall
 }
 
-export interface DbQuickDump {
+export interface DbQuickCapture {
   id: string;
   content: string;
   extractionStatus: ExtractionStatus;
@@ -181,7 +181,7 @@ interface ReviewLogRow {
   partialCreditScore: number | null;
 }
 
-interface QuickDumpRow {
+interface QuickCaptureRow {
   id: string;
   content: string;
   extractionStatus: string;
@@ -338,7 +338,7 @@ function migrateToV2(dbPath: string): void {
         console.log("[Migration] Added review_logs.partialCreditScore column");
       }
 
-      // Quick dumps table
+      // Quick captures table (legacy quick_dumps for backward compatibility)
       if (!tableExists("quick_dumps")) {
         database.exec(`
           CREATE TABLE quick_dumps (
@@ -576,7 +576,7 @@ function migrateToV3(dbPath: string): void {
             insertStmt.run(
               dump.id,
               "quickcapture",
-              "Quick Dump",
+              "Quick Capture",
               title,
               dump.content,
               "[]", // empty canonicalTopicIds
@@ -604,6 +604,122 @@ function migrateToV3(dbPath: string): void {
     db = null;
     restoreBackup(backupPath, dbPath);
     // Re-open database after restore
+    db = new Database(dbPath);
+    db.pragma("journal_mode = WAL");
+    db.pragma("foreign_keys = ON");
+    throw error;
+  }
+}
+
+/**
+ * Migrate database from v3 to v4.
+ * Adds FTS5 full-text search tables and sync triggers.
+ * Creates backup before migration, restores on failure.
+ */
+function migrateToV4(dbPath: string): void {
+  console.log("[Migration] Starting migration to schema version 4 (FTS5)...");
+
+  const backupPath = createBackup(dbPath);
+  console.log(`[Migration] Backup created: ${backupPath}`);
+
+  const database = getDatabase();
+
+  try {
+    database.transaction(() => {
+      // Create FTS5 virtual tables
+      database.exec(`
+        CREATE VIRTUAL TABLE IF NOT EXISTS cards_fts USING fts5(
+          id UNINDEXED, front, back,
+          content=cards, content_rowid=rowid
+        );
+        CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
+          id UNINDEXED, title, content,
+          content=notes, content_rowid=rowid
+        );
+        CREATE VIRTUAL TABLE IF NOT EXISTS source_items_fts USING fts5(
+          id UNINDEXED, title, rawContent, sourceName,
+          content=source_items, content_rowid=rowid
+        );
+      `);
+      console.log("[Migration] Created FTS5 virtual tables");
+
+      // Cards FTS triggers
+      database.exec(`
+        CREATE TRIGGER IF NOT EXISTS cards_fts_insert AFTER INSERT ON cards BEGIN
+          INSERT INTO cards_fts(rowid, id, front, back)
+          VALUES (NEW.rowid, NEW.id, NEW.front, NEW.back);
+        END;
+        CREATE TRIGGER IF NOT EXISTS cards_fts_update AFTER UPDATE ON cards BEGIN
+          INSERT INTO cards_fts(cards_fts, rowid, id, front, back)
+          VALUES ('delete', OLD.rowid, OLD.id, OLD.front, OLD.back);
+          INSERT INTO cards_fts(rowid, id, front, back)
+          VALUES (NEW.rowid, NEW.id, NEW.front, NEW.back);
+        END;
+        CREATE TRIGGER IF NOT EXISTS cards_fts_delete AFTER DELETE ON cards BEGIN
+          INSERT INTO cards_fts(cards_fts, rowid, id, front, back)
+          VALUES ('delete', OLD.rowid, OLD.id, OLD.front, OLD.back);
+        END;
+      `);
+      console.log("[Migration] Created cards_fts triggers");
+
+      // Notes FTS triggers
+      database.exec(`
+        CREATE TRIGGER IF NOT EXISTS notes_fts_insert AFTER INSERT ON notes BEGIN
+          INSERT INTO notes_fts(rowid, id, title, content)
+          VALUES (NEW.rowid, NEW.id, NEW.title, NEW.content);
+        END;
+        CREATE TRIGGER IF NOT EXISTS notes_fts_update AFTER UPDATE ON notes BEGIN
+          INSERT INTO notes_fts(notes_fts, rowid, id, title, content)
+          VALUES ('delete', OLD.rowid, OLD.id, OLD.title, OLD.content);
+          INSERT INTO notes_fts(rowid, id, title, content)
+          VALUES (NEW.rowid, NEW.id, NEW.title, NEW.content);
+        END;
+        CREATE TRIGGER IF NOT EXISTS notes_fts_delete AFTER DELETE ON notes BEGIN
+          INSERT INTO notes_fts(notes_fts, rowid, id, title, content)
+          VALUES ('delete', OLD.rowid, OLD.id, OLD.title, OLD.content);
+        END;
+      `);
+      console.log("[Migration] Created notes_fts triggers");
+
+      // Source items FTS triggers
+      database.exec(`
+        CREATE TRIGGER IF NOT EXISTS source_items_fts_insert AFTER INSERT ON source_items BEGIN
+          INSERT INTO source_items_fts(rowid, id, title, rawContent, sourceName)
+          VALUES (NEW.rowid, NEW.id, NEW.title, NEW.rawContent, NEW.sourceName);
+        END;
+        CREATE TRIGGER IF NOT EXISTS source_items_fts_update AFTER UPDATE ON source_items BEGIN
+          INSERT INTO source_items_fts(source_items_fts, rowid, id, title, rawContent, sourceName)
+          VALUES ('delete', OLD.rowid, OLD.id, OLD.title, OLD.rawContent, OLD.sourceName);
+          INSERT INTO source_items_fts(rowid, id, title, rawContent, sourceName)
+          VALUES (NEW.rowid, NEW.id, NEW.title, NEW.rawContent, NEW.sourceName);
+        END;
+        CREATE TRIGGER IF NOT EXISTS source_items_fts_delete AFTER DELETE ON source_items BEGIN
+          INSERT INTO source_items_fts(source_items_fts, rowid, id, title, rawContent, sourceName)
+          VALUES ('delete', OLD.rowid, OLD.id, OLD.title, OLD.rawContent, OLD.sourceName);
+        END;
+      `);
+      console.log("[Migration] Created source_items_fts triggers");
+
+      // Populate FTS tables with existing data
+      database.exec(`
+        INSERT INTO cards_fts(rowid, id, front, back)
+        SELECT rowid, id, front, back FROM cards;
+        INSERT INTO notes_fts(rowid, id, title, content)
+        SELECT rowid, id, title, content FROM notes;
+        INSERT INTO source_items_fts(rowid, id, title, rawContent, sourceName)
+        SELECT rowid, id, title, rawContent, sourceName FROM source_items;
+      `);
+      console.log("[Migration] Populated FTS tables with existing data");
+
+      setSchemaVersion(4);
+    })();
+
+    console.log("[Migration] Successfully migrated to schema version 4");
+  } catch (error) {
+    console.error("[Migration] Failed, restoring backup:", error);
+    database.close();
+    db = null;
+    restoreBackup(backupPath, dbPath);
     db = new Database(dbPath);
     db.pragma("journal_mode = WAL");
     db.pragma("foreign_keys = ON");
@@ -698,6 +814,11 @@ export function initDatabase(dbPath: string): Database.Database {
   // Migration to v3
   if (getSchemaVersion() < 3) {
     migrateToV3(dbPath);
+  }
+
+  // Migration to v4 (FTS5 search)
+  if (getSchemaVersion() < 4) {
+    migrateToV4(dbPath);
   }
 
   // Seed system smart views (v3)
@@ -913,10 +1034,10 @@ function parseReviewLogRow(row: ReviewLogRow): DbReviewLog {
 }
 
 // ============================================================================
-// Quick Dump Queries
+// Quick Capture Queries
 // ============================================================================
 
-function mapSourceToQuickDump(item: DbSourceItem): DbQuickDump {
+function mapSourceToQuickCapture(item: DbSourceItem): DbQuickCapture {
   let extractionStatus: ExtractionStatus = "pending";
   if (item.status === "processed" || item.status === "curated") {
     extractionStatus = "completed";
@@ -931,45 +1052,45 @@ function mapSourceToQuickDump(item: DbSourceItem): DbQuickDump {
   };
 }
 
-export const quickDumpQueries = {
-  getAll(): DbQuickDump[] {
+export const quickCaptureQueries = {
+  getAll(): DbQuickCapture[] {
     const items = sourceItemQueries.getByType("quickcapture");
-    return items.map(mapSourceToQuickDump);
+    return items.map(mapSourceToQuickCapture);
   },
 
-  getByStatus(status: ExtractionStatus): DbQuickDump[] {
+  getByStatus(status: ExtractionStatus): DbQuickCapture[] {
     const items = sourceItemQueries.getByType("quickcapture").filter((item) => {
-      const qd = mapSourceToQuickDump(item);
+      const qd = mapSourceToQuickCapture(item);
       return qd.extractionStatus === status;
     });
-    return items.map(mapSourceToQuickDump);
+    return items.map(mapSourceToQuickCapture);
   },
 
-  insert(dump: DbQuickDump): void {
+  insert(capture: DbQuickCapture): void {
     const title =
-      dump.content.substring(0, 50).trim() +
-      (dump.content.length > 50 ? "..." : "");
+      capture.content.substring(0, 50).trim() +
+      (capture.content.length > 50 ? "..." : "");
 
     const sourceItem: DbSourceItem = {
-      id: dump.id,
+      id: capture.id,
       sourceType: "quickcapture",
-      sourceName: "Quick Dump",
+      sourceName: "Quick Capture",
       title: title,
-      rawContent: dump.content,
+      rawContent: capture.content,
       canonicalTopicIds: [],
       tags: [],
-      status: dump.extractionStatus === "completed" ? "processed" : "inbox",
-      createdAt: dump.createdAt,
-      processedAt: dump.processedAt || undefined,
-      updatedAt: dump.createdAt,
+      status: capture.extractionStatus === "completed" ? "processed" : "inbox",
+      createdAt: capture.createdAt,
+      processedAt: capture.processedAt || undefined,
+      updatedAt: capture.createdAt,
     };
     sourceItemQueries.insert(sourceItem);
   },
 
-  update(id: string, updates: Partial<DbQuickDump>): void {
+  update(id: string, updates: Partial<DbQuickCapture>): void {
     const current = sourceItemQueries.getById(id);
     if (!current || current.sourceType !== "quickcapture") {
-      throw new Error(`Quick dump not found: ${id}`);
+      throw new Error(`Quick capture not found: ${id}`);
     }
 
     const sourceUpdates: Partial<DbSourceItem> = {};
@@ -997,7 +1118,7 @@ export const quickDumpQueries = {
   },
 };
 
-function parseQuickDumpRow(row: QuickDumpRow): DbQuickDump {
+function parseQuickCaptureRow(row: QuickCaptureRow): DbQuickCapture {
   return {
     ...row,
     extractionStatus: row.extractionStatus as ExtractionStatus,
@@ -1495,6 +1616,251 @@ function seedSystemSmartViews(): void {
 }
 
 // ============================================================================
+// FTS5 Search Queries
+// ============================================================================
+
+export type SearchFilter = "all" | "cards" | "notes" | "inbox";
+
+export interface SearchResultItem {
+  id: string;
+  type: "card" | "note" | "source_item";
+  title: string;
+  snippet: string;
+  createdAt: string;
+  tags?: string[];
+}
+
+export interface SearchResult {
+  results: SearchResultItem[];
+  counts: {
+    all: number;
+    cards: number;
+    notes: number;
+    inbox: number;
+  };
+  queryTimeMs: number;
+}
+
+interface FtsRow {
+  id: string;
+  snippet: string;
+  createdAt: string;
+  tags?: string;
+}
+
+export const searchQueries = {
+  /**
+   * Search across cards, notes, and source_items using FTS5.
+   * Supports #tag syntax which is converted to tag filter.
+   * Returns results with snippets and counts per type.
+   */
+  search(
+    query: string,
+    filter: SearchFilter = "all",
+    limit = 50
+  ): SearchResult {
+    const startTime = performance.now();
+    const db = getDatabase();
+
+    // Extract #tag patterns and convert to regular search terms
+    let processedQuery = query.trim();
+    const tagMatches = processedQuery.match(/#(\w+)/g);
+    const searchTags: string[] = [];
+    if (tagMatches) {
+      tagMatches.forEach((tag) => {
+        searchTags.push(tag.slice(1).toLowerCase());
+        processedQuery = processedQuery.replace(tag, "").trim();
+      });
+    }
+
+    // If only tags were provided, use them as search terms
+    if (!processedQuery && searchTags.length > 0) {
+      processedQuery = searchTags.join(" ");
+    }
+
+    // Escape FTS5 special characters and prepare query
+    const ftsQuery = processedQuery
+      .replace(/['"]/g, "")
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((term) => `"${term}"*`)
+      .join(" ");
+
+    if (!ftsQuery) {
+      return {
+        results: [],
+        counts: { all: 0, cards: 0, notes: 0, inbox: 0 },
+        queryTimeMs: performance.now() - startTime,
+      };
+    }
+
+    const results: SearchResultItem[] = [];
+
+    // Search cards
+    if (filter === "all" || filter === "cards") {
+      const cardsStmt = db.prepare(`
+        SELECT
+          c.id,
+          snippet(cards_fts, -1, '<mark>', '</mark>', '...', 32) as snippet,
+          c.createdAt,
+          c.tags
+        FROM cards_fts
+        JOIN cards c ON cards_fts.id = c.id
+        WHERE cards_fts MATCH ?
+        ORDER BY rank
+        LIMIT 500
+      `);
+      const cardRows = cardsStmt.all(ftsQuery) as FtsRow[];
+      cardRows.forEach((row) => {
+        const tags = row.tags ? JSON.parse(row.tags) : [];
+        // Filter by tag if specified (AND matching)
+        if (searchTags.length > 0) {
+          const lowerTags = tags.map((t: string) => t.toLowerCase());
+          if (!searchTags.every((st) => lowerTags.includes(st))) return;
+        }
+        results.push({
+          id: row.id,
+          type: "card",
+          title:
+            row.snippet.substring(0, 50) +
+            (row.snippet.length > 50 ? "..." : ""),
+          snippet: row.snippet,
+          createdAt: row.createdAt,
+          tags,
+        });
+      });
+    }
+
+    // Search notes
+    if (filter === "all" || filter === "notes") {
+      const notesStmt = db.prepare(`
+        SELECT
+          n.id,
+          n.title,
+          snippet(notes_fts, -1, '<mark>', '</mark>', '...', 32) as snippet,
+          n.createdAt,
+          n.tags
+        FROM notes_fts
+        JOIN notes n ON notes_fts.id = n.id
+        WHERE notes_fts MATCH ?
+        ORDER BY rank
+        LIMIT 500
+      `);
+      const noteRows = notesStmt.all(ftsQuery) as (FtsRow & {
+        title: string;
+      })[];
+      noteRows.forEach((row) => {
+        const tags = row.tags ? JSON.parse(row.tags) : [];
+        if (searchTags.length > 0) {
+          const lowerTags = tags.map((t: string) => t.toLowerCase());
+          if (!searchTags.every((st) => lowerTags.includes(st))) return;
+        }
+        results.push({
+          id: row.id,
+          type: "note",
+          title: row.title,
+          snippet: row.snippet,
+          createdAt: row.createdAt,
+          tags,
+        });
+      });
+    }
+
+    // Search source_items (inbox)
+    if (filter === "all" || filter === "inbox") {
+      const sourceStmt = db.prepare(`
+        SELECT
+          s.id,
+          s.title,
+          snippet(source_items_fts, -1, '<mark>', '</mark>', '...', 32) as snippet,
+          s.createdAt,
+          s.tags
+        FROM source_items_fts
+        JOIN source_items s ON source_items_fts.id = s.id
+        WHERE source_items_fts MATCH ?
+        ORDER BY rank
+        LIMIT 500
+      `);
+      const sourceRows = sourceStmt.all(ftsQuery) as (FtsRow & {
+        title: string;
+      })[];
+      sourceRows.forEach((row) => {
+        const tags = row.tags ? JSON.parse(row.tags) : [];
+        if (searchTags.length > 0) {
+          const lowerTags = tags.map((t: string) => t.toLowerCase());
+          if (!searchTags.every((st) => lowerTags.includes(st))) return;
+        }
+        results.push({
+          id: row.id,
+          type: "source_item",
+          title: row.title,
+          snippet: row.snippet,
+          createdAt: row.createdAt,
+          tags,
+        });
+      });
+    }
+
+    // Sort combined results by date (or relevance - rank is per-table)
+    // For now, let's just stick to the order they were added (cards -> notes -> inbox)
+    // but limit to the requested total
+    const finalResults = results.slice(0, limit);
+
+    // Get counts for each type
+    const counts = { all: 0, cards: 0, notes: 0, inbox: 0 };
+
+    try {
+      counts.cards = (
+        db
+          .prepare(
+            `SELECT COUNT(*) as count FROM cards_fts WHERE cards_fts MATCH ?`
+          )
+          .get(ftsQuery) as { count: number }
+      ).count;
+    } catch {
+      counts.cards = 0;
+    }
+
+    try {
+      counts.notes = (
+        db
+          .prepare(
+            `SELECT COUNT(*) as count FROM notes_fts WHERE notes_fts MATCH ?`
+          )
+          .get(ftsQuery) as { count: number }
+      ).count;
+    } catch {
+      counts.notes = 0;
+    }
+
+    try {
+      counts.inbox = (
+        db
+          .prepare(
+            `SELECT COUNT(*) as count FROM source_items_fts WHERE source_items_fts MATCH ?`
+          )
+          .get(ftsQuery) as { count: number }
+      ).count;
+    } catch {
+      counts.inbox = 0;
+    }
+
+    counts.all = counts.cards + counts.notes + counts.inbox;
+
+    const queryTimeMs = performance.now() - startTime;
+
+    // Performance warning if >200ms
+    if (queryTimeMs > 200) {
+      console.warn(
+        `[Search] Query took ${queryTimeMs.toFixed(1)}ms (>200ms threshold)`
+      );
+    }
+
+    return { results: finalResults, counts, queryTimeMs };
+  },
+};
+
+// ============================================================================
 // Database Status
 // ============================================================================
 
@@ -1502,7 +1868,7 @@ export interface DbStatus {
   version: number;
   cardCount: number;
   noteCount: number;
-  quickDumpCount: number; // Legacy/Compat
+  quickCaptureCount: number; // Legacy/Compat
   inboxCount: number;
   queueCount: number;
   connectionCount: number;
@@ -1519,10 +1885,10 @@ export function getDatabaseStatus(): DbStatus {
   ).count;
 
   // Backward compatibility: count quick_dumps if table exists, else 0
-  let quickDumpCount = 0;
+  let quickCaptureCount = 0;
   try {
     if (tableExists("quick_dumps")) {
-      quickDumpCount = (
+      quickCaptureCount = (
         db.prepare("SELECT COUNT(*) as count FROM quick_dumps").get() as {
           count: number;
         }
@@ -1562,7 +1928,7 @@ export function getDatabaseStatus(): DbStatus {
     version,
     cardCount,
     noteCount,
-    quickDumpCount,
+    quickCaptureCount,
     inboxCount,
     queueCount,
     connectionCount,

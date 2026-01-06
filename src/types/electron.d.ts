@@ -6,7 +6,7 @@ import type {
   IpcResult,
   ScheduleResult,
   RatingValue,
-  QuickDump,
+  QuickCapture,
   Connection,
   BackupInfo,
   DbStatus,
@@ -17,6 +17,8 @@ import type {
   NotebookTopicPage,
   NotebookBlock,
   SmartView,
+  SearchFilter,
+  SearchResult,
 } from "./index";
 import type {
   AIProviderStatus,
@@ -36,7 +38,7 @@ export type {
   IpcResult,
   ScheduleResult,
   RatingValue,
-  QuickDump,
+  QuickCapture,
   Connection,
   BackupInfo,
   DbStatus,
@@ -47,6 +49,8 @@ export type {
   NotebookTopicPage,
   NotebookBlock,
   SmartView,
+  SearchFilter,
+  SearchResult,
 };
 
 // Re-export AI types
@@ -89,13 +93,15 @@ export interface ElectronAPI {
       responseTimeMs?: number | null
     ) => Promise<IpcResult<ScheduleResult>>;
   };
-  quickDumps: {
-    getAll: () => Promise<IpcResult<QuickDump[]>>;
-    getByStatus: (status: ExtractionStatus) => Promise<IpcResult<QuickDump[]>>;
-    create: (dump: QuickDump) => Promise<IpcResult<QuickDump>>;
+  quickCaptures: {
+    getAll: () => Promise<IpcResult<QuickCapture[]>>;
+    getByStatus: (
+      status: ExtractionStatus
+    ) => Promise<IpcResult<QuickCapture[]>>;
+    create: (capture: QuickCapture) => Promise<IpcResult<QuickCapture>>;
     update: (
       id: string,
-      updates: Partial<QuickDump>
+      updates: Partial<QuickCapture>
     ) => Promise<IpcResult<void>>;
     remove: (id: string) => Promise<IpcResult<void>>;
   };
@@ -142,6 +148,12 @@ export interface ElectronAPI {
   smartViews: {
     getAll: () => Promise<IpcResult<SmartView[]>>;
     getSystem: () => Promise<IpcResult<SmartView[]>>;
+  };
+  search: {
+    query: (
+      query: string,
+      filter?: SearchFilter
+    ) => Promise<IpcResult<SearchResult>>;
   };
   backup: {
     list: () => Promise<IpcResult<BackupInfo[]>>;

@@ -21,15 +21,15 @@ import {
   getRowCount,
   createMockCard,
   createMockNote,
-  createMockQuickDump,
+  createMockQuickCapture,
   createMockConnection,
-} from '../helpers/db-helpers'
+} from "../helpers/db-helpers";
 
 // Mock backup-service to prevent actual file operations during tests
-vi.mock('@electron/backup-service', () => ({
+vi.mock("@electron/backup-service", () => ({
   createBackup: vi.fn((dbPath: string) => `${dbPath}.backup`),
   restoreBackup: vi.fn(),
-}))
+}));
 
 // Import after mocking
 import {
@@ -41,9 +41,9 @@ import {
   cardQueries,
   noteQueries,
   reviewLogQueries,
-  quickDumpQueries,
+  quickCaptureQueries,
   connectionQueries,
-} from '@electron/database'
+} from "@electron/database";
 
 describe('Database Schema & Initialization', () => {
   let dbPath: string

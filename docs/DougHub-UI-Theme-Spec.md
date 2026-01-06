@@ -131,7 +131,7 @@ Font families:
 | lg | 44px | px-6 | 15px |
 | icon | 36×36px | - | - |
 
-### Floating Action Button (Quick Dump)
+### Floating Action Button (Quick Capture)
 | Property | Value |
 |----------|-------|
 | Size | 48×48px |
@@ -184,7 +184,7 @@ Standard transition: `transition-all duration-150`
 |------|------|-------|-------------|
 | Today | Calendar | Due count | `today` |
 | Inbox | Inbox | Pending count | `inbox` |
-| Queue | List | Quick dump count | `queue` |
+| Queue | List | Quick Capture count | `queue` |
 | Review | Play | Due now | `review` |
 | Capture | Plus | - | `capture` |
 | Notebook | Book | - | `notebook` |
@@ -202,7 +202,7 @@ Standard transition: `transition-all duration-150`
 
 - [ ] TODO: Implement Inbox view (status='inbox' filter)
 - [ ] TODO: Implement Today view (due cards + recent captures)
-- [ ] TODO: Implement Queue view (quick dumps pending)
+- [ ] TODO: Implement Queue view (Quick Captures pending)
 - [ ] TODO: Implement Notebook view (topic pages)
 - [ ] TODO: Implement Topics browser
 - [ ] TODO: Implement Stats dashboard

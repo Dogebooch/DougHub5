@@ -46,7 +46,7 @@ npm run lint     # ESLint (zero warnings)
 - Medical lists ("5 causes of X") converted to clinical vignette scenarios
 - Warnings for pattern-matching cards that test format recognition vs knowledge
 
-### Quick Dump → Queue
+### Quick Capture → Queue
 - Emergency capture when exhausted (no AI processing)
 - Later: process from queue with same AI-guided workflow
 
@@ -60,7 +60,7 @@ npm run lint     # ESLint (zero warnings)
 
 ### Always Implement
 - Cards ↔ Notes bidirectional linking (`noteId` / `cardIds[]`)
-- Quick Dump escape hatch (always accessible)
+- Quick Capture escape hatch (always accessible)
 - FSRS via `ts-fsrs` library (89% retention target, zero user decisions)
 
 ## UI Conventions

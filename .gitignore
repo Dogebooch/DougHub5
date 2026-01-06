@@ -52,3 +52,6 @@ coverage/
 .tmp/
 
 Thumbs.db
+
+# Exclude large Electron binary
+node_modules/electron/dist/electron.exe

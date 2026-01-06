@@ -32,14 +32,15 @@ const api = {
       responseTimeMs?: number | null
     ) => ipcRenderer.invoke("reviews:schedule", cardId, rating, responseTimeMs),
   },
-  quickDumps: {
-    getAll: () => ipcRenderer.invoke("quickDumps:getAll"),
+  quickCaptures: {
+    getAll: () => ipcRenderer.invoke("quickCaptures:getAll"),
     getByStatus: (status: string) =>
-      ipcRenderer.invoke("quickDumps:getByStatus", status),
-    create: (dump: unknown) => ipcRenderer.invoke("quickDumps:create", dump),
+      ipcRenderer.invoke("quickCaptures:getByStatus", status),
+    create: (capture: unknown) =>
+      ipcRenderer.invoke("quickCaptures:create", capture),
     update: (id: string, updates: unknown) =>
-      ipcRenderer.invoke("quickDumps:update", id, updates),
-    remove: (id: string) => ipcRenderer.invoke("quickDumps:remove", id),
+      ipcRenderer.invoke("quickCaptures:update", id, updates),
+    remove: (id: string) => ipcRenderer.invoke("quickCaptures:remove", id),
   },
   connections: {
     getAll: () => ipcRenderer.invoke("connections:getAll"),
@@ -84,6 +85,10 @@ const api = {
   smartViews: {
     getAll: () => ipcRenderer.invoke("smartViews:getAll"),
     getSystem: () => ipcRenderer.invoke("smartViews:getSystem"),
+  },
+  search: {
+    query: (query: string, filter?: string) =>
+      ipcRenderer.invoke("search:query", query, filter),
   },
   backup: {
     list: () => ipcRenderer.invoke("backup:list"),

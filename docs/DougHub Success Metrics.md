@@ -20,7 +20,7 @@ MVP - Minimally viable product that real users can test and Doug can use daily f
 ## v2 Architecture Metrics (NEW)
 | Metric | Target | Why It Matters | How to Measure |
 |--------|--------|----------------|----------------|
-| **Time-to-capture** | <20s | Quick dump must be instant | Stopwatch: open app → saved to inbox |
+| **Time-to-capture** | <20s | Quick Capture must be instant | Stopwatch: open app → saved to inbox |
 | **Inbox zero rate** | >80% processed weekly | Prevent inbox overwhelm | Count inbox items weekly |
 | **Cards created per curated hour** | Track baseline | Measure curation efficiency | Cards generated / time in Notebook |
 | **% low-ease cards resolved** | >50% resolved within 2 weeks | Fix broken cards quickly | Track low-ease flags cleared |

@@ -19,7 +19,7 @@ These decisions prevent studying from starting.
 ## Core Insight
 Extraction IS the learning. Active recall during capture embeds knowledge better
 than passive saving. AI reduces friction by suggesting concepts and formats—user
-confirms, edits, or adds. Exhaustion escape hatch (Quick Dump) ensures capture
+confirms, edits, or adds. Exhaustion escape hatch (Quick Capture) ensures capture
 still happens when energy is zero.
 
 ## v2 Architecture: 3-Layer System
@@ -80,7 +80,7 @@ collected from day one.
 ### Phase 2: Layer 1 - Knowledge Bank (BUILD NEXT)
 | # | Feature | Task | Status |
 |---|---------|------|--------|
-| 1 | Capture pipeline | Quick Dump → SourceItem (inbox), text support | T38 |
+| 1 | Capture pipeline | Quick Capture → SourceItem (inbox), text support | T38 |
 | 2 | Inbox UI | Persistent indicator, count badge, batch triage | T39 |
 | 3 | Knowledge Bank UI | Vertical list grouped by status, filters | T40 |
 | 4 | Smart Views engine | System views filter logic | T44 |
@@ -108,7 +108,7 @@ collected from day one.
 
 ### Data Migration Note
 The `quick_dumps` table is superseded by `source_items` with `sourceType='quickcapture'`.
-Quick Dump modal should save to `source_items` table directly. Migration already handles
+Quick Capture modal should save to `source_items` table directly. Migration already handles
 existing data in `migrateToV3()`.
 
 ## Technical Stack Requirements - Executive Mandated

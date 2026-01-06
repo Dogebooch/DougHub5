@@ -4,31 +4,34 @@ import path from 'path'
 export default defineConfig({
   test: {
     // Environment for Electron main process testing
-    environment: 'node',
-    
+    environment: "node",
+
     // Global test setup
-    setupFiles: ['./tests/helpers/test-setup.ts'],
-    
+    setupFiles: ["./tests/helpers/test-setup.ts"],
+
     // Include patterns
-    include: ['tests/**/*.{test,spec}.{js,ts}'],
-    
+    include: [
+      "tests/**/*.{test,spec}.{js,ts}",
+      "src/**/*.{test,spec}.{ts,tsx}",
+    ],
+
     // Benchmark patterns
     benchmark: {
-      include: ['tests/performance/**/*.bench.{js,ts}'],
+      include: ["tests/performance/**/*.bench.{js,ts}"],
     },
-    
+
     // Test timeout (increase for performance tests)
     testTimeout: 10000,
-    
+
     // Coverage configuration
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      include: ['electron/**/*.ts'],
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      include: ["electron/**/*.ts"],
       exclude: [
-        'electron/**/*.d.ts',
-        'electron/electron-env.d.ts',
-        'dist-electron/**',
+        "electron/**/*.d.ts",
+        "electron/electron-env.d.ts",
+        "dist-electron/**",
       ],
       // Target 80% coverage for critical database/backup code
       thresholds: {
@@ -38,10 +41,10 @@ export default defineConfig({
         statements: 80,
       },
     },
-    
+
     // Globals for easier testing
     globals: true,
-    
+
     // Parallel execution
     poolOptions: {
       threads: {
@@ -49,12 +52,12 @@ export default defineConfig({
       },
     },
   },
-  
+
   // Resolve aliases to match main app
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@electron': path.resolve(__dirname, './electron'),
+      "@": path.resolve(__dirname, "./src"),
+      "@electron": path.resolve(__dirname, "./electron"),
     },
   },
-})
+});

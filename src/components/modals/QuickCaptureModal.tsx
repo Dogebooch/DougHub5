@@ -12,15 +12,16 @@ import { toast } from "sonner";
 import { X, Upload, ImageIcon, Keyboard } from "lucide-react";
 import type { SourceItem } from "@/types";
 import { useAppStore } from "@/stores/useAppStore";
+import { TITLE_MAX_LENGTH } from "@/constants";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-interface QuickDumpModalProps {
+interface QuickCaptureModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function QuickDumpModal({ isOpen, onClose }: QuickDumpModalProps) {
+export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
   const [content, setContent] = useState("");
   const [contentType, setContentType] = useState<"text" | "image">("text");
   const [imageData, setImageData] = useState<string | null>(null);
@@ -159,18 +160,18 @@ export function QuickDumpModal({ isOpen, onClose }: QuickDumpModalProps) {
           }
         }
 
-        // Generate title from first 50 characters or use placeholder for image
+        // Generate title from first TITLE_MAX_LENGTH characters or use placeholder for image
         const title =
           contentType === "image"
             ? "Image Capture"
-            : trimmedContent.length > 50
-            ? trimmedContent.slice(0, 50) + "..."
+            : trimmedContent.length > TITLE_MAX_LENGTH
+            ? trimmedContent.slice(0, TITLE_MAX_LENGTH) + "..."
             : trimmedContent;
 
         const sourceItem: SourceItem = {
           id: crypto.randomUUID(),
           sourceType: contentType === "image" ? "image" : "quickcapture",
-          sourceName: "Quick Dump",
+          sourceName: "Quick Capture",
           title,
           rawContent: trimmedContent || "Image capture",
           mediaPath,
@@ -200,8 +201,8 @@ export function QuickDumpModal({ isOpen, onClose }: QuickDumpModalProps) {
       setContentType("text");
       onClose();
     } catch (error) {
-      toast.error("Failed to save quick dump");
-      console.error("[QuickDump] Save error:", error);
+      toast.error("Failed to save quick capture");
+      console.error("[QuickCapture] Save error:", error);
     } finally {
       setIsSaving(false);
     }
@@ -247,7 +248,7 @@ export function QuickDumpModal({ isOpen, onClose }: QuickDumpModalProps) {
         )}
 
         <DialogHeader>
-          <DialogTitle>Quick Dump</DialogTitle>
+          <DialogTitle>Quick Capture</DialogTitle>
         </DialogHeader>
 
         <div className="py-4 min-h-[240px] flex flex-col">

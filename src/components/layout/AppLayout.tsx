@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
-import { QuickDumpFAB } from "./QuickDumpFAB";
+import { QuickCaptureFAB } from "./QuickCaptureFAB";
 import { CommandPalette } from "@/components/modals/CommandPalette";
-import { QuickDumpModal } from "@/components/modals/QuickDumpModal";
+import { QuickCaptureModal } from "@/components/modals/QuickCaptureModal";
 import { CaptureInterface } from "@/components/capture/CaptureInterface";
 import { ReviewInterface } from "@/components/review/ReviewInterface";
 import { useAppStore } from "@/stores/useAppStore";
@@ -11,7 +11,7 @@ import { useAppStore } from "@/stores/useAppStore";
 export function AppLayout() {
   const currentView = useAppStore((state) => state.currentView);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isQuickDumpOpen, setIsQuickDumpOpen] = useState(false);
+  const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -25,8 +25,8 @@ export function AppLayout() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const openQuickDump = () => setIsQuickDumpOpen(true);
-  const closeQuickDump = () => setIsQuickDumpOpen(false);
+  const openQuickCapture = () => setIsQuickCaptureOpen(true);
+  const closeQuickCapture = () => setIsQuickCaptureOpen(false);
 
   const renderView = () => {
     switch (currentView) {
@@ -68,16 +68,19 @@ export function AppLayout() {
         </main>
       </div>
 
-      {/* Floating Quick Dump button */}
-      <QuickDumpFAB onClick={openQuickDump} />
+      {/* Floating Quick Capture button */}
+      <QuickCaptureFAB onClick={openQuickCapture} />
 
       <CommandPalette
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
-        onOpenQuickDump={openQuickDump}
+        onOpenQuickCapture={openQuickCapture}
       />
 
-      <QuickDumpModal isOpen={isQuickDumpOpen} onClose={closeQuickDump} />
+      <QuickCaptureModal
+        isOpen={isQuickCaptureOpen}
+        onClose={closeQuickCapture}
+      />
     </div>
   );
 }
