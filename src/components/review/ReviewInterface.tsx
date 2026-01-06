@@ -378,9 +378,9 @@ export function ReviewInterface() {
       </div>
 
       {/* Card display */}
-      <div className="bg-card/40 backdrop-blur-sm border border-white/5 rounded-2xl p-12 space-y-8 shadow-2xl relative overflow-hidden">
+      <div className="bg-card border border-white/5 rounded-2xl p-12 space-y-8 shadow-xl relative overflow-hidden">
         {/* Subtle accent line */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
         <div className="text-center space-y-6">
           {/* Front - Use cloze renderer for cloze and list-cloze types */}
@@ -433,32 +433,32 @@ export function ReviewInterface() {
           <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300">
             {currentGrade === Rating.Again && (
               <>
-                <XCircle className="h-20 w-20 text-destructive" />
-                <span className="text-3xl font-bold text-destructive tracking-tight">
+                <XCircle className="h-16 w-16 text-destructive opacity-80" />
+                <span className="text-2xl font-bold text-destructive tracking-tight">
                   Forgot
                 </span>
               </>
             )}
             {currentGrade === Rating.Hard && (
               <>
-                <AlertTriangle className="h-20 w-20 text-orange-500" />
-                <span className="text-3xl font-bold text-orange-500 tracking-tight">
+                <AlertTriangle className="h-16 w-16 text-orange-400 opacity-80" />
+                <span className="text-2xl font-bold text-orange-400 tracking-tight">
                   Struggled
                 </span>
               </>
             )}
             {currentGrade === Rating.Good && (
               <>
-                <Circle className="h-20 w-20 text-blue-500" />
-                <span className="text-3xl font-bold text-blue-500 tracking-tight">
+                <Circle className="h-16 w-16 text-blue-400 opacity-80" />
+                <span className="text-2xl font-bold text-blue-400 tracking-tight">
                   Recalled
                 </span>
               </>
             )}
             {currentGrade === Rating.Easy && (
               <>
-                <CheckCircle2 className="h-20 w-20 text-emerald-500" />
-                <span className="text-3xl font-bold text-emerald-500 tracking-tight">
+                <CheckCircle2 className="h-16 w-16 text-emerald-400 opacity-80" />
+                <span className="text-2xl font-bold text-emerald-400 tracking-tight">
                   Mastered
                 </span>
               </>
@@ -505,28 +505,28 @@ export function ReviewInterface() {
                 variant="destructive"
                 onClick={() => handleManualGrade(Rating.Again)}
                 disabled={isSubmitting}
-                className="min-w-[120px] h-14 text-base font-bold shadow-lg hover:scale-105 transition-transform"
+                className="min-w-[120px] h-14 text-base font-bold shadow-lg hover:scale-[1.02] transition-all"
               >
                 Forgot
               </Button>
               <Button
                 onClick={() => handleManualGrade(Rating.Hard)}
                 disabled={isSubmitting}
-                className="min-w-[120px] h-14 text-base font-bold bg-orange-600 hover:bg-orange-700 text-white shadow-lg hover:scale-105 transition-transform"
+                className="min-w-[120px] h-14 text-base font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg hover:scale-[1.02] transition-all"
               >
                 Struggled
               </Button>
               <Button
                 onClick={() => handleManualGrade(Rating.Good)}
                 disabled={isSubmitting}
-                className="min-w-[120px] h-14 text-base font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:scale-105 transition-transform"
+                className="min-w-[120px] h-14 text-base font-bold bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:scale-[1.02] transition-all"
               >
                 Recalled
               </Button>
               <Button
                 onClick={() => handleManualGrade(Rating.Easy)}
                 disabled={isSubmitting}
-                className="min-w-[120px] h-14 text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg hover:scale-105 transition-transform"
+                className="min-w-[120px] h-14 text-base font-bold bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg hover:scale-[1.02] transition-all"
               >
                 Mastered
               </Button>

@@ -19,8 +19,7 @@ const api = {
   reviews: {
     log: (review) => electron.ipcRenderer.invoke("reviews:log", review),
     getByCard: (cardId) => electron.ipcRenderer.invoke("reviews:getByCard", cardId),
-    schedule: (cardId, rating) => electron.ipcRenderer.invoke("reviews:schedule", cardId, rating),
-    getIntervals: (cardId) => electron.ipcRenderer.invoke("reviews:getIntervals", cardId)
+    schedule: (cardId, rating, responseTimeMs) => electron.ipcRenderer.invoke("reviews:schedule", cardId, rating, responseTimeMs)
   },
   quickDumps: {
     getAll: () => electron.ipcRenderer.invoke("quickDumps:getAll"),
@@ -34,6 +33,35 @@ const api = {
     getByNote: (noteId) => electron.ipcRenderer.invoke("connections:getByNote", noteId),
     create: (connection) => electron.ipcRenderer.invoke("connections:create", connection),
     remove: (id) => electron.ipcRenderer.invoke("connections:remove", id)
+  },
+  sourceItems: {
+    getAll: () => electron.ipcRenderer.invoke("sourceItems:getAll"),
+    getByStatus: (status) => electron.ipcRenderer.invoke("sourceItems:getByStatus", status),
+    getById: (id) => electron.ipcRenderer.invoke("sourceItems:getById", id),
+    create: (item) => electron.ipcRenderer.invoke("sourceItems:create", item),
+    update: (id, updates) => electron.ipcRenderer.invoke("sourceItems:update", id, updates),
+    delete: (id) => electron.ipcRenderer.invoke("sourceItems:delete", id)
+  },
+  canonicalTopics: {
+    getAll: () => electron.ipcRenderer.invoke("canonicalTopics:getAll"),
+    getById: (id) => electron.ipcRenderer.invoke("canonicalTopics:getById", id),
+    getByDomain: (domain) => electron.ipcRenderer.invoke("canonicalTopics:getByDomain", domain)
+  },
+  notebookPages: {
+    getAll: () => electron.ipcRenderer.invoke("notebookPages:getAll"),
+    getById: (id) => electron.ipcRenderer.invoke("notebookPages:getById", id),
+    create: (page) => electron.ipcRenderer.invoke("notebookPages:create", page),
+    update: (id, updates) => electron.ipcRenderer.invoke("notebookPages:update", id, updates)
+  },
+  notebookBlocks: {
+    getByPage: (pageId) => electron.ipcRenderer.invoke("notebookBlocks:getByPage", pageId),
+    create: (block) => electron.ipcRenderer.invoke("notebookBlocks:create", block),
+    update: (id, updates) => electron.ipcRenderer.invoke("notebookBlocks:update", id, updates),
+    delete: (id) => electron.ipcRenderer.invoke("notebookBlocks:delete", id)
+  },
+  smartViews: {
+    getAll: () => electron.ipcRenderer.invoke("smartViews:getAll"),
+    getSystem: () => electron.ipcRenderer.invoke("smartViews:getSystem")
   },
   backup: {
     list: () => electron.ipcRenderer.invoke("backup:list"),
