@@ -177,6 +177,12 @@ export interface ElectronAPI {
     ) => Promise<IpcResult<SemanticMatch[]>>;
     clearCache: () => Promise<IpcResult<void>>;
   };
+  files: {
+    saveImage: (
+      data: string,
+      mimeType: string
+    ) => Promise<IpcResult<{ path: string }>>;
+  };
   reloadApp: () => Promise<void>;
 }
 

@@ -87,6 +87,9 @@ const api = {
     ),
     clearCache: () => electron.ipcRenderer.invoke("ai:clearCache")
   },
+  files: {
+    saveImage: (data, mimeType) => electron.ipcRenderer.invoke("files:saveImage", { data, mimeType })
+  },
   reloadApp: () => electron.ipcRenderer.invoke("app:reload")
 };
 electron.contextBridge.exposeInMainWorld("api", api);

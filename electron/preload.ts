@@ -121,6 +121,10 @@ const api = {
       ),
     clearCache: () => ipcRenderer.invoke("ai:clearCache"),
   },
+  files: {
+    saveImage: (data: string, mimeType: string) =>
+      ipcRenderer.invoke("files:saveImage", { data, mimeType }),
+  },
   reloadApp: () => ipcRenderer.invoke("app:reload"),
 };
 

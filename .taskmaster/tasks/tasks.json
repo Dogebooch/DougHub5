@@ -1160,7 +1160,7 @@
         "dependencies": [
           "35"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1194,9 +1194,10 @@
               2
             ],
             "details": "Add new IPC handler 'files:saveImage' in electron/ipc-handlers.ts: Accept base64 image data, generate UUID-based filename (e.g., {uuid}.png), save to app.getPath('userData')/images/ directory, return relative path 'images/{uuid}.png'. Add corresponding preload.ts and electron.d.ts entries. In QuickDumpModal, call this API before sourceItems.create when contentType='image', store returned path in mediaPath field, leave rawContent empty or with placeholder text.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test image paste → verify file saved to userData/images/ with UUID filename. Verify SourceItem.mediaPath contains correct relative path. Check filesystem permissions and error handling.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-06T03:15:27.734Z"
           },
           {
             "id": 4,
@@ -1225,7 +1226,7 @@
             "updatedAt": "2026-01-06T02:33:30.460Z"
           }
         ],
-        "updatedAt": "2026-01-06T02:54:36.818Z"
+        "updatedAt": "2026-01-06T03:15:27.734Z"
       },
       {
         "id": "39",
@@ -1763,9 +1764,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-06T02:54:36.819Z",
+      "lastModified": "2026-01-06T03:15:27.735Z",
       "taskCount": 74,
-      "completedCount": 6,
+      "completedCount": 7,
       "tags": [
         "master"
       ]

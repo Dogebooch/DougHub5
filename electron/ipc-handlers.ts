@@ -1,5 +1,7 @@
-import { ipcMain, BrowserWindow } from "electron";
+import { ipcMain, BrowserWindow, app } from "electron";
 import path from "node:path";
+import fs from "node:fs";
+import crypto from "node:crypto";
 import {
   cardQueries,
   noteQueries,
@@ -930,6 +932,53 @@ export function registerIpcHandlers(): void {
       return failure(error);
     }
   });
+
+  // --------------------------------------------------------------------------
+  // File Handlers
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "files:saveImage",
+    async (
+      _,
+      { data, mimeType }: { data: string; mimeType: string }
+    ): Promise<IpcResult<{ path: string }>> => {
+      try {
+        const mimeMap: Record<string, string> = {
+          "image/png": "png",
+          "image/jpeg": "jpg",
+          "image/gif": "gif",
+          "image/webp": "webp",
+        };
+
+        const ext = mimeMap[mimeType] || "png";
+        const fileName = `${crypto.randomUUID()}.${ext}`;
+        const userDataPath = app.getPath("userData");
+        const imagesDir = path.join(userDataPath, "images");
+
+        // Ensure directory exists
+        if (!fs.existsSync(imagesDir)) {
+          fs.mkdirSync(imagesDir, { recursive: true });
+        }
+
+        // Extract base64 content from data URL
+        const base64Data = data.split(",")[1];
+        if (!base64Data) {
+          throw new Error("Invalid base64 data");
+        }
+
+        const buffer = Buffer.from(base64Data, "base64");
+        const filePath = path.join(imagesDir, fileName);
+        const relativePath = path.join("images", fileName).replace(/\\/g, "/");
+
+        fs.writeFileSync(filePath, buffer);
+
+        return success({ path: relativePath });
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
 
   ipcMain.handle("app:reload", () => {
     BrowserWindow.getFocusedWindow()?.webContents.reloadIgnoringCache();

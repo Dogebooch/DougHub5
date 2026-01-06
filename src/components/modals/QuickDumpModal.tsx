@@ -137,6 +137,28 @@ export function QuickDumpModal({ isOpen, onClose }: QuickDumpModalProps) {
     setIsSaving(true);
     try {
       if (typeof window !== "undefined" && window.api) {
+        let mediaPath: string | undefined = undefined;
+
+        // If it's an image, save it to disk first
+        if (contentType === "image" && imageData) {
+          const mimeType =
+            imageData.match(/^data:([^;]+);/)?.[1] || "image/png";
+          const saveResult = await window.api.files.saveImage(
+            imageData,
+            mimeType
+          );
+
+          if (saveResult.error) {
+            toast.error(`Failed to save image file: ${saveResult.error}`);
+            setIsSaving(false);
+            return;
+          }
+
+          if (saveResult.data) {
+            mediaPath = saveResult.data.path;
+          }
+        }
+
         // Generate title from first 50 characters or use placeholder for image
         const title =
           contentType === "image"
@@ -151,7 +173,7 @@ export function QuickDumpModal({ isOpen, onClose }: QuickDumpModalProps) {
           sourceName: "Quick Dump",
           title,
           rawContent: trimmedContent || "Image capture",
-          tempImageData: imageData || undefined,
+          mediaPath,
           canonicalTopicIds: [],
           tags: [],
           status: "inbox",
