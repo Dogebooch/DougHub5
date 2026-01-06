@@ -507,4 +507,102 @@ describe('FTS5 Global Search', () => {
       expect(result.results.length).toBeGreaterThan(0)
     })
   })
+
+  describe('Medical Application Stress Tests', () => {
+    beforeEach(() => {
+      // Acute Liver Failure vignettes
+      cardQueries.insert(createMockCard({
+        front: '45yo F with confusion, jaundice, and elevated LFTs. History of taking multiple Tylenol for headache over 3 days. Most likely diagnosis?',
+        back: 'Acetaminophen-induced acute liver failure',
+        tags: ['gastroenterology', 'toxicology'],
+        cardType: 'vignette'
+      }) as any)
+      
+      cardQueries.insert(createMockCard({
+        front: '22yo M with psychiatric symptoms, jaundice, Kayser-Fleischer rings on slit lamp. Low ceruloplasmin. Diagnosis?',
+        back: 'Wilson\'s disease presenting as acute liver failure',
+        tags: ['gastroenterology', 'neurology'],
+        cardType: 'vignette'
+      }) as any)
+
+      // Complex neurology
+      cardQueries.insert(createMockCard({
+        front: 'A 65yo patient presents with rapidly progressive dementia and myoclonus. CSF shows 14-3-3 protein. EEG shows periodic sharp wave complexes.',
+        back: 'Creutzfeldt-Jakob disease (CJD). Typical findings include 14-3-3 protein and 1:1 periodic complexes.',
+        tags: ['neurology'],
+        cardType: 'qa'
+      }) as any)
+
+      cardQueries.insert(createMockCard({
+        front: 'Patient presents with ascending paralysis after a diarrheal illness (Campylobacter). Albuminocytologic dissociation on CSF.',
+        back: 'Guillain-Barré syndrome (GBS). Treatment: IVIG or plasmapheresis.',
+        tags: ['neurology', 'infectious-disease'],
+        cardType: 'qa'
+      }) as any)
+
+      // Clinical findings and Images
+      noteQueries.insert(createMockNote({
+        title: 'Rheumatology Radiographic Findings',
+        content: 'Bilateral sacroiliitis is hallmark for Ankylosing Spondylitis. ![Bamboo spine](https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Ankylosing_spondylitis_bamboo_spine.jpg/300px-Ankylosing_spondylitis_bamboo_spine.jpg)',
+        tags: ['rheumatology', 'radiology']
+      }))
+
+      noteQueries.insert(createMockNote({
+        title: 'Dermatology Gallery: Lyme Disease',
+        content: 'Early localized Lyme disease presents with Erythema Migrans (bullseye rash as seen here: ![Erythema Migrans](https://www.cdc.gov/lyme/images/home-hero.jpg))',
+        tags: ['dermatology', 'infectious-disease']
+      }))
+    })
+
+    it('finds cards by symptoms in clinical vignette', () => {
+      const result = searchQueries.search('confusion jaundice LFTs')
+      expect(result.results.length).toBeGreaterThan(0)
+      expect(result.results[0].snippet).toContain('Tylenol')
+    })
+
+    it('finds cards by rare clinical signs (Kayser-Fleischer)', () => {
+      const result = searchQueries.search('Kayser-Fleischer')
+      expect(result.results.length).toBeGreaterThan(0)
+      // The sign is in the front (title)
+      expect(result.results[0].title).toContain('Kayser-Fleischer')
+    })
+
+    it('handles complex orthography (Creutzfeldt-Jakob)', () => {
+      const result = searchQueries.search('Creutzfeldt')
+      expect(result.results.length).toBeGreaterThan(0)
+      // The term is in the back, so snippet should show it
+      expect(result.results[0].snippet).toContain('Creutzfeldt')
+    })
+
+    it('handles medical terms with special characters (Guillain-Barré)', () => {
+      const result = searchQueries.search('Guillain-Barré')
+      expect(result.results.length).toBeGreaterThan(0)
+      expect(result.results[0].snippet).toContain('Guillain-Barré')
+    })
+
+    it('finds cards by matching symptoms AND diagnosis', () => {
+      // One term in front (ascending paralysis), one term in back (Guillain)
+      const result = searchQueries.search('ascending paralysis Guillain')
+      expect(result.results.length).toBeGreaterThan(0)
+    })
+
+    it('finds notes containing image URLs and media references', () => {
+      const result = searchQueries.search('Bamboo spine jpg')
+      expect(result.results.length).toBeGreaterThan(0)
+      expect(result.results[0].type).toBe('note')
+      expect(result.results[0].snippet).toContain('Ankylosing')
+    })
+
+    it('finds content containing specific disease locations (Sacroiliitis)', () => {
+      const result = searchQueries.search('Sacroiliitis')
+      expect(result.results.length).toBeGreaterThan(0)
+      expect(result.results[0].type).toBe('note')
+    })
+
+    it('handles clinical vignettes with multi-parameter search (Age + Sex + Symptom)', () => {
+      const result = searchQueries.search('65yo dementia')
+      expect(result.results.length).toBeGreaterThan(0)
+      expect(result.results[0].snippet).toContain('myoclonus')
+    })
+  })
 })

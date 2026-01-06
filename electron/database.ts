@@ -1663,28 +1663,33 @@ export const searchQueries = {
     const db = getDatabase();
 
     // Extract #tag patterns and convert to regular search terms
-    let processedQuery = query.trim();
-    const tagMatches = processedQuery.match(/#(\w+)/g);
     const searchTags: string[] = [];
-    if (tagMatches) {
-      tagMatches.forEach((tag) => {
-        searchTags.push(tag.slice(1).toLowerCase());
-        processedQuery = processedQuery.replace(tag, "").trim();
-      });
-    }
-
-    // If only tags were provided, use them as search terms
-    if (!processedQuery && searchTags.length > 0) {
-      processedQuery = searchTags.join(" ");
-    }
+    let textQuery = query
+      .replace(/#(\w+)/g, (_, tag) => {
+        searchTags.push(tag.toLowerCase());
+        return "";
+      })
+      .trim();
 
     // Escape FTS5 special characters and prepare query
-    const ftsQuery = processedQuery
+    const terms = textQuery
       .replace(/['"]/g, "")
       .split(/\s+/)
       .filter(Boolean)
-      .map((term) => `"${term}"*`)
-      .join(" ");
+      .map((term) => `"${term}"*`);
+
+    // Add tags to FTS query if present
+    const tagTerms = searchTags.map((tag) => `tags:${tag}`);
+
+    // Construct final FTS query
+    let ftsQuery = "";
+    if (terms.length > 0 && tagTerms.length > 0) {
+      ftsQuery = `(${terms.join(" ")}) AND ${tagTerms.join(" AND ")}`;
+    } else if (terms.length > 0) {
+      ftsQuery = terms.join(" ");
+    } else if (tagTerms.length > 0) {
+      ftsQuery = tagTerms.join(" AND ");
+    }
 
     if (!ftsQuery) {
       return {
@@ -1701,32 +1706,30 @@ export const searchQueries = {
       const cardsStmt = db.prepare(`
         SELECT
           c.id,
-          snippet(cards_fts, 1, '<mark>', '</mark>', '...', 32) as snippet,
           c.createdAt,
-          c.tags
+          c.tags,
+          snippet(cards_fts, 1, '<mark>', '</mark>', '...', 32) as s1,
+          snippet(cards_fts, 2, '<mark>', '</mark>', '...', 32) as s2,
+          snippet(cards_fts, 3, '<mark>', '</mark>', '...', 32) as s3
         FROM cards_fts
         JOIN cards c ON cards_fts.id = c.id
         WHERE cards_fts MATCH ?
         ORDER BY rank
         LIMIT ?
       `);
-      const cardRows = cardsStmt.all(ftsQuery, limit) as FtsRow[];
+      const cardRows = cardsStmt.all(ftsQuery, limit) as any[];
       cardRows.forEach((row) => {
-        const tags = row.tags ? JSON.parse(row.tags) : [];
-        // Filter by tag if specified
-        if (searchTags.length > 0) {
-          const lowerTags = tags.map((t: string) => t.toLowerCase());
-          if (!searchTags.some((st) => lowerTags.includes(st))) return;
-        }
+        const snippet =
+          [row.s1, row.s2, row.s3].find((s) => s && s.includes("<mark>")) ||
+          row.s1 ||
+          "";
         results.push({
           id: row.id,
           type: "card",
-          title:
-            row.snippet.substring(0, 50) +
-            (row.snippet.length > 50 ? "..." : ""),
-          snippet: row.snippet,
+          title: row.s1 ? row.s1.replace(/<mark>|<\/mark>/g, "") : "",
+          snippet: snippet,
           createdAt: row.createdAt,
-          tags,
+          tags: row.tags ? JSON.parse(row.tags) : [],
         });
       });
     }
@@ -1737,31 +1740,30 @@ export const searchQueries = {
         SELECT
           n.id,
           n.title,
-          snippet(notes_fts, 2, '<mark>', '</mark>', '...', 32) as snippet,
           n.createdAt,
-          n.tags
+          n.tags,
+          snippet(notes_fts, 1, '<mark>', '</mark>', '...', 32) as s1,
+          snippet(notes_fts, 2, '<mark>', '</mark>', '...', 32) as s2,
+          snippet(notes_fts, 3, '<mark>', '</mark>', '...', 32) as s3
         FROM notes_fts
         JOIN notes n ON notes_fts.id = n.id
         WHERE notes_fts MATCH ?
         ORDER BY rank
         LIMIT ?
       `);
-      const noteRows = notesStmt.all(ftsQuery, limit) as (FtsRow & {
-        title: string;
-      })[];
+      const noteRows = notesStmt.all(ftsQuery, limit) as any[];
       noteRows.forEach((row) => {
-        const tags = row.tags ? JSON.parse(row.tags) : [];
-        if (searchTags.length > 0) {
-          const lowerTags = tags.map((t: string) => t.toLowerCase());
-          if (!searchTags.some((st) => lowerTags.includes(st))) return;
-        }
+        const snippet =
+          [row.s2, row.s1, row.s3].find((s) => s && s.includes("<mark>")) ||
+          row.s2 ||
+          "";
         results.push({
           id: row.id,
           type: "note",
           title: row.title,
-          snippet: row.snippet,
+          snippet: snippet,
           createdAt: row.createdAt,
-          tags,
+          tags: row.tags ? JSON.parse(row.tags) : [],
         });
       });
     }
@@ -1772,31 +1774,30 @@ export const searchQueries = {
         SELECT
           s.id,
           s.title,
-          snippet(source_items_fts, 2, '<mark>', '</mark>', '...', 32) as snippet,
           s.createdAt,
-          s.tags
+          s.tags,
+          snippet(source_items_fts, 1, '<mark>', '</mark>', '...', 32) as s1,
+          snippet(source_items_fts, 2, '<mark>', '</mark>', '...', 32) as s2,
+          snippet(source_items_fts, 4, '<mark>', '</mark>', '...', 32) as s3
         FROM source_items_fts
         JOIN source_items s ON source_items_fts.id = s.id
         WHERE source_items_fts MATCH ?
         ORDER BY rank
         LIMIT ?
       `);
-      const sourceRows = sourceStmt.all(ftsQuery, limit) as (FtsRow & {
-        title: string;
-      })[];
+      const sourceRows = sourceStmt.all(ftsQuery, limit) as any[];
       sourceRows.forEach((row) => {
-        const tags = row.tags ? JSON.parse(row.tags) : [];
-        if (searchTags.length > 0) {
-          const lowerTags = tags.map((t: string) => t.toLowerCase());
-          if (!searchTags.some((st) => lowerTags.includes(st))) return;
-        }
+        const snippet =
+          [row.s2, row.s1, row.s3].find((s) => s && s.includes("<mark>")) ||
+          row.s2 ||
+          "";
         results.push({
           id: row.id,
           type: "source_item",
           title: row.title,
-          snippet: row.snippet,
+          snippet: snippet,
           createdAt: row.createdAt,
-          tags,
+          tags: row.tags ? JSON.parse(row.tags) : [],
         });
       });
     }
@@ -1851,7 +1852,11 @@ export const searchQueries = {
       );
     }
 
-    return { results, counts, queryTimeMs };
+    return {
+      results,
+      counts,
+      queryTimeMs,
+    };
   },
 };
 

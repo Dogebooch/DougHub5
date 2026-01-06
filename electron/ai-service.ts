@@ -377,7 +377,17 @@ Guidelines:
 - Extract 3-7 concepts per input, prioritizing high-yield content
 - Skip trivial or obvious information
 
-Respond with valid JSON only, no markdown formatting.`,
+Respond ONLY with a JSON object in this exact format (no markdown, no code blocks):
+{
+  "concepts": [
+    {
+      "text": "Description of the concept",
+      "conceptType": "definition|mechanism|treatment|diagnosis|epidemiology",
+      "confidence": 0.9,
+      "suggestedFormat": "qa|cloze"
+    }
+  ]
+}`,
 
   cardValidation: `You are a medical education AI assistant that validates flashcard quality.
 Evaluate cards based on the Minimum Information Principle:
@@ -448,7 +458,10 @@ differential-diagnosis, procedure, algorithm, lab-interpretation
 Only suggest tags that are directly relevant to the content.
 Prefer specific tags over general ones (e.g., "cardiology" over "medicine").
 
-Respond with valid JSON only, no markdown formatting.`,
+Respond ONLY with a JSON object in this exact format (no markdown, no code blocks):
+{
+  "tags": ["tag1", "tag2", "tag3"]
+}`,
 } as const;
 
 // ============================================================================
@@ -561,25 +574,47 @@ async function callAI(
 }
 
 /**
- * Parse JSON from AI response, handling markdown code blocks.
+ * Parse JSON from AI response, handling markdown code blocks and mixed text+JSON.
  *
  * @param text AI response text
  * @returns Parsed JSON object
  */
 function parseAIResponse<T>(text: string): T {
-  // Remove markdown code blocks if present
   let cleaned = text.trim();
-  if (cleaned.startsWith("```json")) {
-    cleaned = cleaned.slice(7);
-  } else if (cleaned.startsWith("```")) {
-    cleaned = cleaned.slice(3);
-  }
-  if (cleaned.endsWith("```")) {
-    cleaned = cleaned.slice(0, -3);
-  }
-  cleaned = cleaned.trim();
 
-  return JSON.parse(cleaned) as T;
+  // Remove markdown code blocks (supports ```json, ```JSON, ```)
+  const jsonBlockMatch = cleaned.match(/```(?:json|JSON)?\s*([\s\S]*?)```/);
+  if (jsonBlockMatch) {
+    cleaned = jsonBlockMatch[1].trim();
+  }
+
+  // Extract JSON from mixed text+JSON responses
+  // Support both objects {...} and arrays [...]
+  const firstBrace = cleaned.indexOf("{");
+  const firstBracket = cleaned.indexOf("[");
+  const lastBrace = cleaned.lastIndexOf("}");
+  const lastBracket = cleaned.lastIndexOf("]");
+
+  // Determine if we have an object or array
+  const isObject =
+    firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket);
+  const isArray =
+    firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace);
+
+  if (isObject && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  } else if (isArray && lastBracket > firstBracket) {
+    cleaned = cleaned.slice(firstBracket, lastBracket + 1);
+  }
+
+  try {
+    return JSON.parse(cleaned) as T;
+  } catch (e) {
+    const error = e as Error;
+    console.error("[AI Service] JSON parse failed. Raw text:", text);
+    console.error("[AI Service] Cleaned text:", cleaned);
+    throw new Error(`Failed to parse AI response: ${error.message}`);
+  }
 }
 
 // ============================================================================
@@ -629,29 +664,71 @@ export async function extractConcepts(
       "[AI Service] Raw concept extraction response:",
       conceptsResponse
     );
-    const parsed = parseAIResponse<ConceptExtractionResponse>(conceptsResponse);
+    let parsed = parseAIResponse<ConceptExtractionResponse | Array<any>>(
+      conceptsResponse
+    );
     console.log("[AI Service] Parsed response:", parsed);
 
-    // Validate response structure
-    if (!parsed || !Array.isArray(parsed.concepts)) {
+    // Handle both {concepts: [...]} and direct array [...] formats
+    let conceptsArray: Array<any>;
+    if (Array.isArray(parsed)) {
+      // Ollama sometimes returns array directly
+      conceptsArray = parsed;
+    } else if (
+      parsed &&
+      Array.isArray((parsed as ConceptExtractionResponse).concepts)
+    ) {
+      conceptsArray = (parsed as ConceptExtractionResponse).concepts;
+    } else {
       console.error(
-        "[AI Service] Invalid response structure. Expected {concepts: [...]}"
+        "[AI Service] Invalid response structure. Expected {concepts: [...]} or [...]"
       );
       throw new Error(
         "Invalid response structure from AI: missing or invalid concepts array"
       );
     }
 
-    // Add unique IDs and validate response
-    const concepts = parsed.concepts.map((concept, index) => ({
-      id: `concept-${Date.now()}-${index}`,
-      text: concept.text,
-      conceptType: concept.conceptType,
-      confidence: Math.min(1, Math.max(0, concept.confidence)), // Clamp to 0-1
-      suggestedFormat: (concept.suggestedFormat === "cloze"
-        ? "cloze"
-        : "qa") as "qa" | "cloze",
-    }));
+    // Filter and validate concepts before mapping
+    const validConcepts = conceptsArray.filter((c) => {
+      // Normalize field names (handle both 'text'/'concept', 'conceptType'/'type', etc.)
+      const text = c.text || c.concept;
+      const conceptType = c.conceptType || c.type;
+      const confidence = c.confidence;
+      const format = c.suggestedFormat || c.format;
+
+      const isValid =
+        typeof text === "string" &&
+        text.trim().length > 0 &&
+        typeof conceptType === "string" &&
+        typeof confidence === "number" &&
+        (format === "qa" ||
+          format === "cloze" ||
+          format === "Q&A" ||
+          format === "cloze deletion");
+
+      if (!isValid) {
+        console.warn("[AI Service] Filtered invalid concept:", c);
+      }
+      return isValid;
+    });
+
+    // Add unique IDs to validated concepts and normalize field names
+    const concepts = validConcepts.map((concept, index) => {
+      const text = concept.text || concept.concept;
+      const conceptType = concept.conceptType || concept.type;
+      const format = concept.suggestedFormat || concept.format;
+      // Normalize format string
+      const normalizedFormat =
+        format === "Q&A" || format === "qa" ? "qa" : "cloze";
+
+      return {
+        id: `concept-${Date.now()}-${index}`,
+        text: text,
+        conceptType: conceptType,
+        confidence: Math.min(1, Math.max(0, concept.confidence)), // Clamp to 0-1
+        suggestedFormat: normalizedFormat as "qa" | "cloze",
+      };
+    });
 
     return {
       concepts,
