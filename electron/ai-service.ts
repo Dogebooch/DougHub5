@@ -114,7 +114,7 @@ export const PROVIDER_PRESETS: Record<AIProviderType, AIProviderConfig> = {
     type: "openai-compatible",
     baseURL: "http://localhost:11434/v1",
     apiKey: "ollama", // OpenAI SDK requires non-empty string; Ollama ignores it
-    model: "qwen2.5:32b-instruct-q4_K_M", // Using available model from user's Ollama
+    model: "qwen2.5:7b-instruct", // Lightweight model for development
     timeout: 30000, // 30s for local processing (larger models need more time)
     isLocal: true,
   },
@@ -625,7 +625,22 @@ export async function extractConcepts(
       detectMedicalList(content),
     ]);
 
+    console.log(
+      "[AI Service] Raw concept extraction response:",
+      conceptsResponse
+    );
     const parsed = parseAIResponse<ConceptExtractionResponse>(conceptsResponse);
+    console.log("[AI Service] Parsed response:", parsed);
+
+    // Validate response structure
+    if (!parsed || !Array.isArray(parsed.concepts)) {
+      console.error(
+        "[AI Service] Invalid response structure. Expected {concepts: [...]}"
+      );
+      throw new Error(
+        "Invalid response structure from AI: missing or invalid concepts array"
+      );
+    }
 
     // Add unique IDs and validate response
     const concepts = parsed.concepts.map((concept, index) => ({
@@ -633,7 +648,9 @@ export async function extractConcepts(
       text: concept.text,
       conceptType: concept.conceptType,
       confidence: Math.min(1, Math.max(0, concept.confidence)), // Clamp to 0-1
-      suggestedFormat: (concept.suggestedFormat === "cloze" ? "cloze" : "qa") as "qa" | "cloze",
+      suggestedFormat: (concept.suggestedFormat === "cloze"
+        ? "cloze"
+        : "qa") as "qa" | "cloze",
     }));
 
     return {
