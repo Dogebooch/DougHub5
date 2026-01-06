@@ -553,9 +553,9 @@ export function CaptureInterface() {
 
       <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-700">
         {/* Phase 1: Paste Area */}
-        <Card className="bg-card border border-black/10 shadow-lg overflow-hidden rounded-2xl transition-all hover:shadow-xl">
-          <CardHeader className="py-3 px-5 border-b border-black/[0.05]">
-            <CardTitle className="text-[10px] uppercase tracking-widest font-bold text-card-foreground/40">
+        <Card className="bg-card border border-border/60 shadow-lg overflow-hidden rounded-2xl transition-all hover:shadow-xl">
+          <CardHeader className="py-3 px-5 border-b border-border/40">
+            <CardTitle className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
               Initial Capture
             </CardTitle>
           </CardHeader>
@@ -563,7 +563,7 @@ export function CaptureInterface() {
             <Textarea
               ref={textareaRef}
               placeholder="Paste medical notes, UWorld extracts, or lecture content..."
-              className="min-h-[160px] resize-none bg-black/[0.02] border-black/10 focus-visible:ring-primary/20 focus-visible:bg-black/[0.04] text-card-foreground placeholder:text-card-foreground/25 font-serif text-base leading-relaxed rounded-xl"
+              className="min-h-[160px] resize-none bg-muted/30 border-border/60 focus-visible:ring-primary/20 focus-visible:bg-muted/50 text-foreground placeholder:text-muted-foreground/50 font-serif text-base leading-relaxed rounded-xl"
               value={pastedContent}
               onChange={(e) => setPastedContent(e.target.value)}
               onPaste={handlePaste}
@@ -598,12 +598,12 @@ export function CaptureInterface() {
 
         {/* Phase 2: Extracted Concepts */}
         {extractedConcepts.length > 0 && (
-          <Card className="bg-card border border-black/10 shadow-lg rounded-2xl overflow-hidden">
-            <CardHeader className="py-3 px-5 border-b border-black/[0.05] flex flex-row items-center justify-between">
-              <CardTitle className="text-[10px] uppercase tracking-widest font-bold text-card-foreground/40">
+          <Card className="bg-card border border-border/60 shadow-lg rounded-2xl overflow-hidden">
+            <CardHeader className="py-3 px-5 border-b border-border/40 flex flex-row items-center justify-between">
+              <CardTitle className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
                 Refine & Confirm
               </CardTitle>
-              <span className="text-[10px] text-card-foreground/40 font-medium">
+              <span className="text-[10px] text-muted-foreground font-medium">
                 {selectedConcepts.size}/{extractedConcepts.length} selected
               </span>
             </CardHeader>

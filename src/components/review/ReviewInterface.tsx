@@ -377,7 +377,7 @@ export function ReviewInterface() {
       </div>
 
       {/* Card display */}
-      <div className="bg-card border border-black/10 rounded-2xl p-8 space-y-6 shadow-lg relative overflow-hidden min-h-[320px] flex flex-col justify-center transition-all duration-300 hover:shadow-xl">
+      <div className="bg-card border border-border/60 rounded-2xl p-8 space-y-6 shadow-lg relative overflow-hidden min-h-[320px] flex flex-col justify-center transition-all duration-300 hover:shadow-xl">
         {/* Subtle accent line */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
@@ -400,7 +400,7 @@ export function ReviewInterface() {
           )}
 
           {answerVisible && (
-            <div className="pt-6 border-t border-black/[0.06] space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="pt-6 border-t border-border/40 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
               {/* Back - Use cloze answer for cloze types */}
               {currentCard.cardType === "cloze" ||
               currentCard.cardType === "list-cloze" ? (
@@ -416,7 +416,7 @@ export function ReviewInterface() {
           )}
         </div>
 
-        <div className="text-center text-[10px] text-card-foreground/30 pt-6 border-t border-black/[0.04] font-medium uppercase tracking-widest">
+        <div className="text-center text-[10px] text-muted-foreground/70 pt-6 border-t border-border/30 font-medium uppercase tracking-widest">
           <span className="opacity-50">Source:</span>{" "}
           <span className="text-card-foreground/50">
             {currentNote ? currentNote.title : "Unknown"}

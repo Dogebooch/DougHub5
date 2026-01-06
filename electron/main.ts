@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, Menu } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { initDatabase, closeDatabase } from "./database";
@@ -36,6 +36,9 @@ function createWindow() {
       preload: path.join(__dirname, "preload.mjs"),
     },
   });
+
+  // Disable default menu to prevent Ctrl+Shift+S from being captured by "Save As"
+  Menu.setApplicationMenu(null);
 
   // Test active push message to Renderer-process.
   win.webContents.on("did-finish-load", () => {

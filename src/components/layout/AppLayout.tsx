@@ -16,9 +16,20 @@ export function AppLayout() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+      // Command Palette
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "f")) {
         e.preventDefault();
         setIsCommandPaletteOpen(true);
+      }
+
+      // Quick Capture (Ctrl+Shift+S)
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "s"
+      ) {
+        e.preventDefault();
+        setIsQuickCaptureOpen(true);
       }
     };
 

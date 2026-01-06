@@ -69,7 +69,7 @@ export function ConceptCheckbox({
         "flex items-start gap-4 p-5 rounded-2xl border transition-all duration-300",
         isSelected
           ? "bg-primary/10 border-primary/30 shadow-md"
-          : "bg-black/5 border-black/5 hover:border-black/10 hover:bg-black/[0.07]"
+          : "bg-muted/40 border-border/50 hover:border-border/70 hover:bg-muted/60"
       )}
       role="listitem"
       tabIndex={0}
@@ -85,7 +85,7 @@ export function ConceptCheckbox({
         id={`concept-${concept.id}`}
         checked={isSelected}
         onCheckedChange={onToggle}
-        className="mt-0.5 border-black/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+        className="mt-0.5 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         aria-label={`Select concept: ${concept.text}`}
       />
 
@@ -97,7 +97,7 @@ export function ConceptCheckbox({
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="flex-1 bg-white/50 border-black/10 text-card-foreground"
+              className="flex-1 bg-background border-border/60 text-foreground"
               autoFocus
             />
             <Button
@@ -140,7 +140,10 @@ export function ConceptCheckbox({
         {/* Metadata row */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Concept type badge */}
-          <Badge variant="outline" className="text-[10px] uppercase tracking-wider bg-black/5 border-black/10 text-card-foreground/60 px-2 py-0">
+          <Badge
+            variant="outline"
+            className="text-[10px] uppercase tracking-wider bg-muted/50 border-border/60 text-muted-foreground px-2 py-0"
+          >
             {concept.conceptType}
           </Badge>
 
@@ -149,18 +152,25 @@ export function ConceptCheckbox({
             value={concept.suggestedFormat}
             onValueChange={(v) => handleFormatChange(v as "qa" | "cloze")}
           >
-            <SelectTrigger className="h-6 text-[10px] uppercase tracking-wider bg-black/5 border-black/10 text-card-foreground/60 w-fit gap-1.5 px-2">
+            <SelectTrigger className="h-6 text-[10px] uppercase tracking-wider bg-muted/50 border-border/60 text-muted-foreground w-fit gap-1.5 px-2">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-card border-black/10">
-              <SelectItem value="qa" className="text-xs">Q&A</SelectItem>
-              <SelectItem value="cloze" className="text-xs">Cloze</SelectItem>
+            <SelectContent className="bg-card border-border/60">
+              <SelectItem value="qa" className="text-xs">
+                Q&A
+              </SelectItem>
+              <SelectItem value="cloze" className="text-xs">
+                Cloze
+              </SelectItem>
             </SelectContent>
           </Select>
 
           {/* Confidence indicator */}
           <span
-            className={cn("text-[10px] uppercase tracking-wider font-bold opacity-60", getConfidenceColor(concept.confidence))}
+            className={cn(
+              "text-[10px] uppercase tracking-wider font-bold opacity-60",
+              getConfidenceColor(concept.confidence)
+            )}
           >
             {Math.round(concept.confidence * 100)}% Match
           </span>
