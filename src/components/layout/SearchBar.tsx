@@ -10,7 +10,7 @@ export function SearchBar() {
       <Input
         type="search"
         placeholder="Search cards and notes... (Ctrl+K)"
-        className="w-full pl-10 h-12 bg-background border-border text-foreground placeholder:text-muted-foreground"
+        className="w-full pl-10 h-12 bg-secondary/50 border-white/5 focus-visible:ring-primary/50 text-foreground placeholder:text-muted-foreground transition-all"
       />
     </div>
   );

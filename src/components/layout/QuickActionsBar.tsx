@@ -21,26 +21,29 @@ export function QuickActionsBar({ onOpenQuickDump }: QuickActionsBarProps) {
   const dueCount = mounted && isHydrated ? getCardsDueToday().length : 0;
 
   return (
-    <div className="border-b border-border bg-card">
+    <div className="border-b border-white/5 bg-background shadow-sm">
       <div className="mx-auto max-w-7xl px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
               variant="default"
               size="lg"
-              className="min-h-[44px]"
+              className="min-h-[48px] px-6 font-bold shadow-md hover:shadow-primary/20 transition-all"
               onClick={onOpenQuickDump}
             >
               Quick Dump
             </Button>
             <Button
-              variant="secondary"
+              variant="outline"
               size="lg"
-              className="min-h-[44px] gap-2"
+              className="min-h-[48px] px-6 gap-2 border-white/10 hover:bg-white/5 font-semibold"
               onClick={() => setCurrentView("review")}
             >
-              <span>Due Today:</span>
-              <Badge variant="outline" className="ml-1 bg-background">
+              <span>Due Today</span>
+              <Badge
+                variant="secondary"
+                className="ml-1 px-3 py-1 bg-primary text-white border-none font-bold"
+              >
                 {dueCount}
               </Badge>
             </Button>
@@ -48,10 +51,10 @@ export function QuickActionsBar({ onOpenQuickDump }: QuickActionsBarProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="min-h-[44px] min-w-[44px]"
+            className="h-12 w-12 hover:bg-white/5 transition-colors"
             onClick={() => setCurrentView("settings")}
           >
-            <Settings className="h-5 w-5" />
+            <Settings className="h-6 w-6 text-muted-foreground" />
             <span className="sr-only">Settings</span>
           </Button>
         </div>
