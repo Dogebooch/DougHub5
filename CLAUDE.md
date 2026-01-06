@@ -109,4 +109,4 @@ Keep task list lean to minimize token usage. Follow these rules:
 3. Insert into MVP task chain
 
 **Active MVP Path:**
-T36 (Topic Service) → T39 (Inbox UI) → T40 (Knowledge Bank UI) → T44 (Smart Views) → T41 (Notebook UI) → T42 (Card Generation) → T43 (Card Worthiness Gate)
+T36 (Topic Service) → T39 (Inbox UI) → T40 (Knowledge Bank UI) → T44 (Smart Views) → T41 (Notebook UI) → T42 (Card Generation) → T43 (Card Worthiness Gate) → T45 (FSRS Integration)

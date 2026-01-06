@@ -97,14 +97,18 @@ collected from day one.
 |---|---------|------|--------|
 | 8 | Card generation from notebook | AI suggests cards from Notebook blocks ONLY | T42 |
 | 9 | Card-worthiness gate | Rubric (board-relevant? testable? discriminative?) | T43 |
-| 10 | Low-ease detection | Flag repeatedly-hard cards, route to fix flow | T46 |
+| 10 | FSRS integration | Response time tracking, provenance display | T45 |
 
-### Phase 5: Cross-Cutting Polish
-| # | Feature | Task | Status |
-|---|---------|------|--------|
-| 11 | Global search | <200ms response via command palette | T10 |
-| 12 | Medical list processing | Clinical vignettes or overlapping cloze | T4 |
-| 13 | Ollama auto-start | Launch AI on first request | T17 |
+> **Note:** Low-ease detection (T46) deferred to post-MVP. Core FSRS review works without it.
+
+### Phase 5: Cross-Cutting Polish (POST-MVP)
+| # | Feature | Status |
+|---|---------|--------|
+| 11 | Global search (<200ms via command palette) | Deferred |
+| 12 | Medical list processing (clinical vignettes) | Deferred |
+| 13 | Ollama auto-start | ✅ Complete (T17 done) |
+
+> **Note:** Phase 5 features are post-MVP polish. Core v2 architecture (Phases 2-4) takes priority.
 
 ### Data Migration Note
 The `quick_dumps` table is superseded by `source_items` with `sourceType='quickcapture'`.

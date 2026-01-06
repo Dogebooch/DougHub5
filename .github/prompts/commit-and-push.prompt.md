@@ -23,7 +23,7 @@ Please commit and save the working directory with the following steps:
 
 2. **Stage all changes**: `git add .`
 
-3. **Commit** with an auto-generated message using current timestamp
+3. **Commit** with a message written by the AI model: 1-2 sentences clearly describing what changed in this commit (not just a timestamp).
 
 
 4. **Push to remote** automatically after committing

@@ -1,8 +1,0 @@
-Task 1: Queue onboarding and guidance
-Task 2: Undo functionality (Ctrl+Z) for edits and review grades
-Task 3: Anki import functionality
-Task 4: Keyboard shortcut reference overlay
-Task 5: Statistics and analytics dashboard
-Task 6: Tag management UI (create, edit, merge, delete)
-Task 7: Capture textarea auto-resize based on content
-Task 8: Capture page UX redesign for better information dump workflow

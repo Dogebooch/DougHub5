@@ -24,6 +24,18 @@
 **Priority:** Low
 **Notes:** Could reduce clicks for common capture patterns.
 
+### Command Palette (Ctrl+K)
+**Source:** Task 11 (cancelled)
+**Description:** Keyboard-first command palette for quick navigation, search, and actions. Currently bound to Ctrl+F but not discoverable.
+**Priority:** Low
+**Notes:** Sidebar provides navigation. This is power-user polish, not MVP-critical.
+
+### Hotkey Reliability Investigation
+**Source:** Manual testing 2026-01-06
+**Description:** Ctrl+Shift+S hotkey intermittently stops working. Manual button always works. May be focus/event bubbling issue.
+**Priority:** Low
+**Notes:** Workaround: use FAB button. Investigate after MVP.
+
 ---
 
 ## Capture & Extraction
@@ -33,10 +45,10 @@
 **Priority:** Medium
 **Notes:** Has detailed subtasks in original TaskMaster. Revisit after core v2 flow works.
 
-### Auto Note Creation (was T6)
+### Auto Note Creation (was T6) - OBSOLETE
 **Description:** Automatically create Notes from extraction sessions with bidirectional card-note links.
-**Priority:** Medium
-**Notes:** May be superseded by v2 SourceItem → NotebookBlock flow.
+**Priority:** N/A
+**Notes:** **SUPERSEDED by v2 architecture.** v2 uses SourceItem → NotebookBlock → Card flow. "Notes" are a v1 concept. The noteId column on cards is legacy; v2 cards use notebookTopicPageId instead. Move to Archive when ready.
 
 ### Connection Suggestions (was T7)
 **Description:** AI surfaces related notes during extraction based on semantic similarity.
