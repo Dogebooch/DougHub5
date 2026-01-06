@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/useAppStore";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -193,11 +192,33 @@ export function Sidebar({ className }: SidebarProps) {
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {/* Main navigation */}
           <div className="space-y-0.5">
-            {!collapsed && (
-              <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
-                Main
-              </p>
-            )}
+            <div
+              className={cn(
+                "flex items-center px-3 py-2",
+                collapsed ? "justify-center" : "justify-between"
+              )}
+            >
+              {!collapsed && (
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+                  Main
+                </p>
+              )}
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                className={cn(
+                  "flex items-center justify-center rounded-md transition-all duration-200",
+                  "text-muted-foreground/20 hover:text-muted-foreground/100 hover:bg-white/5",
+                  collapsed ? "h-8 w-8" : "h-5 w-5"
+                )}
+                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {collapsed ? (
+                  <PanelLeftOpen className="h-4 w-4" />
+                ) : (
+                  <PanelLeftClose className="h-4 w-4" />
+                )}
+              </button>
+            </div>
             {mainNavItems.map((item) => (
               <NavButton key={item.id} item={item} />
             ))}
@@ -239,8 +260,8 @@ export function Sidebar({ className }: SidebarProps) {
           */}
         </nav>
 
-        {/* Footer with settings and collapse toggle */}
-        <div className="p-2 border-t border-white/5 space-y-1">
+        {/* Footer with settings */}
+        <div className="p-2 border-t border-white/5">
           <NavButton
             item={{
               id: "settings",
@@ -249,25 +270,6 @@ export function Sidebar({ className }: SidebarProps) {
               implemented: true,
             }}
           />
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setCollapsed(!collapsed)}
-            className={cn(
-              "w-full justify-center text-muted-foreground/50 hover:text-muted-foreground h-8",
-              !collapsed && "justify-start px-3"
-            )}
-          >
-            {collapsed ? (
-              <PanelLeftOpen className="h-4 w-4" />
-            ) : (
-              <>
-                <PanelLeftClose className="h-4 w-4 mr-2" />
-                <span className="text-xs">Collapse</span>
-              </>
-            )}
-          </Button>
         </div>
       </aside>
     </TooltipProvider>
