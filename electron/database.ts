@@ -1398,6 +1398,21 @@ export const canonicalTopicQueries = {
     const rows = stmt.all(domain) as CanonicalTopicRow[];
     return rows.map(parseCanonicalTopicRow);
   },
+
+  insert(topic: DbCanonicalTopic): void {
+    const stmt = getDatabase().prepare(`
+      INSERT INTO canonical_topics (id, canonicalName, aliases, domain, parentTopicId, createdAt)
+      VALUES (@id, @canonicalName, @aliases, @domain, @parentTopicId, @createdAt)
+    `);
+    stmt.run({
+      id: topic.id,
+      canonicalName: topic.canonicalName,
+      aliases: JSON.stringify(topic.aliases),
+      domain: topic.domain,
+      parentTopicId: topic.parentTopicId || null,
+      createdAt: topic.createdAt,
+    });
+  },
 };
 
 function parseCanonicalTopicRow(row: CanonicalTopicRow): DbCanonicalTopic {

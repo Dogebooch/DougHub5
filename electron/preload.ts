@@ -65,6 +65,10 @@ const api = {
     getById: (id: string) => ipcRenderer.invoke("canonicalTopics:getById", id),
     getByDomain: (domain: string) =>
       ipcRenderer.invoke("canonicalTopics:getByDomain", domain),
+    resolveAlias: (name: string) =>
+      ipcRenderer.invoke("canonicalTopics:resolveAlias", name),
+    createOrGet: (name: string, domain?: string) =>
+      ipcRenderer.invoke("canonicalTopics:createOrGet", name, domain),
   },
   notebookPages: {
     getAll: () => ipcRenderer.invoke("notebookPages:getAll"),

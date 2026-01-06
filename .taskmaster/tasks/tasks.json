@@ -1172,8 +1172,73 @@
         "dependencies": [
           "35"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "in-progress",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create electron/topic-service.ts with core alias resolution functions",
+            "description": "Implement resolveTopicAlias() and createOrGetTopic() functions for basic topic alias lookup and creation with automatic alias generation",
+            "dependencies": [],
+            "details": "Create new service file electron/topic-service.ts. Implement resolveTopicAlias(input: string): Promise<CanonicalTopic | null> that normalizes input (trim, lowercase), queries canonical_topics table checking canonicalName exact match first, then searches aliases JSON array case-insensitively, returns matched DbCanonicalTopic or null. Implement createOrGetTopic(name: string, domain?: string): Promise<CanonicalTopic> that calls resolveTopicAlias first, returns existing if found, otherwise generates UUID, creates new DbCanonicalTopic with name as canonicalName, auto-generates aliases array (lowercase variant, remove spaces variant), defaults domain to 'general', inserts via canonicalTopicQueries, returns new topic. Import getDatabase from database.ts, use existing canonicalTopicQueries for CRUD operations.",
+            "status": "done",
+            "testStrategy": "Unit test resolveTopicAlias with exact match 'HCM' finding canonicalName='HCM'. Test alias match 'hocm' resolving to topic with aliases=['HOCM','hocm']. Test createOrGetTopic returns existing topic when alias matches, creates new topic with auto-generated aliases when no match. Verify case-insensitive matching.",
+            "updatedAt": "2026-01-06T14:43:34.428Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement suggestTopicMatches() with fuzzy search for autocomplete",
+            "description": "Add fuzzy search function to suggest topic matches using simple string similarity for autocomplete dropdown",
+            "dependencies": [
+              1
+            ],
+            "details": "In electron/topic-service.ts, implement suggestTopicMatches(input: string): Promise<CanonicalTopic[]>. Normalize input (trim, lowercase). Query all topics via canonicalTopicQueries.getAll(). For each topic, calculate similarity score: check if canonicalName or any alias contains input substring (score=2), or if input contains topic name (score=1), or use Levenshtein distance for fuzzy match (score based on edit distance). Sort by score descending, return top 5 matches. Keep implementation simple using string.includes() for substring matching and optional basic Levenshtein algorithm (max 3-edit distance threshold) for typo tolerance.",
+            "status": "pending",
+            "testStrategy": "Test 'cardio' matches topics with canonicalName='Cardiology' or aliases containing 'cardio'. Test fuzzy match: 'hypertrophic' finds 'Hypertrophic Cardiomyopathy' with 1-2 char typos. Test returns max 5 results sorted by relevance. Test empty input returns popular/recent topics.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement addTopicAlias() with uniqueness validation",
+            "description": "Add function to add new aliases to existing topics with duplicate prevention across all topics",
+            "dependencies": [
+              1
+            ],
+            "details": "In electron/topic-service.ts, implement addTopicAlias(topicId: string, alias: string): Promise<void>. Normalize alias (trim, lowercase). First check: query all topics via canonicalTopicQueries.getAll(), search through all aliases arrays to verify this alias doesn't exist on any other topic (throw Error if found). Second: fetch target topic via canonicalTopicQueries.getById(topicId), verify exists, check alias not already in topic's aliases array. If valid, push alias to topic.aliases, update topic in database using prepared statement: UPDATE canonical_topics SET aliases = ? WHERE id = ?. Use JSON.stringify for aliases array. Wrap in try-catch for error handling.",
+            "status": "pending",
+            "testStrategy": "Test adding 'HOCM' as alias to 'Hypertrophic Cardiomyopathy' succeeds. Test adding duplicate alias to same topic is idempotent (no error, no duplicate entry). Test adding alias that exists on another topic throws validation error with clear message. Test case-insensitive duplicate detection.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement mergeTopics() with transactional safety and reference updates",
+            "description": "Add topic merging function that consolidates aliases and updates all references in source_items and notebook_topic_pages tables",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "In electron/topic-service.ts, implement mergeTopics(sourceId: string, targetId: string): Promise<void>. Use database transaction for atomicity. Steps: (1) Fetch source and target topics via canonicalTopicQueries.getById, verify both exist. (2) Merge aliases: combine source.aliases into target.aliases array, deduplicate. (3) Update source_items: query all source_items where canonicalTopicIds JSON array contains sourceId, parse JSON, replace sourceId with targetId, update row with JSON.stringify. (4) Update notebook_topic_pages: UPDATE notebook_topic_pages SET canonicalTopicId = ? WHERE canonicalTopicId = ?. (5) Delete source topic: DELETE FROM canonical_topics WHERE id = ?. (6) Update target topic with merged aliases. Wrap entire operation in db.transaction(() => { ... }) for rollback on error. Import getDatabase to access transaction API.",
+            "status": "pending",
+            "testStrategy": "Test merging 'HOCM' topic into 'Hypertrophic Cardiomyopathy' preserves all aliases from both. Test all source_items referencing source topic now reference target topic after merge. Test all notebook_topic_pages update canonicalTopicId correctly. Test source topic is deleted. Test transaction rollback on error (e.g., target topic doesn't exist) leaves database unchanged.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Wire IPC handlers and create TopicAutocomplete UI component",
+            "description": "Register IPC handlers for topic operations and build React autocomplete component with debounced search and dropdown suggestions",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "In electron/ipc-handlers.ts, import topic-service functions. Register handlers: ipcMain.handle('topic:resolve', async (_, input: string) => try { return success(await resolveTopicAlias(input)) } catch { failure }), 'topic:createOrGet', 'topic:suggest', 'topic:addAlias', 'topic:merge'. Export preload.ts methods: topic: { resolve: (input) => ipcRenderer.invoke('topic:resolve', input), ... }. Update src/types/electron.d.ts interface ElectronAPI with topic methods. Create src/components/ui/TopicAutocomplete.tsx: use Command component from shadcn (already in codebase at command.tsx), implement debounced input (300ms) calling window.api.topic.suggest, render CommandList with CommandGroup showing suggestions (display canonicalName + alias count), CommandItem onClick calls onSelect(topic), show 'Create new topic' option at bottom if no exact match. Props: value, onChange, onSelect(topic), placeholder. Use existing Input, Popover, Command components.",
+            "status": "pending",
+            "testStrategy": "Test IPC handlers return IpcResult format with data/error. Test topic:resolve handler calls resolveTopicAlias and returns topic. Test TopicAutocomplete renders input, typing triggers debounced suggest call, dropdown shows results, clicking suggestion calls onSelect. Test 'Create new topic' option calls createOrGetTopic and adds new topic. Test keyboard navigation (arrow keys, enter to select).",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-01-06T14:43:34.428Z"
       },
       {
         "id": "37",
@@ -1937,7 +2002,9 @@
         "details": "",
         "testStrategy": "",
         "priority": "low",
-        "dependencies": ["17"],
+        "dependencies": [
+          "17"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:00:00.000Z"
@@ -1961,7 +2028,9 @@
         "details": "",
         "testStrategy": "",
         "priority": "medium",
-        "dependencies": ["94"],
+        "dependencies": [
+          "94"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:30:00.000Z"
@@ -1973,7 +2042,9 @@
         "details": "",
         "testStrategy": "",
         "priority": "medium",
-        "dependencies": ["94"],
+        "dependencies": [
+          "94"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:30:00.000Z"
@@ -1985,7 +2056,10 @@
         "details": "",
         "testStrategy": "",
         "priority": "medium",
-        "dependencies": ["95", "96"],
+        "dependencies": [
+          "95",
+          "96"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:30:00.000Z"
@@ -1997,7 +2071,9 @@
         "details": "",
         "testStrategy": "",
         "priority": "low",
-        "dependencies": ["97"],
+        "dependencies": [
+          "97"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:30:00.000Z"
@@ -2009,7 +2085,9 @@
         "details": "",
         "testStrategy": "",
         "priority": "low",
-        "dependencies": ["97"],
+        "dependencies": [
+          "97"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:30:00.000Z"
@@ -2021,7 +2099,9 @@
         "details": "",
         "testStrategy": "",
         "priority": "medium",
-        "dependencies": ["94"],
+        "dependencies": [
+          "94"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:30:00.000Z"
@@ -2033,7 +2113,10 @@
         "details": "",
         "testStrategy": "",
         "priority": "medium",
-        "dependencies": ["95", "100"],
+        "dependencies": [
+          "95",
+          "100"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:30:00.000Z"
@@ -2057,7 +2140,9 @@
         "details": "",
         "testStrategy": "",
         "priority": "low",
-        "dependencies": ["96"],
+        "dependencies": [
+          "96"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:30:00.000Z"
@@ -2069,7 +2154,9 @@
         "details": "",
         "testStrategy": "",
         "priority": "low",
-        "dependencies": ["98"],
+        "dependencies": [
+          "98"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:30:00.000Z"
@@ -2081,7 +2168,9 @@
         "details": "",
         "testStrategy": "",
         "priority": "low",
-        "dependencies": ["94"],
+        "dependencies": [
+          "94"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:30:00.000Z"
@@ -2093,7 +2182,9 @@
         "details": "",
         "testStrategy": "",
         "priority": "medium",
-        "dependencies": ["94"],
+        "dependencies": [
+          "94"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:30:00.000Z"
@@ -2129,7 +2220,9 @@
         "details": "",
         "testStrategy": "",
         "priority": "low",
-        "dependencies": ["108"],
+        "dependencies": [
+          "108"
+        ],
         "status": "deferred",
         "subtasks": [],
         "updatedAt": "2026-01-06T06:30:00.000Z"
@@ -2149,8 +2242,8 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-06T05:29:32.390Z",
-      "taskCount": 84,
+      "lastModified": "2026-01-06T14:43:34.429Z",
+      "taskCount": 102,
       "completedCount": 10,
       "tags": [
         "master"

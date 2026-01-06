@@ -61,6 +61,7 @@ import {
   type MedicalListDetection,
   type VignetteConversion,
 } from "./ai-service";
+import { resolveTopicAlias, createOrGetTopic } from "./topic-service";
 
 // ============================================================================
 // IPC Result Wrapper
@@ -567,6 +568,34 @@ export function registerIpcHandlers(): void {
     }
   );
 
+  ipcMain.handle(
+    "canonicalTopics:resolveAlias",
+    async (_, name: string): Promise<IpcResult<DbCanonicalTopic | null>> => {
+      try {
+        const topic = resolveTopicAlias(name);
+        return success(topic);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "canonicalTopics:createOrGet",
+    async (
+      _,
+      name: string,
+      domain?: string
+    ): Promise<IpcResult<DbCanonicalTopic>> => {
+      try {
+        const topic = createOrGetTopic(name, domain);
+        return success(topic);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
   // --------------------------------------------------------------------------
   // Notebook Topic Page Handlers (v3)
   // --------------------------------------------------------------------------
@@ -722,7 +751,7 @@ export function registerIpcHandlers(): void {
       filter?: SearchFilter
     ): Promise<IpcResult<SearchResult>> => {
       try {
-        const result = searchQueries.search(query, filter || 'all');
+        const result = searchQueries.search(query, filter || "all");
         return success(result);
       } catch (error) {
         return failure(error);

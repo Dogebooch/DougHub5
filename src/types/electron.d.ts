@@ -126,6 +126,11 @@ export interface ElectronAPI {
     getAll: () => Promise<IpcResult<CanonicalTopic[]>>;
     getById: (id: string) => Promise<IpcResult<CanonicalTopic | null>>;
     getByDomain: (domain: string) => Promise<IpcResult<CanonicalTopic[]>>;
+    resolveAlias: (name: string) => Promise<IpcResult<CanonicalTopic | null>>;
+    createOrGet: (
+      name: string,
+      domain?: string
+    ) => Promise<IpcResult<CanonicalTopic>>;
   };
   notebookPages: {
     getAll: () => Promise<IpcResult<NotebookTopicPage[]>>;
