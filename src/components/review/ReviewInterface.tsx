@@ -268,13 +268,12 @@ export function ReviewInterface() {
         } else if (!isSubmitting) {
           handleContinue();
         }
-      } else if (
-        e.key === "Enter" &&
-        answerVisible &&
-        !isSubmitting &&
-        !showingFeedback
-      ) {
-        handleContinue();
+      } else if (answerVisible && !isSubmitting && !showingFeedback) {
+        if (e.key === "1") handleManualGrade(Rating.Again);
+        else if (e.key === "2") handleManualGrade(Rating.Hard);
+        else if (e.key === "3") handleManualGrade(Rating.Good);
+        else if (e.key === "4") handleManualGrade(Rating.Easy);
+        else if (e.key === "Enter") handleContinue();
       } else if (e.key === "Escape") {
         navigateToCapture();
       }
@@ -286,8 +285,10 @@ export function ReviewInterface() {
     answerVisible,
     handleShowAnswer,
     handleContinue,
+    handleManualGrade,
     navigateToCapture,
     isSubmitting,
+    showingFeedback,
     showManualGradeSelector,
     isPaused,
   ]);
@@ -525,6 +526,9 @@ export function ReviewInterface() {
                 Mastered
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Press 1-4 to grade
+            </p>
           </div>
         )}
       </div>
