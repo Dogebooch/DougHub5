@@ -188,6 +188,12 @@ export interface ElectronAPI {
       maxResults?: number
     ) => Promise<IpcResult<SemanticMatch[]>>;
     clearCache: () => Promise<IpcResult<void>>;
+    onOllamaStatus: (
+      callback: (payload: {
+        status: "starting" | "started" | "failed" | "already-running";
+        message: string;
+      }) => void
+    ) => () => void;
   };
   files: {
     saveImage: (

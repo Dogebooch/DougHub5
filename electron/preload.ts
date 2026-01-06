@@ -125,6 +125,13 @@ const api = {
         maxResults
       ),
     clearCache: () => ipcRenderer.invoke("ai:clearCache"),
+    onOllamaStatus: (
+      callback: (payload: { status: string; message: string }) => void
+    ) => {
+      const subscription = (_event: any, payload: any) => callback(payload);
+      ipcRenderer.on("ai:ollamaStatus", subscription);
+      return () => ipcRenderer.removeListener("ai:ollamaStatus", subscription);
+    },
   },
   files: {
     saveImage: (data: string, mimeType: string) =>

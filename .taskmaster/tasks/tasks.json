@@ -730,7 +730,7 @@
         "dependencies": [
           "2"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -778,7 +778,8 @@
             "testStrategy": "Test on Windows with Ollama installed via official installer. Test PATH detection. Test with Ollama not installed → verify appropriate error message. Verify spawn works with full path.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-01-06T05:29:32.390Z"
       },
       {
         "id": "18",
@@ -1932,9 +1933,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-06T05:12:32.738Z",
+      "lastModified": "2026-01-06T05:29:32.390Z",
       "taskCount": 84,
-      "completedCount": 9,
+      "completedCount": 10,
       "tags": [
         "master"
       ]

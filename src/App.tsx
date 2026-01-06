@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { useAppStore } from "@/stores/useAppStore";
 import { AppLayout } from "@/components/layout/AppLayout";
 
@@ -8,6 +8,27 @@ export default function App() {
 
   useEffect(() => {
     initialize();
+
+    // Listen for Ollama status updates
+    const cleanup = window.api.ai.onOllamaStatus((payload) => {
+      switch (payload.status) {
+        case "starting":
+          toast.info(payload.message, { id: "ollama-status" });
+          break;
+        case "started":
+          toast.success(payload.message, { id: "ollama-status" });
+          break;
+        case "failed":
+          toast.error(payload.message, { id: "ollama-status" });
+          break;
+        case "already-running":
+          // Transparent to user, just log it
+          console.log("[AI Status]", payload.message);
+          break;
+      }
+    });
+
+    return () => cleanup();
   }, [initialize]);
 
   if (isLoading) {
