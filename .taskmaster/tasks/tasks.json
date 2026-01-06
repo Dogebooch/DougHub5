@@ -1357,8 +1357,13 @@
         "description": "Adjust manual grade button colors for better accessibility and visual clarity. Current dark colors have low contrast.",
         "priority": "low",
         "status": "deferred",
-        "tags": ["ux", "polish"],
-        "dependencies": ["5"],
+        "tags": [
+          "ux",
+          "polish"
+        ],
+        "dependencies": [
+          "5"
+        ],
         "subtasks": []
       },
       {
@@ -1367,8 +1372,13 @@
         "description": "Add visual indicator showing how auto-grade was determined (e.g., 'Recalled (12.3s)'). User can't tell why card was graded certain way.",
         "priority": "medium",
         "status": "deferred",
-        "tags": ["ux", "transparency"],
-        "dependencies": ["5"],
+        "tags": [
+          "ux",
+          "transparency"
+        ],
+        "dependencies": [
+          "5"
+        ],
         "subtasks": []
       },
       {
@@ -1377,8 +1387,14 @@
         "description": "New users confused about Continue vs. manual buttons. Add guided tutorial explaining zero-decision flow and when to override.",
         "priority": "high",
         "status": "deferred",
-        "tags": ["ux", "onboarding"],
-        "dependencies": ["5", "54"],
+        "tags": [
+          "ux",
+          "onboarding"
+        ],
+        "dependencies": [
+          "5",
+          "54"
+        ],
         "subtasks": []
       },
       {
@@ -1387,8 +1403,13 @@
         "description": "Manual grade buttons appear before answer revealed, which is confusing. Should only show after Space pressed.",
         "priority": "high",
         "status": "deferred",
-        "tags": ["ux", "bug-fix"],
-        "dependencies": ["5"],
+        "tags": [
+          "ux",
+          "bug-fix"
+        ],
+        "dependencies": [
+          "5"
+        ],
         "subtasks": []
       },
       {
@@ -1397,8 +1418,13 @@
         "description": "Add global '← Capture' button in header so user can exit review without scrolling to bottom.",
         "priority": "medium",
         "status": "deferred",
-        "tags": ["ux", "navigation"],
-        "dependencies": ["5"],
+        "tags": [
+          "ux",
+          "navigation"
+        ],
+        "dependencies": [
+          "5"
+        ],
         "subtasks": []
       },
       {
@@ -1407,7 +1433,10 @@
         "description": "Capture screen feels empty. Add hero section, multi-input tabs, examples, recent activity. Make it feel like a proper home screen.",
         "priority": "high",
         "status": "deferred",
-        "tags": ["ux", "onboarding"],
+        "tags": [
+          "ux",
+          "onboarding"
+        ],
         "dependencies": [],
         "subtasks": []
       },
@@ -1417,8 +1446,13 @@
         "description": "Paste box should adapt: single-line for quick text, multi-line for paragraphs, drop zone for PDFs/images.",
         "priority": "medium",
         "status": "deferred",
-        "tags": ["ux", "smart-ui"],
-        "dependencies": ["58"],
+        "tags": [
+          "ux",
+          "smart-ui"
+        ],
+        "dependencies": [
+          "58"
+        ],
         "subtasks": []
       },
       {
@@ -1427,8 +1461,13 @@
         "description": "Quick Dump is unclear. Add tooltip, visual design (lightning icon), and explanation of 'emergency capture' use case.",
         "priority": "medium",
         "status": "deferred",
-        "tags": ["ux", "quick-dump"],
-        "dependencies": ["58"],
+        "tags": [
+          "ux",
+          "quick-dump"
+        ],
+        "dependencies": [
+          "58"
+        ],
         "subtasks": []
       },
       {
@@ -1437,8 +1476,15 @@
         "description": "Show subtle timer in top-right (0-5s green, 5-15s blue, etc.) and/or expandable session stats panel.",
         "priority": "low",
         "status": "deferred",
-        "tags": ["ux", "stats"],
-        "dependencies": ["5", "54", "57"],
+        "tags": [
+          "ux",
+          "stats"
+        ],
+        "dependencies": [
+          "5",
+          "54",
+          "57"
+        ],
         "subtasks": []
       },
       {
@@ -1447,9 +1493,156 @@
         "description": "Remove confusing 'Tab to navigate, Space to toggle' hint. Replace with accurate shortcuts and better AI accuracy messaging.",
         "priority": "medium",
         "status": "deferred",
-        "tags": ["ux", "onboarding"],
-        "dependencies": ["58"],
+        "tags": [
+          "ux",
+          "onboarding"
+        ],
+        "dependencies": [
+          "58"
+        ],
         "subtasks": []
+      },
+      {
+        "id": "71",
+        "title": "Queue onboarding and guidance: explain what Queue is and how to access reviews",
+        "description": "Users don't understand what the Queue view is or how it relates to reviews. Add onboarding explanation and UI guidance.",
+        "status": "deferred",
+        "priority": "medium",
+        "dependencies": [],
+        "details": "PROBLEM:\n- No clear explanation of Queue vs Review\n- Users don't know where to find due cards\n- Terminology confusion: 'Queue' is vague\n- No guidance on what to do when queue is empty\n\nSOLUTION:\n1. First-time Queue visit: Show tutorial modal explaining:\n   - Queue shows cards due for review today\n   - Auto-populated by FSRS scheduler\n   - Click 'Start Review' to begin session\n   - Visual diagram: Capture → Cards → Queue → Review\n\n2. Empty state guidance:\n   - When queue empty: 'No cards due. Next review: [timestamp]'\n   - Suggest: 'Create more cards' or 'Adjust daily limit in Settings'\n   - Show upcoming review schedule (next 7 days)\n   - Link to Capture view to create more cards\n\n3. Header/navigation clarity:\n   - Consider renaming 'Queue' to 'Due Cards' or 'Review Queue'\n   - Add badge with due count in sidebar/header\n   - Tooltip on hover: 'Cards scheduled for review today'\n\n4. Contextual help:\n   - Small '?' icon in Queue header\n   - Clicking shows: queue logic, scheduling explanation\n   - Link to Review to start session\n\n5. Visual improvements:\n   - Show preview of next 3-5 cards in queue\n   - Display estimated time to complete queue\n   - Show progress: \"5 of 23 cards reviewed today\"\n\nFILES TO CREATE/MODIFY:\n- src/components/review/QueueView.tsx (create or update)\n- src/components/modals/QueueTutorialModal.tsx\n- src/components/layout/Navigation.tsx (badge + tooltip)\n- src/stores/useAppStore.ts (track tutorial completion)",
+        "testStrategy": "Test first-time Queue visit shows tutorial. Test empty state messaging. Verify badge shows correct due count. Test tooltip hover. Verify navigation works correctly.",
+        "subtasks": [],
+        "tags": [
+          "onboarding",
+          "ux",
+          "post-mvp",
+          "queue"
+        ]
+      },
+      {
+        "id": "72",
+        "title": "Undo functionality (Ctrl+Z) for edits and review grades",
+        "description": "Implement global undo system allowing users to reverse recent actions, especially card edits and review grades.",
+        "status": "deferred",
+        "priority": "high",
+        "dependencies": [],
+        "details": "PROBLEM:\n- Users accidentally grade cards incorrectly (fat-finger mistakes)\n- No way to undo card edits after saving\n- Medical content mistakes can't be quickly reversed\n- Causes anxiety about making mistakes during tired post-shift reviews\n\nKEY USE CASES:\n1. Review grade undo: User accidentally hits wrong grade button, Ctrl+Z immediately reverts\n2. Card edit undo: User edits card content, saves changes but realizes mistake, Ctrl+Z reverts\n3. Batch operation undo: User deletes multiple cards accidentally, Ctrl+Z restores\n\nIMPLEMENTATION:\n1. Action history stack: Store last 10-20 actions in memory\n   - Each action: { type, timestamp, before, after, revertFn }\n   - Types: 'review_grade', 'card_edit', 'card_delete', 'metadata_change'\n\n2. Database integration:\n   - For review grades: Update review_logs with new grade, restore FSRS state\n   - For edits: Keep edit_history table with timestamps, revert to previous version\n   - For deletes: Soft delete pattern (deleted_at column), restore on undo\n\n3. UI feedback:\n   - Toast notification: \"Undone: [action description]\"\n   - Keyboard shortcut: Ctrl+Z (Cmd+Z on Mac)\n   - Optional: Show \"Undo\" button in corner for 5 seconds after action\n   - Redo support: Ctrl+Shift+Z\n\nFILES TO CREATE/MODIFY:\n- src/stores/useAppStore.ts: Add undoStack, redoStack, undo(), redo() actions\n- src/hooks/useUndo.ts: Hook for keyboard shortcut and undo logic\n- electron/database.ts: Add edit_history table, soft delete support\n- src/components/layout/UndoToast.tsx: Undo notification component\n- src/components/review/ReviewInterface.tsx: Integrate undo for grades",
+        "testStrategy": "Test undo after review grade. Test undo after card edit. Test undo after delete. Test redo functionality. Test undo stack limits. Test session persistence.",
+        "subtasks": [],
+        "tags": [
+          "ux",
+          "post-mvp",
+          "undo",
+          "quality-of-life"
+        ]
+      },
+      {
+        "id": "73",
+        "title": "Anki import functionality (.apkg file support)",
+        "description": "Allow users to import existing Anki decks (.apkg files) to migrate their medical flashcard collections into DougHub.",
+        "status": "deferred",
+        "priority": "critical",
+        "dependencies": [],
+        "details": "CRITICAL IMPORTANCE:\n- Medical students/residents have YEARS of Anki cards\n- Migration barrier is #1 blocker for adoption\n- Must preserve scheduling data (FSRS state, due dates)\n- Common use case: User has 5,000+ Step 1/2 cards in Anki\n\nANKI .APKG FORMAT:\n- SQLite database in ZIP archive\n- Tables: cards, notes, revlog (review history), decks\n- Anki uses SM-2 algorithm (older) or FSRS-4.5 (newer)\n- Media files (images) stored in separate folder in archive\n\nIMPORT REQUIREMENTS:\n1. File handling: Accept .apkg file via drag-drop or file picker, extract ZIP, read SQLite DB\n2. Data mapping: Anki notes → DougHub cards, preserve tags, convert decks to topics\n3. FSRS migration: Preserve or convert scheduling state, maintain ease/interval/due dates\n4. Media handling: Extract images, copy to DougHub storage, update paths\n5. UI workflow: Import modal with preview, options, progress bar, summary\n6. Conflict handling: Duplicate detection, merge options\n\nLIBRARIES TO USE:\n- adm-zip or yauzl: ZIP extraction\n- better-sqlite3: Read Anki SQLite database (already in project)\n- FSRS-rs or ts-fsrs: FSRS state conversion\n\nFILES TO CREATE:\n- electron/anki-importer.ts: Core import logic\n- electron/anki-parser.ts: Parse .apkg format\n- electron/media-migrator.ts: Handle image/media files\n- src/components/settings/AnkiImportModal.tsx: Import UI\n- src/components/settings/ImportPreview.tsx: Preview component\n- electron/ipc-handlers.ts: Add importAnkiDeck() handler",
+        "testStrategy": "Test with real Anki decks from AnkiWeb (Zanki, AnKing). Verify FSRS state preservation. Check image rendering. Confirm tag import. Test with 10/100/1000/10000 card decks.",
+        "subtasks": [],
+        "tags": [
+          "import",
+          "anki",
+          "migration",
+          "critical",
+          "post-mvp"
+        ]
+      },
+      {
+        "id": "74",
+        "title": "Keyboard shortcut reference overlay (Ctrl+? or F1)",
+        "description": "Global keyboard shortcut help overlay showing all available shortcuts, context-sensitive to current view.",
+        "status": "deferred",
+        "priority": "medium",
+        "dependencies": [],
+        "details": "PROBLEM:\n- Users don't know available keyboard shortcuts\n- Docs mention Ctrl+K, Space, Escape but no in-app reference\n- Power users want to learn shortcuts to speed up workflow\n\nSOLUTION:\n1. Shortcut overlay: Triggered by Ctrl+? or F1, modal with semi-transparent background\n2. Context-aware display: Show all shortcuts, highlight relevant ones for current view\n3. Shortcut categories: Global, Capture, Review, Navigation\n4. Interactive features: Search within shortcuts, click to execute, print button\n5. Visual design: <kbd> styled tags, monospace font, icons, clean layout\n\nSHORTCUT CATEGORIES:\nGLOBAL: Ctrl+K (command palette), Ctrl+F (search), Ctrl+Enter (floating capture), Ctrl+Z (undo)\nCAPTURE: Ctrl+S (save), Tab (next field), Ctrl+Shift+C (make cloze)\nREVIEW: Space (show answer/continue), 1-4 (manual grade), Escape (exit)\nNAVIGATION: Alt+1-4 (view switching)\n\nFILES TO CREATE:\n- src/components/modals/KeyboardShortcutsModal.tsx\n- src/constants/keyboard-shortcuts.ts: Centralized shortcut definitions\n- src/hooks/useKeyboardShortcut.ts: Reusable hook for registering shortcuts\n- src/components/ui/KeyboardKey.tsx: Styled <kbd> component",
+        "testStrategy": "Test overlay triggers via Ctrl+? and F1. Test context highlighting. Test search functionality. Verify all shortcuts listed. Test keyboard navigation within modal.",
+        "subtasks": [],
+        "tags": [
+          "ux",
+          "keyboard",
+          "shortcuts",
+          "post-mvp",
+          "onboarding"
+        ]
+      },
+      {
+        "id": "75",
+        "title": "Statistics and analytics dashboard (FSRS metrics, retention, weak topics)",
+        "description": "Comprehensive analytics view showing learning progress, FSRS metrics, retention curves, and performance insights.",
+        "status": "deferred",
+        "priority": "high",
+        "dependencies": [],
+        "details": "MEDICAL RESIDENT NEEDS:\n- \"Am I actually retaining this?\" - Confidence in learning\n- \"What are my weak areas?\" - Targeted review\n- \"How much do I know about X?\" - Topic mastery\n- \"Am I ready for boards?\" - Exam readiness metrics\n\nDASHBOARD SECTIONS:\n1. OVERVIEW STATS: Total cards, reviews today/week, retention rate, study streak\n2. RETENTION CURVE: Line graph showing retention % over time, FSRS accuracy\n3. TOPIC BREAKDOWN: Bar chart of cards per topic, color-coded by mastery level\n4. REVIEW HEATMAP: GitHub-style calendar showing review activity\n5. FSRS INSIGHTS: Average ease by topic, hardest cards, cards at risk\n6. PERFORMANCE TRENDS: Response time trends, auto-grade distribution, learning velocity\n7. STUDY GOALS: Achievements, milestones, progress toward goals\n\nUI/UX:\n- Accessible via sidebar: \"Stats\" icon\n- Responsive grid layout\n- Export data: CSV download\n- Date range filter: Last 7/30/90/365 days or All Time\n- Print-friendly view\n\nCHARTS LIBRARY: Recharts or Chart.js for React\n\nFILES TO CREATE:\n- src/components/stats/StatsDashboard.tsx\n- src/components/stats/RetentionCurve.tsx\n- src/components/stats/TopicBreakdown.tsx\n- src/components/stats/ReviewHeatmap.tsx\n- src/components/stats/PerformanceTrends.tsx\n- electron/stats-queries.ts: Aggregate queries for dashboard\n- src/hooks/useStats.ts: Data fetching hook",
+        "testStrategy": "Test all dashboard sections render. Test date range filtering. Test export functionality. Verify calculations accurate. Test with empty data (new user). Test with large datasets (100k+ reviews).",
+        "subtasks": [],
+        "tags": [
+          "analytics",
+          "stats",
+          "fsrs",
+          "post-mvp",
+          "retention"
+        ]
+      },
+      {
+        "id": "76",
+        "title": "Tag management UI (create, rename, merge, delete tags manually)",
+        "description": "Interface for manual tag management, separate from AI auto-suggestions. Allow users to organize, clean up, and maintain their tag taxonomy.",
+        "status": "deferred",
+        "priority": "medium",
+        "dependencies": [],
+        "details": "DISTINCTION FROM EXISTING:\n- Task #12 covers AI tag SUGGESTIONS during capture\n- THIS task covers manual tag MANAGEMENT post-creation\n- Think: Gmail labels management vs auto-labeling\n\nUSE CASES:\n1. Tag cleanup: Merge \"cardiology\", \"cards\", \"cardio\" into one\n2. Tag organization: Create parent-child relationships (optional hierarchy)\n3. Tag discovery: View all tags with card counts, sort, search\n\nFEATURES:\n1. TAG BROWSER: List view with card counts, search, sort options, color coding\n2. TAG EDITOR: Inline edit, validation, aliases, descriptions\n3. MERGE TAGS: Select multiple → merge, choose primary, update cards atomically\n4. DELETE TAGS: Delete unused tags, confirm for used tags, soft delete\n5. BULK OPERATIONS: Select cards → apply/remove tags\n6. TAG ANALYTICS: Most/least used, retention rates, orphaned tags\n\nUI LOCATION:\n- Settings → Tags\n- Or dedicated \"Tags\" view in sidebar (after MVP)\n- Quick access: Right-click tag anywhere → \"Manage tag\"\n\nDATABASE:\n- canonical_topics table (already exists in v2 schema)\n- Add: color, description, parent_id (for hierarchy)\n- topic_aliases table for merge functionality\n- deleted_tags table for soft delete\n\nFILES TO CREATE:\n- src/components/settings/TagManagement.tsx\n- src/components/settings/TagBrowser.tsx\n- src/components/settings/TagEditor.tsx\n- src/components/modals/MergeTagsModal.tsx\n- electron/tag-manager.ts: Tag CRUD operations\n- electron/ipc-handlers.ts: Add tag management handlers",
+        "testStrategy": "Test tag creation, rename, delete. Test merge functionality updates all cards. Test bulk operations. Test tag analytics calculations. Test hierarchy (if implemented). Test soft delete recovery.",
+        "subtasks": [],
+        "tags": [
+          "tags",
+          "management",
+          "ux",
+          "post-mvp",
+          "organization"
+        ]
+      },
+      {
+        "id": "77",
+        "title": "Capture textarea auto-resize based on content length",
+        "description": "Make the paste/input textarea dynamically resize based on content, eliminating need to scroll within small box.",
+        "status": "deferred",
+        "priority": "medium",
+        "dependencies": [],
+        "details": "CURRENT PROBLEM:\n- User pastes long clinical vignette or article\n- Textarea stays small fixed height\n- Must scroll within textarea to see content\n- Feels cramped, hard to review pasted content\n- UX doesn't convey \"dump everything here\"\n\nDESIRED BEHAVIOR:\n- Textarea starts at reasonable default (4-6 lines)\n- As user types/pastes, textarea grows vertically\n- Max height: ~70% of viewport (then scroll whole page, not textarea)\n- Smooth transition, no jarring jumps\n- Shrinks back down if user deletes content\n\nIMPLEMENTATION:\n1. Auto-resize logic: Use `react-textarea-autosize` package OR custom hook\n   - Listen to input events, measure scrollHeight\n   - Set height = max(minHeight, min(scrollHeight, maxHeight))\n   - Debounce resize during rapid typing\n\n2. Visual design:\n   - Min height: 120px (~4 lines)\n   - Max height: calc(100vh - 300px)\n   - Vertical resize handle (optional): User can manually adjust\n   - Smooth CSS transition: `transition: height 0.1s ease`\n\n3. Content type adaptation (BONUS):\n   - Single line paste (<80 chars): Keep small\n   - Paragraph paste (80-500 chars): Grow to ~8 lines\n   - Long article (500+ chars): Grow to max height\n   - Image/PDF drop: Collapse textarea, show preview\n\nLIBRARIES: react-textarea-autosize (lightweight, 2KB)\n\nFILES TO MODIFY:\n- src/components/capture/CaptureInterface.tsx\n- src/components/capture/AutoResizeTextarea.tsx (new component)\n- src/index.css: Add smooth transition styles",
+        "testStrategy": "Test paste of varying lengths (short, medium, long). Test typing and deleting. Test smooth transitions. Test max height cap. Test mobile responsiveness. Test keyboard navigation preserved.",
+        "subtasks": [],
+        "tags": [
+          "ux",
+          "capture",
+          "textarea",
+          "post-mvp",
+          "polish"
+        ]
+      },
+      {
+        "id": "78",
+        "title": "Capture page UX redesign: better 'dump it here, I'll organize' messaging",
+        "description": "Redesign Capture page to clearly convey 'paste anything, AI will organize it' workflow. Currently feels empty and unclear.",
+        "status": "deferred",
+        "priority": "high",
+        "dependencies": [],
+        "details": "CURRENT ISSUES (from user feedback):\n- Capture screen feels empty and uninviting\n- Not clear what to do: \"Just paste... anything?\"\n- No examples or guidance for first-time users\n- Doesn't convey AI-powered workflow\n- Feels like generic form, not intelligent assistant\n\nDESIRED FEELING:\n- \"This is a smart assistant that handles the hard parts\"\n- \"I can dump messy notes and it'll make sense of them\"\n- \"Low friction, zero decision paralysis\"\n- \"I trust this to extract what matters\"\n\nREDESIGN COMPONENTS:\n1. HERO SECTION: \"Drop your notes. We'll handle the rest.\" with animation\n2. MULTI-INPUT TABS: Text | Image | PDF | Quick Dump\n3. EXAMPLES SECTION: Clickable snippets to populate textarea\n4. RECENT ACTIVITY: Shows last 3-5 cards created\n5. SMART PLACEHOLDERS: Context-aware based on time/usage\n6. VISUAL HIERARCHY: Larger textarea, de-emphasize Quick Dump, emphasize Extract Cards\n7. ONBOARDING OVERLAY: Dismissible tour for first-time users\n8. CONFIDENCE INDICATORS: \"AI analyzing... found 5 key concepts\"\n9. STATS/MOTIVATION: \"You've created 247 cards this month\"\n10. LAYOUT OPTIONS: Test centered vs two-column vs full-width\n\nFILES TO CREATE/MODIFY:\n- src/components/capture/CaptureInterface.tsx (major refactor)\n- src/components/capture/CaptureHero.tsx (new)\n- src/components/capture/ExamplesPanel.tsx (new)\n- src/components/capture/RecentActivity.tsx (new)\n- src/components/modals/CaptureOnboardingModal.tsx (new)\n- src/index.css: Updated capture page styles\n\nINSPIRATION:\n- Notion's clean, inviting empty state\n- Readwise's \"highlight → card\" clear value prop\n- RemNote's \"drop anything\" file import\n- Linear's command-driven, frictionless input",
+        "testStrategy": "User testing with medical residents. A/B test current vs redesigned. Measure: Time to first card creation, perceived clarity, user confidence ratings.",
+        "subtasks": [],
+        "tags": [
+          "ux",
+          "capture",
+          "onboarding",
+          "post-mvp",
+          "redesign"
+        ]
       }
     ],
     "metadata": {

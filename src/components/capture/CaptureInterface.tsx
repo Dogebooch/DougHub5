@@ -513,31 +513,29 @@ export function CaptureInterface() {
 
   return (
     <div className="space-y-8">
-      <div className="text-center space-y-2">
-        <h1 className="text-4xl font-semibold text-foreground flex items-center justify-center gap-3">
-          <Sparkles className="h-8 w-8 text-primary" />
+      <div className="text-center space-y-1">
+        <h1 className="text-xl font-semibold text-foreground flex items-center justify-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
           AI-Guided Capture
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Paste your notes and let AI extract flashcard concepts
         </p>
       </div>
 
       <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-700">
         {/* Phase 1: Paste Area */}
-        <Card className="bg-card border border-black/10 shadow-heavy overflow-hidden rounded-[2rem] transition-all hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)]">
-          <CardHeader className="pb-3 border-b border-black/[0.03] bg-black/[0.01]">
-            <CardTitle className="text-[10px] uppercase tracking-[0.25em] font-black text-card-foreground/30 flex items-center gap-4">
-              <span className="w-12 h-[1px] bg-black/10" />
+        <Card className="bg-card border border-black/10 shadow-lg overflow-hidden rounded-2xl transition-all hover:shadow-xl">
+          <CardHeader className="py-3 px-5 border-b border-black/[0.05]">
+            <CardTitle className="text-[10px] uppercase tracking-widest font-bold text-card-foreground/40">
               Initial Capture
-              <span className="flex-1 h-[1px] bg-black/10" />
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-8 px-10 pb-10">
+          <CardContent className="p-5">
             <Textarea
               ref={textareaRef}
-              placeholder="Drop your medical notes here... (e.g., Robbins Pathology, UWorld extracts, or lecture transcripts)"
-              className="min-h-[250px] resize-none bg-black/[0.03] border-black/10 focus-visible:ring-primary/20 focus-visible:bg-black/[0.05] text-card-foreground placeholder:text-card-foreground/20 font-serif text-xl leading-relaxed rounded-2xl shadow-inner border transition-all duration-500"
+              placeholder="Paste medical notes, UWorld extracts, or lecture content..."
+              className="min-h-[160px] resize-none bg-black/[0.02] border-black/10 focus-visible:ring-primary/20 focus-visible:bg-black/[0.04] text-card-foreground placeholder:text-card-foreground/25 font-serif text-base leading-relaxed rounded-xl"
               value={pastedContent}
               onChange={(e) => setPastedContent(e.target.value)}
               onPaste={handlePaste}
@@ -546,21 +544,21 @@ export function CaptureInterface() {
             />
 
             {pastedContent.trim() && extractedConcepts.length === 0 && (
-              <div className="mt-8 flex justify-end">
+              <div className="mt-4 flex justify-end">
                 <Button
                   onClick={() => handleExtractConcepts()}
                   disabled={isProcessing}
-                  size="xl"
-                  className="gap-3 shadow-xl rounded-2xl h-16 px-10 text-lg font-bold hover:translate-y-[-2px] transition-all"
+                  size="lg"
+                  className="gap-2 shadow-md rounded-lg"
                 >
                   {processingState === "extracting" ? (
                     <>
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                      Deconstructing Knowledge...
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Extracting...
                     </>
                   ) : (
                     <>
-                      <Sparkles className="h-6 w-6" />
+                      <Sparkles className="h-4 w-4" />
                       Extract Concepts
                     </>
                   )}
@@ -572,18 +570,16 @@ export function CaptureInterface() {
 
         {/* Phase 2: Extracted Concepts */}
         {extractedConcepts.length > 0 && (
-          <Card className="bg-card border border-black/10 shadow-heavy rounded-[2rem] overflow-hidden">
-            <CardHeader className="pb-3 border-b border-black/[0.03] bg-black/[0.01]">
-              <CardTitle className="text-[10px] uppercase tracking-[0.25em] font-black text-card-foreground/30 flex items-center gap-4">
-                <span className="w-12 h-[1px] bg-black/10" />
+          <Card className="bg-card border border-black/10 shadow-lg rounded-2xl overflow-hidden">
+            <CardHeader className="py-3 px-5 border-b border-black/[0.05] flex flex-row items-center justify-between">
+              <CardTitle className="text-[10px] uppercase tracking-widest font-bold text-card-foreground/40">
                 Refine & Confirm
-                <span className="flex-1 h-[1px] bg-black/10" />
-                <span className="text-[10px] opacity-40 font-sans tracking-normal">
-                  {selectedConcepts.size}/{extractedConcepts.length} READY
-                </span>
               </CardTitle>
+              <span className="text-[10px] text-card-foreground/40 font-medium">
+                {selectedConcepts.size}/{extractedConcepts.length} selected
+              </span>
             </CardHeader>
-            <CardContent className="space-y-4 pt-8 px-10 pb-10">
+            <CardContent className="space-y-3 p-5">
               {extractedConcepts.map((concept) => (
                 <div key={concept.id} className="space-y-2">
                   <ConceptCheckbox
@@ -651,12 +647,18 @@ export function CaptureInterface() {
         )}
 
         {/* Keyboard hints */}
-        <p className="text-center text-sm text-muted-foreground">
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Tab</kbd> to
-          navigate •{" "}
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Space</kbd> to
-          toggle •{" "}
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Enter</kbd> to
+        <p className="text-center text-xs text-muted-foreground/60">
+          <kbd className="px-1 py-0.5 bg-muted/50 rounded text-[10px]">Tab</kbd>{" "}
+          navigate
+          {" • "}
+          <kbd className="px-1 py-0.5 bg-muted/50 rounded text-[10px]">
+            Space
+          </kbd>{" "}
+          toggle
+          {" • "}
+          <kbd className="px-1 py-0.5 bg-muted/50 rounded text-[10px]">
+            Enter
+          </kbd>{" "}
           create
         </p>
       </div>

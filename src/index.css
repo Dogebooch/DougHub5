@@ -26,12 +26,17 @@
   --success-foreground: 35 25% 88%;
   --info: 195 25% 48%;
   --info-foreground: 35 25% 88%;
-  --radius: 1rem;
+  --radius: 0.75rem;
   --chart-1: 175 30% 45%;
   --chart-2: 145 20% 42%;
   --chart-3: 38 45% 42%;
   --chart-4: 195 25% 48%;
   --chart-5: 12 40% 48%;
+  
+  /* Animation tokens */
+  --transition-fast: 150ms ease-out;
+  --transition-normal: 250ms ease-out;
+  --transition-slow: 400ms ease-out;
 }
 
 @layer base {
@@ -53,8 +58,8 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
 
   /* Reading surface optimization */
@@ -65,12 +70,25 @@
 }
 
 @layer components {
-  /* Modern soft shadows */
+  /* Refined shadow hierarchy */
+  .shadow-subtle {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+  
   .shadow-soft {
-    shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
   
   .shadow-heavy {
-    box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+  }
+  
+  /* Smooth transitions by default */
+  .transition-fast {
+    transition-duration: var(--transition-fast);
+  }
+  
+  .transition-normal {
+    transition-duration: var(--transition-normal);
   }
 }

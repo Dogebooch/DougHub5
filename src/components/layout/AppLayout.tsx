@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "./Header";
-import { QuickActionsBar } from "./QuickActionsBar";
+import { Sidebar } from "./Sidebar";
+import { QuickDumpFAB } from "./QuickDumpFAB";
 import { CommandPalette } from "@/components/modals/CommandPalette";
 import { QuickDumpModal } from "@/components/modals/QuickDumpModal";
 import { CaptureInterface } from "@/components/capture/CaptureInterface";
@@ -53,16 +54,22 @@ export function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-1000 selection:bg-primary/20 relative overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 selection:bg-primary/20 relative overflow-x-hidden flex flex-col">
       {/* Subtle organic background vignette and noise */}
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(63,150,143,0.05)_0%,transparent_70%)]" />
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(63,150,143,0.04)_0%,transparent_60%)]" />
+      <div className="fixed inset-0 pointer-events-none opacity-[0.02] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
       <Header />
-      <QuickActionsBar onOpenQuickDump={openQuickDump} />
-      <main className="mx-auto max-w-7xl px-6 py-12 relative z-10">
-        {renderView()}
-      </main>
+
+      <div className="flex flex-1 relative z-10">
+        <Sidebar />
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-4xl px-6 py-8">{renderView()}</div>
+        </main>
+      </div>
+
+      {/* Floating Quick Dump button */}
+      <QuickDumpFAB onClick={openQuickDump} />
 
       <CommandPalette
         isOpen={isCommandPaletteOpen}

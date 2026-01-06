@@ -9,40 +9,45 @@ export function Header() {
   const isBrowserMode = typeof window !== "undefined" && !window.api;
 
   return (
-    <header className="border-b border-black/30 bg-black/40 backdrop-blur-xl sticky top-0 z-50 shadow-md">
-      <div className="mx-auto max-w-7xl px-6 py-2">
-        <div className="flex items-center justify-between gap-6 mb-2">
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => setCurrentView("capture")}
-              className="text-2xl font-sans font-black tracking-tighter text-primary hover:text-primary/80 transition-all flex items-center gap-3 group"
-            >
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center text-primary-foreground text-sm font-black shadow-[0_5px_15px_-5px_rgba(63,150,143,0.5)] rotate-3 group-hover:rotate-0 transition-all duration-500">
-                DH
-              </div>
-              <span className="text-foreground tracking-[-0.05em] uppercase text-xl font-black">
-                DougHub
-              </span>
-            </button>
-            {isBrowserMode && (
-              <Badge variant="outline" className="text-xs">
-                Browser Mode (In-Memory)
-              </Badge>
-            )}
+    <header className="h-14 border-b border-white/10 bg-black/30 backdrop-blur-xl sticky top-0 z-50">
+      <div className="h-full px-4 flex items-center justify-between gap-4">
+        {/* Logo and title */}
+        <button
+          onClick={() => setCurrentView("capture")}
+          className="flex items-center gap-2.5 text-primary hover:text-primary/80 transition-all group"
+        >
+          <div className="w-7 h-7 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center text-primary-foreground text-[10px] font-black shadow-md group-hover:rotate-[-3deg] transition-transform duration-300">
+            DH
           </div>
+          <span className="text-foreground font-bold text-base tracking-tight">
+            DougHub
+          </span>
+        </button>
+
+        {/* Center: Search */}
+        <div className="flex-1 max-w-md">
+          <SearchBar />
+        </div>
+
+        {/* Right: Browser badge + reload */}
+        <div className="flex items-center gap-2">
+          {isBrowserMode && (
+            <Badge variant="outline" className="text-[10px] h-6">
+              Browser Mode
+            </Badge>
+          )}
           {!isBrowserMode && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => window.api.reloadApp()}
               title="Reload app"
-              className="opacity-30 hover:opacity-100 transition-opacity"
+              className="h-8 w-8 opacity-30 hover:opacity-100 transition-opacity"
             >
-              <RotateCw className="h-4 w-4" />
+              <RotateCw className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>
-        <SearchBar />
       </div>
     </header>
   );
