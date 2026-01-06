@@ -61,7 +61,11 @@ import {
   type MedicalListDetection,
   type VignetteConversion,
 } from "./ai-service";
-import { resolveTopicAlias, createOrGetTopic } from "./topic-service";
+import {
+  resolveTopicAlias,
+  createOrGetTopic,
+  suggestTopicMatches,
+} from "./topic-service";
 
 // ============================================================================
 // IPC Result Wrapper
@@ -590,6 +594,18 @@ export function registerIpcHandlers(): void {
       try {
         const topic = createOrGetTopic(name, domain);
         return success(topic);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "canonicalTopics:suggestMatches",
+    async (_, input: string): Promise<IpcResult<DbCanonicalTopic[]>> => {
+      try {
+        const matches = suggestTopicMatches(input);
+        return success(matches);
       } catch (error) {
         return failure(error);
       }

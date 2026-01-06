@@ -1193,9 +1193,10 @@
               1
             ],
             "details": "In electron/topic-service.ts, implement suggestTopicMatches(input: string): Promise<CanonicalTopic[]>. Normalize input (trim, lowercase). Query all topics via canonicalTopicQueries.getAll(). For each topic, calculate similarity score: check if canonicalName or any alias contains input substring (score=2), or if input contains topic name (score=1), or use Levenshtein distance for fuzzy match (score based on edit distance). Sort by score descending, return top 5 matches. Keep implementation simple using string.includes() for substring matching and optional basic Levenshtein algorithm (max 3-edit distance threshold) for typo tolerance.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test 'cardio' matches topics with canonicalName='Cardiology' or aliases containing 'cardio'. Test fuzzy match: 'hypertrophic' finds 'Hypertrophic Cardiomyopathy' with 1-2 char typos. Test returns max 5 results sorted by relevance. Test empty input returns popular/recent topics.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-06T14:54:58.758Z"
           },
           {
             "id": 3,
@@ -1238,7 +1239,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-01-06T14:43:34.428Z"
+        "updatedAt": "2026-01-06T14:54:58.758Z"
       },
       {
         "id": "37",
@@ -2242,7 +2243,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-06T14:43:34.429Z",
+      "lastModified": "2026-01-06T14:54:58.759Z",
       "taskCount": 102,
       "completedCount": 10,
       "tags": [

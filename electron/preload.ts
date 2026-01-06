@@ -69,6 +69,8 @@ const api = {
       ipcRenderer.invoke("canonicalTopics:resolveAlias", name),
     createOrGet: (name: string, domain?: string) =>
       ipcRenderer.invoke("canonicalTopics:createOrGet", name, domain),
+    suggestMatches: (input: string) =>
+      ipcRenderer.invoke("canonicalTopics:suggestMatches", input),
   },
   notebookPages: {
     getAll: () => ipcRenderer.invoke("notebookPages:getAll"),

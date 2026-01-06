@@ -65,3 +65,65 @@ export function createOrGetTopic(name: string, domain: string = 'general'): DbCa
   canonicalTopicQueries.insert(newTopic);
   return newTopic;
 }
+
+/**
+ * Suggests up to 5 matching canonical topics based on partial input.
+ * Priority: Exact Match > Prefix Match > Substring Match.
+ * Case-insensitive, sorts by relevance then alphabetically.
+ */
+export function suggestTopicMatches(input: string): DbCanonicalTopic[] {
+  const normalizedInput = input.trim().toLowerCase();
+  
+  if (!normalizedInput) {
+    return [];
+  }
+
+  const allTopics = canonicalTopicQueries.getAll();
+  
+  const scoredTopics = allTopics.map(topic => {
+    const canonical = topic.canonicalName.toLowerCase();
+    const aliases = topic.aliases.map(a => a.toLowerCase());
+    
+    let score = 0;
+
+    // 1. Exact canonical name
+    if (canonical === normalizedInput) {
+      score = 100;
+    } 
+    // 2. Exact alias
+    else if (aliases.some(a => a === normalizedInput)) {
+      score = 90;
+    }
+    // 3. Prefix canonical name
+    else if (canonical.startsWith(normalizedInput)) {
+      score = 80;
+    }
+    // 4. Prefix alias
+    else if (aliases.some(a => a.startsWith(normalizedInput))) {
+      score = 70;
+    }
+    // 5. Substring canonical name
+    else if (canonical.includes(normalizedInput)) {
+      score = 60;
+    }
+    // 6. Substring alias
+    else if (aliases.some(a => a.includes(normalizedInput))) {
+      score = 50;
+    }
+
+    return { topic, score };
+  });
+
+  return scoredTopics
+    .filter(item => item.score > 0)
+    .sort((a, b) => {
+      // Sort by score descending
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      // Then alphabetically by canonical name
+      return a.topic.canonicalName.localeCompare(b.topic.canonicalName);
+    })
+    .slice(0, 5)
+    .map(item => item.topic);
+}
