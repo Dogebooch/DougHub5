@@ -629,35 +629,35 @@ function migrateToV4(dbPath: string): void {
       // Create FTS5 virtual tables
       database.exec(`
         CREATE VIRTUAL TABLE IF NOT EXISTS cards_fts USING fts5(
-          id UNINDEXED, front, back,
+          id UNINDEXED, front, back, tags,
           content=cards, content_rowid=rowid
         );
         CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
-          id UNINDEXED, title, content,
+          id UNINDEXED, title, content, tags,
           content=notes, content_rowid=rowid
         );
         CREATE VIRTUAL TABLE IF NOT EXISTS source_items_fts USING fts5(
-          id UNINDEXED, title, rawContent, sourceName,
+          id UNINDEXED, title, rawContent, sourceName, tags,
           content=source_items, content_rowid=rowid
         );
       `);
-      console.log("[Migration] Created FTS5 virtual tables");
+      console.log("[Migration] Created FTS5 virtual tables with tags");
 
       // Cards FTS triggers
       database.exec(`
         CREATE TRIGGER IF NOT EXISTS cards_fts_insert AFTER INSERT ON cards BEGIN
-          INSERT INTO cards_fts(rowid, id, front, back)
-          VALUES (NEW.rowid, NEW.id, NEW.front, NEW.back);
+          INSERT INTO cards_fts(rowid, id, front, back, tags)
+          VALUES (NEW.rowid, NEW.id, NEW.front, NEW.back, NEW.tags);
         END;
         CREATE TRIGGER IF NOT EXISTS cards_fts_update AFTER UPDATE ON cards BEGIN
-          INSERT INTO cards_fts(cards_fts, rowid, id, front, back)
-          VALUES ('delete', OLD.rowid, OLD.id, OLD.front, OLD.back);
-          INSERT INTO cards_fts(rowid, id, front, back)
-          VALUES (NEW.rowid, NEW.id, NEW.front, NEW.back);
+          INSERT INTO cards_fts(cards_fts, rowid, id, front, back, tags)
+          VALUES ('delete', OLD.rowid, OLD.id, OLD.front, OLD.back, OLD.tags);
+          INSERT INTO cards_fts(rowid, id, front, back, tags)
+          VALUES (NEW.rowid, NEW.id, NEW.front, NEW.back, NEW.tags);
         END;
         CREATE TRIGGER IF NOT EXISTS cards_fts_delete AFTER DELETE ON cards BEGIN
-          INSERT INTO cards_fts(cards_fts, rowid, id, front, back)
-          VALUES ('delete', OLD.rowid, OLD.id, OLD.front, OLD.back);
+          INSERT INTO cards_fts(cards_fts, rowid, id, front, back, tags)
+          VALUES ('delete', OLD.rowid, OLD.id, OLD.front, OLD.back, OLD.tags);
         END;
       `);
       console.log("[Migration] Created cards_fts triggers");
@@ -665,18 +665,18 @@ function migrateToV4(dbPath: string): void {
       // Notes FTS triggers
       database.exec(`
         CREATE TRIGGER IF NOT EXISTS notes_fts_insert AFTER INSERT ON notes BEGIN
-          INSERT INTO notes_fts(rowid, id, title, content)
-          VALUES (NEW.rowid, NEW.id, NEW.title, NEW.content);
+          INSERT INTO notes_fts(rowid, id, title, content, tags)
+          VALUES (NEW.rowid, NEW.id, NEW.title, NEW.content, NEW.tags);
         END;
         CREATE TRIGGER IF NOT EXISTS notes_fts_update AFTER UPDATE ON notes BEGIN
-          INSERT INTO notes_fts(notes_fts, rowid, id, title, content)
-          VALUES ('delete', OLD.rowid, OLD.id, OLD.title, OLD.content);
-          INSERT INTO notes_fts(rowid, id, title, content)
-          VALUES (NEW.rowid, NEW.id, NEW.title, NEW.content);
+          INSERT INTO notes_fts(notes_fts, rowid, id, title, content, tags)
+          VALUES ('delete', OLD.rowid, OLD.id, OLD.title, OLD.content, OLD.tags);
+          INSERT INTO notes_fts(rowid, id, title, content, tags)
+          VALUES (NEW.rowid, NEW.id, NEW.title, NEW.content, NEW.tags);
         END;
         CREATE TRIGGER IF NOT EXISTS notes_fts_delete AFTER DELETE ON notes BEGIN
-          INSERT INTO notes_fts(notes_fts, rowid, id, title, content)
-          VALUES ('delete', OLD.rowid, OLD.id, OLD.title, OLD.content);
+          INSERT INTO notes_fts(notes_fts, rowid, id, title, content, tags)
+          VALUES ('delete', OLD.rowid, OLD.id, OLD.title, OLD.content, OLD.tags);
         END;
       `);
       console.log("[Migration] Created notes_fts triggers");
@@ -684,30 +684,30 @@ function migrateToV4(dbPath: string): void {
       // Source items FTS triggers
       database.exec(`
         CREATE TRIGGER IF NOT EXISTS source_items_fts_insert AFTER INSERT ON source_items BEGIN
-          INSERT INTO source_items_fts(rowid, id, title, rawContent, sourceName)
-          VALUES (NEW.rowid, NEW.id, NEW.title, NEW.rawContent, NEW.sourceName);
+          INSERT INTO source_items_fts(rowid, id, title, rawContent, sourceName, tags)
+          VALUES (NEW.rowid, NEW.id, NEW.title, NEW.rawContent, NEW.sourceName, NEW.tags);
         END;
         CREATE TRIGGER IF NOT EXISTS source_items_fts_update AFTER UPDATE ON source_items BEGIN
-          INSERT INTO source_items_fts(source_items_fts, rowid, id, title, rawContent, sourceName)
-          VALUES ('delete', OLD.rowid, OLD.id, OLD.title, OLD.rawContent, OLD.sourceName);
-          INSERT INTO source_items_fts(rowid, id, title, rawContent, sourceName)
-          VALUES (NEW.rowid, NEW.id, NEW.title, NEW.rawContent, NEW.sourceName);
+          INSERT INTO source_items_fts(source_items_fts, rowid, id, title, rawContent, sourceName, tags)
+          VALUES ('delete', OLD.rowid, OLD.id, OLD.title, OLD.rawContent, OLD.sourceName, OLD.tags);
+          INSERT INTO source_items_fts(rowid, id, title, rawContent, sourceName, tags)
+          VALUES (NEW.rowid, NEW.id, NEW.title, NEW.rawContent, NEW.sourceName, NEW.tags);
         END;
         CREATE TRIGGER IF NOT EXISTS source_items_fts_delete AFTER DELETE ON source_items BEGIN
-          INSERT INTO source_items_fts(source_items_fts, rowid, id, title, rawContent, sourceName)
-          VALUES ('delete', OLD.rowid, OLD.id, OLD.title, OLD.rawContent, OLD.sourceName);
+          INSERT INTO source_items_fts(source_items_fts, rowid, id, title, rawContent, sourceName, tags)
+          VALUES ('delete', OLD.rowid, OLD.id, OLD.title, OLD.rawContent, OLD.sourceName, OLD.tags);
         END;
       `);
       console.log("[Migration] Created source_items_fts triggers");
 
       // Populate FTS tables with existing data
       database.exec(`
-        INSERT INTO cards_fts(rowid, id, front, back)
-        SELECT rowid, id, front, back FROM cards;
-        INSERT INTO notes_fts(rowid, id, title, content)
-        SELECT rowid, id, title, content FROM notes;
-        INSERT INTO source_items_fts(rowid, id, title, rawContent, sourceName)
-        SELECT rowid, id, title, rawContent, sourceName FROM source_items;
+        INSERT INTO cards_fts(rowid, id, front, back, tags)
+        SELECT rowid, id, front, back, tags FROM cards;
+        INSERT INTO notes_fts(rowid, id, title, content, tags)
+        SELECT rowid, id, title, content, tags FROM notes;
+        INSERT INTO source_items_fts(rowid, id, title, rawContent, sourceName, tags)
+        SELECT rowid, id, title, rawContent, sourceName, tags FROM source_items;
       `);
       console.log("[Migration] Populated FTS tables with existing data");
 
@@ -1701,22 +1701,22 @@ export const searchQueries = {
       const cardsStmt = db.prepare(`
         SELECT
           c.id,
-          snippet(cards_fts, -1, '<mark>', '</mark>', '...', 32) as snippet,
+          snippet(cards_fts, 1, '<mark>', '</mark>', '...', 32) as snippet,
           c.createdAt,
           c.tags
         FROM cards_fts
         JOIN cards c ON cards_fts.id = c.id
         WHERE cards_fts MATCH ?
         ORDER BY rank
-        LIMIT 500
+        LIMIT ?
       `);
-      const cardRows = cardsStmt.all(ftsQuery) as FtsRow[];
+      const cardRows = cardsStmt.all(ftsQuery, limit) as FtsRow[];
       cardRows.forEach((row) => {
         const tags = row.tags ? JSON.parse(row.tags) : [];
-        // Filter by tag if specified (AND matching)
+        // Filter by tag if specified
         if (searchTags.length > 0) {
           const lowerTags = tags.map((t: string) => t.toLowerCase());
-          if (!searchTags.every((st) => lowerTags.includes(st))) return;
+          if (!searchTags.some((st) => lowerTags.includes(st))) return;
         }
         results.push({
           id: row.id,
@@ -1737,23 +1737,23 @@ export const searchQueries = {
         SELECT
           n.id,
           n.title,
-          snippet(notes_fts, -1, '<mark>', '</mark>', '...', 32) as snippet,
+          snippet(notes_fts, 2, '<mark>', '</mark>', '...', 32) as snippet,
           n.createdAt,
           n.tags
         FROM notes_fts
         JOIN notes n ON notes_fts.id = n.id
         WHERE notes_fts MATCH ?
         ORDER BY rank
-        LIMIT 500
+        LIMIT ?
       `);
-      const noteRows = notesStmt.all(ftsQuery) as (FtsRow & {
+      const noteRows = notesStmt.all(ftsQuery, limit) as (FtsRow & {
         title: string;
       })[];
       noteRows.forEach((row) => {
         const tags = row.tags ? JSON.parse(row.tags) : [];
         if (searchTags.length > 0) {
           const lowerTags = tags.map((t: string) => t.toLowerCase());
-          if (!searchTags.every((st) => lowerTags.includes(st))) return;
+          if (!searchTags.some((st) => lowerTags.includes(st))) return;
         }
         results.push({
           id: row.id,
@@ -1772,23 +1772,23 @@ export const searchQueries = {
         SELECT
           s.id,
           s.title,
-          snippet(source_items_fts, -1, '<mark>', '</mark>', '...', 32) as snippet,
+          snippet(source_items_fts, 2, '<mark>', '</mark>', '...', 32) as snippet,
           s.createdAt,
           s.tags
         FROM source_items_fts
         JOIN source_items s ON source_items_fts.id = s.id
         WHERE source_items_fts MATCH ?
         ORDER BY rank
-        LIMIT 500
+        LIMIT ?
       `);
-      const sourceRows = sourceStmt.all(ftsQuery) as (FtsRow & {
+      const sourceRows = sourceStmt.all(ftsQuery, limit) as (FtsRow & {
         title: string;
       })[];
       sourceRows.forEach((row) => {
         const tags = row.tags ? JSON.parse(row.tags) : [];
         if (searchTags.length > 0) {
           const lowerTags = tags.map((t: string) => t.toLowerCase());
-          if (!searchTags.every((st) => lowerTags.includes(st))) return;
+          if (!searchTags.some((st) => lowerTags.includes(st))) return;
         }
         results.push({
           id: row.id,
@@ -1800,11 +1800,6 @@ export const searchQueries = {
         });
       });
     }
-
-    // Sort combined results by date (or relevance - rank is per-table)
-    // For now, let's just stick to the order they were added (cards -> notes -> inbox)
-    // but limit to the requested total
-    const finalResults = results.slice(0, limit);
 
     // Get counts for each type
     const counts = { all: 0, cards: 0, notes: 0, inbox: 0 };
@@ -1856,7 +1851,7 @@ export const searchQueries = {
       );
     }
 
-    return { results: finalResults, counts, queryTimeMs };
+    return { results, counts, queryTimeMs };
   },
 };
 

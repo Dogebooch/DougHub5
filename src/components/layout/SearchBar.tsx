@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, X, FileText, CreditCard, Inbox } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import type { SearchFilter, SearchResult, SearchResultItem } from '@/types';
+import { useAppStore } from "@/stores/useAppStore";
 
 const FILTER_OPTIONS: { value: SearchFilter; label: string; icon: React.ReactNode }[] = [
   { value: 'all', label: 'All', icon: null },
@@ -32,6 +33,7 @@ function getResultIcon(type: SearchResultItem['type']) {
 }
 
 export function SearchBar() {
+  const setCurrentView = useAppStore((state) => state.setCurrentView);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<SearchFilter>('all');
   const [results, setResults] = useState<SearchResult | null>(null);
@@ -125,8 +127,24 @@ export function SearchBar() {
   };
 
   const handleResultClick = (result: SearchResultItem) => {
-    // TODO: Navigate to result based on type
-    console.log('[Search] Selected:', result);
+    console.log("[Search] Navigating to:", result.type, result.id);
+
+    switch (result.type) {
+      case "card":
+        // TODO: Reroute to card browser/notebook when implemented.
+        // For now, it opens the review interface with the card context.
+        setCurrentView("review", result.id);
+        break;
+      case "note":
+        setCurrentView("notebook", result.id);
+        break;
+      case "source_item":
+        setCurrentView("inbox", result.id);
+        break;
+      default:
+        console.warn("[Search] Unknown result type:", result.type);
+    }
+
     setIsOpen(false);
     setQuery('');
   };

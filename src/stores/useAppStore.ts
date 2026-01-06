@@ -5,11 +5,9 @@ import {
   IpcResult,
   RatingValue,
   ScheduleResult,
+  AppView,
 } from "@/types";
 import { seedSampleData } from "@/lib/seedData";
-
-// View types for navigation
-export type AppView = "capture" | "review" | "settings";
 
 interface AppState {
   cards: CardWithFSRS[];
@@ -18,6 +16,7 @@ interface AppState {
   isSeeded: boolean;
   isLoading: boolean;
   currentView: AppView;
+  selectedItemId: string | null;
   inboxCount: number;
   queueCount: number;
 }
@@ -40,7 +39,7 @@ interface AppActions {
   ) => Promise<{ success: boolean; data?: ScheduleResult; error?: string }>;
   setHydrated: () => void;
   seedSampleData: () => void;
-  setCurrentView: (view: AppView) => void;
+  setCurrentView: (view: AppView, itemId?: string | null) => void;
   initialize: () => Promise<void>;
   refreshCounts: () => Promise<void>;
 }
@@ -54,10 +53,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   isSeeded: false,
   isLoading: true,
   currentView: "capture",
+  selectedItemId: null,
   inboxCount: 0,
   queueCount: 0,
 
-  setCurrentView: (view: AppView) => set({ currentView: view }),
+  setCurrentView: (view: AppView, itemId: string | null = null) =>
+    set({ currentView: view, selectedItemId: itemId }),
 
   refreshCounts: async () => {
     if (typeof window !== "undefined" && window.api) {

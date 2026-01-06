@@ -10,6 +10,7 @@ import { useAppStore } from "@/stores/useAppStore";
 
 export function AppLayout() {
   const currentView = useAppStore((state) => state.currentView);
+  const selectedItemId = useAppStore((state) => state.selectedItemId);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
 
@@ -32,6 +33,34 @@ export function AppLayout() {
     switch (currentView) {
       case "review":
         return <ReviewInterface />;
+      case "notebook":
+        return (
+          <div className="p-8 text-center space-y-4">
+            <h1 className="text-2xl font-semibold">Notebook</h1>
+            <p className="text-muted-foreground">
+              Notebook and topic pages coming soon.
+              {selectedItemId && (
+                <span className="block mt-2 text-primary font-mono text-xs">
+                  Target ID: {selectedItemId}
+                </span>
+              )}
+            </p>
+          </div>
+        );
+      case "inbox":
+        return (
+          <div className="p-8 text-center space-y-4">
+            <h1 className="text-2xl font-semibold">Inbox</h1>
+            <p className="text-muted-foreground">
+              Inbox and knowledge bank coming soon.
+              {selectedItemId && (
+                <span className="block mt-2 text-primary font-mono text-xs">
+                  Target ID: {selectedItemId}
+                </span>
+              )}
+            </p>
+          </div>
+        );
       case "settings":
         // TODO: Create a SettingsInterface component with sections for:
         // - FSRS Algorithm Parameters: Allow user to view and customize their

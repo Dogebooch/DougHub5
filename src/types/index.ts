@@ -108,6 +108,17 @@ export interface NotebookBlock {
 }
 
 // v2 Architecture - Smart Views
+export type AppView =
+  | "capture"
+  | "review"
+  | "settings"
+  | "inbox"
+  | "today"
+  | "queue"
+  | "notebook"
+  | "topics"
+  | "stats";
+
 export interface SmartViewFilter {
   status?: string[];
   sourceType?: string[];

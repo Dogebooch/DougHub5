@@ -105,6 +105,7 @@ type CardWithFSRS = Card & {
   cardType: string | null;
   parentListId: string | null;
   listPosition: number | null;
+  dueDate: string;
   stability: number;
   difficulty: number;
   elapsedDays: number;
@@ -550,11 +551,12 @@ export function createMockCard(
 ): CardWithFSRS {
   const now = new Date().toISOString();
   return {
-    id: `card-${Date.now()}`,
+    id: randomUUID(),
     front: "Test Question",
     back: "Test Answer",
     noteId: "note-1",
     tags: [],
+    dueDate: now,
     cardType: "qa",
     parentListId: null,
     listPosition: null,
@@ -578,7 +580,7 @@ export function createMockCard(
 export function createMockNote(overrides: Partial<Note> = {}): Note {
   const now = new Date().toISOString();
   return {
-    id: `note-${Date.now()}`,
+    id: randomUUID(),
     title: "Test Note",
     content: "Test content",
     tags: [],

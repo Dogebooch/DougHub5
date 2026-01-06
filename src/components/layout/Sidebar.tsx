@@ -22,20 +22,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-type ViewType =
-  | "capture"
-  | "review"
-  | "settings"
-  | "inbox"
-  | "today"
-  | "queue"
-  | "notebook"
-  | "topics"
-  | "stats";
+import { AppView } from "@/types";
 
 interface NavItem {
-  id: ViewType;
+  id: AppView;
   label: string;
   icon: React.ElementType;
   badge?: number;
@@ -88,7 +78,7 @@ export function Sidebar({ className }: SidebarProps) {
       label: "Inbox",
       icon: Inbox,
       badge: inboxCount,
-      implemented: false,
+      implemented: true,
     },
     {
       id: "queue",
@@ -100,7 +90,7 @@ export function Sidebar({ className }: SidebarProps) {
   ];
 
   const secondaryNavItems: NavItem[] = [
-    { id: "notebook", label: "Notebook", icon: BookOpen, implemented: false },
+    { id: "notebook", label: "Notebook", icon: BookOpen, implemented: true },
     { id: "topics", label: "Topics", icon: Tag, implemented: false },
     { id: "stats", label: "Stats", icon: BarChart3, implemented: false },
   ];
@@ -110,7 +100,7 @@ export function Sidebar({ className }: SidebarProps) {
 
   const handleNavClick = (item: NavItem) => {
     if (item.implemented) {
-      setCurrentView(item.id as "capture" | "review" | "settings");
+      setCurrentView(item.id);
     }
   };
 
