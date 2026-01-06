@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
 
+/* Modern Font Stacks */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap');
+
 :root, .dark {
   --background: 120 12% 7%;
   --foreground: 37 25% 88%;
@@ -34,6 +37,11 @@
 }
 
 @layer base {
+  :root {
+    --font-serif: "Newsreader", "Times New Roman", serif;
+    --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  }
+
   * {
     border-color: hsl(var(--border));
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -42,6 +50,29 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-family: var(--font-sans);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  /* Reading surface optimization */
+  .font-serif {
+    font-family: var(--font-serif);
+    font-variant-numeric: oldstyle-nums;
+  }
+}
+
+@layer components {
+  /* Modern soft shadows */
+  .shadow-soft {
+    shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .shadow-heavy {
+    box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
   }
 }

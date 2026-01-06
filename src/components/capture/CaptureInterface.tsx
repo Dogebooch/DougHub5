@@ -523,21 +523,21 @@ export function CaptureInterface() {
         </p>
       </div>
 
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-700">
         {/* Phase 1: Paste Area */}
-        <Card className="bg-card border border-black/10 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.5)] overflow-hidden">
-          <CardHeader className="pb-3 border-b border-black/5 bg-black/[0.02]">
-            <CardTitle className="text-xs uppercase tracking-widest font-bold text-card-foreground/50">
-              Step 1: Paste your content
+        <Card className="bg-card border border-black/10 shadow-heavy overflow-hidden rounded-[2rem] transition-all hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)]">
+          <CardHeader className="pb-3 border-b border-black/[0.03] bg-black/[0.01]">
+            <CardTitle className="text-[10px] uppercase tracking-[0.25em] font-black text-card-foreground/30 flex items-center gap-4">
+              <span className="w-12 h-[1px] bg-black/10" />
+              Initial Capture
+              <span className="flex-1 h-[1px] bg-black/10" />
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-8 px-10 pb-10">
             <Textarea
               ref={textareaRef}
-              placeholder="Paste your medical notes, textbook excerpts, or lecture content here...
-
-Example: 'Aspirin irreversibly inhibits cyclooxygenase (COX-1 and COX-2), blocking prostaglandin synthesis. This reduces inflammation, fever, and platelet aggregation.'"
-              className="min-h-[200px] resize-none bg-black/5 border-black/10 focus-visible:ring-primary/40 text-card-foreground placeholder:text-card-foreground/30 font-serif text-lg leading-relaxed rounded-xl shadow-inner"
+              placeholder="Drop your medical notes here... (e.g., Robbins Pathology, UWorld extracts, or lecture transcripts)"
+              className="min-h-[250px] resize-none bg-black/[0.03] border-black/10 focus-visible:ring-primary/20 focus-visible:bg-black/[0.05] text-card-foreground placeholder:text-card-foreground/20 font-serif text-xl leading-relaxed rounded-2xl shadow-inner border transition-all duration-500"
               value={pastedContent}
               onChange={(e) => setPastedContent(e.target.value)}
               onPaste={handlePaste}
@@ -546,21 +546,21 @@ Example: 'Aspirin irreversibly inhibits cyclooxygenase (COX-1 and COX-2), blocki
             />
 
             {pastedContent.trim() && extractedConcepts.length === 0 && (
-              <div className="mt-6 flex justify-end">
+              <div className="mt-8 flex justify-end">
                 <Button
                   onClick={() => handleExtractConcepts()}
                   disabled={isProcessing}
-                  size="lg"
-                  className="gap-2 shadow-lg"
+                  size="xl"
+                  className="gap-3 shadow-xl rounded-2xl h-16 px-10 text-lg font-bold hover:translate-y-[-2px] transition-all"
                 >
                   {processingState === "extracting" ? (
                     <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Extracting...
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      Deconstructing Knowledge...
                     </>
                   ) : (
                     <>
-                      <Sparkles className="h-5 w-5" />
+                      <Sparkles className="h-6 w-6" />
                       Extract Concepts
                     </>
                   )}
@@ -572,16 +572,18 @@ Example: 'Aspirin irreversibly inhibits cyclooxygenase (COX-1 and COX-2), blocki
 
         {/* Phase 2: Extracted Concepts */}
         {extractedConcepts.length > 0 && (
-          <Card className="bg-card border border-black/10 shadow-xl">
-            <CardHeader className="pb-3 border-b border-black/5">
-              <CardTitle className="text-xs uppercase tracking-widest font-bold text-card-foreground/50 flex items-center justify-between">
-                <span>Step 2: Select concepts to create cards</span>
-                <span className="text-[10px] opacity-60">
-                  {selectedConcepts.size}/{extractedConcepts.length} selected
+          <Card className="bg-card border border-black/10 shadow-heavy rounded-[2rem] overflow-hidden">
+            <CardHeader className="pb-3 border-b border-black/[0.03] bg-black/[0.01]">
+              <CardTitle className="text-[10px] uppercase tracking-[0.25em] font-black text-card-foreground/30 flex items-center gap-4">
+                <span className="w-12 h-[1px] bg-black/10" />
+                Refine & Confirm
+                <span className="flex-1 h-[1px] bg-black/10" />
+                <span className="text-[10px] opacity-40 font-sans tracking-normal">
+                  {selectedConcepts.size}/{extractedConcepts.length} READY
                 </span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 pt-6">
+            <CardContent className="space-y-4 pt-8 px-10 pb-10">
               {extractedConcepts.map((concept) => (
                 <div key={concept.id} className="space-y-2">
                   <ConceptCheckbox

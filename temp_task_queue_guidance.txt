@@ -1,0 +1,46 @@
+TITLE: Queue onboarding and guidance: explain what Queue is and how to access reviews
+
+DESCRIPTION: Users don't understand what the Queue view is or how it relates to reviews. Add onboarding explanation and UI guidance.
+
+DETAILS:
+PROBLEM:
+- No clear explanation of Queue vs Review
+- Users don't know where to find due cards
+- Terminology confusion: 'Queue' is vague
+- No guidance on what to do when queue is empty
+
+SOLUTION:
+1. First-time Queue visit: Show tutorial modal explaining:
+   - Queue shows cards due for review today
+   - Auto-populated by FSRS scheduler
+   - Click 'Start Review' to begin session
+   - Visual diagram: Capture → Cards → Queue → Review
+
+2. Empty state guidance:
+   - When queue empty: 'No cards due. Next review: [timestamp]'
+   - Suggest: 'Create more cards' or 'Adjust daily limit in Settings'
+   - Show upcoming review schedule (next 7 days)
+   - Link to Capture view to create more cards
+
+3. Header/navigation clarity:
+   - Consider renaming 'Queue' to 'Due Cards' or 'Review Queue'
+   - Add badge with due count in sidebar/header
+   - Tooltip on hover: 'Cards scheduled for review today'
+
+4. Contextual help:
+   - Small '?' icon in Queue header
+   - Clicking shows: queue logic, scheduling explanation
+   - Link to Review to start session
+
+5. Visual improvements:
+   - Show preview of next 3-5 cards in queue
+   - Display estimated time to complete queue
+   - Show progress: "5 of 23 cards reviewed today"
+
+FILES TO CREATE/MODIFY:
+- src/components/review/QueueView.tsx (create or update)
+- src/components/modals/QueueTutorialModal.tsx
+- src/components/layout/Navigation.tsx (badge + tooltip)
+- src/stores/useAppStore.ts (track tutorial completion)
+
+TAGS: onboarding, ux, post-mvp, queue
