@@ -9,7 +9,7 @@ export function Header() {
   const isBrowserMode = typeof window !== "undefined" && !window.api;
 
   return (
-    <header className="border-b border-white/5 bg-neutral-900/50 backdrop-blur-md sticky top-0 z-50">
+    <header className="border-b border-black/20 bg-black/40 backdrop-blur-md sticky top-0 z-50 shadow-sm">
       <div className="mx-auto max-w-7xl px-6 py-4">
         <div className="flex items-center justify-between gap-6 mb-4">
           <div className="flex items-center gap-6">
@@ -17,10 +17,10 @@ export function Header() {
               onClick={() => setCurrentView("capture")}
               className="text-2xl font-bold tracking-tighter text-primary hover:text-primary/80 transition-all flex items-center gap-2"
             >
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-background text-sm">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground text-sm font-black shadow-md">
                 DH
               </div>
-              DougHub
+              <span className="text-foreground">DougHub</span>
             </button>
             {isBrowserMode && (
               <Badge variant="outline" className="text-xs">

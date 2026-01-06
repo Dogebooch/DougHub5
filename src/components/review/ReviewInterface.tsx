@@ -378,11 +378,11 @@ export function ReviewInterface() {
       </div>
 
       {/* Card display */}
-      <div className="bg-card border border-white/5 rounded-2xl p-12 space-y-8 shadow-xl relative overflow-hidden">
+      <div className="bg-card border border-black/10 rounded-2xl p-12 space-y-8 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden">
         {/* Subtle accent line */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
-        <div className="text-center space-y-6">
+        <div className="text-center space-y-8">
           {/* Front - Use cloze renderer for cloze and list-cloze types */}
           {currentCard.cardType === "cloze" ||
           currentCard.cardType === "list-cloze" ? (
@@ -393,19 +393,19 @@ export function ReviewInterface() {
               cardType={currentCard.cardType}
             />
           ) : (
-            <div className="text-3xl font-medium leading-relaxed tracking-tight text-foreground">
+            <div className="text-3xl font-medium leading-relaxed tracking-tight text-card-foreground">
               {currentCard.front}
             </div>
           )}
 
           {answerVisible && (
-            <div className="pt-8 border-t border-white/5 space-y-4">
+            <div className="pt-10 border-t border-black/5 space-y-6">
               {/* Back - Use cloze answer for cloze types */}
               {currentCard.cardType === "cloze" ||
               currentCard.cardType === "list-cloze" ? (
                 <ClozeAnswer back={currentCard.back} />
               ) : (
-                <div className="text-2xl leading-relaxed text-foreground/90 font-medium">
+                <div className="text-2xl leading-relaxed text-card-foreground/90 font-medium">
                   {currentCard.back}
                 </div>
               )}
@@ -413,13 +413,13 @@ export function ReviewInterface() {
           )}
         </div>
 
-        <div className="text-center text-xs text-muted-foreground pt-6 border-t border-white/5">
-          <span className="opacity-60 uppercase tracking-widest font-bold mr-2">
-            Source:
+        <div className="text-center text-[11px] text-card-foreground/50 pt-8 border-t border-black/5">
+          <span className="opacity-40 uppercase tracking-widest font-bold mr-2">
+            Reference:
           </span>
           {currentNote ? currentNote.title : "Unknown source"}
           {currentCard.state > 0 && (
-            <span className="ml-2">
+            <span className="ml-3 opacity-30">
               • Stability: {currentCard.stability.toFixed(1)} • Reps:{" "}
               {currentCard.reps}
             </span>
@@ -505,28 +505,28 @@ export function ReviewInterface() {
                 variant="destructive"
                 onClick={() => handleManualGrade(Rating.Again)}
                 disabled={isSubmitting}
-                className="min-w-[120px] h-14 text-base font-bold shadow-lg hover:scale-[1.02] transition-all"
+                className="min-w-[120px] h-14 text-base font-bold shadow-lg hover:scale-[1.02] transition-all bg-[#8b3d30] hover:bg-[#a64a3a]"
               >
                 Forgot
               </Button>
               <Button
                 onClick={() => handleManualGrade(Rating.Hard)}
                 disabled={isSubmitting}
-                className="min-w-[120px] h-14 text-base font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg hover:scale-[1.02] transition-all"
+                className="min-w-[120px] h-14 text-base font-bold bg-[#ca8a04] hover:bg-[#eab308] text-white shadow-lg hover:scale-[1.02] transition-all"
               >
                 Struggled
               </Button>
               <Button
                 onClick={() => handleManualGrade(Rating.Good)}
                 disabled={isSubmitting}
-                className="min-w-[120px] h-14 text-base font-bold bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:scale-[1.02] transition-all"
+                className="min-w-[120px] h-14 text-base font-bold bg-[#1e3a8a]/70 hover:bg-[#1e3a8a] text-white shadow-lg hover:scale-[1.02] transition-all"
               >
                 Recalled
               </Button>
               <Button
                 onClick={() => handleManualGrade(Rating.Easy)}
                 disabled={isSubmitting}
-                className="min-w-[120px] h-14 text-base font-bold bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg hover:scale-[1.02] transition-all"
+                className="min-w-[120px] h-14 text-base font-bold bg-[#14532d] hover:bg-[#166534] text-white shadow-lg hover:scale-[1.02] transition-all"
               >
                 Mastered
               </Button>
