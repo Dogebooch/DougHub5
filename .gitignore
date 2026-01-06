@@ -49,6 +49,8 @@ coverage/
 .cache/
 .temp/
 .tmp/
+Thumbs.db
+.tmp/
 .tmp/
 
 # Temporary files
