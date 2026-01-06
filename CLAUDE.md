@@ -64,3 +64,27 @@ Ctrl+K: Command palette | Space: Answer/continue | Escape: Back to capture
 
 ## Reference
 Full specs in `docs/`
+
+---
+
+## TaskMaster Hygiene Rules
+Keep task list lean to minimize token usage. Follow these rules:
+
+**Task Creation:**
+- Only create tasks for work being done NOW or NEXT
+- Future ideas → single "Future Ideas" task with bullet list, not separate verbose tasks
+- Max 10-15 active tasks at a time; consolidate related work
+- Keep `details` concise (<500 chars) unless task is in-progress
+
+**Before Creating Tasks:**
+- Check for duplicates first (search existing titles)
+- If similar task exists, update it instead of creating new
+- Don't create subtasks unless task is complex AND actively being worked
+
+**Task Cleanup (run periodically):**
+- Done/Cancelled tasks: trim `details` to empty string (title+description enough for history)
+- Deferred tasks: trim `details`, keep only title+description
+- Duplicate tasks: cancel the newer one, keep the one with subtasks/progress
+
+**Duplicates Found (for reference):**
+- Tasks 22,23,24,25,26,27 duplicated tasks 10,11,9,7,12,15 respectively

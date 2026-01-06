@@ -1,4 +1,6 @@
 import Database from 'better-sqlite3';
+import fs from "fs";
+import path from "path";
 import { createBackup, restoreBackup } from "./backup-service";
 
 // ============================================================================
@@ -9,8 +11,15 @@ export type CardType = "standard" | "qa" | "cloze" | "vignette" | "list-cloze";
 export type ExtractionStatus = "pending" | "processing" | "completed";
 
 // v3 Architecture types
-export type SourceType = 'qbank' | 'article' | 'pdf' | 'image' | 'audio' | 'quickcapture' | 'manual';
-export type SourceItemStatus = 'inbox' | 'processed' | 'curated';
+export type SourceType =
+  | "qbank"
+  | "article"
+  | "pdf"
+  | "image"
+  | "audio"
+  | "quickcapture"
+  | "manual";
+export type SourceItemStatus = "inbox" | "processed" | "curated";
 
 export interface DbCard {
   id: string;
@@ -119,6 +128,13 @@ export interface DbNotebookBlock {
   annotations?: string;
   mediaPath?: string;
   position: number;
+}
+
+export interface DbMedicalAcronym {
+  id?: number;
+  acronym: string;
+  expansion: string;
+  category?: string;
 }
 
 export interface DbSmartView {
@@ -728,6 +744,40 @@ function migrateToV4(dbPath: string): void {
 }
 
 /**
+ * Migrate database from v4 to v5.
+ * Adds medical_acronyms table for robust terminology expansion.
+ */
+function migrateToV5(dbPath: string): void {
+  console.log(
+    "[Migration] Starting migration to schema version 5 (Acronyms)..."
+  );
+
+  const database = getDatabase();
+
+  try {
+    database.transaction(() => {
+      database.exec(`
+        CREATE TABLE IF NOT EXISTS medical_acronyms (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          acronym TEXT NOT NULL,
+          expansion TEXT NOT NULL,
+          category TEXT,
+          UNIQUE(acronym, expansion)
+        );
+        CREATE INDEX IF NOT EXISTS idx_medical_acronyms_lookup ON medical_acronyms(acronym);
+      `);
+      console.log("[Migration] Created medical_acronyms table and indexes");
+      setSchemaVersion(5);
+    })();
+
+    console.log("[Migration] Successfully migrated to schema version 5");
+  } catch (error) {
+    console.error("[Migration] Failed migration to v5:", error);
+    throw error;
+  }
+}
+
+/**
  * Initialize the SQLite database.
  * Call this from main.ts after app.whenReady().
  *
@@ -821,9 +871,19 @@ export function initDatabase(dbPath: string): Database.Database {
     migrateToV4(dbPath);
   }
 
+  // Migration to v5 (Medical Acronyms)
+  if (getSchemaVersion() < 5) {
+    migrateToV5(dbPath);
+  }
+
   // Seed system smart views (v3)
   if (getSchemaVersion() >= 3) {
     seedSystemSmartViews();
+  }
+
+  // Seed medical acronyms (v5)
+  if (getSchemaVersion() >= 5) {
+    seedMedicalAcronymsFromLocalFile();
   }
 
   return db;
@@ -1615,6 +1675,186 @@ function seedSystemSmartViews(): void {
   console.log(`[Database] Seeded ${systemViews.length} system smart views`);
 }
 
+/**
+ * Seeds medical acronyms from a local JSON file or a default list.
+ */
+function seedMedicalAcronymsFromLocalFile(): void {
+  const db = getDatabase();
+  const count = db
+    .prepare("SELECT COUNT(*) as count FROM medical_acronyms")
+    .get() as { count: number };
+
+  if (count.count > 0) {
+    return; // Already seeded
+  }
+
+  console.log("[Database] Seeding medical acronyms...");
+
+  let loadedAcronyms: any[] = [];
+
+  // Try to load from local JSON file
+  try {
+    const possiblePaths = [
+      path.join(process.cwd(), "src", "data", "medical-acronyms.json"),
+      path.join(__dirname, "..", "src", "data", "medical-acronyms.json"),
+      path.join(__dirname, "assets", "medical-acronyms.json"),
+    ];
+
+    let foundPath = "";
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        foundPath = p;
+        break;
+      }
+    }
+
+    if (foundPath) {
+      const content = fs.readFileSync(foundPath, "utf8");
+      loadedAcronyms = JSON.parse(content);
+      console.log(
+        `[Database] Loaded ${loadedAcronyms.length} acronyms from ${foundPath}`
+      );
+    }
+  } catch (error) {
+    console.warn(
+      "[Database] Failed to load acronyms from file, using fallback list:",
+      error
+    );
+  }
+
+  // Fallback if file load failed or returned empty
+  if (loadedAcronyms.length === 0) {
+    loadedAcronyms = [
+      { acronym: "HOCM", expansion: "Hypertrophic Obstructive Cardiomyopathy" },
+      { acronym: "ADHF", expansion: "Acute Decompensated Heart Failure" },
+      { acronym: "PUD", expansion: "Peptic Ulcer Disease" },
+      { acronym: "DKA", expansion: "Diabetic Ketoacidosis" },
+      { acronym: "CKD", expansion: "Chronic Kidney Disease" },
+      { acronym: "ESRD", expansion: "End Stage Renal Disease" },
+      { acronym: "COPD", expansion: "Chronic Obstructive Pulmonary Disease" },
+      { acronym: "SLE", expansion: "Systemic Lupus Erythematosus" },
+      { acronym: "GERD", expansion: "Gastroesophageal Reflux Disease" },
+      {
+        acronym: "NSTEMI",
+        expansion: "Non-ST Elevation Myocardial Infarction",
+      },
+      { acronym: "STEMI", expansion: "ST Elevation Myocardial Infarction" },
+      {
+        acronym: "SIADH",
+        expansion: "Syndrome of Inappropriate Antidiuretic Hormone",
+      },
+      {
+        acronym: "TIPS",
+        expansion: "Transjugular Intrahepatic Portosystemic Shunt",
+      },
+      { acronym: "DIC", expansion: "Disseminated Intravascular Coagulation" },
+      {
+        acronym: "HELLP",
+        expansion: "Hemolysis, Elevated Liver enzymes, Low Platelets",
+      },
+      { acronym: "MODS", expansion: "Multiple Organ Dysfunction Syndrome" },
+      { acronym: "SIRS", expansion: "Systemic Inflammatory Response Syndrome" },
+      { acronym: "ARDS", expansion: "Acute Respiratory Distress Syndrome" },
+      { acronym: "TACE", expansion: "Transarterial Chemoembolization" },
+      { acronym: "WPW", expansion: "Wolff-Parkinson-White syndrome" },
+      { acronym: "PT", expansion: "Prothrombin Time", category: "Labs" },
+      { acronym: "PT", expansion: "Physical Therapy", category: "Rehab" },
+      { acronym: "PE", expansion: "Pulmonary Embolism", category: "Pulmonary" },
+      {
+        acronym: "PE",
+        expansion: "Physical Examination",
+        category: "Clinical",
+      },
+    ];
+  }
+
+  medicalAcronymQueries.bulkInsert(loadedAcronyms);
+  console.log(
+    `[Database] Seeded ${loadedAcronyms.length} medical acronyms total`
+  );
+}
+
+// ============================================================================
+// Medical Acronym Queries
+// ============================================================================
+
+export const medicalAcronymQueries = {
+  getAll(): DbMedicalAcronym[] {
+    const stmt = getDatabase().prepare("SELECT * FROM medical_acronyms");
+    return stmt.all() as DbMedicalAcronym[];
+  },
+
+  getByAcronym(acronym: string): DbMedicalAcronym[] {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM medical_acronyms WHERE acronym = ?"
+    );
+    return stmt.all(acronym.toUpperCase()) as DbMedicalAcronym[];
+  },
+
+  insert(entry: DbMedicalAcronym): void {
+    const stmt = getDatabase().prepare(`
+      INSERT OR IGNORE INTO medical_acronyms (acronym, expansion, category)
+      VALUES (?, ?, ?)
+    `);
+    stmt.run(
+      entry.acronym.toUpperCase(),
+      entry.expansion,
+      entry.category || null
+    );
+    invalidateAcronymCache();
+  },
+
+  bulkInsert(entries: DbMedicalAcronym[]): void {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      INSERT OR IGNORE INTO medical_acronyms (acronym, expansion, category)
+      VALUES (?, ?, ?)
+    `);
+    const insertMany = db.transaction((items: DbMedicalAcronym[]) => {
+      for (const item of items) {
+        stmt.run(
+          item.acronym.toUpperCase(),
+          item.expansion,
+          item.category || null
+        );
+      }
+    });
+    insertMany(entries);
+    invalidateAcronymCache();
+  },
+
+  clear(): void {
+    getDatabase().exec("DELETE FROM medical_acronyms");
+    invalidateAcronymCache();
+  },
+};
+
+let acronymCache: Map<string, string[]> | null = null;
+
+/**
+ * Loads and returns medical acronyms in a fast-lookup Map.
+ * Used for <200ms search query expansion.
+ */
+export function getAcronymCache(): Map<string, string[]> {
+  if (acronymCache) return acronymCache;
+
+  const all = medicalAcronymQueries.getAll();
+  const cache = new Map<string, string[]>();
+  for (const entry of all) {
+    const upper = entry.acronym.toUpperCase();
+    if (!cache.has(upper)) {
+      cache.set(upper, []);
+    }
+    cache.get(upper)!.push(entry.expansion);
+  }
+  acronymCache = cache;
+  return cache;
+}
+
+export function invalidateAcronymCache(): void {
+  acronymCache = null;
+}
+
 // ============================================================================
 // FTS5 Search Queries
 // ============================================================================
@@ -1661,6 +1901,7 @@ export const searchQueries = {
   ): SearchResult {
     const startTime = performance.now();
     const db = getDatabase();
+    const cache = getAcronymCache();
 
     // Extract #tag patterns and convert to regular search terms
     const searchTags: string[] = [];
@@ -1671,12 +1912,25 @@ export const searchQueries = {
       })
       .trim();
 
-    // Escape FTS5 special characters and prepare query
+    // Escape FTS5 special characters and prepare query with acronym expansion
     const terms = textQuery
       .replace(/['"]/g, "")
       .split(/\s+/)
       .filter(Boolean)
-      .map((term) => `"${term}"*`);
+      .map((term) => {
+        const upperTerm = term.toUpperCase();
+        const expansions = cache.get(upperTerm);
+
+        if (expansions && expansions.length > 0) {
+          // Expand to (acronym OR "expansion 1" OR "expansion 2"...)
+          const orTerms = [
+            `"${term}"*`,
+            ...expansions.map((exp) => `"${exp}"`),
+          ];
+          return `(${orTerms.join(" OR ")})`;
+        }
+        return `"${term}"*`;
+      });
 
     // Add tags to FTS query if present
     const tagTerms = searchTags.map((tag) => `tags:${tag}`);
@@ -1684,9 +1938,9 @@ export const searchQueries = {
     // Construct final FTS query
     let ftsQuery = "";
     if (terms.length > 0 && tagTerms.length > 0) {
-      ftsQuery = `(${terms.join(" ")}) AND ${tagTerms.join(" AND ")}`;
+      ftsQuery = `(${terms.join(" AND ")}) AND ${tagTerms.join(" AND ")}`;
     } else if (terms.length > 0) {
-      ftsQuery = terms.join(" ");
+      ftsQuery = terms.join(" AND ");
     } else if (tagTerms.length > 0) {
       ftsQuery = tagTerms.join(" AND ");
     }
