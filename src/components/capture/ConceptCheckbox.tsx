@@ -66,10 +66,10 @@ export function ConceptCheckbox({
   return (
     <div
       className={cn(
-        "flex items-start gap-3 p-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+        "flex items-start gap-4 p-5 rounded-2xl border transition-all duration-300",
         isSelected
-          ? "bg-primary/5 border-primary/20"
-          : "bg-background border-border hover:bg-muted/50"
+          ? "bg-primary/10 border-primary/30 shadow-md"
+          : "bg-black/5 border-black/5 hover:border-black/10 hover:bg-black/[0.07]"
       )}
       role="listitem"
       tabIndex={0}
@@ -85,7 +85,7 @@ export function ConceptCheckbox({
         id={`concept-${concept.id}`}
         checked={isSelected}
         onCheckedChange={onToggle}
-        className="mt-0.5"
+        className="mt-0.5 border-black/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         aria-label={`Select concept: ${concept.text}`}
       />
 
@@ -97,13 +97,13 @@ export function ConceptCheckbox({
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="flex-1"
+              className="flex-1 bg-white/50 border-black/10 text-card-foreground"
               autoFocus
             />
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8 text-success-foreground"
+              className="h-8 w-8 text-success"
               onClick={handleSaveEdit}
             >
               <Check className="h-4 w-4" />
@@ -111,7 +111,7 @@ export function ConceptCheckbox({
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8 text-muted-foreground"
+              className="h-8 w-8 text-destructive/60"
               onClick={handleCancelEdit}
             >
               <X className="h-4 w-4" />
@@ -121,14 +121,14 @@ export function ConceptCheckbox({
           <div className="flex items-start justify-between gap-2">
             <label
               htmlFor={`concept-${concept.id}`}
-              className="text-sm font-medium leading-relaxed cursor-pointer flex-1"
+              className="text-base font-serif font-medium leading-[1.4] text-card-foreground cursor-pointer flex-1"
             >
               {concept.text}
             </label>
             <Button
               size="icon"
               variant="ghost"
-              className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
+              className="h-6 w-6 text-card-foreground/30 hover:text-card-foreground shrink-0"
               onClick={() => setIsEditing(true)}
               aria-label="Edit concept"
             >
@@ -140,7 +140,7 @@ export function ConceptCheckbox({
         {/* Metadata row */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Concept type badge */}
-          <Badge variant="outline" className="text-xs capitalize">
+          <Badge variant="outline" className="text-[10px] uppercase tracking-wider bg-black/5 border-black/10 text-card-foreground/60 px-2 py-0">
             {concept.conceptType}
           </Badge>
 
@@ -149,25 +149,25 @@ export function ConceptCheckbox({
             value={concept.suggestedFormat}
             onValueChange={(v) => handleFormatChange(v as "qa" | "cloze")}
           >
-            <SelectTrigger className="h-6 w-[80px] text-xs">
+            <SelectTrigger className="h-6 text-[10px] uppercase tracking-wider bg-black/5 border-black/10 text-card-foreground/60 w-fit gap-1.5 px-2">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="qa">Q&A</SelectItem>
-              <SelectItem value="cloze">Cloze</SelectItem>
+            <SelectContent className="bg-card border-black/10">
+              <SelectItem value="qa" className="text-xs">Q&A</SelectItem>
+              <SelectItem value="cloze" className="text-xs">Cloze</SelectItem>
             </SelectContent>
           </Select>
 
           {/* Confidence indicator */}
           <span
-            className={cn("text-xs", getConfidenceColor(concept.confidence))}
+            className={cn("text-[10px] uppercase tracking-wider font-bold opacity-60", getConfidenceColor(concept.confidence))}
           >
-            {Math.round(concept.confidence * 100)}% confidence
+            {Math.round(concept.confidence * 100)}% Match
           </span>
 
           {/* Validating indicator */}
           {concept.isValidating && (
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
               <Loader2 className="h-3 w-3 animate-spin" />
               Validating...
             </span>

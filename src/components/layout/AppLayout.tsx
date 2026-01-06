@@ -53,10 +53,13 @@ export function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-1000 selection:bg-primary/20">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-1000 selection:bg-primary/20 relative overflow-x-hidden">
+      {/* Subtle organic background vignette */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(63,150,143,0.05)_0%,transparent_70%)]" />
+      
       <Header />
       <QuickActionsBar onOpenQuickDump={openQuickDump} />
-      <main className="mx-auto max-w-7xl px-6 py-12">{renderView()}</main>
+      <main className="mx-auto max-w-7xl px-6 py-12 relative z-10">{renderView()}</main>
 
       <CommandPalette
         isOpen={isCommandPaletteOpen}

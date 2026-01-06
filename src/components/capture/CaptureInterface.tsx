@@ -525,19 +525,19 @@ export function CaptureInterface() {
 
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Phase 1: Paste Area */}
-        <Card className="bg-muted/40">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+        <Card className="bg-card border border-black/10 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.5)] overflow-hidden">
+          <CardHeader className="pb-3 border-b border-black/5 bg-black/[0.02]">
+            <CardTitle className="text-xs uppercase tracking-widest font-bold text-card-foreground/50">
               Step 1: Paste your content
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <Textarea
               ref={textareaRef}
               placeholder="Paste your medical notes, textbook excerpts, or lecture content here...
 
 Example: 'Aspirin irreversibly inhibits cyclooxygenase (COX-1 and COX-2), blocking prostaglandin synthesis. This reduces inflammation, fever, and platelet aggregation.'"
-              className="min-h-[150px] resize-none bg-background/80"
+              className="min-h-[200px] resize-none bg-black/5 border-black/10 focus-visible:ring-primary/40 text-card-foreground placeholder:text-card-foreground/30 font-serif text-lg leading-relaxed rounded-xl shadow-inner"
               value={pastedContent}
               onChange={(e) => setPastedContent(e.target.value)}
               onPaste={handlePaste}
@@ -546,20 +546,21 @@ Example: 'Aspirin irreversibly inhibits cyclooxygenase (COX-1 and COX-2), blocki
             />
 
             {pastedContent.trim() && extractedConcepts.length === 0 && (
-              <div className="mt-4 flex justify-end">
+              <div className="mt-6 flex justify-end">
                 <Button
                   onClick={() => handleExtractConcepts()}
                   disabled={isProcessing}
-                  className="gap-2"
+                  size="lg"
+                  className="gap-2 shadow-lg"
                 >
                   {processingState === "extracting" ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-5 w-5 animate-spin" />
                       Extracting...
                     </>
                   ) : (
                     <>
-                      <Sparkles className="h-4 w-4" />
+                      <Sparkles className="h-5 w-5" />
                       Extract Concepts
                     </>
                   )}
@@ -571,16 +572,16 @@ Example: 'Aspirin irreversibly inhibits cyclooxygenase (COX-1 and COX-2), blocki
 
         {/* Phase 2: Extracted Concepts */}
         {extractedConcepts.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+          <Card className="bg-card border border-black/10 shadow-xl">
+            <CardHeader className="pb-3 border-b border-black/5">
+              <CardTitle className="text-xs uppercase tracking-widest font-bold text-card-foreground/50 flex items-center justify-between">
                 <span>Step 2: Select concepts to create cards</span>
-                <span className="text-xs">
+                <span className="text-[10px] opacity-60">
                   {selectedConcepts.size}/{extractedConcepts.length} selected
                 </span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 pt-6">
               {extractedConcepts.map((concept) => (
                 <div key={concept.id} className="space-y-2">
                   <ConceptCheckbox
