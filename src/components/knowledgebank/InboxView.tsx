@@ -21,6 +21,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from "@/components/ui/checkbox";
 import { SourceItemRow } from "./SourceItemRow";
 import { BatchActions } from "./BatchActions";
+import { AddToNotebookDialog } from "./AddToNotebookDialog";
 import { SourceItem, SourceType } from "@/types";
 import { useAppStore } from "@/stores/useAppStore";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +36,10 @@ export function InboxView() {
   );
   const [sortBy, setSortBy] = useState<SortOrder>("newest");
   const [isLoading, setIsLoading] = useState(true);
+
+  // Dialog state
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [targetItemIds, setTargetItemIds] = useState<string[]>([]);
 
   const refreshCounts = useAppStore((state) => state.refreshCounts);
   const selectedInboxItems = useAppStore((state) => state.selectedInboxItems);
@@ -168,8 +173,19 @@ export function InboxView() {
   };
 
   const handleAddToNotebook = (item: SourceItem) => {
-    console.log("Add to Notebook placeholder:", item.id);
-    // Task 39.4 will implement this logic
+    setTargetItemIds([item.id]);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleBatchAddToNotebook = () => {
+    setTargetItemIds(Array.from(selectedInboxItems));
+    setIsAddDialogOpen(true);
+  };
+
+  const onAddSuccess = () => {
+    fetchInbox();
+    clearInboxSelection();
+    setIsAddDialogOpen(false);
   };
 
   const handleOpen = (item: SourceItem) => {
@@ -350,9 +366,16 @@ export function InboxView() {
 
       <BatchActions
         selectedCount={selectedInboxItems.size}
-        onAddToNotebook={() => console.log("Batch Add to Notebook")}
+        onAddToNotebook={handleBatchAddToNotebook}
         onDelete={handleBatchDelete}
         onClearSelection={clearInboxSelection}
+      />
+
+      <AddToNotebookDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        itemIds={targetItemIds}
+        onSuccess={onAddSuccess}
       />
     </div>
   );

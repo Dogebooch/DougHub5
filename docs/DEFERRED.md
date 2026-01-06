@@ -93,6 +93,24 @@
 - Select Visible checkbox: checked when all visible selected, indeterminate when partial
 **Notes:** Component manually verified. Defer until post-MVP test suite expansion.
 
+### AddToNotebookDialog Component Tests
+**Description:** Unit tests for AddToNotebookDialog.tsx topic selection and creation flow.
+**Priority:** Low
+**Source:** Task 39.5 completion (2026-01-06)
+**Test Cases:**
+- Dialog displays correct item count in description
+- Confirm disabled when no topic selected and input empty
+- Debounce triggers after 300ms of typing
+- No API call when input < 2 characters
+- Suggestions display with aliases
+- "Create new topic" option appears when no exact match
+- Selecting topic updates button text and enables Confirm
+- Creating new topic calls createOrGet before batchAddToNotebook
+- Success toast shows topic name and item count
+- Error toast on API failure
+- State resets after successful submission
+**Notes:** Component manually verified. Defer until post-MVP test suite expansion.
+
 ---
 
 ## Capture & Extraction
