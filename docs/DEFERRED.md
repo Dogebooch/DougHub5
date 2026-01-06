@@ -18,6 +18,12 @@
 
 ## UI Enhancements
 
+### Single-Item Delete Confirmation
+**Description:** Add confirmation dialog for single-item delete in InboxView. Currently deletes immediately on click; batch delete has confirmation but single delete does not.
+**Priority:** Low
+**Source:** Task 39.1-39.3 review (2026-01-06)
+**Notes:** Low risk—user can re-capture if accidental delete. Batch delete (39.4) has confirmation. Align single/batch behavior post-MVP.
+
 ### Quick Actions Row
 **Description:** Add quick action buttons below capture box: "Paste", "Upload", "Extract Board Question" for faster capture workflows.
 **Priority:** Low
@@ -70,6 +76,22 @@
 - batchDeleteInbox: verify same error handling pattern
 - Edge cases: empty selection, API unavailable, partial IPC failures
 **Notes:** Store logic is simple and manually verified. Defer until post-MVP test suite expansion.
+
+### BatchActions Component Tests
+**Description:** Unit tests for BatchActions.tsx toolbar and InboxView integration.
+**Priority:** Low
+**Source:** Task 39.4 completion (2026-01-06)
+**Test Cases:**
+- Toolbar hidden when selectedCount === 0
+- Toolbar visible with correct count when selectedCount > 0
+- Singular/plural text ("item" vs "items")
+- Delete button opens AlertDialog
+- Cancel closes dialog without firing onDelete
+- Confirm fires onDelete and shows loading spinner
+- Add to Notebook button fires onAddToNotebook
+- Clear Selection button fires onClearSelection
+- Select Visible checkbox: checked when all visible selected, indeterminate when partial
+**Notes:** Component manually verified. Defer until post-MVP test suite expansion.
 
 ---
 

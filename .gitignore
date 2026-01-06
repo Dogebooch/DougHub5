@@ -67,3 +67,30 @@ Thumbs.db
 
 # Exclude large Electron binary
 node_modules/electron/dist/electron.exe
+
+# -----------------------------
+# Large files / archives
+# Avoid committing files larger than ~100MB. Add specific patterns below to cover common large files and archives.
+# Common large binary and archive extensions
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.iso
+*.exe
+*.dll
+*.bin
+*.apk
+*.jar
+*.war
+*.gz
+*.bz2
+*.xz
+
+# Common cache / large folders
+large_files/
+*.cache
+.cache/
+
+# End of additions
