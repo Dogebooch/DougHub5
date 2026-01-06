@@ -1,7 +1,10 @@
 import Database from 'better-sqlite3';
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 import { createBackup, restoreBackup } from "./backup-service";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ============================================================================
 // Types (local to database layer, will sync with types/index.ts in Phase 4)
@@ -1439,6 +1442,13 @@ export const canonicalTopicQueries = {
       createdAt: merged.createdAt,
     });
   },
+
+  delete(id: string): void {
+    const stmt = getDatabase().prepare(
+      "DELETE FROM canonical_topics WHERE id = @id"
+    );
+    stmt.run({ id });
+  },
 };
 
 function parseCanonicalTopicRow(row: CanonicalTopicRow): DbCanonicalTopic {
@@ -1606,6 +1616,40 @@ export const smartViewQueries = {
     );
     const rows = stmt.all() as SmartViewRow[];
     return rows.map(parseSmartViewRow);
+  },
+
+  getById(id: string): DbSmartView | null {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM smart_views WHERE id = ?"
+    );
+    const row = stmt.get(id) as SmartViewRow | undefined;
+    return row ? parseSmartViewRow(row) : null;
+  },
+
+  update(id: string, updates: Partial<DbSmartView>): void {
+    const current = smartViewQueries.getById(id);
+    if (!current) {
+      throw new Error(`SmartView not found: ${id}`);
+    }
+
+    const merged = { ...current, ...updates };
+    const stmt = getDatabase().prepare(`
+      UPDATE smart_views SET
+        name = @name,
+        icon = @icon,
+        filter = @filter,
+        sortBy = @sortBy,
+        isSystem = @isSystem
+      WHERE id = @id
+    `);
+    stmt.run({
+      id: merged.id,
+      name: merged.name,
+      icon: merged.icon,
+      filter: JSON.stringify(merged.filter),
+      sortBy: merged.sortBy,
+      isSystem: merged.isSystem ? 1 : 0,
+    });
   },
 };
 

@@ -1172,7 +1172,7 @@
         "dependencies": [
           "35"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1220,9 +1220,10 @@
               3
             ],
             "details": "In electron/topic-service.ts, implement mergeTopics(sourceId: string, targetId: string): Promise<void>. Use database transaction for atomicity. Steps: (1) Fetch source and target topics via canonicalTopicQueries.getById, verify both exist. (2) Merge aliases: combine source.aliases into target.aliases array, deduplicate. (3) Update source_items: query all source_items where canonicalTopicIds JSON array contains sourceId, parse JSON, replace sourceId with targetId, update row with JSON.stringify. (4) Update notebook_topic_pages: UPDATE notebook_topic_pages SET canonicalTopicId = ? WHERE canonicalTopicId = ?. (5) Delete source topic: DELETE FROM canonical_topics WHERE id = ?. (6) Update target topic with merged aliases. Wrap entire operation in db.transaction(() => { ... }) for rollback on error. Import getDatabase to access transaction API.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test merging 'HOCM' topic into 'Hypertrophic Cardiomyopathy' preserves all aliases from both. Test all source_items referencing source topic now reference target topic after merge. Test all notebook_topic_pages update canonicalTopicId correctly. Test source topic is deleted. Test transaction rollback on error (e.g., target topic doesn't exist) leaves database unchanged.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-06T15:37:46.360Z"
           },
           {
             "id": 5,
@@ -1235,12 +1236,13 @@
               4
             ],
             "details": "In electron/ipc-handlers.ts, import topic-service functions. Register handlers: ipcMain.handle('topic:resolve', async (_, input: string) => try { return success(await resolveTopicAlias(input)) } catch { failure }), 'topic:createOrGet', 'topic:suggest', 'topic:addAlias', 'topic:merge'. Export preload.ts methods: topic: { resolve: (input) => ipcRenderer.invoke('topic:resolve', input), ... }. Update src/types/electron.d.ts interface ElectronAPI with topic methods. Create src/components/ui/TopicAutocomplete.tsx: use Command component from shadcn (already in codebase at command.tsx), implement debounced input (300ms) calling window.api.topic.suggest, render CommandList with CommandGroup showing suggestions (display canonicalName + alias count), CommandItem onClick calls onSelect(topic), show 'Create new topic' option at bottom if no exact match. Props: value, onChange, onSelect(topic), placeholder. Use existing Input, Popover, Command components.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test IPC handlers return IpcResult format with data/error. Test topic:resolve handler calls resolveTopicAlias and returns topic. Test TopicAutocomplete renders input, typing triggers debounced suggest call, dropdown shows results, clicking suggestion calls onSelect. Test 'Create new topic' option calls createOrGetTopic and adds new topic. Test keyboard navigation (arrow keys, enter to select).",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-06T15:44:32.497Z"
           }
         ],
-        "updatedAt": "2026-01-06T15:05:57.395Z"
+        "updatedAt": "2026-01-06T15:44:32.497Z"
       },
       {
         "id": "37",
@@ -2244,9 +2246,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-06T15:05:57.396Z",
+      "lastModified": "2026-01-06T15:44:32.497Z",
       "taskCount": 102,
-      "completedCount": 10,
+      "completedCount": 11,
       "tags": [
         "master"
       ]

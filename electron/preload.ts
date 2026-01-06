@@ -73,6 +73,8 @@ const api = {
       ipcRenderer.invoke("canonicalTopics:addAlias", topicId, alias),
     suggestMatches: (input: string) =>
       ipcRenderer.invoke("canonicalTopics:suggestMatches", input),
+    merge: (sourceId: string, targetId: string) =>
+      ipcRenderer.invoke("canonicalTopics:merge", sourceId, targetId),
   },
   notebookPages: {
     getAll: () => ipcRenderer.invoke("notebookPages:getAll"),

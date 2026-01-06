@@ -66,6 +66,7 @@ import {
   createOrGetTopic,
   suggestTopicMatches,
   addTopicAlias,
+  mergeTopics,
 } from "./topic-service";
 
 // ============================================================================
@@ -619,6 +620,18 @@ export function registerIpcHandlers(): void {
       try {
         const matches = suggestTopicMatches(input);
         return success(matches);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "canonicalTopics:merge",
+    async (_, sourceId: string, targetId: string): Promise<IpcResult<void>> => {
+      try {
+        mergeTopics(sourceId, targetId);
+        return success(undefined);
       } catch (error) {
         return failure(error);
       }

@@ -21,12 +21,12 @@ const api = {
     getByCard: (cardId) => electron.ipcRenderer.invoke("reviews:getByCard", cardId),
     schedule: (cardId, rating, responseTimeMs) => electron.ipcRenderer.invoke("reviews:schedule", cardId, rating, responseTimeMs)
   },
-  quickDumps: {
-    getAll: () => electron.ipcRenderer.invoke("quickDumps:getAll"),
-    getByStatus: (status) => electron.ipcRenderer.invoke("quickDumps:getByStatus", status),
-    create: (dump) => electron.ipcRenderer.invoke("quickDumps:create", dump),
-    update: (id, updates) => electron.ipcRenderer.invoke("quickDumps:update", id, updates),
-    remove: (id) => electron.ipcRenderer.invoke("quickDumps:remove", id)
+  quickCaptures: {
+    getAll: () => electron.ipcRenderer.invoke("quickCaptures:getAll"),
+    getByStatus: (status) => electron.ipcRenderer.invoke("quickCaptures:getByStatus", status),
+    create: (capture) => electron.ipcRenderer.invoke("quickCaptures:create", capture),
+    update: (id, updates) => electron.ipcRenderer.invoke("quickCaptures:update", id, updates),
+    remove: (id) => electron.ipcRenderer.invoke("quickCaptures:remove", id)
   },
   connections: {
     getAll: () => electron.ipcRenderer.invoke("connections:getAll"),
@@ -45,7 +45,12 @@ const api = {
   canonicalTopics: {
     getAll: () => electron.ipcRenderer.invoke("canonicalTopics:getAll"),
     getById: (id) => electron.ipcRenderer.invoke("canonicalTopics:getById", id),
-    getByDomain: (domain) => electron.ipcRenderer.invoke("canonicalTopics:getByDomain", domain)
+    getByDomain: (domain) => electron.ipcRenderer.invoke("canonicalTopics:getByDomain", domain),
+    resolveAlias: (name) => electron.ipcRenderer.invoke("canonicalTopics:resolveAlias", name),
+    createOrGet: (name, domain) => electron.ipcRenderer.invoke("canonicalTopics:createOrGet", name, domain),
+    addAlias: (topicId, alias) => electron.ipcRenderer.invoke("canonicalTopics:addAlias", topicId, alias),
+    suggestMatches: (input) => electron.ipcRenderer.invoke("canonicalTopics:suggestMatches", input),
+    merge: (sourceId, targetId) => electron.ipcRenderer.invoke("canonicalTopics:merge", sourceId, targetId)
   },
   notebookPages: {
     getAll: () => electron.ipcRenderer.invoke("notebookPages:getAll"),
@@ -62,6 +67,9 @@ const api = {
   smartViews: {
     getAll: () => electron.ipcRenderer.invoke("smartViews:getAll"),
     getSystem: () => electron.ipcRenderer.invoke("smartViews:getSystem")
+  },
+  search: {
+    query: (query, filter) => electron.ipcRenderer.invoke("search:query", query, filter)
   },
   backup: {
     list: () => electron.ipcRenderer.invoke("backup:list"),
@@ -85,7 +93,12 @@ const api = {
       minSimilarity,
       maxResults
     ),
-    clearCache: () => electron.ipcRenderer.invoke("ai:clearCache")
+    clearCache: () => electron.ipcRenderer.invoke("ai:clearCache"),
+    onOllamaStatus: (callback) => {
+      const subscription = (_event, payload) => callback(payload);
+      electron.ipcRenderer.on("ai:ollamaStatus", subscription);
+      return () => electron.ipcRenderer.removeListener("ai:ollamaStatus", subscription);
+    }
   },
   files: {
     saveImage: (data, mimeType) => electron.ipcRenderer.invoke("files:saveImage", { data, mimeType })
