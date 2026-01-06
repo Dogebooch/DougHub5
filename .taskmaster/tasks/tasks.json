@@ -1350,12 +1350,112 @@
         ],
         "dependencies": [],
         "subtasks": []
+      },
+      {
+        "id": 53,
+        "title": "Review UI: Refine manual grade button color contrast",
+        "description": "Adjust manual grade button colors for better accessibility and visual clarity. Current dark colors have low contrast.",
+        "priority": "low",
+        "status": "deferred",
+        "tags": ["ux", "polish"],
+        "dependencies": ["5"],
+        "subtasks": []
+      },
+      {
+        "id": 54,
+        "title": "Review UI: Show response time and auto-grade reasoning",
+        "description": "Add visual indicator showing how auto-grade was determined (e.g., 'Recalled (12.3s)'). User can't tell why card was graded certain way.",
+        "priority": "medium",
+        "status": "deferred",
+        "tags": ["ux", "transparency"],
+        "dependencies": ["5"],
+        "subtasks": []
+      },
+      {
+        "id": 55,
+        "title": "Review UI: Add first-time interactive tutorial",
+        "description": "New users confused about Continue vs. manual buttons. Add guided tutorial explaining zero-decision flow and when to override.",
+        "priority": "high",
+        "status": "deferred",
+        "tags": ["ux", "onboarding"],
+        "dependencies": ["5", "54"],
+        "subtasks": []
+      },
+      {
+        "id": 56,
+        "title": "Review UI: Hide manual grade buttons until answer shown",
+        "description": "Manual grade buttons appear before answer revealed, which is confusing. Should only show after Space pressed.",
+        "priority": "high",
+        "status": "deferred",
+        "tags": ["ux", "bug-fix"],
+        "dependencies": ["5"],
+        "subtasks": []
+      },
+      {
+        "id": 57,
+        "title": "Review UI: Add persistent back button in header",
+        "description": "Add global '← Capture' button in header so user can exit review without scrolling to bottom.",
+        "priority": "medium",
+        "status": "deferred",
+        "tags": ["ux", "navigation"],
+        "dependencies": ["5"],
+        "subtasks": []
+      },
+      {
+        "id": 58,
+        "title": "Main screen (Capture): Improve onboarding and discoverability",
+        "description": "Capture screen feels empty. Add hero section, multi-input tabs, examples, recent activity. Make it feel like a proper home screen.",
+        "priority": "high",
+        "status": "deferred",
+        "tags": ["ux", "onboarding"],
+        "dependencies": [],
+        "subtasks": []
+      },
+      {
+        "id": 59,
+        "title": "Capture UI: Auto-resize paste box based on content type",
+        "description": "Paste box should adapt: single-line for quick text, multi-line for paragraphs, drop zone for PDFs/images.",
+        "priority": "medium",
+        "status": "deferred",
+        "tags": ["ux", "smart-ui"],
+        "dependencies": ["58"],
+        "subtasks": []
+      },
+      {
+        "id": 60,
+        "title": "Quick Dump UI: Add explanation and visual distinction",
+        "description": "Quick Dump is unclear. Add tooltip, visual design (lightning icon), and explanation of 'emergency capture' use case.",
+        "priority": "medium",
+        "status": "deferred",
+        "tags": ["ux", "quick-dump"],
+        "dependencies": ["58"],
+        "subtasks": []
+      },
+      {
+        "id": 61,
+        "title": "Review UI: Add response time indicator in header",
+        "description": "Show subtle timer in top-right (0-5s green, 5-15s blue, etc.) and/or expandable session stats panel.",
+        "priority": "low",
+        "status": "deferred",
+        "tags": ["ux", "stats"],
+        "dependencies": ["5", "54", "57"],
+        "subtasks": []
+      },
+      {
+        "id": 62,
+        "title": "Capture UI: Clarify keyboard shortcuts and boost AI confidence",
+        "description": "Remove confusing 'Tab to navigate, Space to toggle' hint. Replace with accurate shortcuts and better AI accuracy messaging.",
+        "priority": "medium",
+        "status": "deferred",
+        "tags": ["ux", "onboarding"],
+        "dependencies": ["58"],
+        "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
       "lastModified": "2026-01-06T00:32:13.607Z",
-      "taskCount": 52,
+      "taskCount": 62,
       "completedCount": 5,
       "tags": [
         "master"

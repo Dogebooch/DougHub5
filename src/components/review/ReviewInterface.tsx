@@ -356,56 +356,59 @@ export function ReviewInterface() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 space-y-8">
+    <div className="max-w-4xl mx-auto py-12 px-6 space-y-10 animate-in fade-in duration-700">
       {/* Progress bar */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">
           <span>
-            Card {currentQueueIndex + 1} of {totalInQueue} - {progressPercent}%
-            complete
+            Session Progress {progressPercent}%
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1.5">
             <RotateCcw className="h-3 w-3" />
-            {reviewedCount} reviewed
+            {reviewedCount} Completed
           </span>
         </div>
-        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden shadow-inner">
+        <div className="w-full h-1 bg-black/20 rounded-full overflow-hidden">
           <div
-            className="h-full bg-primary transition-all duration-500 ease-out shadow-[0_0_10px_rgba(20,184,166,0.3)]"
+            className="h-full bg-primary transition-all duration-1000 ease-in-out shadow-[0_0_15px_rgba(63,150,143,0.2)]"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
       </div>
 
       {/* Card display */}
-      <div className="bg-card border border-black/10 rounded-2xl p-12 space-y-8 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden">
-        {/* Subtle accent line */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-
-        <div className="text-center space-y-8">
+      <div className="bg-card border-none rounded-3xl p-16 space-y-10 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.6)] relative overflow-hidden group">
+        {/* Subtle organic texture or accent */}
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-50" />
+        
+        <div className="text-center space-y-10">
           {/* Front - Use cloze renderer for cloze and list-cloze types */}
           {currentCard.cardType === "cloze" ||
           currentCard.cardType === "list-cloze" ? (
-            <ClozeDisplay
-              front={currentCard.front}
-              revealed={answerVisible}
-              cardId={currentCard.id}
-              cardType={currentCard.cardType}
-            />
+            <div className="text-3xl font-serif leading-relaxed tracking-tight text-card-foreground selection:bg-primary/20">
+              <ClozeDisplay
+                front={currentCard.front}
+                revealed={answerVisible}
+                cardId={currentCard.id}
+                cardType={currentCard.cardType}
+              />
+            </div>
           ) : (
-            <div className="text-3xl font-medium leading-relaxed tracking-tight text-card-foreground">
+            <div className="text-4xl font-serif font-medium leading-[1.4] tracking-tight text-card-foreground selection:bg-primary/20">
               {currentCard.front}
             </div>
           )}
 
           {answerVisible && (
-            <div className="pt-10 border-t border-black/5 space-y-6">
+            <div className="pt-12 border-t border-black/5 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
               {/* Back - Use cloze answer for cloze types */}
               {currentCard.cardType === "cloze" ||
               currentCard.cardType === "list-cloze" ? (
-                <ClozeAnswer back={currentCard.back} />
+                <div className="font-serif italic text-card-foreground/80">
+                  <ClozeAnswer back={currentCard.back} />
+                </div>
               ) : (
-                <div className="text-2xl leading-relaxed text-card-foreground/90 font-medium">
+                <div className="text-2xl leading-relaxed text-card-foreground/85 font-serif italic">
                   {currentCard.back}
                 </div>
               )}
@@ -413,52 +416,49 @@ export function ReviewInterface() {
           )}
         </div>
 
-        <div className="text-center text-[11px] text-card-foreground/50 pt-8 border-t border-black/5">
-          <span className="opacity-40 uppercase tracking-widest font-bold mr-2">
-            Reference:
-          </span>
+        <div className="text-center text-[10px] text-card-foreground/40 pt-10 border-t border-black/5 font-mono uppercase tracking-widest">
+          <span className="opacity-40 font-bold mr-3 underline decoration-primary/20 underline-offset-4">Reference</span> 
           {currentNote ? currentNote.title : "Unknown source"}
           {currentCard.state > 0 && (
-            <span className="ml-3 opacity-30">
-              • Stability: {currentCard.stability.toFixed(1)} • Reps:{" "}
-              {currentCard.reps}
+            <span className="ml-4 opacity-30">
+              • Stability {currentCard.stability.toFixed(1)} • Reps {currentCard.reps}
             </span>
           )}
         </div>
       </div>
 
       {/* Action buttons */}
-      <div className="flex justify-center min-h-[160px] items-center">
+      <div className="flex justify-center min-h-[180px] items-center">
         {showingFeedback ? (
-          <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300">
+          <div className="flex flex-col items-center gap-5 animate-in fade-in zoom-in-95 duration-500">
             {currentGrade === Rating.Again && (
               <>
-                <XCircle className="h-16 w-16 text-destructive opacity-80" />
-                <span className="text-2xl font-bold text-destructive tracking-tight">
+                <XCircle className="h-16 w-16 text-destructive/70" />
+                <span className="text-xl font-bold text-destructive/80 tracking-[0.2em] uppercase">
                   Forgot
                 </span>
               </>
             )}
             {currentGrade === Rating.Hard && (
               <>
-                <AlertTriangle className="h-16 w-16 text-orange-400 opacity-80" />
-                <span className="text-2xl font-bold text-orange-400 tracking-tight">
+                <AlertTriangle className="h-16 w-16 text-accent/70" />
+                <span className="text-xl font-bold text-accent/80 tracking-[0.2em] uppercase">
                   Struggled
                 </span>
               </>
             )}
             {currentGrade === Rating.Good && (
               <>
-                <Circle className="h-16 w-16 text-blue-400 opacity-80" />
-                <span className="text-2xl font-bold text-blue-400 tracking-tight">
+                <Circle className="h-16 w-16 text-info/70" />
+                <span className="text-xl font-bold text-info/80 tracking-[0.2em] uppercase">
                   Recalled
                 </span>
               </>
             )}
             {currentGrade === Rating.Easy && (
               <>
-                <CheckCircle2 className="h-16 w-16 text-emerald-400 opacity-80" />
-                <span className="text-2xl font-bold text-emerald-400 tracking-tight">
+                <CheckCircle2 className="h-16 w-16 text-success/70" />
+                <span className="text-xl font-bold text-success/80 tracking-[0.2em] uppercase">
                   Mastered
                 </span>
               </>
@@ -468,71 +468,71 @@ export function ReviewInterface() {
           <Button
             size="lg"
             onClick={handleShowAnswer}
-            className="min-w-[280px] h-16 text-xl font-bold bg-primary hover:bg-primary/90 shadow-xl"
+            className="min-w-[320px] h-20 text-2xl font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl shadow-[0_15px_30px_-10px_rgba(63,150,143,0.3)] hover:translate-y-[-2px] transition-all duration-300"
           >
             Show Answer
-            <span className="ml-3 text-sm opacity-70 font-normal">(Space)</span>
+            <span className="ml-4 text-xs opacity-50 font-mono tracking-widest">(Space)</span>
           </Button>
         ) : (
-          <div className="flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex flex-col items-center gap-10 animate-in fade-in slide-in-from-bottom-6 duration-700 w-full">
             {!isPaused && (
               <Button
                 size="lg"
                 onClick={handleContinue}
                 disabled={isSubmitting}
-                className="min-w-[280px] h-16 text-xl font-bold bg-primary hover:bg-primary/90 shadow-xl"
+                className="min-w-[320px] h-20 text-2xl font-bold bg-white/5 hover:bg-white/10 text-foreground border border-white/10 rounded-2xl shadow-xl hover:translate-y-[-2px] transition-all duration-300"
               >
                 Continue
-                <span className="ml-3 text-sm opacity-70 font-normal underline decoration-white/30">
+                <span className="ml-4 text-xs opacity-40 font-mono tracking-widest underline decoration-primary/30">
                   (Space)
                 </span>
               </Button>
             )}
 
             {isPaused && (
-              <div className="text-center space-y-1">
-                <p className="font-medium text-foreground">
-                  Session Interrupted
+              <div className="text-center space-y-2 py-4">
+                <p className="text-lg font-serif italic text-foreground/80">
+                  A Moment of Pause
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Please select your recall quality manually.
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Select recall quality to proceed
                 </p>
               </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-6">
               <Button
                 variant="destructive"
                 onClick={() => handleManualGrade(Rating.Again)}
                 disabled={isSubmitting}
-                className="min-w-[120px] h-14 text-base font-bold shadow-lg hover:scale-[1.02] transition-all bg-[#8b3d30] hover:bg-[#a64a3a]"
+                className="min-w-[140px] h-16 text-xs uppercase tracking-widest font-bold shadow-lg hover:scale-105 transition-all bg-[#8c3a2e] hover:bg-[#a64536] border-none rounded-xl"
               >
                 Forgot
               </Button>
               <Button
                 onClick={() => handleManualGrade(Rating.Hard)}
                 disabled={isSubmitting}
-                className="min-w-[120px] h-14 text-base font-bold bg-[#ca8a04] hover:bg-[#eab308] text-white shadow-lg hover:scale-[1.02] transition-all"
+                className="min-w-[140px] h-16 text-xs uppercase tracking-widest font-bold bg-[#b58135] hover:bg-[#cf943c] text-white shadow-lg hover:scale-105 transition-all border-none rounded-xl"
               >
                 Struggled
               </Button>
               <Button
                 onClick={() => handleManualGrade(Rating.Good)}
                 disabled={isSubmitting}
-                className="min-w-[120px] h-14 text-base font-bold bg-[#1e3a8a]/70 hover:bg-[#1e3a8a] text-white shadow-lg hover:scale-[1.02] transition-all"
+                className="min-w-[140px] h-16 text-xs uppercase tracking-widest font-bold bg-[#3d5e7a] hover:bg-[#4a7294] text-white shadow-lg hover:scale-105 transition-all border-none rounded-xl"
               >
                 Recalled
               </Button>
               <Button
                 onClick={() => handleManualGrade(Rating.Easy)}
                 disabled={isSubmitting}
-                className="min-w-[120px] h-14 text-base font-bold bg-[#14532d] hover:bg-[#166534] text-white shadow-lg hover:scale-[1.02] transition-all"
+                className="min-w-[140px] h-16 text-xs uppercase tracking-widest font-bold bg-[#3e5e40] hover:bg-[#4b724e] text-white shadow-lg hover:scale-105 transition-all border-none rounded-xl"
               >
                 Mastered
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Press 1-4 to grade
+            <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground/50">
+              Recall keys 1 - 4
             </p>
           </div>
         )}

@@ -21,14 +21,14 @@ export function QuickActionsBar({ onOpenQuickDump }: QuickActionsBarProps) {
   const dueCount = mounted && isHydrated ? getCardsDueToday().length : 0;
 
   return (
-    <div className="border-b border-white/5 bg-background shadow-sm">
-      <div className="mx-auto max-w-7xl px-6 py-4">
+    <div className="border-b border-black/10 bg-background shadow-sm">
+      <div className="mx-auto max-w-7xl px-6 py-5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <Button
               variant="default"
               size="lg"
-              className="min-h-[48px] px-6 font-bold shadow-md hover:shadow-primary/20 transition-all"
+              className="min-h-[52px] px-8 font-serif font-bold text-lg shadow-lg hover:shadow-primary/10 transition-all rounded-xl"
               onClick={onOpenQuickDump}
             >
               Quick Dump
@@ -36,13 +36,13 @@ export function QuickActionsBar({ onOpenQuickDump }: QuickActionsBarProps) {
             <Button
               variant="outline"
               size="lg"
-              className="min-h-[48px] px-6 gap-2 border-white/10 hover:bg-white/5 font-semibold"
+              className="min-h-[52px] px-8 gap-3 border-white/5 bg-white/5 hover:bg-white/10 font-serif font-semibold text-lg transition-all rounded-xl"
               onClick={() => setCurrentView("review")}
             >
-              <span>Due Today</span>
+              <span className="opacity-80">Queue</span>
               <Badge
                 variant="secondary"
-                className="ml-1 px-3 py-1 bg-primary text-white border-none font-bold"
+                className="px-4 py-1.5 bg-primary text-primary-foreground border-none font-black text-sm rounded-lg shadow-sm"
               >
                 {dueCount}
               </Badge>
@@ -51,10 +51,10 @@ export function QuickActionsBar({ onOpenQuickDump }: QuickActionsBarProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-12 w-12 hover:bg-white/5 transition-colors"
+            className="h-14 w-14 hover:bg-white/5 transition-all rounded-2xl"
             onClick={() => setCurrentView("settings")}
           >
-            <Settings className="h-6 w-6 text-muted-foreground" />
+            <Settings className="h-7 w-7 text-muted-foreground/60" />
             <span className="sr-only">Settings</span>
           </Button>
         </div>

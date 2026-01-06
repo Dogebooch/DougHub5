@@ -53,7 +53,7 @@ export function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-1000 selection:bg-primary/20">
       <Header />
       <QuickActionsBar onOpenQuickDump={openQuickDump} />
       <main className="mx-auto max-w-7xl px-6 py-12">{renderView()}</main>
