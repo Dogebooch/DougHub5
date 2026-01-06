@@ -86,9 +86,6 @@ Keep task list lean to minimize token usage. Follow these rules:
 - Deferred tasks: trim `details`, keep only title+description
 - Duplicate tasks: cancel the newer one, keep the one with subtasks/progress
 
-**Duplicates Found (for reference):**
-- Tasks 22,23,24,25,26,27 duplicated tasks 10,11,9,7,12,15 respectively
-
 ---
 
 ## Deferred Task Workflow

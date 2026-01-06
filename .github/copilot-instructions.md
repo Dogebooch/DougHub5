@@ -7,6 +7,13 @@ DougHub is a **flashcard app for medical residents with ADHD** studying for boar
 
 ## Architecture
 
+### v2 Architecture: 3-Layer System
+```
+Layer 1: Knowledge Bank (SourceItems) - Raw captures, inbox → processed → curated
+Layer 2: Personal Notebook (NotebookTopicPages) - Curated topics with blocks
+Layer 3: Flashcards (Cards) - Generated ONLY from Notebook blocks
+```
+
 ### Data Flow
 ```
 React Component → useAppStore → window.api.* → IPC Handler → database.ts → SQLite
@@ -19,7 +26,7 @@ React Component → useAppStore → window.api.* → IPC Handler → database.ts
 ### Key Files
 - `electron/database.ts` / `ipc-handlers.ts`: Data layer
 - `src/stores/useAppStore.ts`: Zustand store (single source of truth)
-- `src/types/index.ts`: Domain types (`Card`, `Note`, `CardWithFSRS`)
+- `src/types/index.ts`: Domain types (`Card`, `SourceItem`, `NotebookTopicPage`, `CanonicalTopic`)
 
 ## Commands
 ```bash
@@ -59,9 +66,14 @@ npm run lint     # ESLint (zero warnings)
 - Manual scheduling decisions
 
 ### Always Implement
-- Cards ↔ Notes bidirectional linking (`noteId` / `cardIds[]`)
-- Quick Capture escape hatch (always accessible)
+- Cards link to NotebookTopicPage (provenance tracking)
+- Quick Capture escape hatch (always accessible, saves to SourceItem with status: inbox)
 - FSRS via `ts-fsrs` library (89% retention target, zero user decisions)
+
+### v2 Constraints
+- **Notebook-only card creation:** Cards generated ONLY from NotebookTopicPage blocks
+- **Canonical Topics:** Use CanonicalTopic with alias normalization, never raw topic strings
+- **Quick Capture:** Always accessible, saves to SourceItem (sourceType: 'quickcapture', status: 'inbox')
 
 ## UI Conventions
 - shadcn/ui components from `src/components/ui/`

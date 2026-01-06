@@ -24,6 +24,24 @@
 **Priority:** Low
 **Notes:** Could reduce clicks for common capture patterns.
 
+### Knowledge Bank Advanced Filters
+**Source:** Task 40 scoping (2026-01-06)
+**Description:** Additional filter options for Knowledge Bank: topic filter dropdown, tag filter dropdown, date range picker, multi-select status/sourceType filters.
+**Priority:** Low
+**Notes:** Single-select chips + source dropdown covers 95% of use cases. Add if users request.
+
+### Knowledge Bank Full-Text Search
+**Source:** Task 40 scoping (2026-01-06)
+**Description:** Search rawContent field in addition to title. Requires new IPC handler `sourceItems:search(query)` with SQLite FTS5.
+**Priority:** Medium
+**Notes:** Title search covers most cases. Add when users have 500+ items and can't find content.
+
+### Knowledge Bank Keyboard Navigation
+**Source:** Task 40 scoping (2026-01-06)
+**Description:** Keyboard shortcuts for Knowledge Bank: `/` to focus search, `i/p/c` to filter by status, arrow keys to navigate list, Enter to open item.
+**Priority:** Low
+**Notes:** Follows Superhuman/Things 3 patterns. Power user polish.
+
 ### Command Palette (Ctrl+K)
 **Source:** Task 11 (cancelled)
 **Description:** Keyboard-first command palette for quick navigation, search, and actions. Currently bound to Ctrl+F but not discoverable.
@@ -116,6 +134,12 @@
 ---
 
 ## Polish & UX
+
+### Test Suite Fixes
+**Source:** Audit 2026-01-06
+**Description:** Fix 105 failing tests. Issues: missing `fireEvent` imports in QuickCaptureModal.test.tsx, Electron subprocess mocking (`unref`) fails in Vitest environment.
+**Priority:** Medium
+**Notes:** Defer until after T39-T45 UI changes complete. Current tests will need rewriting anyway as UI evolves. Core app functionality works.
 
 ### Command Palette Enhancements (was T11)
 **Description:** Fuzzy search, recent actions history, more command categories.
