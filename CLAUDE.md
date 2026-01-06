@@ -88,3 +88,25 @@ Keep task list lean to minimize token usage. Follow these rules:
 
 **Duplicates Found (for reference):**
 - Tasks 22,23,24,25,26,27 duplicated tasks 10,11,9,7,12,15 respectively
+
+---
+
+## Deferred Task Workflow
+
+**When to Defer:**
+- Feature is nice-to-have but not MVP-critical
+- User says "we can do this later" or "defer this"
+- Task blocked by unplanned dependency
+
+**How to Defer:**
+1. Add feature to `docs/DEFERRED.md` with description, reason, and priority
+2. Cancel the TaskMaster task (if exists)
+3. Acknowledge to user that it's parked for post-MVP
+
+**How to Promote:**
+1. Create new TaskMaster task with full details
+2. Remove from `docs/DEFERRED.md`
+3. Insert into MVP task chain
+
+**Active MVP Path:**
+T36 (Topic Service) → T39 (Inbox UI) → T40 (Knowledge Bank UI) → T44 (Smart Views) → T41 (Notebook UI) → T42 (Card Generation) → T43 (Card Worthiness Gate)
