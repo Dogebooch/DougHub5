@@ -1413,6 +1413,32 @@ export const canonicalTopicQueries = {
       createdAt: topic.createdAt,
     });
   },
+
+  update(id: string, updates: Partial<DbCanonicalTopic>): void {
+    const current = canonicalTopicQueries.getById(id);
+    if (!current) {
+      throw new Error(`CanonicalTopic not found: ${id}`);
+    }
+
+    const merged = { ...current, ...updates };
+    const stmt = getDatabase().prepare(`
+      UPDATE canonical_topics SET
+        canonicalName = @canonicalName,
+        aliases = @aliases,
+        domain = @domain,
+        parentTopicId = @parentTopicId,
+        createdAt = @createdAt
+      WHERE id = @id
+    `);
+    stmt.run({
+      id: merged.id,
+      canonicalName: merged.canonicalName,
+      aliases: JSON.stringify(merged.aliases),
+      domain: merged.domain,
+      parentTopicId: merged.parentTopicId || null,
+      createdAt: merged.createdAt,
+    });
+  },
 };
 
 function parseCanonicalTopicRow(row: CanonicalTopicRow): DbCanonicalTopic {

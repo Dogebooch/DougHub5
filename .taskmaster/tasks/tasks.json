@@ -1206,9 +1206,10 @@
               1
             ],
             "details": "In electron/topic-service.ts, implement addTopicAlias(topicId: string, alias: string): Promise<void>. Normalize alias (trim, lowercase). First check: query all topics via canonicalTopicQueries.getAll(), search through all aliases arrays to verify this alias doesn't exist on any other topic (throw Error if found). Second: fetch target topic via canonicalTopicQueries.getById(topicId), verify exists, check alias not already in topic's aliases array. If valid, push alias to topic.aliases, update topic in database using prepared statement: UPDATE canonical_topics SET aliases = ? WHERE id = ?. Use JSON.stringify for aliases array. Wrap in try-catch for error handling.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test adding 'HOCM' as alias to 'Hypertrophic Cardiomyopathy' succeeds. Test adding duplicate alias to same topic is idempotent (no error, no duplicate entry). Test adding alias that exists on another topic throws validation error with clear message. Test case-insensitive duplicate detection.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-06T15:05:57.395Z"
           },
           {
             "id": 4,
@@ -1239,7 +1240,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-01-06T14:54:58.758Z"
+        "updatedAt": "2026-01-06T15:05:57.395Z"
       },
       {
         "id": "37",
@@ -2243,7 +2244,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-06T14:54:58.759Z",
+      "lastModified": "2026-01-06T15:05:57.396Z",
       "taskCount": 102,
       "completedCount": 10,
       "tags": [

@@ -51,6 +51,16 @@ coverage/
 .tmp/
 .tmp/
 
+# Temporary files
+.tmp/
+
+# Additions for large files
+*.tmp
+*.bak
+*.swp
+*.tmp
+*.log
+
 Thumbs.db
 
 # Exclude large Electron binary

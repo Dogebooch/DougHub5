@@ -127,3 +127,38 @@ export function suggestTopicMatches(input: string): DbCanonicalTopic[] {
     .slice(0, 5)
     .map(item => item.topic);
 }
+
+/**
+ * Adds a new alias to an existing topic with global uniqueness validation.
+ */
+export function addTopicAlias(topicId: string, alias: string): void {
+  const normalizedAlias = normalize(alias);
+  if (!normalizedAlias) {
+    throw new Error("Alias cannot be empty");
+  }
+
+  const topic = canonicalTopicQueries.getById(topicId);
+  if (!topic) {
+    throw new Error(`Topic not found: ${topicId}`);
+  }
+
+  // Idempotency: if the alias is already the canonical name or in aliases, do nothing.
+  const isDuplicateOnSelf =
+    normalize(topic.canonicalName) === normalizedAlias ||
+    topic.aliases.some((a) => normalize(a) === normalizedAlias);
+  if (isDuplicateOnSelf) {
+    return;
+  }
+
+  // Global validation: Verify the alias doesn't already exist on ANY other topic
+  const existingTopic = resolveTopicAlias(normalizedAlias);
+  if (existingTopic) {
+    throw new Error(
+      `Alias '${alias.trim()}' already belongs to topic '${existingTopic.canonicalName}'`
+    );
+  }
+
+  // If valid, add the alias and update the database
+  const updatedAliases = [...topic.aliases, normalizedAlias];
+  canonicalTopicQueries.update(topicId, { aliases: updatedAliases });
+}

@@ -131,6 +131,7 @@ export interface ElectronAPI {
       name: string,
       domain?: string
     ) => Promise<IpcResult<CanonicalTopic>>;
+    addAlias: (topicId: string, alias: string) => Promise<IpcResult<void>>;
     suggestMatches: (input: string) => Promise<IpcResult<CanonicalTopic[]>>;
   };
   notebookPages: {

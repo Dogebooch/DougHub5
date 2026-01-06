@@ -65,6 +65,7 @@ import {
   resolveTopicAlias,
   createOrGetTopic,
   suggestTopicMatches,
+  addTopicAlias,
 } from "./topic-service";
 
 // ============================================================================
@@ -594,6 +595,18 @@ export function registerIpcHandlers(): void {
       try {
         const topic = createOrGetTopic(name, domain);
         return success(topic);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "canonicalTopics:addAlias",
+    async (_, topicId: string, alias: string): Promise<IpcResult<void>> => {
+      try {
+        addTopicAlias(topicId, alias);
+        return success(undefined);
       } catch (error) {
         return failure(error);
       }
