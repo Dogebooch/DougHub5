@@ -6,6 +6,7 @@ import { CommandPalette } from "@/components/modals/CommandPalette";
 import { QuickCaptureModal } from "@/components/modals/QuickCaptureModal";
 import { CaptureInterface } from "@/components/capture/CaptureInterface";
 import { ReviewInterface } from "@/components/review/ReviewInterface";
+import { InboxView } from "@/components/knowledgebank/InboxView";
 import { useAppStore } from "@/stores/useAppStore";
 
 export function AppLayout() {
@@ -59,19 +60,7 @@ export function AppLayout() {
           </div>
         );
       case "inbox":
-        return (
-          <div className="p-8 text-center space-y-4">
-            <h1 className="text-2xl font-semibold">Inbox</h1>
-            <p className="text-muted-foreground">
-              Inbox and knowledge bank coming soon.
-              {selectedItemId && (
-                <span className="block mt-2 text-primary font-mono text-xs">
-                  Target ID: {selectedItemId}
-                </span>
-              )}
-            </p>
-          </div>
-        );
+        return <InboxView />;
       case "settings":
         // TODO: Create a SettingsInterface component with sections for:
         // - FSRS Algorithm Parameters: Allow user to view and customize their

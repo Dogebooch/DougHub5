@@ -19,6 +19,7 @@ interface AppState {
   selectedItemId: string | null;
   inboxCount: number;
   queueCount: number;
+  selectedInboxItems: Set<string>;
 }
 
 interface AppActions {
@@ -42,6 +43,18 @@ interface AppActions {
   setCurrentView: (view: AppView, itemId?: string | null) => void;
   initialize: () => Promise<void>;
   refreshCounts: () => Promise<void>;
+
+  // Inbox Batch Actions
+  toggleInboxSelection: (id: string) => void;
+  selectAllInbox: (ids: string[]) => void;
+  clearInboxSelection: () => void;
+  batchAddToNotebook: (
+    itemIds: string[],
+    topicId: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  batchDeleteInbox: (
+    itemIds: string[]
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 type AppStore = AppState & AppActions;
@@ -56,6 +69,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   selectedItemId: null,
   inboxCount: 0,
   queueCount: 0,
+  selectedInboxItems: new Set<string>(),
 
   setCurrentView: (view: AppView, itemId: string | null = null) =>
     set({ currentView: view, selectedItemId: itemId }),
@@ -373,6 +387,110 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       };
     } catch (error) {
       console.error("[Store] Error scheduling review:", error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  toggleInboxSelection: (id: string) => {
+    set((state) => {
+      const next = new Set(state.selectedInboxItems);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return { selectedInboxItems: next };
+    });
+  },
+
+  selectAllInbox: (ids: string[]) => {
+    set({ selectedInboxItems: new Set(ids) });
+  },
+
+  clearInboxSelection: () => {
+    set({ selectedInboxItems: new Set() });
+  },
+
+  batchAddToNotebook: async (itemIds: string[], topicId: string) => {
+    try {
+      if (typeof window !== "undefined" && window.api) {
+        // Execute batch updates with individual error tracking
+        const results = await Promise.allSettled(
+          itemIds.map((id) =>
+            window.api.sourceItems.update(id, {
+              status: "curated",
+              canonicalTopicIds: [topicId],
+              updatedAt: new Date().toISOString(),
+            })
+          )
+        );
+
+        // Log individual failures
+        const failures = results.filter((r) => r.status === "rejected");
+        if (failures.length > 0) {
+          console.error(
+            `[Store] batchAddToNotebook: ${failures.length}/${itemIds.length} items failed`,
+            failures
+          );
+        }
+
+        // Refresh counts and clear selection
+        await get().refreshCounts();
+        get().clearInboxSelection();
+
+        const successCount = results.filter(
+          (r) => r.status === "fulfilled"
+        ).length;
+        return {
+          success: successCount > 0,
+          error:
+            failures.length > 0
+              ? `${failures.length} items failed to update`
+              : undefined,
+        };
+      }
+      return { success: false, error: "window.api not available" };
+    } catch (error) {
+      console.error("[Store] batchAddToNotebook error:", error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  batchDeleteInbox: async (itemIds: string[]) => {
+    try {
+      if (typeof window !== "undefined" && window.api) {
+        // Execute batch deletions with individual error tracking
+        const results = await Promise.allSettled(
+          itemIds.map((id) => window.api.sourceItems.delete(id))
+        );
+
+        // Log individual failures
+        const failures = results.filter((r) => r.status === "rejected");
+        if (failures.length > 0) {
+          console.error(
+            `[Store] batchDeleteInbox: ${failures.length}/${itemIds.length} items failed`,
+            failures
+          );
+        }
+
+        // Refresh counts and clear selection
+        await get().refreshCounts();
+        get().clearInboxSelection();
+
+        const successCount = results.filter(
+          (r) => r.status === "fulfilled"
+        ).length;
+        return {
+          success: successCount > 0,
+          error:
+            failures.length > 0
+              ? `${failures.length} items failed to delete`
+              : undefined,
+        };
+      }
+      return { success: false, error: "window.api not available" };
+    } catch (error) {
+      console.error("[Store] batchDeleteInbox error:", error);
       return { success: false, error: String(error) };
     }
   },
