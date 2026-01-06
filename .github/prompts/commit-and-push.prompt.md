@@ -3,29 +3,7 @@ description: Commit and save the working directory with intelligent .gitignore m
 name: commit-and-push
 ---
 
-# Commit and Save Working Directory
 
-Please commit and save the working directory with the following steps:
+# Commit and Push
 
-1. **Update .gitignore** - First, scan for and add these items to .gitignore if not already present:
-   - Files larger than 100MB
-   - `node_modules/`
-   - `dist/` and `dist-electron/`
-   - `build/` and `out/`
-   - `.vscode/` and `.idea/`
-   - `*.log`, `npm-debug.log*`, `yarn-debug.log*`, `yarn-error.log*`
-   - `.DS_Store`, `Thumbs.db`
-   - `.env`, `.env.local`, `.env.*.local`
-   - `*.db`, `*.sqlite`, `*.sqlite3`
-   - `coverage/`, `.nyc_output/`
-   - `*.pem`, `*.key`, `*.cert`
-   - `.cache/`, `.temp/`, `.tmp/`
-
-2. **Stage all changes**: `git add .`
-
-3. **Commit** with a message written by the AI model: 1-2 sentences clearly describing what changed in this commit (not just a timestamp).
-
-
-4. **Push to remote** automatically after committing
-
-Show me what files are being committed and any large files that were excluded.
+Commit and push all changes in the current working directory. Write a clear commit message describing the changes. If a merge is required, confirm with the user before proceeding, but assume the current working directory is canonical.

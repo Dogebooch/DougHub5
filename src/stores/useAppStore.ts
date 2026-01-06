@@ -19,6 +19,7 @@ interface AppState {
   selectedItemId: string | null;
   inboxCount: number;
   queueCount: number;
+  smartViewCounts: Record<string, number>;
   selectedInboxItems: Set<string>;
 }
 
@@ -43,6 +44,7 @@ interface AppActions {
   setCurrentView: (view: AppView, itemId?: string | null) => void;
   initialize: () => Promise<void>;
   refreshCounts: () => Promise<void>;
+  refreshSmartViewCounts: () => Promise<void>;
 
   // Inbox Batch Actions
   toggleInboxSelection: (id: string) => void;
@@ -69,10 +71,36 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   selectedItemId: null,
   inboxCount: 0,
   queueCount: 0,
+  smartViewCounts: {
+    inbox: 0,
+    today: 0,
+    queue: 0,
+    notebook: 0,
+    weak: 0,
+  },
   selectedInboxItems: new Set<string>(),
 
   setCurrentView: (view: AppView, itemId: string | null = null) =>
     set({ currentView: view, selectedItemId: itemId }),
+
+  refreshSmartViewCounts: async () => {
+    if (typeof window !== "undefined" && window.api) {
+      const itemsResult = await window.api.sourceItems.getAll();
+      if (!itemsResult.error && itemsResult.data) {
+        const items = itemsResult.data;
+        const counts = {
+          inbox: items.filter((i) => i.status === "inbox").length,
+          today: get().getCardsDueToday().length,
+          queue: items.filter(
+            (i) => i.status === "inbox" && i.sourceType === "quickcapture"
+          ).length,
+          notebook: 0, // Placeholder
+          weak: 0, // Placeholder
+        };
+        set({ smartViewCounts: counts });
+      }
+    }
+  },
 
   refreshCounts: async () => {
     if (typeof window !== "undefined" && window.api) {
@@ -83,6 +111,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           queueCount: statusResult.data.queueCount,
         });
       }
+      await get().refreshSmartViewCounts();
     }
   },
 
@@ -418,7 +447,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const results = await Promise.allSettled(
           itemIds.map((id) =>
             window.api.sourceItems.update(id, {
-              status: "curated",
+              status: "processed",
               canonicalTopicIds: [topicId],
               updatedAt: new Date().toISOString(),
             })

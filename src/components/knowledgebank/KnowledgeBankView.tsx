@@ -7,23 +7,33 @@ import { StatusGroup } from './StatusGroup';
 import { BatchActions } from './BatchActions';
 import { AddToNotebookDialog } from './AddToNotebookDialog';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const KnowledgeBankView = () => {
   const [items, setItems] = useState<SourceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [sourceTypeFilter, setSourceTypeFilter] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState({
     inbox: true,
     processed: false,
     curated: false,
   });
-  
+
   // Dialog state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [targetItemIds, setTargetItemIds] = useState<string[]>([]);
 
   // Store actions
   const selectedInboxItems = useAppStore((state) => state.selectedInboxItems);
-  const toggleInboxSelection = useAppStore((state) => state.toggleInboxSelection);
+  const toggleInboxSelection = useAppStore(
+    (state) => state.toggleInboxSelection
+  );
   const clearInboxSelection = useAppStore((state) => state.clearInboxSelection);
   const batchDeleteInbox = useAppStore((state) => state.batchDeleteInbox);
 
@@ -41,24 +51,40 @@ export const KnowledgeBankView = () => {
   }, [fetchItems]);
 
   const toggleGroup = (group: keyof typeof expandedGroups) => {
-    setExpandedGroups(prev => ({
+    setExpandedGroups((prev) => ({
       ...prev,
-      [group]: !prev[group]
+      [group]: !prev[group],
     }));
   };
 
+  // Memoize source type counts for dropdown
+  const sourceTypeCounts = useMemo(() => ({
+    qbank: items.filter(i => i.sourceType === 'qbank').length,
+    article: items.filter(i => i.sourceType === 'article').length,
+    pdf: items.filter(i => i.sourceType === 'pdf').length,
+    image: items.filter(i => i.sourceType === 'image').length,
+    audio: items.filter(i => i.sourceType === 'audio').length,
+    quickcapture: items.filter(i => i.sourceType === 'quickcapture').length,
+    manual: items.filter(i => i.sourceType === 'manual').length,
+  }), [items]);
+
   // Group and sort items
   const { inboxItems, processedItems, curatedItems } = useMemo(() => {
-    const sorted = [...items].sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    const filteredItems = sourceTypeFilter
+      ? items.filter((i) => i.sourceType === sourceTypeFilter)
+      : items;
+
+    const sorted = [...filteredItems].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
     return {
-      inboxItems: sorted.filter(i => i.status === 'inbox'),
-      processedItems: sorted.filter(i => i.status === 'processed'),
-      curatedItems: sorted.filter(i => i.status === 'curated'),
+      inboxItems: sorted.filter((i) => i.status === "inbox"),
+      processedItems: sorted.filter((i) => i.status === "processed"),
+      curatedItems: sorted.filter((i) => i.status === "curated"),
     };
-  }, [items]);
+  }, [items, sourceTypeFilter]);
 
   const handleDelete = async (id: string) => {
     const result = await window.api.sourceItems.delete(id);
@@ -86,7 +112,9 @@ export const KnowledgeBankView = () => {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground animate-pulse">Loading Knowledge Bank...</p>
+        <p className="text-muted-foreground animate-pulse">
+          Loading Knowledge Bank...
+        </p>
       </div>
     );
   }
@@ -117,9 +145,38 @@ export const KnowledgeBankView = () => {
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Knowledge Bank</h1>
         </div>
-        <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
-          {items.length} items total
-        </Badge>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground italic">
+              Filter by type:
+            </span>
+            <Select
+              value={sourceTypeFilter || "all"}
+              onValueChange={(val) =>
+                setSourceTypeFilter(val === "all" ? null : val)
+              }
+            >
+              <SelectTrigger className="w-[160px] h-9 bg-card">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types ({items.length})</SelectItem>
+                <SelectItem value="qbank">QBank ({sourceTypeCounts.qbank})</SelectItem>
+                <SelectItem value="article">Article ({sourceTypeCounts.article})</SelectItem>
+                <SelectItem value="pdf">PDF ({sourceTypeCounts.pdf})</SelectItem>
+                <SelectItem value="image">Image ({sourceTypeCounts.image})</SelectItem>
+                <SelectItem value="audio">Audio ({sourceTypeCounts.audio})</SelectItem>
+                <SelectItem value="quickcapture">Quick Capture ({sourceTypeCounts.quickcapture})</SelectItem>
+                <SelectItem value="manual">Manual ({sourceTypeCounts.manual})
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
+            {items.length} items total
+          </Badge>
+        </div>
       </div>
 
       <div className="space-y-1 rounded-md border shadow-sm overflow-hidden bg-card">
@@ -129,17 +186,17 @@ export const KnowledgeBankView = () => {
           status="inbox"
           count={inboxItems.length}
           isExpanded={expandedGroups.inbox}
-          onToggle={() => toggleGroup('inbox')}
+          onToggle={() => toggleGroup("inbox")}
         >
           {inboxItems.length > 0 ? (
-            inboxItems.map(sItem => (
+            inboxItems.map((sItem) => (
               <SourceItemRow
                 key={sItem.id}
                 sourceItem={sItem}
                 isSelected={selectedInboxItems.has(sItem.id)}
                 onToggleSelect={(id) => toggleInboxSelection(id)}
                 onAddToNotebook={(it) => openAddDialog([it.id])}
-                onOpen={(it) => console.log('Open:', it.id)}
+                onOpen={(it) => console.log("Open:", it.id)}
                 onDelete={(it) => handleDelete(it.id)}
               />
             ))
@@ -156,17 +213,17 @@ export const KnowledgeBankView = () => {
           status="processed"
           count={processedItems.length}
           isExpanded={expandedGroups.processed}
-          onToggle={() => toggleGroup('processed')}
+          onToggle={() => toggleGroup("processed")}
         >
           {processedItems.length > 0 ? (
-            processedItems.map(sItem => (
+            processedItems.map((sItem) => (
               <SourceItemRow
                 key={sItem.id}
                 sourceItem={sItem}
                 isSelected={selectedInboxItems.has(sItem.id)}
                 onToggleSelect={(id) => toggleInboxSelection(id)}
                 onAddToNotebook={(it) => openAddDialog([it.id])}
-                onOpen={(it) => console.log('Open:', it.id)}
+                onOpen={(it) => console.log("Open:", it.id)}
                 onDelete={(it) => handleDelete(it.id)}
               />
             ))
@@ -183,17 +240,17 @@ export const KnowledgeBankView = () => {
           status="curated"
           count={curatedItems.length}
           isExpanded={expandedGroups.curated}
-          onToggle={() => toggleGroup('curated')}
+          onToggle={() => toggleGroup("curated")}
         >
           {curatedItems.length > 0 ? (
-            curatedItems.map(sItem => (
+            curatedItems.map((sItem) => (
               <SourceItemRow
                 key={sItem.id}
                 sourceItem={sItem}
                 isSelected={selectedInboxItems.has(sItem.id)}
                 onToggleSelect={(id) => toggleInboxSelection(id)}
                 onAddToNotebook={(it) => openAddDialog([it.id])}
-                onOpen={(it) => console.log('Open:', it.id)}
+                onOpen={(it) => console.log("Open:", it.id)}
                 onDelete={(it) => handleDelete(it.id)}
               />
             ))

@@ -116,6 +116,7 @@ export type AppView =
   | "today"
   | "queue"
   | "notebook"
+  | "weak"
   | "topics"
   | "stats"
   | "knowledgebank";

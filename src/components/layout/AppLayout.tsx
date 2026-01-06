@@ -8,13 +8,19 @@ import { CaptureInterface } from "@/components/capture/CaptureInterface";
 import { ReviewInterface } from "@/components/review/ReviewInterface";
 import { InboxView } from "@/components/knowledgebank/InboxView";
 import { KnowledgeBankView } from "@/components/knowledgebank/KnowledgeBankView";
+import { SmartViewSidebar } from "./SmartViewSidebar";
 import { useAppStore } from "@/stores/useAppStore";
 
 export function AppLayout() {
   const currentView = useAppStore((state) => state.currentView);
   const selectedItemId = useAppStore((state) => state.selectedItemId);
+  const refreshCounts = useAppStore((state) => state.refreshCounts);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
+
+  useEffect(() => {
+    refreshCounts();
+  }, [refreshCounts]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -60,6 +66,27 @@ export function AppLayout() {
             </p>
           </div>
         );
+      case "today":
+        return (
+          <div className="p-8 text-center space-y-4">
+            <h1 className="text-2xl font-semibold">Today's Review</h1>
+            <p className="text-muted-foreground">Coming soon...</p>
+          </div>
+        );
+      case "queue":
+        return (
+          <div className="p-8 text-center space-y-4">
+            <h1 className="text-2xl font-semibold">Study Queue</h1>
+            <p className="text-muted-foreground">Coming soon...</p>
+          </div>
+        );
+      case "weak":
+        return (
+          <div className="p-8 text-center space-y-4">
+            <h1 className="text-2xl font-semibold">Weak Topics</h1>
+            <p className="text-muted-foreground">Coming soon...</p>
+          </div>
+        );
       case "inbox":
         return <InboxView />;
       case "knowledgebank":
@@ -95,6 +122,9 @@ export function AppLayout() {
 
       <div className="flex flex-1 relative z-10">
         <Sidebar />
+        <aside className="w-56 border-r border-white/5 bg-black/10 backdrop-blur-sm pt-4 hidden lg:block">
+          <SmartViewSidebar />
+        </aside>
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-4xl px-6 py-8">{renderView()}</div>
         </main>

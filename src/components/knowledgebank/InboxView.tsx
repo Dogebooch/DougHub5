@@ -76,6 +76,16 @@ export function InboxView() {
     setFilterSourceType("all");
   };
 
+  const sourceTypeCounts = useMemo(() => ({
+    qbank: items.filter(i => i.sourceType === 'qbank').length,
+    article: items.filter(i => i.sourceType === 'article').length,
+    pdf: items.filter(i => i.sourceType === 'pdf').length,
+    image: items.filter(i => i.sourceType === 'image').length,
+    audio: items.filter(i => i.sourceType === 'audio').length,
+    quickcapture: items.filter(i => i.sourceType === 'quickcapture').length,
+    manual: items.filter(i => i.sourceType === 'manual').length,
+  }), [items]);
+
   const filteredAndSortedItems = useMemo(() => {
     return items
       .filter((item) => {
@@ -248,14 +258,14 @@ export function InboxView() {
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="qbank">QBank</SelectItem>
-                <SelectItem value="article">Article</SelectItem>
-                <SelectItem value="pdf">PDF</SelectItem>
-                <SelectItem value="image">Image</SelectItem>
-                <SelectItem value="audio">Audio</SelectItem>
-                <SelectItem value="quickcapture">Quick Capture</SelectItem>
-                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="all">All Types ({items.length})</SelectItem>
+                <SelectItem value="qbank">QBank ({sourceTypeCounts.qbank})</SelectItem>
+                <SelectItem value="article">Article ({sourceTypeCounts.article})</SelectItem>
+                <SelectItem value="pdf">PDF ({sourceTypeCounts.pdf})</SelectItem>
+                <SelectItem value="image">Image ({sourceTypeCounts.image})</SelectItem>
+                <SelectItem value="audio">Audio ({sourceTypeCounts.audio})</SelectItem>
+                <SelectItem value="quickcapture">Quick Capture ({sourceTypeCounts.quickcapture})</SelectItem>
+                <SelectItem value="manual">Manual ({sourceTypeCounts.manual})</SelectItem>
               </SelectContent>
             </Select>
           </div>
