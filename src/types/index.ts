@@ -68,6 +68,7 @@ export interface SourceItem {
   title: string;
   rawContent: string;
   mediaPath?: string;
+  tempImageData?: string; // v2: Temporary base64 data before saving to disk
   transcription?: string;
   canonicalTopicIds: string[];
   tags: string[];

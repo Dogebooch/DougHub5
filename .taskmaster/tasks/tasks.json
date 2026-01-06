@@ -1168,9 +1168,10 @@
             "description": "Refactor QuickDumpModal.tsx to use sourceItems.create API, mapping text content to SourceItem schema with sourceType='quickcapture' and status='inbox'.",
             "dependencies": [],
             "details": "Modify src/components/modals/QuickDumpModal.tsx: Change from window.api.quickDumps.create to window.api.sourceItems.create. Map fields: content → rawContent, generate title from first 50 chars of content, set sourceType='quickcapture', status='inbox', sourceName='Quick Dump', tags=[], canonicalTopicIds=[]. Update SourceItem import from @/types. Keep existing UI/UX (textarea, Save/Cancel buttons, keyboard shortcuts).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Manual test: Open Quick Dump modal (Ctrl+Shift+S), paste text, verify SourceItem created in source_items table with correct fields. Check toast message shows 'Saved to inbox'.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-06T02:38:03.709Z"
           },
           {
             "id": 2,
@@ -1180,9 +1181,10 @@
               1
             ],
             "details": "In QuickDumpModal.tsx: Add state for contentType ('text' | 'image'), imagePreview (base64 data URL). Add onPaste handler to detect image/png, image/jpeg from clipboard. Add onDrop/onDragOver handlers for image files. Display image preview with max-height constraint when image detected. On save: if image, convert to blob and prepare for file system save (subtask 3 handles actual file I/O). Update placeholder text to 'Paste text or image...'.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test paste image from clipboard, verify preview shown. Test drag-drop image file, verify preview. Test switching between text/image content. Verify UI adapts appropriately.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-06T02:54:36.818Z"
           },
           {
             "id": 3,
@@ -1223,7 +1225,7 @@
             "updatedAt": "2026-01-06T02:33:30.460Z"
           }
         ],
-        "updatedAt": "2026-01-06T02:33:30.460Z"
+        "updatedAt": "2026-01-06T02:54:36.818Z"
       },
       {
         "id": "39",
@@ -1761,7 +1763,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-06T02:33:30.461Z",
+      "lastModified": "2026-01-06T02:54:36.819Z",
       "taskCount": 74,
       "completedCount": 6,
       "tags": [

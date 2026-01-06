@@ -10,8 +10,8 @@ import {
   BarChart3,
   Settings,
   // AlertTriangle, // TODO: Uncomment when weak topics section is implemented
-  ChevronLeft,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/useAppStore";
@@ -24,7 +24,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-type ViewType = "capture" | "review" | "settings" | "inbox" | "today" | "queue" | "notebook" | "topics" | "stats";
+type ViewType =
+  | "capture"
+  | "review"
+  | "settings"
+  | "inbox"
+  | "today"
+  | "queue"
+  | "notebook"
+  | "topics"
+  | "stats";
 
 interface NavItem {
   id: ViewType;
@@ -61,10 +70,34 @@ export function Sidebar({ className }: SidebarProps) {
 
   const mainNavItems: NavItem[] = [
     { id: "capture", label: "Capture", icon: Plus, implemented: true },
-    { id: "review", label: "Review", icon: Play, badge: dueCount, implemented: true },
-    { id: "today", label: "Today", icon: Calendar, badge: dueCount, implemented: false },
-    { id: "inbox", label: "Inbox", icon: Inbox, badge: inboxCount, implemented: false },
-    { id: "queue", label: "Queue", icon: List, badge: queueCount, implemented: false },
+    {
+      id: "review",
+      label: "Review",
+      icon: Play,
+      badge: dueCount,
+      implemented: true,
+    },
+    {
+      id: "today",
+      label: "Today",
+      icon: Calendar,
+      badge: dueCount,
+      implemented: false,
+    },
+    {
+      id: "inbox",
+      label: "Inbox",
+      icon: Inbox,
+      badge: inboxCount,
+      implemented: false,
+    },
+    {
+      id: "queue",
+      label: "Queue",
+      icon: List,
+      badge: queueCount,
+      implemented: false,
+    },
   ];
 
   const secondaryNavItems: NavItem[] = [
@@ -85,7 +118,7 @@ export function Sidebar({ className }: SidebarProps) {
   const NavButton = ({ item }: { item: NavItem }) => {
     const isActive = currentView === item.id;
     const Icon = item.icon;
-    
+
     const button = (
       <button
         onClick={() => handleNavClick(item)}
@@ -93,19 +126,23 @@ export function Sidebar({ className }: SidebarProps) {
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
           "hover:bg-white/5 active:scale-[0.98]",
-          isActive && "bg-white/10 text-primary border-l-2 border-primary -ml-px pl-[11px]",
+          isActive &&
+            "bg-white/10 text-primary border-l-2 border-primary -ml-px pl-[11px]",
           !isActive && "text-muted-foreground hover:text-foreground",
-          !item.implemented && "opacity-40 cursor-not-allowed hover:bg-transparent",
+          !item.implemented &&
+            "opacity-40 cursor-not-allowed hover:bg-transparent",
           collapsed && "justify-center px-0"
         )}
       >
-        <Icon className={cn("h-4 w-4 flex-shrink-0", isActive && "text-primary")} />
+        <Icon
+          className={cn("h-4 w-4 flex-shrink-0", isActive && "text-primary")}
+        />
         {!collapsed && (
           <>
             <span className="flex-1 text-left">{item.label}</span>
             {item.badge !== undefined && item.badge > 0 && (
-              <Badge 
-                variant="secondary" 
+              <Badge
+                variant="secondary"
                 className={cn(
                   "h-5 min-w-[20px] px-1.5 text-[10px] font-bold",
                   isActive ? "bg-primary/20 text-primary" : "bg-white/10"
@@ -115,7 +152,9 @@ export function Sidebar({ className }: SidebarProps) {
               </Badge>
             )}
             {!item.implemented && (
-              <span className="text-[9px] uppercase tracking-wider opacity-50">Soon</span>
+              <span className="text-[9px] uppercase tracking-wider opacity-50">
+                Soon
+              </span>
             )}
           </>
         )}
@@ -145,8 +184,8 @@ export function Sidebar({ className }: SidebarProps) {
     <TooltipProvider>
       <aside
         className={cn(
-          "flex flex-col h-full bg-muted/30 border-r border-white/10 transition-all duration-200",
-          collapsed ? "w-14" : "w-56",
+          "flex flex-col h-[calc(100vh-80px)] m-3 bg-muted/80 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl transition-all duration-200 z-20",
+          collapsed ? "w-14" : "w-52",
           className
         )}
       >
@@ -203,9 +242,14 @@ export function Sidebar({ className }: SidebarProps) {
         {/* Footer with settings and collapse toggle */}
         <div className="p-2 border-t border-white/5 space-y-1">
           <NavButton
-            item={{ id: "settings", label: "Settings", icon: Settings, implemented: true }}
+            item={{
+              id: "settings",
+              label: "Settings",
+              icon: Settings,
+              implemented: true,
+            }}
           />
-          
+
           <Button
             variant="ghost"
             size="sm"
@@ -216,10 +260,10 @@ export function Sidebar({ className }: SidebarProps) {
             )}
           >
             {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
+              <PanelLeftOpen className="h-4 w-4" />
             ) : (
               <>
-                <ChevronLeft className="h-4 w-4 mr-2" />
+                <PanelLeftClose className="h-4 w-4 mr-2" />
                 <span className="text-xs">Collapse</span>
               </>
             )}

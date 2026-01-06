@@ -1,7 +1,7 @@
 import "electron";
 import "node:url";
 import "node:path";
-import { M, R, V } from "./main-BLVjUYNt.js";
+import { M, R, V } from "./main-BklOF4W3.js";
 export {
   M as MAIN_DIST,
   R as RENDERER_DIST,

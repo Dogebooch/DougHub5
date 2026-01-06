@@ -54,7 +54,7 @@ export function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 selection:bg-primary/20 relative overflow-x-hidden flex flex-col">
+    <div className="h-screen overflow-hidden bg-background text-foreground transition-colors duration-300 selection:bg-primary/20 relative overflow-x-hidden flex flex-col">
       {/* Subtle organic background vignette and noise */}
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(63,150,143,0.04)_0%,transparent_60%)]" />
       <div className="fixed inset-0 pointer-events-none opacity-[0.02] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />

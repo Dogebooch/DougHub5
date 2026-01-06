@@ -83,6 +83,7 @@ export interface DbSourceItem {
   title: string;
   rawContent: string;
   mediaPath?: string;
+  tempImageData?: string;
   transcription?: string;
   canonicalTopicIds: string[];
   tags: string[];
@@ -542,12 +543,12 @@ function migrateToV3(dbPath: string): void {
         const quickDumps = database
           .prepare("SELECT * FROM quick_dumps")
           .all() as Array<{
-            id: string;
-            content: string;
-            extractionStatus: string;
-            createdAt: string;
-            processedAt: string | null;
-          }>;
+          id: string;
+          content: string;
+          extractionStatus: string;
+          createdAt: string;
+          processedAt: string | null;
+        }>;
 
         if (quickDumps.length > 0) {
           const insertStmt = database.prepare(`
@@ -568,7 +569,9 @@ function migrateToV3(dbPath: string): void {
             }
 
             // Use first 50 chars of content as title
-            const title = dump.content.substring(0, 50).trim() + (dump.content.length > 50 ? "..." : "");
+            const title =
+              dump.content.substring(0, 50).trim() +
+              (dump.content.length > 50 ? "..." : "");
 
             insertStmt.run(
               dump.id,
@@ -584,7 +587,9 @@ function migrateToV3(dbPath: string): void {
             );
           }
 
-          console.log(`[Migration] Migrated ${quickDumps.length} quick_dumps to source_items`);
+          console.log(
+            `[Migration] Migrated ${quickDumps.length} quick_dumps to source_items`
+          );
         }
       }
 
@@ -1094,11 +1099,17 @@ export const sourceItemQueries = {
       )
     `);
     stmt.run({
-      ...item,
+      id: item.id,
+      sourceType: item.sourceType,
+      sourceName: item.sourceName,
       sourceUrl: item.sourceUrl || null,
+      title: item.title,
+      rawContent: item.rawContent,
       mediaPath: item.mediaPath || null,
       transcription: item.transcription || null,
       questionId: item.questionId || null,
+      status: item.status,
+      createdAt: item.createdAt,
       processedAt: item.processedAt || null,
       updatedAt: item.updatedAt || null,
       canonicalTopicIds: JSON.stringify(item.canonicalTopicIds),
@@ -1132,11 +1143,17 @@ export const sourceItemQueries = {
       WHERE id = @id
     `);
     stmt.run({
-      ...merged,
+      id: merged.id,
+      sourceType: merged.sourceType,
+      sourceName: merged.sourceName,
       sourceUrl: merged.sourceUrl || null,
+      title: merged.title,
+      rawContent: merged.rawContent,
       mediaPath: merged.mediaPath || null,
       transcription: merged.transcription || null,
       questionId: merged.questionId || null,
+      status: merged.status,
+      createdAt: merged.createdAt,
       processedAt: merged.processedAt || null,
       updatedAt: merged.updatedAt || null,
       canonicalTopicIds: JSON.stringify(merged.canonicalTopicIds),
