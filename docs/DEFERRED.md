@@ -168,6 +168,104 @@
 
 ---
 
+## AI & Extraction
+
+### AI Extraction Pipeline Debugging
+**Source:** TaskMaster AI setup docs (ai-extraction-fix.txt)
+**Description:** Troubleshoot Ollama AI extraction integration. Issues include JSON parsing with Ollama responses, model compatibility testing (currently using 7b-instruct), and extractConcepts() return format validation. End-to-end testing needed from CaptureInterface paste → AI extraction → concept display.
+**Priority:** Medium
+**Notes:** Core extraction works with Claude. Ollama is alternative provider for offline/local usage. Not MVP-blocking.
+
+---
+
+## Browser & Web Integration
+
+### Browser Extension for Web Capture
+**Source:** TaskMaster AI setup docs (post-mvp-browser-extension.txt)
+**Description:** Chrome/Firefox extension allowing right-click capture of web content (UWorld, UpToDate, etc.) directly into DougHub's Knowledge Bank. Features: context menu, metadata extraction (URL, title, date), quick tag assignment, image capture support. Two approaches: Tampermonkey script (simpler) or native extension (better UX). Requires local HTTP API in Electron main process.
+**Priority:** Medium
+**Notes:** Requires Layer 1 (Knowledge Bank) complete. Would dramatically improve capture workflow for web-based study resources.
+
+---
+
+## Capture Enhancements (Advanced)
+
+### Camera Capture with AI Vision Analysis
+**Source:** TaskMaster AI setup docs (post-mvp-capture-ux.txt)
+**Description:** Add camera/webcam capture to Quick Dump. AI vision model (Claude) analyzes image + surrounding text context to extract diagram/chart content, cross-reference similar images online, identify medical concepts. Enables multimodal learning pipeline.
+**Priority:** Low
+**Notes:** Exploratory. Needs research on multimodal AI integration, image similarity APIs, cost implications.
+
+### Unified Capture Pathway UX Audit
+**Source:** TaskMaster AI setup docs (post-mvp-capture-ux.txt)
+**Description:** Current UI doesn't clearly teach three capture pathways: (1) Quick Dump → Inbox, (2) Main Page → Extract Concepts, (3) Learning Pipeline. Need UX audit, visual cues/onboarding, user testing with residents, potential pathway consolidation.
+**Priority:** Low
+**Notes:** Awaits post-MVP user feedback. May not be an actual problem.
+
+### AI Image Context Understanding
+**Source:** TaskMaster AI setup docs (post-mvp-capture-ux.txt)
+**Description:** Enhance AI service to handle images with rich context. Accept image + text together (multimodal), use surrounding text to disambiguate, identify medical diagrams/charts/algorithms, generate appropriate card formats (labeled diagram → multiple cloze cards). Requires Claude vision API research.
+**Priority:** Low
+**Notes:** Related to Camera Capture feature. Needs prompt engineering for medical images.
+
+---
+
+## Search Enhancements (Advanced)
+
+### OCR Image Text Search
+**Source:** TaskMaster AI setup docs (post-mvp-search.txt)
+**Description:** Extract text from images for searchability using Tesseract.js or Cloud OCR API. Index extracted text in FTS5 for search.
+**Priority:** Low
+**Notes:** High complexity. Requires OCR infrastructure and FTS5 indexing strategy.
+
+### Video Transcription Search
+**Source:** TaskMaster AI setup docs (post-mvp-search.txt)
+**Description:** Transcribe video/audio content using Whisper for searchability.
+**Priority:** Low
+**Notes:** Very high complexity. Major scope consideration. Would enable searching recorded lectures.
+
+### Voice Search (Siri-like)
+**Source:** TaskMaster AI setup docs (post-mvp-search.txt)
+**Description:** Implement voice-to-text search using Web Speech API. Allow users to speak search queries.
+**Priority:** Low
+**Notes:** High complexity. Nice-to-have for accessibility and mobile use.
+
+### Semantic Intent Search
+**Source:** TaskMaster AI setup docs (post-mvp-search.txt)
+**Description:** Use AI embeddings to understand search intent beyond keyword matching. Leverage Ollama for local embeddings.
+**Priority:** Medium
+**Notes:** Current TF-IDF approach works. This would enable "find cards about heart failure management" vs exact keyword matching.
+
+### Context-Aware Search Suggestions
+**Source:** TaskMaster AI setup docs (post-mvp-search.txt)
+**Description:** AI-powered suggestions like "Cards comparing X and Y" based on user context and study patterns.
+**Priority:** Low
+**Notes:** Needs AI inference. Cool feature but not essential.
+
+---
+
+## UI Polish (Post-MVP)
+
+### Superhuman-Style Split View for Notebook
+**Source:** TaskMaster AI setup docs (post-mvp-ui-enhancements.txt)
+**Description:** Master-detail layout for Notebook view: narrow topic list on left (~280px), content on right. Resizable divider, topic search/filter, smooth transitions, keyboard navigation. Avoids full-page navigation.
+**Priority:** Low
+**Notes:** Nice UX polish. Current full-page navigation works fine for MVP.
+
+### Notion-Style Breadcrumb Navigation
+**Source:** TaskMaster AI setup docs (post-mvp-ui-enhancements.txt)
+**Description:** Breadcrumb trail in content header showing location ("Capture > New Note", "Review > Cardiology"). Clickable segments, truncation with hover expansion.
+**Priority:** Low
+**Notes:** Helps orientation in complex navigation. Post-MVP polish.
+
+### Things 3 Today Badge Pulse Animation
+**Source:** TaskMaster AI setup docs (post-mvp-ui-enhancements.txt)
+**Description:** Subtle pulse animation on Today count badge when due cards > 0. Scale 1.0 to 1.05, opacity variation, respects prefers-reduced-motion, stops after review session starts.
+**Priority:** Low
+**Notes:** Delightful detail. Pure polish.
+
+---
+
 ## Archive (Completed or Obsolete)
 
 *Move items here when they're done or no longer relevant*
