@@ -117,7 +117,8 @@ export type AppView =
   | "queue"
   | "notebook"
   | "topics"
-  | "stats";
+  | "stats"
+  | "knowledgebank";
 
 export interface SmartViewFilter {
   status?: string[];

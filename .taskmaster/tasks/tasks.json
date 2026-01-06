@@ -1359,7 +1359,39 @@
           "39"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create StatusGroup collapsible component (COMPLETE)",
+            "description": "StatusGroup.tsx component is already complete with collapsible status sections, badge styling, and chevron animations.",
+            "dependencies": [],
+            "details": "StatusGroup.tsx already exists at src/components/knowledgebank/StatusGroup.tsx with full implementation: collapsible UI with shadcn Collapsible, count badges with status-specific styling (primary for inbox, secondary for processed, green outline for curated), chevron rotation animations, and controlled expand/collapse state. No work required.",
+            "status": "done",
+            "testStrategy": "Component is complete and tested. Verify it renders with correct styling and interactions."
+          },
+          {
+            "id": 2,
+            "title": "Create KnowledgeBankView with status-grouped layout",
+            "description": "Build main Knowledge Bank view component fetching all SourceItems and organizing them into 3 collapsible StatusGroup sections (Inbox, Processed, Curated) using existing row components.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create src/components/knowledgebank/KnowledgeBankView.tsx. Fetch all items via window.api.sourceItems.getAll() on mount. Group items by status field into 3 arrays. Render 3 StatusGroup components: Inbox (expanded by default), Processed (collapsed), Curated (collapsed). Each StatusGroup contains SourceItemRow components (REUSE existing). Add header with 'Knowledge Bank' title and total item count badge. Sort items newest-first (by createdAt DESC) within each group. Wire selection state from store.selectedInboxItems. Include BatchActions floating bar (REUSE existing) and AddToNotebookDialog (REUSE existing). Update AppLayout.tsx renderView() to add case 'knowledgebank' returning <KnowledgeBankView />. Update AppView type in src/types/index.ts to include 'knowledgebank' if not already present.",
+            "status": "pending",
+            "testStrategy": "Add 10+ SourceItems with mixed statuses via database. Navigate to /knowledgebank view. Verify 3 StatusGroup sections render with correct counts. Verify Inbox expands by default, others collapse. Test selection checkboxes sync with store. Verify BatchActions appears when items selected. Test Add to Notebook dialog workflow."
+          },
+          {
+            "id": 3,
+            "title": "Add search and filter controls to KnowledgeBankView",
+            "description": "Implement real-time search input (debounced 200ms) and multi-select filters (status, source type) with AND logic to filter visible items in Knowledge Bank.",
+            "dependencies": [
+              2
+            ],
+            "details": "Add to KnowledgeBankView.tsx: (1) Search Input component at top of view, debounced 200ms using useMemo/useCallback hooks. Filter items by checking if query matches title.toLowerCase() or rawContent.toLowerCase(). (2) Status filter chips below search: 'All' | 'Inbox (N)' | 'Processed (N)' | 'Curated (N)'. Single-select behavior: clicking a chip shows only that status group. 'All' shows all groups. Update StatusGroup visibility based on active filter. (3) Source Type dropdown (Select component from shadcn) with options: All, Text, Image, Audio, Quick Capture. Filter items where sourceType matches selection. (4) Combine filters with AND logic: search AND status AND sourceType. (5) Add 'Select All Visible' checkbox that calls store.selectAllInbox() with filtered item IDs. (6) Update item counts in StatusGroup badges to reflect filtered counts. Ensure <200ms search response by avoiding expensive operations in render.",
+            "status": "pending",
+            "testStrategy": "Create 20+ items with varied titles, content, statuses, and types. Test search updates results in <200ms. Verify status chips filter correctly (Inbox only, Processed only, etc). Test source type dropdown filters by type. Verify filters combine with AND logic (search 'cardio' + status 'inbox' + type 'pdf' shows only matching items). Test 'Select All Visible' selects only filtered items. Verify counts update dynamically as filters change."
+          }
+        ]
       },
       {
         "id": 41,

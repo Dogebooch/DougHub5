@@ -7,6 +7,7 @@ import { QuickCaptureModal } from "@/components/modals/QuickCaptureModal";
 import { CaptureInterface } from "@/components/capture/CaptureInterface";
 import { ReviewInterface } from "@/components/review/ReviewInterface";
 import { InboxView } from "@/components/knowledgebank/InboxView";
+import { KnowledgeBankView } from "@/components/knowledgebank/KnowledgeBankView";
 import { useAppStore } from "@/stores/useAppStore";
 
 export function AppLayout() {
@@ -61,6 +62,8 @@ export function AppLayout() {
         );
       case "inbox":
         return <InboxView />;
+      case "knowledgebank":
+        return <KnowledgeBankView />;
       case "settings":
         // TODO: Create a SettingsInterface component with sections for:
         // - FSRS Algorithm Parameters: Allow user to view and customize their
