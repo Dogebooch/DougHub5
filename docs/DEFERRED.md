@@ -48,12 +48,6 @@
 **Priority:** Low
 **Notes:** Follows Superhuman/Things 3 patterns. Power user polish.
 
-### Command Palette (Ctrl+K)
-**Description:** Keyboard-first command palette for quick navigation, search, and actions. Currently bound to Ctrl+F but not discoverable.
-**Priority:** Low
-**Source:** Task T11 (Cancelled)
-**Notes:** Sidebar provides navigation. This is power-user polish, not MVP-critical.
-
 ### Hotkey Reliability Investigation
 **Description:** Ctrl+Shift+S hotkey intermittently stops working. Manual button always works. May be focus/event bubbling issue.
 **Priority:** Low
@@ -121,12 +115,6 @@
 **Source:** Task T4 (Legacy)
 **Notes:** Has detailed subtasks in original TaskMaster. Revisit after core v2 flow works.
 
-### Auto Note Creation - OBSOLETE
-**Description:** Automatically create Notes from extraction sessions with bidirectional card-note links.
-**Priority:** N/A
-**Source:** Task T6 (Legacy)
-**Notes:** **SUPERSEDED by v2 architecture.** v2 uses SourceItem → NotebookBlock → Card flow. "Notes" are a v1 concept. The noteId column on cards is legacy; v2 cards use notebookTopicPageId instead. Move to Archive when ready.
-
 ### Connection Suggestions
 **Description:** AI surfaces related notes during extraction based on semantic similarity.
 **Priority:** Low
@@ -185,6 +173,13 @@
 **Source:** Task T50 (Legacy)
 **Notes:** Exploratory. Web Speech API + AI comparison. Privacy considerations.
 
+### Low-Ease Card Detection (T46)
+**Description:** Flag cards with difficulty/ease metrics indicating poor retention (ease < 2.0). Surface in Weak Topics smart view, suggest card rewrites or content fixes.
+**Priority:** Medium
+**Source:** Task T46 from backup, DougHub Vision (deferred)
+**Dependency:** T45 (FSRS Integration)
+**Notes:** Diagnostic feature for identifying struggling cards. Post-MVP but high value for board prep efficiency.
+
 ---
 
 ## AI & Settings
@@ -230,10 +225,10 @@
 **Notes:** Apply incrementally as we build. Don't need a dedicated task.
 
 ### Data Persistence & Crash Recovery
-**Description:** Hourly backups, session restoration, auto-save indicators.
+**Description:** UI integration for backup system: auto-save toast notifications (every 30s), Settings page backup restore UI, backup file browser.
 **Priority:** Medium
 **Source:** Task T14 (Legacy)
-**Notes:** Some backup infrastructure exists. This is about polish and UI indicators.
+**Notes:** backup-service.ts EXISTS (auto-backup with 7-day retention, createBackup/restoreBackup functions). Only UI indicators remain: toast notifications on save, Settings page for restore.
 
 ### Evidence-Based Card Validation
 **Description:** Real-time warnings for pattern-matching cards, multi-fact violations.
@@ -599,8 +594,24 @@
 
 ## Archive (Completed or Obsolete)
 
-*Move items here when they're done or no longer relevant*
+### Command Palette (Ctrl+K) - IMPLEMENTED ✓
+**Status:** Completed in `src/components/CommandPalette.tsx`
+**Features:**
+- Keyboard shortcut: Ctrl+K / Cmd+K
+- Fuzzy search navigation
+- Quick actions: Go to Capture, Review, Quick Capture, Settings
+- Keyboard navigation (up/down/enter)
+- Opens QuickDumpModal for Quick Capture command
+**Implementation:** React component with fuzzy search, integrated in App.tsx
+**Date Completed:** Pre-2026-01-06
+**Notes:** Basic implementation complete. Enhancements (recent history, more commands) deferred to post-MVP.
+
+### Auto Note Creation from AI Extraction - OBSOLETE
+**Status:** Superseded by v2 architecture
+**Original Idea:** Automatically create Notes from extraction sessions with bidirectional card-note links
+**Replacement:** v2 uses SourceItem → NotebookTopicPage → Card flow. "Notes" are a v1 concept. The noteId column on cards is legacy; v2 cards use notebookTopicPageId instead.
+**Date Obsoleted:** 2026-01-06 (v2 data model adoption)
 
 ---
 
-*Last updated: 2026-01-06 (TaskMaster cleanup - added 32 items from deferred tasks)*
+*Last updated: 2026-01-06 (TaskMaster cleanup - moved completed/obsolete items to Archive)*

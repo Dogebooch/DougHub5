@@ -682,13 +682,11 @@
         "id": "38",
         "title": "[v2-T2] Capture pipeline: Quick Dump → SourceItem (inbox), text + image support",
         "description": "Implement capture flow that creates SourceItems in Knowledge Bank with inbox status. Support text paste and image paste/drop.",
-        "details": "",
-        "testStrategy": "",
+        "details": "TEXT CAPTURE: Complete ✓. IMAGE CAPTURE: NOT IMPLEMENTED (T38.2-T38.3 pending). Database supports images but UI lacks handlers.",
+        "testStrategy": "Test text capture (working), test image capture (pending)",
         "priority": "high",
-        "dependencies": [
-          "35"
-        ],
-        "status": "done",
+        "dependencies": ["35"],
+        "status": "pending",
         "subtasks": [
           {
             "id": 1,
@@ -705,12 +703,10 @@
             "id": 2,
             "title": "Add image paste/drop support to QuickDumpModal",
             "description": "Implement clipboard paste and drag-drop handlers for images in QuickDumpModal, with visual preview and content type detection.",
-            "dependencies": [
-              1
-            ],
-            "details": "",
-            "status": "done",
-            "testStrategy": "",
+            "dependencies": [1],
+            "details": "CRITICAL: NOT IMPLEMENTED. T38.2 was marked DONE incorrectly. QuickDumpModal only handles text paste (clipboardData.getData('text')). No image handlers exist for clipboardData.files or clipboardData.items. Database schema supports images (imageData BLOB) but UI does not.",
+            "status": "pending",
+            "testStrategy": "Test image paste from clipboard, drag-drop image files, verify preview displays, confirm imageData saves to DB",
             "parentId": "undefined",
             "updatedAt": "2026-01-06T02:54:36.818Z"
           },
@@ -718,12 +714,10 @@
             "id": 3,
             "title": "Implement image file storage and mediaPath handling",
             "description": "Create IPC handler for saving image files to app data directory and returning relative path for mediaPath field.",
-            "dependencies": [
-              2
-            ],
-            "details": "",
-            "status": "done",
-            "testStrategy": "",
+            "dependencies": [2],
+            "details": "Depends on T38.2. No IPC handlers exist for image save operations. Need: saveImage(buffer) IPC handler, file storage in app.getPath('userData')/images/, return mediaPath for DB storage.",
+            "status": "pending",
+            "testStrategy": "Save image via IPC, verify file exists in userData/images/, confirm mediaPath stored in sourceItems table, test image retrieval",
             "parentId": "undefined",
             "updatedAt": "2026-01-06T03:15:27.734Z"
           },
@@ -731,9 +725,7 @@
             "id": 4,
             "title": "Add inboxCount state management to useAppStore",
             "description": "Extend useAppStore with inboxCount state that queries source_items table for items with status='inbox', and refreshes after captures.",
-            "dependencies": [
-              1
-            ],
+            "dependencies": [1],
             "details": "",
             "status": "done",
             "testStrategy": "",
@@ -744,9 +736,7 @@
             "id": 5,
             "title": "Wire Sidebar to display inbox badge count from useAppStore",
             "description": "Connect Sidebar component to useAppStore.inboxCount and replace hardcoded inboxCount=0 with live state.",
-            "dependencies": [
-              4
-            ],
+            "dependencies": [4],
             "details": "",
             "status": "done",
             "testStrategy": "",
@@ -956,11 +946,9 @@
       "version": "1.0.0",
       "lastModified": "2026-01-06T23:32:49.610Z",
       "taskCount": 18,
-      "completedCount": 13,
-      "pendingCount": 5,
-      "tags": [
-        "master"
-      ]
+      "completedCount": 12,
+      "pendingCount": 6,
+      "tags": ["master"]
     }
   }
 }

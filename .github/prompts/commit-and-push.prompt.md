@@ -1,5 +1,5 @@
 ---
-description: Commit and save the working directory with intelligent .gitignore management
+description: Commit and save the working directory
 name: commit-and-push
 ---
 
