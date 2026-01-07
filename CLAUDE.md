@@ -47,6 +47,15 @@ Ctrl+K: Command palette | Space: Answer/continue | Escape: Back
 
 **Defer workflow:** Add to DEFERRED.md → cancel in TaskMaster → acknowledge to user.
 
+**DEFERRED.md format:**
+```markdown
+### Feature Name
+**Description:** What it does
+**Priority:** High/Medium/Low
+**Source:** Where it came from (Task TX, User request, etc.)
+**Notes:** Context, dependencies, or implementation hints
+```
+
 **MVP Path:** T112 (Sidebar) → T41 (Notebook) → T42 (Card Gen) → T43 (Worthiness) → T45 (FSRS)
 
 ---

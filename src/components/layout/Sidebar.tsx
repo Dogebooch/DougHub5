@@ -3,6 +3,7 @@ import {
   Database,
   Play,
   Plus,
+  Inbox,
   BookOpen,
   Tag,
   BarChart3,
@@ -54,12 +55,18 @@ export function Sidebar({ className }: SidebarProps) {
   const dueCount = isHydrated ? getCardsDueToday().length : 0;
 
   const mainNavItems: NavItem[] = [
-    { id: "capture", label: "Capture", icon: Plus, implemented: true },
     {
       id: "review",
       label: "Review",
       icon: Play,
       badge: dueCount,
+      implemented: true,
+    },
+    {
+      id: "inbox",
+      label: "Inbox",
+      icon: Inbox,
+      badge: inboxCount,
       implemented: true,
     },
     {
@@ -160,6 +167,18 @@ export function Sidebar({ className }: SidebarProps) {
           className
         )}
       >
+        {/* Quick Action */}
+        <div className="p-2 border-b border-white/5">
+          <NavButton
+            item={{
+              id: "capture",
+              label: "Capture",
+              icon: Plus,
+              implemented: true,
+            }}
+          />
+        </div>
+
         {/* Nav sections */}
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {/* Main navigation */}
@@ -172,7 +191,7 @@ export function Sidebar({ className }: SidebarProps) {
             >
               {!collapsed && (
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
-                  Main
+                  DO NOW
                 </p>
               )}
               <button

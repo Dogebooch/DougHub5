@@ -378,6 +378,28 @@
 
 ---
 
+## Notebook Enhancements (Post-MVP)
+
+### Notebook Block Drag-to-Reorder
+**Description:** Drag and drop blocks within a topic page to reorder them. Uses position field in NotebookBlock schema.
+**Priority:** Low
+**Source:** Task T41 scoping (2026-01-07)
+**Notes:** Position field exists in schema. Complex drag-drop UI not MVP-critical. Blocks display fine in creation order.
+
+### Notebook Block Excerpt Selection
+**Description:** When adding a block from Knowledge Bank, allow text highlighting/selection to capture specific excerpt instead of full content.
+**Priority:** Medium
+**Source:** Task T41 scoping (2026-01-07)
+**Notes:** MVP uses full rawContent. Excerpt selection needs text selection UI, potentially contenteditable or range selection API. Add when users have long source items.
+
+### Card Generation from Blocks (T42 Integration)
+**Description:** "Generate Card" and "Generate All Cards" buttons on NotebookBlock and TopicPageView. T41 adds placeholder buttons; T42 implements actual AI card generation.
+**Priority:** High (T42 handles this)
+**Source:** Task T41/T42 split (2026-01-07)
+**Notes:** T41.4 and T41.3 add disabled placeholder buttons with tooltip "Coming in T42". T42 will wire up actual functionality.
+
+---
+
 ## Navigation & History
 
 ### Global Floating Capture Window

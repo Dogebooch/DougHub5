@@ -8,6 +8,7 @@ import { CaptureInterface } from "@/components/capture/CaptureInterface";
 import { ReviewInterface } from "@/components/review/ReviewInterface";
 import { InboxView } from "@/components/knowledgebank/InboxView";
 import { KnowledgeBankView } from "@/components/knowledgebank/KnowledgeBankView";
+import { NotebookView } from "@/components/notebook/NotebookView";
 import { SmartViewSidebar } from "./SmartViewSidebar";
 import { useAppStore } from "@/stores/useAppStore";
 
@@ -53,19 +54,7 @@ export function AppLayout() {
       case "review":
         return <ReviewInterface />;
       case "notebook":
-        return (
-          <div className="p-8 text-center space-y-4">
-            <h1 className="text-2xl font-semibold">Notebook</h1>
-            <p className="text-muted-foreground">
-              Notebook and topic pages coming soon.
-              {selectedItemId && (
-                <span className="block mt-2 text-primary font-mono text-xs">
-                  Target ID: {selectedItemId}
-                </span>
-              )}
-            </p>
-          </div>
-        );
+        return <NotebookView />;
       case "today":
         return (
           <div className="p-8 text-center space-y-4">

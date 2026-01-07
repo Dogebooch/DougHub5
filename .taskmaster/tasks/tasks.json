@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "Database schema expansion for Quick Dump queue and medical features",
         "description": "Add quick_dumps table and extend cards/notes tables to support medical list processing, partial credit, response time tracking, and connection suggestions",
         "details": "",
@@ -76,7 +76,7 @@
         "updatedAt": "2026-01-05T00:05:06.017Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "AI service integration layer",
         "description": "Create local-first AI service with Ollama auto-detection, cloud fallbacks (OpenAI, DeepSeek, Anthropic), concept extraction, card format suggestions, and medical content processing",
         "details": "",
@@ -158,7 +158,7 @@
         "updatedAt": "2026-01-05T01:22:53.351Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "AI-guided capture interface",
         "description": "Replace manual capture interface with AI concept extraction workflow: paste → highlight → confirm → format suggestion → save",
         "details": "",
@@ -239,7 +239,7 @@
         "updatedAt": "2026-01-05T14:29:44.672Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "Zero-decision review interface (eliminate grading buttons)",
         "description": "Replace 4-button grading (Again/Hard/Good/Easy) with Show Answer → Continue flow, letting FSRS auto-schedule based on response time",
         "details": "",
@@ -343,7 +343,7 @@
         "updatedAt": "2026-01-06T00:32:13.607Z"
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "Global search with <200ms response time",
         "description": "Implement fast unified search across cards and notes with FTS5 full-text search, Cmd+F shortcut, instant results",
         "details": "",
@@ -452,7 +452,7 @@
         "updatedAt": "2026-01-06T05:12:32.737Z"
       },
       {
-        "id": "17",
+        "id": 17,
         "title": "Auto-start Ollama from Electron on first AI request",
         "description": "Automatically start Ollama when the app needs AI services, eliminating the friction of manually starting Ollama before using the app",
         "details": "",
@@ -513,7 +513,7 @@
         "updatedAt": "2026-01-06T05:29:32.390Z"
       },
       {
-        "id": "31",
+        "id": 31,
         "title": "BUG FIX: Quick Dump saves to notes table instead of quick_dumps table",
         "description": "QuickDumpModal incorrectly saves content as a regular note instead of to the quick_dumps table, breaking the extraction queue workflow",
         "details": "",
@@ -527,7 +527,7 @@
         "updatedAt": "2026-01-06T02:11:06.148Z"
       },
       {
-        "id": "35",
+        "id": 35,
         "title": "[v2-T1] Data model v3: SourceItem, CanonicalTopic, NotebookTopicPage, SmartView schemas",
         "description": "Implement the v2 architecture data model with new tables for 3-layer system: Knowledge Bank (SourceItem), Notebook (NotebookTopicPage, NotebookBlock), and enhanced Cards with provenance. Add CanonicalTopic for topic normalization and SmartView for filtered access.",
         "details": "",
@@ -597,7 +597,7 @@
         ]
       },
       {
-        "id": "36",
+        "id": 36,
         "title": "[v2-T1.1] Topic normalization: alias table, matching rules, dedupe prevention",
         "description": "Implement topic alias matching system that normalizes user input to canonical topics. 'HOCM', 'HCM', 'hypertrophic cardiomyopathy' should all resolve to the same CanonicalTopic.",
         "details": "",
@@ -679,7 +679,7 @@
         "updatedAt": "2026-01-06T15:44:32.497Z"
       },
       {
-        "id": "38",
+        "id": 38,
         "title": "[v2-T2] Capture pipeline: Quick Dump → SourceItem (inbox), text + image support",
         "description": "Implement capture flow that creates SourceItems in Knowledge Bank with inbox status. Support text paste and image paste/drop.",
         "details": "TEXT CAPTURE: Complete ✓. IMAGE CAPTURE: NOT IMPLEMENTED (T38.2-T38.3 pending). Database supports images but UI lacks handlers.",
@@ -757,7 +757,7 @@
         "updatedAt": "2026-01-07T00:32:56.159Z"
       },
       {
-        "id": "40",
+        "id": 40,
         "title": "[v2-T3] Knowledge Bank UI: vertical list grouped by status, search, filters",
         "description": "Build the main Knowledge Bank view showing all SourceItems organized by status with filtering and search capabilities.",
         "details": "",
@@ -808,7 +808,7 @@
         "updatedAt": "2026-01-06T20:57:59.367Z"
       },
       {
-        "id": "41",
+        "id": 41,
         "title": "[v2-T4] Notebook UI: topic pages, add blocks from sources, enforce card-creation here only",
         "description": "Build the Notebook layer with topic pages containing blocks from Knowledge Bank. This is the ONLY place where cards can be created.",
         "details": "NOTEBOOK VIEW:\n\n1. TOPIC PAGE LIST:\n- Sidebar or list showing all NotebookTopicPages\n- Show: topic name, aliases, card count, source count\n- Search/filter by topic name\n- 'New Topic Page' button\n\n2. TOPIC PAGE VIEW:\n- Header: Topic name, aliases, stats\n- Blocks section: excerpts from SourceItems\n- Each block shows:\n  - Source reference (clickable deep link)\n  - Content excerpt\n  - Annotations (user notes)\n  - Actions: [Edit] [→ Source] [Generate Card]\n- Footer: [+ Add from Knowledge Bank] [Generate All Cards]\n\n3. ADD BLOCK FLOW:\n- Click '+ Add from Knowledge Bank'\n- Modal shows Knowledge Bank filtered to curated/processed\n- Select source item\n- Select excerpt (highlight text) or use full content\n- Save creates NotebookBlock linked to source\n- SourceItem status → 'curated'\n\n4. BLOCK MANAGEMENT:\n- Drag to reorder blocks (position field)\n- Edit block content (excerpt)\n- Add annotations\n- Delete block (doesn't delete source)\n\nCARD CREATION ENFORCED:\n- 'Generate Card' button ONLY appears on blocks\n- No card creation in Knowledge Bank\n- No card creation from scratch\n- All cards have notebookTopicPageId (enforced)\n\nCOMPONENTS:\n\n- src/components/notebook/NotebookView.tsx\n- src/components/notebook/TopicPageList.tsx\n- src/components/notebook/TopicPageView.tsx\n- src/components/notebook/NotebookBlock.tsx\n- src/components/notebook/AddBlockModal.tsx",
@@ -819,10 +819,78 @@
           "36"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create NotebookView container component with routing integration",
+            "description": "Build the main NotebookView container that renders when currentView is 'notebook', replacing the placeholder in AppLayout.tsx",
+            "dependencies": [],
+            "details": "Create src/components/notebook/NotebookView.tsx as the main container. Add state management for loading topic pages and blocks. Integrate with useAppStore to handle currentView='notebook'. Import and render TopicPageList and TopicPageView as child components. Set up responsive layout with sidebar (TopicPageList) and main content area (TopicPageView). Follow the pattern established in KnowledgeBankView.tsx for loading states, error handling, and IPC calls to window.api.notebookPages.getAll(). Add to AppLayout.tsx renderView switch case.",
+            "status": "pending",
+            "testStrategy": "Navigate to notebook view from sidebar, verify component renders without errors, check that it fetches topic pages on mount"
+          },
+          {
+            "id": 2,
+            "title": "Build TopicPageList sidebar with search and new topic creation",
+            "description": "Create the topic page list sidebar showing all NotebookTopicPages with search/filter and 'New Topic Page' button",
+            "dependencies": [
+              1
+            ],
+            "details": "Create src/components/notebook/TopicPageList.tsx. Display list of NotebookTopicPages with topic name (via canonicalTopicId lookup using window.api.canonicalTopics.getById), card count (cardIds.length), and derived source count. Implement search/filter input to filter by topic name using local state. Add 'New Topic Page' button that opens a dialog using shadcn Dialog component with topic autocomplete (similar to AddToNotebookDialog pattern with window.api.canonicalTopics.suggestMatches). On topic selection/creation, call window.api.notebookPages.create() with new NotebookTopicPage object (UUID id, canonicalTopicId, empty cardIds array, timestamps). Display active/selected topic page with visual indicator. Handle empty state when no topics exist.",
+            "status": "pending",
+            "testStrategy": "Click 'New Topic Page', create new topic, verify it appears in list. Search for topics, verify filtering works. Click topic to select it."
+          },
+          {
+            "id": 3,
+            "title": "Build TopicPageView with header, stats, and blocks list",
+            "description": "Create the main topic page view showing header with topic info, stats, and list of NotebookBlocks",
+            "dependencies": [
+              1
+            ],
+            "details": "Create src/components/notebook/TopicPageView.tsx. Accept selectedPageId prop from NotebookView. Fetch topic page using window.api.notebookPages.getById(selectedPageId) and blocks using window.api.notebookBlocks.getByPage(selectedPageId). Fetch CanonicalTopic details using window.api.canonicalTopics.getById(page.canonicalTopicId) to display topic name and aliases. Header section displays topic name, aliases (as badges), card count, and source count (derived from blocks). Blocks section maps over NotebookBlock[] and renders NotebookBlock component for each. Footer with '+ Add from Knowledge Bank' button (will open AddBlockModal) and 'Generate All Cards' placeholder button (disabled with tooltip 'Coming in T42'). Handle loading states and empty blocks state with helpful message. Sort blocks by position field ascending.",
+            "status": "pending",
+            "testStrategy": "Select topic page, verify header shows correct topic name and stats. Verify blocks list renders. Click footer buttons to verify behavior."
+          },
+          {
+            "id": 4,
+            "title": "Create NotebookBlock component with source deep link and actions",
+            "description": "Build the individual block component displaying source excerpt, annotations, and action buttons",
+            "dependencies": [
+              3
+            ],
+            "details": "Create src/components/notebook/NotebookBlock.tsx accepting NotebookBlock as prop. Use shadcn Card component for container with hover effects. Fetch SourceItem details using window.api.sourceItems.getById(block.sourceItemId) to display source reference. Display source reference as clickable link that calls useAppStore.setCurrentView('knowledgebank', block.sourceItemId) to navigate to Knowledge Bank with item highlighted. Show block content (full content, not excerpt per scope). If block.annotations exists, display in muted text below content. If block.mediaPath exists, display image preview. Actions row with [Edit] button (opens inline textarea to edit block.content and block.annotations, saves via window.api.notebookBlocks.update), [→ Source] button (same as clicking source reference), and [Generate Card] placeholder button (disabled with tooltip 'Coming in T42'). Delete button in dropdown menu calls window.api.notebookBlocks.delete(block.id).",
+            "status": "pending",
+            "testStrategy": "Verify block displays source reference correctly. Click source deep link, verify navigation to Knowledge Bank. Edit block content and annotations, verify saves. Click Generate Card placeholder, verify tooltip shows."
+          },
+          {
+            "id": 5,
+            "title": "Build AddBlockModal for selecting sources from Knowledge Bank",
+            "description": "Create modal dialog for adding blocks from Knowledge Bank SourceItems to current topic page",
+            "dependencies": [
+              3
+            ],
+            "details": "Create src/components/notebook/AddBlockModal.tsx using shadcn Dialog. Accept props: open, onOpenChange, notebookTopicPageId, onSuccess. Fetch SourceItems filtered by status='processed' or status='curated' (exclude inbox per spec) using window.api.sourceItems.getAll() then filter locally. Display vertical list similar to KnowledgeBankView with SourceItemRow-like cards showing title, source type badge, topic tags. Add search/filter input to filter by title or tags. On item selection, create NotebookBlock: fetch existing blocks for page to determine max position, create block with UUID id, notebookTopicPageId, sourceItemId, content=sourceItem.rawContent (full content per scope), annotations=null, mediaPath=sourceItem.mediaPath, position=maxPosition+1. Call window.api.notebookBlocks.create(block). Update SourceItem status to 'curated' via window.api.sourceItems.update(id, {status: 'curated'}). Show success toast and trigger onSuccess callback to refresh parent.",
+            "status": "pending",
+            "testStrategy": "Open AddBlockModal from topic page footer. Search for sources, verify filtering. Select source item, verify block is created and appears in blocks list. Verify source status updated to curated."
+          },
+          {
+            "id": 6,
+            "title": "Wire up Notebook view navigation and integrate with app routing",
+            "description": "Connect Notebook view to sidebar navigation and ensure proper state management integration",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "details": "Update AppLayout.tsx to import and render NotebookView component instead of placeholder when currentView='notebook'. Ensure SmartViewSidebar.tsx or Sidebar.tsx has proper navigation to notebook view using useAppStore.setCurrentView('notebook'). Add notebook count to smartViewCounts in useAppStore.ts by fetching window.api.notebookPages.getAll() and counting total pages. Update refreshSmartViewCounts to include notebook count. Test navigation flow: Knowledge Bank → Add to Notebook → View in Notebook should work seamlessly. Ensure selectedItemId from store is used to highlight/scroll to specific item when navigating from deep links. Add loading and error states for all async operations. Verify IpcResult error handling follows established patterns.",
+            "status": "pending",
+            "testStrategy": "Navigate to notebook from sidebar, verify correct view loads. Add source to notebook from Knowledge Bank, click 'View in Notebook' link, verify navigation and item highlight. Check notebook count badge in sidebar updates correctly."
+          }
+        ]
       },
       {
-        "id": "42",
+        "id": 42,
         "title": "[v2-T4.1] Card generation from notebook: AI suggests, card-worthiness gate",
         "description": "Implement AI-powered card generation from Notebook blocks with card-worthiness evaluation before creation.",
         "details": "CARD GENERATION FLOW:\n\n1. USER INITIATES:\n- Click 'Generate Card' on a block\n- Or 'Generate All Cards' for entire topic page\n\n2. AI CARD SUGGESTION:\n- Call AI to analyze block content\n- Suggest card format (Q&A, cloze, vignette)\n- Generate front/back content\n- Return multiple card suggestions if content-rich\n\n3. CARD-WORTHINESS GATE (T5):\n- Before showing card to user, evaluate:\n  - Board-relevant? (high-yield for Step 2/3)\n  - Testable? (clear right answer)\n  - Discriminative? (distinguishes from similar concepts)\n- Show AI assessment with checkmarks/warnings\n- Recommendation: CREATE CARD / KEEP AS NOTE ONLY\n\n4. USER DECISION:\n- [Create Card] - proceeds with creation\n- [Keep as Note Only] - doesn't create card, marks block\n- [Edit First] - allows editing before creation\n- [Discard] - cancels without saving\n\n5. CARD CREATION:\n- Create card with:\n  - notebookTopicPageId (required)\n  - sourceBlockId (specific block)\n  - tags from topic\n  - FSRS defaults\n- Update NotebookTopicPage.cardIds array\n\nCOMPONENTS:\n\n- src/components/notebook/CardGenerationModal.tsx\n- src/components/notebook/CardWorthinessGate.tsx\n- src/components/notebook/CardSuggestionPreview.tsx\n\nAI FUNCTIONS in electron/ai-service.ts:\n- generateCardFromBlock(blockContent: string, topicContext: string): Promise<CardSuggestion[]>\n- evaluateCardWorthiness(card: CardSuggestion): Promise<WorthinessAssessment>",
@@ -835,7 +903,7 @@
         "subtasks": []
       },
       {
-        "id": "43",
+        "id": 43,
         "title": "[v2-T5] Card-worthiness gate: rubric (board-relevant? testable? discriminative?), UI",
         "description": "Implement the full card-worthiness evaluation rubric that gates all card creation to minimize low-yield cards.",
         "details": "WORTHINESS RUBRIC:\n\n1. BOARD-RELEVANT:\n- Is this high-yield for Step 2/3 or specialty boards?\n- AI checks against known high-yield topics\n- Weight: High\n\n2. TESTABLE:\n- Does this have a clear, unambiguous answer?\n- Avoid opinion-based or 'it depends' content\n- Weight: High\n\n3. DISCRIMINATIVE:\n- Does this distinguish from similar concepts?\n- Avoid cards that could apply to multiple conditions\n- Weight: Medium\n\n4. MINIMUM INFORMATION:\n- Single concept per card?\n- Not testing multiple facts at once?\n- Weight: High\n\n5. NO PATTERN MATCHING:\n- Answer not giveaway from card format?\n- Could be rephrased and still work?\n- Weight: Medium\n\nSCORING:\n- Each criterion: Pass / Warning / Fail\n- Overall: CREATE / CONSIDER EDITING / NOT RECOMMENDED\n- Show reasoning for each criterion\n\nUI COMPONENT:\n\n```\n┌─ Card Quality Check ─────────────────────────────────┐\n│ \"What is the most specific marker for MI?\"           │\n│ → Troponin I                                         │\n│                                                      │\n│ ✓ Board-relevant (high-yield for Step 2/3)           │\n│ ✓ Testable (clear right answer)                      │\n│ ✓ Discriminative (distinguishes troponin vs CK-MB)   │\n│ ✓ Minimum information (single fact)                  │\n│ ⚠️ Consider: Add 'why' for deeper learning           │\n│                                                      │\n│ Recommendation: ✅ CREATE CARD                       │\n│                                                      │\n│ [Create] [Keep Note] [Edit] [Discard]                │\n└──────────────────────────────────────────────────────┘\n```\n\nAI IMPLEMENTATION:\n- evaluateCardWorthiness(card) returns WorthinessAssessment\n- WorthinessAssessment has criteria[], overallRecommendation, suggestions[]",
@@ -848,7 +916,7 @@
         "subtasks": []
       },
       {
-        "id": "44",
+        "id": 44,
         "title": "[v2-T8] Smart Views: system views (Inbox, Today, Queue, Weak Topics), filter engine",
         "description": "Implement Smart Views system with preset system views and a reusable filter engine for dynamic list filtering.",
         "details": "",
@@ -912,7 +980,7 @@
         "updatedAt": "2026-01-06T21:12:10.478Z"
       },
       {
-        "id": "45",
+        "id": 45,
         "title": "[v2-T6] FSRS integration: scheduling fields, review UI, response time tracking",
         "description": "Ensure FSRS integration works with new card provenance model. Track response times for future personalization.",
         "details": "FSRS FIELDS (already in cards table):\n- stability, difficulty, elapsedDays, scheduledDays\n- reps, lapses, state\n- dueDate, lastReview\n\nNEW TRACKING:\n- responseTimeMs in review_logs (already added in Task 1)\n- Track time from card shown to answer revealed\n- Track time from answer revealed to rating\n\nREVIEW UI UPDATES:\n\n1. PROVENANCE DISPLAY:\n- Show source: 'From: [Topic Name]'\n- Click to navigate to NotebookTopicPage\n- Show related cards count\n\n2. ZERO-DECISION FLOW:\n- Show Answer (Space)\n- Continue (Enter) = auto-grade based on response time\n- I Forgot (F) = grade as Again\n- Edit (E) = open card editor\n- Skip (S) = skip without grading\n\n3. LOW-EASE FLAGGING:\n- If card ease < 2.0 after review, flag for attention\n- Show in Weak Topics smart view\n- Suggest 'fix card' flow\n\nRESPONSE TIME LOGIC:\n- Fast correct (< 5s): increase ease slightly\n- Slow correct (> 15s): decrease ease slightly\n- Helps identify cards that need improvement\n\nCOMPONENTS:\n\n- Update src/components/review/ReviewInterface.tsx\n- Add response time tracking\n- Add provenance display\n- Connect to NotebookTopicPage navigation",
@@ -926,7 +994,7 @@
         "subtasks": []
       },
       {
-        "id": "91",
+        "id": 91,
         "title": "Debug and Fix Ollama AI Extraction Pipeline",
         "description": "Troubleshoot and resolve AI extraction issues with Ollama integration, focusing on JSON parsing, model compatibility, and response handling in the extractConcepts() function",
         "details": "",
@@ -938,7 +1006,7 @@
         "updatedAt": "2026-01-06T04:58:26.652Z"
       },
       {
-        "id": "112",
+        "id": 112,
         "title": "Sidebar Consolidation: merge SmartViewSidebar into Sidebar",
         "description": "Delete SmartViewSidebar.tsx, consolidate navigation into single Sidebar component with DO NOW and LIBRARY sections",
         "details": "DO NOW: Review (primary), Inbox (secondary). LIBRARY: Notebook, Knowledge Bank. KB shows ALL items with inbox at top; Inbox is pre-filtered shortcut. Remove: Capture, Today, Queue, Topics, Stats.",
@@ -1020,7 +1088,9 @@
       "completedCount": 13,
       "tags": [
         "master"
-      ]
+      ],
+      "created": "2026-01-07T00:53:48.742Z",
+      "description": "Tasks for master context"
     }
   }
 }
