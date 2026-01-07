@@ -4,14 +4,14 @@ import {
   Sparkles, 
   Plus, 
   Loader2,
-  Library,
-  Layers
+  Library
 } from 'lucide-react';
 import { 
   NotebookTopicPage, 
   NotebookBlock, 
   CanonicalTopic 
 } from '@/types';
+import { NotebookBlockComponent } from './NotebookBlock';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -40,15 +40,15 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({ pageId, onRefresh 
       // 1. Fetch page
       const pageResult = await window.api.notebookPages.getById(pageId);
       if (pageResult.error) throw new Error(pageResult.error);
-      if (!pageResult.data) throw new Error('Page not found');
-      
+      if (!pageResult.data) throw new Error("Page not found");
+
       const pageData = pageResult.data;
       setPage(pageData);
 
       // 2. Fetch topic and blocks in parallel
       const [topicResult, blocksResult] = await Promise.all([
         window.api.canonicalTopics.getById(pageData.canonicalTopicId),
-        window.api.notebookBlocks.getByPage(pageId)
+        window.api.notebookBlocks.getByPage(pageId),
       ]);
 
       if (topicResult.error) throw new Error(topicResult.error);
@@ -56,6 +56,9 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({ pageId, onRefresh 
 
       setTopic(topicResult.data);
       setBlocks(blocksResult.data || []);
+
+      // Notify parent of refresh if needed (e.g. updating sidebar counts)
+      onRefresh();
     } catch (err: any) {
       console.error('Error fetching topic page:', err);
       setError(err.message || 'Failed to load topic page');

@@ -404,6 +404,12 @@
 **Source:** Task T41.3/T41.5 review (2026-01-07)
 **Notes:** Full refetch approach is simpler and acceptable for MVP. True optimistic updates add complexity (temp IDs, rollback on failure). Add when block creation latency becomes noticeable.
 
+### TopicPageView Double-Fetch on Load
+**Description:** TopicPageView calls `onRefresh()` at end of `fetchData()`, which triggers parent refetch. This may cause double-fetch on initial load since parent already loaded data.
+**Priority:** Low
+**Source:** Task T41.3 review (2026-01-07)
+**Notes:** Not breaking - just minor inefficiency. Consider only calling `onRefresh()` after mutations (block create/delete), not on initial load. Could use a `skipParentRefresh` flag or separate the refresh trigger.
+
 ---
 
 ## Navigation & History
