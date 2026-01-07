@@ -398,6 +398,12 @@
 **Source:** Task T41/T42 split (2026-01-07)
 **Notes:** T41.4 and T41.3 add disabled placeholder buttons with tooltip "Coming in T42". T42 will wire up actual functionality.
 
+### Optimistic UI for Block Creation
+**Description:** Show newly created blocks immediately before API confirms, then reconcile with server response. Currently T41 uses full refetch after block creation.
+**Priority:** Low
+**Source:** Task T41.3/T41.5 review (2026-01-07)
+**Notes:** Full refetch approach is simpler and acceptable for MVP. True optimistic updates add complexity (temp IDs, rollback on failure). Add when block creation latency becomes noticeable.
+
 ---
 
 ## Navigation & History

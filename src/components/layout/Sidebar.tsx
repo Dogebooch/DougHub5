@@ -5,8 +5,6 @@ import {
   Plus,
   Inbox,
   BookOpen,
-  Tag,
-  BarChart3,
   Settings,
   PanelLeftClose,
   PanelLeftOpen,
@@ -80,8 +78,6 @@ export function Sidebar({ className }: SidebarProps) {
 
   const secondaryNavItems: NavItem[] = [
     { id: "notebook", label: "Notebook", icon: BookOpen, implemented: true },
-    { id: "topics", label: "Topics", icon: Tag, implemented: false },
-    { id: "stats", label: "Stats", icon: BarChart3, implemented: false },
   ];
 
   // TODO: Implement weak topics section

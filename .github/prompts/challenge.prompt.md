@@ -38,4 +38,6 @@ Perform a critical review identifying:
 
 For each issue: **Severity** | **Location** | **Problem** | **Fix**
 
-Prioritize critical bugs and security issues.
+Prioritize critical bugs and security issues. Make executive decisions on anything that you find, as long as it is within the scope of the subtask and the scope of the foundation docs. Once you have made those decisions, Merge all the ideas into one plan, and implement the plan as discussed.
+
+Here are the answers to any questions you asked before starting the challenge step:

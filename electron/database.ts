@@ -131,6 +131,7 @@ export interface DbNotebookBlock {
   annotations?: string;
   mediaPath?: string;
   position: number;
+  cardCount: number;
 }
 
 export interface DbMedicalAcronym {
@@ -260,6 +261,7 @@ interface NotebookBlockRow {
   annotations: string | null;
   mediaPath: string | null;
   position: number;
+  cardCount: number;
 }
 
 interface SmartViewRow {
@@ -1531,9 +1533,13 @@ function parseNotebookTopicPageRow(
 
 export const notebookBlockQueries = {
   getByPage(pageId: string): DbNotebookBlock[] {
-    const stmt = getDatabase().prepare(
-      "SELECT * FROM notebook_blocks WHERE notebookTopicPageId = ? ORDER BY position"
-    );
+    const stmt = getDatabase().prepare(`
+      SELECT b.*, 
+        (SELECT COUNT(*) FROM cards c WHERE c.sourceBlockId = b.id) as cardCount 
+      FROM notebook_blocks b 
+      WHERE b.notebookTopicPageId = ? 
+      ORDER BY b.position
+    `);
     const rows = stmt.all(pageId) as NotebookBlockRow[];
     return rows.map(parseNotebookBlockRow);
   },
@@ -1594,6 +1600,7 @@ function parseNotebookBlockRow(row: NotebookBlockRow): DbNotebookBlock {
     annotations: row.annotations || undefined,
     mediaPath: row.mediaPath || undefined,
     position: row.position,
+    cardCount: row.cardCount || 0,
   };
 }
 

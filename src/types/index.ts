@@ -105,6 +105,7 @@ export interface NotebookBlock {
   annotations?: string;
   mediaPath?: string;
   position: number;
+  cardCount: number; // v2: Number of cards generated from this block
 }
 
 // v2 Architecture - Smart Views
