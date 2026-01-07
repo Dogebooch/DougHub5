@@ -4,7 +4,7 @@
       "command": "cmd",
       "args": ["/c", "npx", "-y", "--package=task-master-ai", "task-master-ai"],
       "env": {
-        "TASK_MASTER_TOOLS": "default",
+        "TASK_MASTER_TOOLS": "core",
         "TASKMASTER_AI_PROVIDER": "claude-code",
         "TASKMASTER_AI_MODEL": "sonnet"
       }

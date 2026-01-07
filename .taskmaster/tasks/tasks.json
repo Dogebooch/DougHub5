@@ -685,8 +685,10 @@
         "details": "TEXT CAPTURE: Complete ✓. IMAGE CAPTURE: NOT IMPLEMENTED (T38.2-T38.3 pending). Database supports images but UI lacks handlers.",
         "testStrategy": "Test text capture (working), test image capture (pending)",
         "priority": "high",
-        "dependencies": ["35"],
-        "status": "pending",
+        "dependencies": [
+          "35"
+        ],
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -703,29 +705,35 @@
             "id": 2,
             "title": "Add image paste/drop support to QuickDumpModal",
             "description": "Implement clipboard paste and drag-drop handlers for images in QuickDumpModal, with visual preview and content type detection.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "CRITICAL: NOT IMPLEMENTED. T38.2 was marked DONE incorrectly. QuickDumpModal only handles text paste (clipboardData.getData('text')). No image handlers exist for clipboardData.files or clipboardData.items. Database schema supports images (imageData BLOB) but UI does not.",
-            "status": "pending",
+            "status": "cancelled",
             "testStrategy": "Test image paste from clipboard, drag-drop image files, verify preview displays, confirm imageData saves to DB",
             "parentId": "undefined",
-            "updatedAt": "2026-01-06T02:54:36.818Z"
+            "updatedAt": "2026-01-07T00:32:52.755Z"
           },
           {
             "id": 3,
             "title": "Implement image file storage and mediaPath handling",
             "description": "Create IPC handler for saving image files to app data directory and returning relative path for mediaPath field.",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "Depends on T38.2. No IPC handlers exist for image save operations. Need: saveImage(buffer) IPC handler, file storage in app.getPath('userData')/images/, return mediaPath for DB storage.",
-            "status": "pending",
+            "status": "cancelled",
             "testStrategy": "Save image via IPC, verify file exists in userData/images/, confirm mediaPath stored in sourceItems table, test image retrieval",
             "parentId": "undefined",
-            "updatedAt": "2026-01-06T03:15:27.734Z"
+            "updatedAt": "2026-01-07T00:32:52.758Z"
           },
           {
             "id": 4,
             "title": "Add inboxCount state management to useAppStore",
             "description": "Extend useAppStore with inboxCount state that queries source_items table for items with status='inbox', and refreshes after captures.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "",
             "status": "done",
             "testStrategy": "",
@@ -736,7 +744,9 @@
             "id": 5,
             "title": "Wire Sidebar to display inbox badge count from useAppStore",
             "description": "Connect Sidebar component to useAppStore.inboxCount and replace hardcoded inboxCount=0 with live state.",
-            "dependencies": [4],
+            "dependencies": [
+              4
+            ],
             "details": "",
             "status": "done",
             "testStrategy": "",
@@ -744,7 +754,7 @@
             "updatedAt": "2026-01-06T02:33:30.460Z"
           }
         ],
-        "updatedAt": "2026-01-06T03:15:27.734Z"
+        "updatedAt": "2026-01-07T00:32:56.159Z"
       },
       {
         "id": "40",
@@ -938,17 +948,79 @@
           "44"
         ],
         "status": "pending",
-        "subtasks": [],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update Sidebar.tsx: Add Capture at top and restructure sections",
+            "description": "Move Capture to top of sidebar (above sections), rename 'Main' section to 'DO NOW', and add Inbox as new nav item with unprocessed count",
+            "dependencies": [],
+            "details": "In src/components/layout/Sidebar.tsx: (1) Extract Capture from mainNavItems array, (2) Render Capture button above nav sections at line ~164, (3) Change section header 'Main' to 'DO NOW' at line 175, (4) Add Inbox import from lucide-react at line 2-12, (5) Create new NavItem for Inbox with id='inbox', icon=Inbox, badge=inboxCount (reusing existing inboxCount from line 42), (6) Add Inbox to mainNavItems array after Review button, (7) Keep existing NavButton component pattern for consistency",
+            "status": "pending",
+            "testStrategy": "Verify Capture button appears at top above sections, DO NOW section header displays correctly, Inbox nav item renders with badge count",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Add Review emphasis styling with subtle glow when cards due",
+            "description": "Enhance Review button styling to show subtle glow ring effect when dueCount > 0 for visual emphasis",
+            "dependencies": [
+              1
+            ],
+            "details": "In src/components/layout/Sidebar.tsx NavButton component (line 89-152): Add conditional ring styling to Review button when item.id === 'review' && item.badge > 0. Apply classes: 'ring-2 ring-primary/20 ring-offset-2 ring-offset-background/50' to create subtle glow effect. This should be applied to the button element at line 94-107. Maintain existing hover and active states while adding the glow as an additional visual cue.",
+            "status": "pending",
+            "testStrategy": "Test with dueCount=0 (no glow) and dueCount>0 (subtle glow visible), verify glow doesn't interfere with hover/active states",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Remove Topics and Stats from secondary navigation",
+            "description": "Delete Topics and Stats nav items from secondaryNavItems array in Sidebar.tsx",
+            "dependencies": [
+              1
+            ],
+            "details": "In src/components/layout/Sidebar.tsx at line 74-78: Remove the Topics and Stats items from secondaryNavItems array. This array should only contain Notebook item after removal. The Tag and BarChart3 imports from lucide-react (lines 7-8) can also be removed. Keep the 'Library' section header and structure intact.",
+            "status": "pending",
+            "testStrategy": "Verify secondaryNavItems only contains Notebook, Topics and Stats no longer render in LIBRARY section",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Update AppLayout.tsx: Remove SmartViewSidebar component",
+            "description": "Delete SmartViewSidebar import and rendering from AppLayout.tsx",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "In src/components/layout/AppLayout.tsx: (1) Remove SmartViewSidebar import at line 11, (2) Delete the entire <aside> section containing SmartViewSidebar at lines 125-127, (3) Keep the main Sidebar component and all other layout structure intact. This removes the separate Smart Views sidebar panel from the layout, consolidating all navigation into the single Sidebar component.",
+            "status": "pending",
+            "testStrategy": "Verify layout renders with only single Sidebar, no second sidebar panel, main content area expands correctly",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Delete SmartViewSidebar.tsx and clean up unused Smart View state",
+            "description": "Delete SmartViewSidebar.tsx file and remove obsolete smartViewCounts for deleted views (today, queue, weak)",
+            "dependencies": [
+              4
+            ],
+            "details": "File operations: (1) Delete src/components/layout/SmartViewSidebar.tsx entirely. State cleanup in src/stores/useAppStore.ts: (2) At line 73-79, update smartViewCounts initialization to only include inbox: 0 and notebook: 0 (remove today, queue, weak), (3) In refreshSmartViewCounts function (line 85-99), simplify counts object to only calculate inbox and notebook counts, remove today/queue/weak calculations. Note: Keep the smartViewCounts structure itself as it's used by Inbox nav item badge. Also consider if src/lib/system-views.ts SYSTEM_VIEWS array needs updating (currently defines today/queue/weak views).",
+            "status": "pending",
+            "testStrategy": "Verify SmartViewSidebar.tsx deleted, app runs without errors, inbox count still updates correctly in Sidebar badge",
+            "parentId": "undefined"
+          }
+        ],
         "updatedAt": "2026-01-06T23:19:24.740Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-06T23:32:49.610Z",
+      "lastModified": "2026-01-07T00:32:56.160Z",
       "taskCount": 18,
-      "completedCount": 12,
-      "pendingCount": 6,
-      "tags": ["master"]
+      "completedCount": 13,
+      "tags": [
+        "master"
+      ]
     }
   }
 }

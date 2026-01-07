@@ -139,6 +139,12 @@
 **Source:** Task T37 (Legacy)
 **Notes:** Nice-to-have for smarter metadata suggestions.
 
+### Image Capture Support (T38.2-T38.3)
+**Description:** Add image paste/drop support to QuickDumpModal. Implement clipboard paste and drag-drop handlers for images with visual preview. Create IPC handler for saving image files to app data directory.
+**Priority:** Medium
+**Source:** Task T38 subtasks 2-3 (deferred from MVP)
+**Notes:** Text capture works and is MVP-sufficient. Database schema supports images (imageData BLOB, mediaPath) but UI lacks handlers. Defer until post-MVP when workflow is validated with text content.
+
 ---
 
 ## Review & Scheduling
@@ -345,6 +351,18 @@
 **Priority:** Low
 **Source:** UI/UX Sidebar Analysis (2026-01-06)
 **Notes:** Move to Settings menu for now. Consider promoting to sidebar post-MVP if users want quick access to stats.
+
+### Card Browser with Queue Filter
+**Description:** Combined view to browse all cards with filtering by status (due/new/learning/suspended), topic, tags, and date. Replaces the standalone Queue smart view. Features: search cards, bulk actions, sort by due date/ease/created, preview card content. Essentially "Knowledge Bank for cards."
+**Priority:** Medium
+**Source:** Sidebar Consolidation Analysis (2026-01-06)
+**Notes:** Queue alone was weak (filter-as-destination anti-pattern). Combined with Card Browser provides real utility. Post-MVP.
+
+### Dashboard View
+**Description:** Aggregated overview showing: cards due today, streak count, weekly review heatmap, retention rate, upcoming workload forecast. Entry point for Stats and Insights. Could replace separate Stats view.
+**Priority:** Low
+**Source:** Sidebar Consolidation Analysis (2026-01-06)
+**Notes:** Not daily-use for exhausted user. Nice-to-have for weekly check-ins and motivation. Post-MVP.
 
 ### Sidebar Keyboard Navigation (j/k)
 **Description:** Add Vim-style keyboard navigation for sidebar: j/k to move between nav items, Enter to select. Matches Superhuman/Things 3 patterns.
