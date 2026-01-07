@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BookOpen, Loader2 } from "lucide-react";
 import { NotebookTopicPage, CanonicalTopic } from "@/types";
 import { useAppStore } from "@/stores/useAppStore";
+import { TopicPageList } from "./TopicPageList";
 
 /**
  * NotebookView
@@ -16,49 +17,52 @@ export const NotebookView = () => {
   const [selectedPageId, setSelectedPageId] = useState<string | null>(selectedItemId || null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load data on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const pagesResult = await window.api.notebookPages.getAll();
-        
-        if (pagesResult.error) {
-          console.error("Failed to fetch notebook pages:", pagesResult.error);
-          setIsLoading(false);
-          return;
-        }
-
-        const fetchedPages = pagesResult.data || [];
-        setPages(fetchedPages);
-
-        // Fetch canonical topics for each page to show names
-        const topicMap = new Map<string, CanonicalTopic>();
-        await Promise.all(
-          fetchedPages.map(async (page) => {
-            if (page.canonicalTopicId && !topicMap.has(page.canonicalTopicId)) {
-              try {
-                const topicResult = await window.api.canonicalTopics.getById(page.canonicalTopicId);
-                if (topicResult.data) {
-                  topicMap.set(page.canonicalTopicId, topicResult.data);
-                }
-              } catch (err) {
-                console.error(`Failed to fetch topic ${page.canonicalTopicId}:`, err);
-              }
-            }
-          })
-        );
-        
-        setTopics(topicMap);
-      } catch (error) {
-        console.error("Error in NotebookView data fetching:", error);
-      } finally {
-        setIsLoading(false);
+  // Load data - extracted to useCallback for child components
+  const fetchData = useCallback(async () => {
+    try {
+      const pagesResult = await window.api.notebookPages.getAll();
+      
+      if (pagesResult.error) {
+        console.error("Failed to fetch notebook pages:", pagesResult.error);
+        return;
       }
+
+      const fetchedPages = pagesResult.data || [];
+      setPages(fetchedPages);
+
+      // Fetch canonical topics for each page to show names
+      const topicMap = new Map<string, CanonicalTopic>();
+      await Promise.all(
+        fetchedPages.map(async (page) => {
+          if (page.canonicalTopicId && !topicMap.has(page.canonicalTopicId)) {
+            try {
+              const topicResult = await window.api.canonicalTopics.getById(page.canonicalTopicId);
+              if (topicResult.data) {
+                topicMap.set(page.canonicalTopicId, topicResult.data);
+              }
+            } catch (err) {
+              console.error(`Failed to fetch topic ${page.canonicalTopicId}:`, err);
+            }
+          }
+        })
+      );
+      
+      setTopics(topicMap);
+    } catch (error) {
+      console.error("Error in NotebookView data fetching:", error);
+    }
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    const doInitialLoad = async () => {
+      setIsLoading(true);
+      await fetchData();
+      setIsLoading(false);
     };
 
-    fetchData();
-  }, []);
+    doInitialLoad();
+  }, [fetchData]);
 
   // Loading State
   if (isLoading) {
@@ -70,18 +74,38 @@ export const NotebookView = () => {
     );
   }
 
-  // Empty State
+  // Empty State - but we still want to show the container so we can create pages
+  // Only show the big empty state if we really want to block the UI
+  // Requirement 6 in T41.1 says show empty state when no pages exist.
+  // Requirement 4 in T41.2 says TopicPageList should handle empty states too.
+  // I will keep the full-screen empty state if pages.length === 0, 
+  // but I need to make sure the user can still create a page.
+  // Wait, if pages.length === 0, NotebookView returns early. 
+  // Let's modify this so TopicPageList is always visible or the empty state has a button.
   if (pages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full space-y-4 p-8 text-center">
-        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-2">
-          <BookOpen className="w-8 h-8 text-muted-foreground" />
+      <div className="flex h-full overflow-hidden">
+        {/* Sidebar still visible so user can click "New Topic Page" */}
+        <div className="w-64 border-r bg-muted/30 flex flex-col h-full">
+          <TopicPageList 
+            pages={pages} 
+            topics={topics} 
+            selectedId={selectedPageId} 
+            onSelect={setSelectedPageId}
+            onPageCreated={fetchData}
+          />
         </div>
-        <div className="space-y-2">
-          <h2 className="text-xl font-semibold">No topic pages yet</h2>
-          <p className="text-muted-foreground max-w-xs">
-            Create a topic page to start organizing your knowledge.
-          </p>
+
+        <div className="flex-1 flex flex-col items-center justify-center space-y-4 p-8 text-center bg-background">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-2">
+            <BookOpen className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold">No topic pages yet</h2>
+            <p className="text-muted-foreground max-w-xs">
+              Create a topic page from the sidebar to start organizing your knowledge.
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -89,25 +113,15 @@ export const NotebookView = () => {
 
   return (
     <div className="flex h-full overflow-hidden">
-      {/* Sidebar: Topic Page List Placeholder */}
+      {/* Sidebar: Topic Page List */}
       <div className="w-64 border-r bg-muted/30 flex flex-col h-full">
-        <div className="p-4 border-b font-medium text-sm text-muted-foreground uppercase tracking-wider">
-          Topic Pages
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {/* <TopicPageList pages={pages} topics={topics} selectedId={selectedPageId} onSelect={setSelectedPageId} /> */}
-          <div className="p-4 text-xs italic text-muted-foreground">
-            TopicPageList component will render here. ({pages.length} pages, {topics.size} topics)
-            {selectedPageId && (
-              <button 
-                onClick={() => setSelectedPageId(null)}
-                className="block mt-2 text-primary hover:underline"
-              >
-                Clear Selection
-              </button>
-            )}
-          </div>
-        </div>
+        <TopicPageList 
+          pages={pages} 
+          topics={topics} 
+          selectedId={selectedPageId} 
+          onSelect={setSelectedPageId}
+          onPageCreated={fetchData}
+        />
       </div>
 
       {/* Main Content: Topic Page View Placeholder */}

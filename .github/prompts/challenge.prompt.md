@@ -1,7 +1,7 @@
 ---
 description: Challenge the current plan or implementation for gaps, edge cases, and issues
 name: challenge
-agent: ask
+agent: agent
 ---
 
 # Challenge Current Plan/Implementation
