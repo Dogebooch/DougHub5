@@ -73,10 +73,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   queueCount: 0,
   smartViewCounts: {
     inbox: 0,
-    today: 0,
-    queue: 0,
     notebook: 0,
-    weak: 0,
   },
   selectedInboxItems: new Set<string>(),
 
@@ -88,17 +85,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       const itemsResult = await window.api.sourceItems.getAll();
       if (!itemsResult.error && itemsResult.data) {
         const items = itemsResult.data;
-        const todayStr = new Date().toDateString();
         const counts = {
           inbox: items.filter((i) => i.status === "inbox").length,
-          today: items.filter(
-            (i) => new Date(i.createdAt).toDateString() === todayStr
-          ).length,
-          queue: items.filter(
-            (i) => i.status === "inbox" && i.sourceType === "quickcapture"
-          ).length,
           notebook: 0, // Placeholder
-          weak: 0, // Placeholder
         };
         set({ smartViewCounts: counts });
       }

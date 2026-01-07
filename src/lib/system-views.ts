@@ -3,10 +3,7 @@
 import { SmartViewFilter } from './filter-engine';
 import {
   Inbox,
-  Calendar,
-  ClipboardList,
   BookOpen,
-  AlertTriangle,
   LucideIcon,
 } from "lucide-react";
 
@@ -29,36 +26,12 @@ export const SYSTEM_VIEWS: SystemView[] = [
     description: "Unprocessed captures awaiting review",
   },
   {
-    id: "today",
-    name: "Today",
-    icon: Calendar,
-    filter: { createdToday: true },
-    viewKey: "today",
-    description: "Items captured today",
-  },
-  {
-    id: "queue",
-    name: "Queue",
-    icon: ClipboardList,
-    filter: { sourceType: ["quickcapture"], status: ["inbox"] },
-    viewKey: "queue",
-    description: "Quick captures ready to process",
-  },
-  {
     id: "notebook",
     name: "Notebook",
     icon: BookOpen,
     filter: {},
     viewKey: "notebook",
     description: "Curated topic pages and notes",
-  },
-  {
-    id: "weak",
-    name: "Weak Topics",
-    icon: AlertTriangle,
-    filter: { hasLowEase: true },
-    viewKey: "weak",
-    description: "Cards with low ease scores (<2.0)",
   },
 ];
 
