@@ -20,25 +20,27 @@ interface NotebookBlockProps {
   onRefresh: () => void;
 }
 
-export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({ block, onRefresh }) => {
+export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
+  block,
+}) => {
   const [sourceTitle, setSourceTitle] = useState<string | null>(null);
   const [loadingSource, setLoadingSource] = useState(false);
 
   useEffect(() => {
     const fetchSource = async () => {
       if (!block.sourceItemId) return;
-      
+
       setLoadingSource(true);
       try {
         const result = await window.api.sourceItems.getById(block.sourceItemId);
         if (result.data) {
           setSourceTitle(result.data.title);
         } else {
-          setSourceTitle('Unknown Source');
+          setSourceTitle("Unknown Source");
         }
       } catch (err) {
-        console.error('Error fetching source title:', err);
-        setSourceTitle('Error loading source');
+        console.error("Error fetching source title:", err);
+        setSourceTitle("Error loading source");
       } finally {
         setLoadingSource(false);
       }
@@ -57,15 +59,18 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({ block, on
             <span>Block {block.position + 1}</span>
           </div>
 
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-semibold bg-primary/10 text-primary border-none">
-            {block.cardCount || 0} {block.cardCount === 1 ? 'card' : 'cards'}
+          <Badge
+            variant="secondary"
+            className="text-[10px] px-1.5 py-0 h-4 font-semibold bg-primary/10 text-primary border-none"
+          >
+            {block.cardCount || 0} {block.cardCount === 1 ? "card" : "cards"}
           </Badge>
 
           {block.sourceItemId && (
             <div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full border border-border/50">
               <LinkIcon className="w-3 h-3" />
               <span className="max-w-[150px] truncate">
-                {loadingSource ? 'Loading...' : sourceTitle}
+                {loadingSource ? "Loading..." : sourceTitle}
               </span>
               <ExternalLink className="w-2.5 h-2.5 opacity-50 ml-0.5" />
             </div>
@@ -84,10 +89,10 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({ block, on
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="cursor-not-allowed">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  disabled 
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
                   className="h-8 gap-2 text-xs font-semibold grayscale opacity-70"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-primary" />
