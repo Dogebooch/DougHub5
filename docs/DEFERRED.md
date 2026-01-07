@@ -139,15 +139,16 @@
 **Source:** Task T37 (Legacy)
 **Notes:** Nice-to-have for smarter metadata suggestions.
 
-### Image Capture Support (T38.2-T38.3)
-**Description:** Add image paste/drop support to QuickDumpModal. Implement clipboard paste and drag-drop handlers for images with visual preview. Create IPC handler for saving image files to app data directory.
-**Priority:** Medium
-**Source:** Task T38 subtasks 2-3 (deferred from MVP)
-**Notes:** Text capture works and is MVP-sufficient. Database schema supports images (imageData BLOB, mediaPath) but UI lacks handlers. Defer until post-MVP when workflow is validated with text content.
-
 ---
 
 ## Review & Scheduling
+
+### Card-Worthiness Gate (T43)
+**Description:** AI-powered card quality evaluation rubric before card creation. Checks: board-relevant? testable? discriminative? minimum information? no pattern matching? Shows pass/warning/fail for each criterion with overall recommendation.
+**Priority:** Medium
+**Source:** Task T43 (deferred from MVP 2026-01-07)
+**Dependency:** T42 (Card Generation)
+**Notes:** Full AI quality filter is polish. User can manually decide card-worthiness while studying. Implement after core card generation flow is stable and validated.
 
 ### Response Time Personalization
 **Description:** Track response times, use for interval adjustments and domain-specific scheduling.
@@ -218,23 +219,12 @@
 **Source:** Task T11 (Legacy)
 **Notes:** Basic command palette exists. These are enhancements.
 
-### Low-Ease Detection
-**Description:** Flag repeatedly-hard cards, route to "fix card" flow, Weak Topics view.
-**Priority:** Medium
-**Source:** Task T46 (Legacy)
-**Notes:** Useful for identifying knowledge gaps. Implement after core review works.
-
 ### UI/UX Rules Documentation
 **Description:** Document button hierarchy, confirmation patterns, naming conventions, keyboard shortcuts.
 **Priority:** Low
 **Source:** Task T47 (Legacy)
 **Notes:** Apply incrementally as we build. Don't need a dedicated task.
 
-### Data Persistence & Crash Recovery
-**Description:** UI integration for backup system: auto-save toast notifications (every 30s), Settings page backup restore UI, backup file browser.
-**Priority:** Medium
-**Source:** Task T14 (Legacy)
-**Notes:** backup-service.ts EXISTS (auto-backup with 7-day retention, createBackup/restoreBackup functions). Only UI indicators remain: toast notifications on save, Settings page for restore.
 
 ### Evidence-Based Card Validation
 **Description:** Real-time warnings for pattern-matching cards, multi-fact violations.
@@ -251,16 +241,6 @@
 **Priority:** Medium
 **Source:** TaskMaster AI setup docs (ai-extraction-fix.txt)
 **Notes:** Core extraction works with Claude. Ollama is alternative provider for offline/local usage. Not MVP-blocking.
-
----
-
-## Browser & Web Integration
-
-### Browser Extension for Web Capture
-**Description:** Chrome/Firefox extension allowing right-click capture of web content (UWorld, UpToDate, etc.) directly into DougHub's Knowledge Bank. Features: context menu, metadata extraction (URL, title, date), quick tag assignment, image capture support. Two approaches: Tampermonkey script (simpler) or native extension (better UX). Requires local HTTP API in Electron main process.
-**Priority:** Medium
-**Source:** TaskMaster AI setup docs (post-mvp-browser-extension.txt)
-**Notes:** Requires Layer 1 (Knowledge Bank) complete. Would dramatically improve capture workflow for web-based study resources.
 
 ---
 
@@ -352,11 +332,6 @@
 **Source:** UI/UX Sidebar Analysis (2026-01-06)
 **Notes:** Move to Settings menu for now. Consider promoting to sidebar post-MVP if users want quick access to stats.
 
-### Card Browser with Queue Filter
-**Description:** Combined view to browse all cards with filtering by status (due/new/learning/suspended), topic, tags, and date. Replaces the standalone Queue smart view. Features: search cards, bulk actions, sort by due date/ease/created, preview card content. Essentially "Knowledge Bank for cards."
-**Priority:** Medium
-**Source:** Sidebar Consolidation Analysis (2026-01-06)
-**Notes:** Queue alone was weak (filter-as-destination anti-pattern). Combined with Card Browser provides real utility. Post-MVP.
 
 ### Dashboard View
 **Description:** Aggregated overview showing: cards due today, streak count, weekly review heatmap, retention rate, upcoming workload forecast. Entry point for Stats and Insights. Could replace separate Stats view.
