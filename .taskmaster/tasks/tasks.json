@@ -904,28 +904,15 @@
       },
       {
         "id": "42",
-        "title": "[v2-T4.1] Card generation from notebook: AI suggests, card-worthiness gate",
-        "description": "Implement AI-powered card generation from Notebook blocks with card-worthiness evaluation before creation.",
-        "details": "CARD GENERATION FLOW:\n\n1. USER INITIATES:\n- Click 'Generate Card' on a block\n- Or 'Generate All Cards' for entire topic page\n\n2. AI CARD SUGGESTION:\n- Call AI to analyze block content\n- Suggest card format (Q&A, cloze, vignette)\n- Generate front/back content\n- Return multiple card suggestions if content-rich\n\n3. CARD-WORTHINESS GATE (T5):\n- Before showing card to user, evaluate:\n  - Board-relevant? (high-yield for Step 2/3)\n  - Testable? (clear right answer)\n  - Discriminative? (distinguishes from similar concepts)\n- Show AI assessment with checkmarks/warnings\n- Recommendation: CREATE CARD / KEEP AS NOTE ONLY\n\n4. USER DECISION:\n- [Create Card] - proceeds with creation\n- [Keep as Note Only] - doesn't create card, marks block\n- [Edit First] - allows editing before creation\n- [Discard] - cancels without saving\n\n5. CARD CREATION:\n- Create card with:\n  - notebookTopicPageId (required)\n  - sourceBlockId (specific block)\n  - tags from topic\n  - FSRS defaults\n- Update NotebookTopicPage.cardIds array\n\nCOMPONENTS:\n\n- src/components/notebook/CardGenerationModal.tsx\n- src/components/notebook/CardWorthinessGate.tsx\n- src/components/notebook/CardSuggestionPreview.tsx\n\nAI FUNCTIONS in electron/ai-service.ts:\n- generateCardFromBlock(blockContent: string, topicContext: string): Promise<CardSuggestion[]>\n- evaluateCardWorthiness(card: CardSuggestion): Promise<WorthinessAssessment>",
-        "testStrategy": "Generate card from medical fact block, verify AI suggests appropriate format. Test worthiness gate shows correct assessments. Test 'Keep as Note Only' doesn't create card. Verify all created cards have required provenance fields.",
+        "title": "Card Generation from Notebook Blocks",
+        "description": "AI suggests cards from notebook blocks, user confirms, cards get provenance linked to source.",
+        "details": "CARD GENERATION FLOW:\n\n1. USER INITIATES:\n- Click 'Generate Card' on a block\n- Or 'Generate All Cards' for entire topic page\n\n2. AI CARD SUGGESTION:\n- Call AI to analyze block content\n- Suggest card format (Q&A, cloze, vignette)\n- Generate front/back content\n- Return multiple card suggestions if content-rich\n\n3. USER DECISION:\n- Preview suggested cards\n- [Create Card] - proceeds with creation\n- [Edit First] - allows editing before creation\n- [Skip] - doesn't create card\n\n4. CARD CREATION:\n- Create card with:\n  - notebookTopicPageId (required)\n  - sourceBlockId (specific block)\n  - tags from topic\n  - FSRS defaults\n- Update NotebookTopicPage.cardIds array\n\nCOMPONENTS:\n- src/components/notebook/CardGenerationModal.tsx\n- src/components/notebook/CardSuggestionPreview.tsx\n\nAI FUNCTIONS in electron/ai-service.ts:\n- generateCardFromBlock(blockContent: string, topicContext: string): Promise<CardSuggestion[]>",
+        "testStrategy": "Generate card from medical fact block, verify AI suggests appropriate format. Verify all created cards have required provenance fields (notebookTopicPageId, sourceBlockId).",
         "priority": "high",
         "dependencies": [
           "41"
         ],
         "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "43",
-        "title": "[DEFERRED] Card-worthiness gate: rubric (board-relevant? testable? discriminative?), UI",
-        "description": "AI quality filter for card creation. Deferred - user can manually decide card-worthiness while studying.",
-        "details": "Moved to DEFERRED.md. Full AI rubric evaluation is polish, not MVP-critical.",
-        "testStrategy": "",
-        "priority": "low",
-        "dependencies": [
-          "42"
-        ],
-        "status": "cancelled",
         "subtasks": []
       },
       {
@@ -1150,6 +1137,17 @@
         "testStrategy": "Complete review session with 2+ mistakes. Verify prompt appears. Click Review Now, verify mistakes display with AI feedback. Verify all mistakes can be scrolled through.",
         "priority": "high",
         "dependencies": ["45"],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "118",
+        "title": "Two-Mode Capture: FAB modal with auto-classification and Process Now button",
+        "description": "Expand capture modal with content auto-classification, AI title generation, and disabled 'Process Now' button (enabled after T117 Learning Mode).",
+        "details": "TWO-MODE CAPTURE PRINCIPLE:\n\n1. SINGLE CAPTURE MODAL (QuickDumpModal expansion):\n- Opened via FAB (+), global shortcut, drag-drop, or Tampermonkey prefill\n- Plaintext textarea with auto-detect: Text / URL / PDF / Image / QBank\n- AI auto-title (debounced, editable, fallback to truncation)\n\n2. TWO EXITS:\n- [Save to Inbox] (primary): Create SourceItem, close modal, show toast\n- [Process Now] (secondary, disabled initially): Create SourceItem, enter guided processing\n\n3. AUTO-CLASSIFICATION:\n- Detect content type from paste/drop\n- Show badge indicating detected type\n- Set sourceType field automatically\n\n4. PROCESS NOW BUTTON:\n- Initially disabled with tooltip 'Coming soon - complete Learning Mode first'\n- Enabled after T117 (Learning Mode) is complete\n- When enabled: saves to inbox then navigates to guided processing flow\n\nNOTE: This expands T38's basic capture with the two-mode principle. Inbox remains derived view (status='inbox').",
+        "testStrategy": "Paste text, verify auto-title generates. Verify Save to Inbox creates SourceItem. Verify Process Now button is disabled. Test content type detection for URL vs plain text.",
+        "priority": "high",
+        "dependencies": ["38"],
         "status": "pending",
         "subtasks": []
       }

@@ -16,6 +16,46 @@
 
 ---
 
+## POST-MVP Priority Features
+
+> **Note:** These features are first in line after MVP completion. They build on core functionality and provide high value.
+
+### Card-Worthiness Gate (F6)
+**Description:** Before card creation, AI evaluates: Is this testable? One concept? Discriminative? Shows warning if fails, user can override. Flow: User selects block for card generation → AI evaluates against rubric → Pass: Generate card normally → Fail: Yellow warning "This may not make an effective card because [reason]" with options [Create Anyway] | [Edit First] | [Skip].
+**Priority:** High
+**Source:** Canonical MVP Post-MVP list (2026-01-07)
+**Dependency:** T42 (Card Generation)
+**Notes:** Later expansion: uniform card formats for EKG findings, physical exam findings, crossover confusion topics, lists, etc.
+
+### AI Duplicate Detection (F2)
+**Description:** AI-powered detection of duplicate or near-duplicate content in Knowledge Bank and Notebook. Warns user before creating redundant entries. Prep: Add embedding columns to schema now for future similarity search.
+**Priority:** High
+**Source:** Canonical MVP Post-MVP list (2026-01-07)
+**Notes:** Requires embeddings infrastructure. Add embedding columns in advance during T42 work.
+
+### Topic Maturity Dashboard (F9)
+**Description:** SQL aggregation showing topic progress: cards created, cards mature (passed X reviews), retention rate per topic. Progress bars on topic headers in Notebook view.
+**Priority:** High
+**Source:** Canonical MVP Post-MVP list (2026-01-07)
+**Dependency:** T45 (FSRS Integration)
+**Notes:** Visual feedback on board prep progress per topic.
+
+### Staleness Alerts (F10)
+**Description:** Badge/indicator for topics not reviewed in 14+ days. Surface in sidebar or topic list to prompt review of neglected areas.
+**Priority:** High
+**Source:** Canonical MVP Post-MVP list (2026-01-07)
+**Dependency:** T45 (FSRS Integration)
+**Notes:** Prevents knowledge decay in less-practiced topics.
+
+### Confusion Cluster Detection (F12)
+**Description:** Detect patterns where user confuses similar concepts (e.g., similar drug names, overlapping symptoms). Requires embeddings + error pattern analysis from review logs.
+**Priority:** High
+**Source:** Canonical MVP Post-MVP list (2026-01-07)
+**Dependency:** T45 (FSRS Integration), F2 (embeddings)
+**Notes:** High-value for medical education - addresses common confusion pairs.
+
+---
+
 ## UI Enhancements
 
 ### Single-Item Delete Confirmation
@@ -142,13 +182,6 @@
 ---
 
 ## Review & Scheduling
-
-### Card-Worthiness Gate (T43)
-**Description:** AI-powered card quality evaluation rubric before card creation. Checks: board-relevant? testable? discriminative? minimum information? no pattern matching? Shows pass/warning/fail for each criterion with overall recommendation.
-**Priority:** Medium
-**Source:** Task T43 (deferred from MVP 2026-01-07)
-**Dependency:** T42 (Card Generation)
-**Notes:** Full AI quality filter is polish. User can manually decide card-worthiness while studying. Implement after core card generation flow is stable and validated.
 
 ### Response Time Personalization
 **Description:** Track response times, use for interval adjustments and domain-specific scheduling.
@@ -367,12 +400,6 @@
 **Source:** Task T41 scoping (2026-01-07)
 **Notes:** MVP uses full rawContent. Excerpt selection needs text selection UI, potentially contenteditable or range selection API. Add when users have long source items.
 
-### Card Generation from Blocks (T42 Integration)
-**Description:** "Generate Card" and "Generate All Cards" buttons on NotebookBlock and TopicPageView. T41 adds placeholder buttons; T42 implements actual AI card generation.
-**Priority:** High (T42 handles this)
-**Source:** Task T41/T42 split (2026-01-07)
-**Notes:** T41.4 and T41.3 add disabled placeholder buttons with tooltip "Coming in T42". T42 will wire up actual functionality.
-
 ### Optimistic UI for Block Creation
 **Description:** Show newly created blocks immediately before API confirms, then reconcile with server response. Currently T41 uses full refetch after block creation.
 **Priority:** Low
@@ -557,11 +584,11 @@
 **Source:** Task T101 (Legacy)
 **Notes:** Research-backed modification to standard FSRS.
 
-### Pre-Test Diagnostic
+### Pre-Test Diagnostic (F11)
 **Description:** Before generating cards from topic, run quick diagnostic. If >80% accuracy, skip or reduce card count.
-**Priority:** Low
-**Source:** Task T102 (Legacy)
-**Notes:** Saves time on already-known material. Efficiency feature.
+**Priority:** High
+**Source:** Task T102 (Legacy), Canonical MVP Post-MVP list
+**Notes:** Saves time on already-known material. Efficiency feature. First batch of post-MVP features.
 
 ### Illness Script Template
 **Description:** Scaffold for medical content consolidation. Etiology → Risk Factors → Presentation → Diagnosis → Treatment structure.
