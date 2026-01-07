@@ -19,14 +19,101 @@ import {
 interface NotebookBlockProps {
   block: NotebookBlock;
   onRefresh: () => void;
+  onGenerateCard: (text: string) => void;
 }
 
 export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
   block,
+  onGenerateCard,
 }) => {
   const { setCurrentView } = useAppStore();
   const [sourceTitle, setSourceTitle] = useState<string | null>(null);
   const [loadingSource, setLoadingSource] = useState(false);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+
+  // Selection state
+  const [selectionData, setSelectionData] = useState<{
+    text: string;
+    x: number;
+    y: number;
+    show: boolean;
+    isAbove: boolean;
+  }>({ text: "", x: 0, y: 0, show: false, isAbove: true });
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const handleSelectionUpdate = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed || !contentRef.current) {
+          setSelectionData((prev) => ({ ...prev, show: false }));
+          return;
+        }
+
+        const selectedText = selection.toString().trim();
+        if (selectedText.length < 10) {
+          setSelectionData((prev) => ({ ...prev, show: false }));
+          return;
+        }
+
+        // Ensure selection is within THIS block
+        if (!contentRef.current.contains(selection.anchorNode)) {
+          return;
+        }
+
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+
+        // Calculate if we have space above (button ~40px)
+        const isAbove = rect.top > 50;
+        const x = rect.left + rect.width / 2;
+        const y = isAbove ? rect.top - 10 : rect.bottom + 10;
+
+        setSelectionData({
+          text: selectedText,
+          x,
+          y,
+          show: true,
+          isAbove,
+        });
+      }, 200);
+    };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      // Hide button immediately when starting a new click/drag
+      // unless clicking the button itself
+      if (!(e.target as HTMLElement).closest(".selection-trigger")) {
+        setSelectionData((prev) => ({ ...prev, show: false }));
+      }
+    };
+
+    const handleScroll = () => {
+      setSelectionData((prev) => ({ ...prev, show: false }));
+    };
+
+    document.addEventListener("mouseup", handleSelectionUpdate);
+    document.addEventListener("keyup", handleSelectionUpdate);
+    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("scroll", handleScroll, true);
+
+    return () => {
+      document.removeEventListener("mouseup", handleSelectionUpdate);
+      document.removeEventListener("keyup", handleSelectionUpdate);
+      window.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("scroll", handleScroll, true);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  const handleGenerateClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onGenerateCard(selectionData.text);
+    window.getSelection()?.removeAllRanges();
+    setSelectionData((prev) => ({ ...prev, show: false }));
+  };
 
   useEffect(() => {
     const fetchSource = async () => {
@@ -90,9 +177,35 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
       </div>
 
       {/* Content */}
-      <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+      <div
+        ref={contentRef}
+        className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed"
+      >
         {block.content}
       </div>
+
+      {/* Floating Selection Trigger */}
+      {selectionData.show && (
+        <div
+          className="selection-trigger fixed z-[100] transition-all duration-200 pointer-events-auto"
+          style={{
+            left: selectionData.x,
+            top: selectionData.y,
+            transform: `translateX(-50%) translateY(${
+              selectionData.isAbove ? "-100%" : "0"
+            })`,
+          }}
+        >
+          <Button
+            size="sm"
+            className="h-8 gap-2 shadow-lg animate-in fade-in zoom-in duration-200"
+            onClick={handleGenerateClick}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Generate Card
+          </Button>
+        </div>
+      )}
 
       {/* Footer / Actions */}
       <div className="mt-4 pt-3 border-t flex justify-end">

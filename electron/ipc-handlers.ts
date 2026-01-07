@@ -53,6 +53,7 @@ import {
   detectMedicalList,
   convertToVignette,
   suggestTags,
+  generateCardFromBlock,
   findRelatedNotes,
   aiCache,
   type AIProviderStatus,
@@ -60,6 +61,7 @@ import {
   type ValidationResult,
   type MedicalListDetection,
   type VignetteConversion,
+  type CardSuggestion,
 } from "./ai-service";
 import {
   resolveTopicAlias,
@@ -982,6 +984,27 @@ export function registerIpcHandlers(): void {
         const result = await convertToVignette(listItem, context);
         aiCache.set(cacheKey, result);
         return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "ai:generateCards",
+    async (
+      _,
+      blockContent: string,
+      topicContext: string,
+      userIntent?: string
+    ): Promise<IpcResult<CardSuggestion[]>> => {
+      try {
+        const cards = await generateCardFromBlock(
+          blockContent,
+          topicContext,
+          userIntent
+        );
+        return success(cards);
       } catch (error) {
         return failure(error);
       }

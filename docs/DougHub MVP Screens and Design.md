@@ -37,13 +37,14 @@
 │                  │                                                │
 │  DO NOW          │  MAIN CONTENT AREA                            │
 │  ────────────    │  (adapts to selected view)                    │
-│  ▶ Review (12)   │                                                │
+│  ⭐ Review (12)  │                                                │
 │  📥 Inbox (5)    │  Knowledge Bank shows ALL items with inbox    │
 │                  │  items grouped at top. "Inbox" in DO NOW is   │
 │  LIBRARY         │  a pre-filtered shortcut to that same view.   │
 │  ────────────    │                                                │
 │  📓 Notebook     │  Same data, different entry point by intent.  │
-│  📚 Knowledge    │                                                │
+│  🗄️ Knowledge    │                                                │
+│  🃏 Cards        │                                                │
 │                  │                                                │
 │  ────────────    │                                                │
 │  ⚙️ Settings     │                                                │
@@ -54,26 +55,28 @@
 ```
 
 ### Visual Hierarchy
-- **Review** = MOST prominent (primary color, larger/bolder) - Doug's main action
+- **Review** = MOST prominent (glow when cards due) - Doug's main action
 - **Inbox** = Secondary emphasis (pre-filtered shortcut to KB inbox items)
 - **Library items** = Neutral/calm reference destinations
 
-### Sidebar (5 items total)
+### Sidebar (6 items total)
 | View | Purpose | Badge |
 |------|---------|-------|
-| **Review** | Due cards (FSRS) | Count |
+| **Review** | Due cards (FSRS) | Count (glow when >0) |
 | **Inbox** | Shortcut to KB filtered by status='inbox' | Count |
 | **Notebook** | Topic pages, card generation | - |
 | **Knowledge Bank** | ALL items, inbox grouped at top | - |
+| **Cards** | Browse/filter all cards (T115) | - |
 | **Settings** | Configuration | - |
 
 ### Removed from Sidebar (MVP)
 - **Capture** → FAB + Ctrl+Shift+S sufficient
 - **Today** → Date grouping within Inbox/KB view
-- **Queue** → Filter chip within Inbox view
+- **Queue** → Filter chip within Card Browser
 - **Topics** → Browse within Notebook
-- **Stats** → Move to Settings (not daily-use)
-- **Weak Topics** → Deferred until T46 (low-ease detection)
+- **Stats** → Deferred to Insights section (POST-MVP)
+- **Mistakes** → Deferred to Insights section (POST-MVP)
+- **Weak Topics** → Deferred to Insights section (POST-MVP)
 
 ### Source Item Row (Vertical List)
 ```
@@ -121,7 +124,9 @@
 
 ---
 
-## Card-Worthiness Gate (Before Card Creation)
+## Card-Worthiness Gate (POST-MVP — F6)
+
+> **Note:** Full AI rubric evaluation deferred to post-MVP. MVP card generation shows AI suggestions; user decides without formal pass/fail gating.
 
 ```
 ┌─ Card Quality Check ─────────────────────────────────────────────┐

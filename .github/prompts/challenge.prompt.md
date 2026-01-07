@@ -34,6 +34,12 @@ Perform a critical review identifying:
 - N+1 queries, missing indexes
 - Memory leaks, large bundle sizes
 
+## UI/UX
+- Inconsistent styling, missing states (loading, error, empty)
+- Poor accessibility, non-intuitive flows
+- Quality of life improvements
+- Workflow states
+
 ---
 
 For each issue: **Severity** | **Location** | **Problem** | **Fix**

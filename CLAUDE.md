@@ -19,7 +19,9 @@ IPC returns IpcResult<T>: { data, error: null } | { data: null, error }
 
 **v2 3-Layer System:**
 1. Knowledge Bank (SourceItems) → 2. Notebook (NotebookTopicPages) → 3. Cards
-- Cards ONLY from Notebook blocks, never direct from KB
+- **Notebook = "What Boards Test" registry** — curated, clinically-relevant content
+- Cards ONLY from Notebook blocks (or Card Browser "New Card"), never direct from KB
+- Card generation: text selection → AI suggests format + card-worthiness feedback → user confirms
 - CanonicalTopic with alias normalization (no raw topic strings)
 - Deep links always: Cards → NotebookTopicPage → SourceItem
 
@@ -56,7 +58,7 @@ Ctrl+K: Command palette | Space: Answer/continue | Escape: Back
 **Notes:** Context, dependencies, or implementation hints
 ```
 
-**MVP Path:** T112 (Sidebar) → T41 (Notebook) → T42 (Card Gen) → T43 (Worthiness) → T45 (FSRS)
+**MVP Path:** T42 (Card Gen) → T45 (FSRS) → T117 (Learning Mode) → T118 (Two-Mode Capture) → T115 (Card Browser)
 
 ---
 

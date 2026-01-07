@@ -27,6 +27,7 @@ import type {
   MedicalListDetection,
   VignetteConversion,
   SemanticMatch,
+  CardSuggestion,
 } from "./ai";
 
 // Re-export database types for convenience
@@ -192,6 +193,11 @@ export interface ElectronAPI {
       listItem: string,
       context: string
     ) => Promise<IpcResult<VignetteConversion>>;
+    generateCards: (
+      blockContent: string,
+      topicContext: string,
+      userIntent?: string
+    ) => Promise<IpcResult<CardSuggestion[]>>;
     suggestTags: (content: string) => Promise<IpcResult<string[]>>;
     findRelatedNotes: (
       content: string,

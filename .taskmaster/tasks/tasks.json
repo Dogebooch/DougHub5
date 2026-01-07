@@ -159,83 +159,16 @@
       },
       {
         "id": "3",
-        "title": "AI-guided capture interface",
-        "description": "Replace manual capture interface with AI concept extraction workflow: paste → highlight → confirm → format suggestion → save",
-        "details": "",
+        "title": "[ARCHIVED] AI-guided capture interface (v1)",
+        "description": "ARCHIVED: v1 capture flow with AI concept extraction checkboxes. Superseded by v2 Two-Mode Capture (T118). Kept for historical reference.",
+        "details": "Original flow: paste → AI extracts concepts → checkboxes → format suggestion → batch card creation. v2 uses simpler Save to Inbox flow.",
         "testStrategy": "",
-        "priority": "high",
+        "priority": "low",
         "dependencies": [
           "2"
         ],
         "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add paste detection and content state management",
-            "description": "Implement paste area UI with auto-detection and state management for pasted content, extracted concepts, selected concepts, and processing state",
-            "dependencies": [],
-            "details": "",
-            "status": "done",
-            "testStrategy": "",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-05T14:29:44.663Z"
-          },
-          {
-            "id": 2,
-            "title": "Create concept extraction display with checkboxes",
-            "description": "Build ConceptCheckbox component to display extracted concepts with selection, format badges, and edit capability",
-            "dependencies": [
-              1
-            ],
-            "details": "",
-            "status": "done",
-            "testStrategy": "",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-05T14:29:44.666Z"
-          },
-          {
-            "id": 3,
-            "title": "Implement AI concept extraction integration",
-            "description": "Wire up AI service calls for concept extraction with loading states and error handling",
-            "dependencies": [
-              1
-            ],
-            "details": "",
-            "status": "done",
-            "testStrategy": "",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-05T14:29:44.669Z"
-          },
-          {
-            "id": 4,
-            "title": "Add format suggestion display and validation warnings",
-            "description": "Create ValidationWarning component and integrate real-time card validation for each selected concept",
-            "dependencies": [
-              2,
-              3
-            ],
-            "details": "",
-            "status": "done",
-            "testStrategy": "",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-05T14:29:44.671Z"
-          },
-          {
-            "id": 5,
-            "title": "Implement batch card creation and auto-note generation",
-            "description": "Create batch card creation flow with auto-generated parent Note and save feedback within 500ms",
-            "dependencies": [
-              2,
-              3,
-              4
-            ],
-            "details": "",
-            "status": "done",
-            "testStrategy": "",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-05T14:29:44.672Z"
-          }
-        ],
+        "subtasks": [],
         "updatedAt": "2026-01-05T14:29:44.672Z"
       },
       {
@@ -823,81 +756,75 @@
           {
             "id": 1,
             "title": "Create NotebookView container component with routing integration",
-            "description": "Build the main NotebookView container that renders when currentView is 'notebook', replacing the placeholder in AppLayout.tsx",
+            "description": "NotebookView.tsx renders when currentView='notebook'. Pattern: KnowledgeBankView.tsx",
             "dependencies": [],
-            "details": "Create src/components/notebook/NotebookView.tsx as the main container. Add state management for loading topic pages and blocks. Integrate with useAppStore to handle currentView='notebook'. Import and render TopicPageList and TopicPageView as child components. Set up responsive layout with sidebar (TopicPageList) and main content area (TopicPageView). Follow the pattern established in KnowledgeBankView.tsx for loading states, error handling, and IPC calls to window.api.notebookPages.getAll(). Add to AppLayout.tsx renderView switch case.",
+            "details": "",
             "status": "done",
-            "testStrategy": "Navigate to notebook view from sidebar, verify component renders without errors, check that it fetches topic pages on mount",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-07T02:21:03.674Z"
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
             "title": "Build TopicPageList sidebar with search and new topic creation",
-            "description": "Create the topic page list sidebar showing all NotebookTopicPages with search/filter and 'New Topic Page' button",
+            "description": "TopicPageList.tsx shows all topics with search. 'New Topic Page' uses TopicAutocomplete dialog.",
             "dependencies": [
               1
             ],
-            "details": "Create src/components/notebook/TopicPageList.tsx. Display list of NotebookTopicPages with topic name (via canonicalTopicId lookup using window.api.canonicalTopics.getById), card count (cardIds.length), and derived source count. Implement search/filter input to filter by topic name using local state. Add 'New Topic Page' button that opens a dialog using shadcn Dialog component with topic autocomplete (similar to AddToNotebookDialog pattern with window.api.canonicalTopics.suggestMatches). On topic selection/creation, call window.api.notebookPages.create() with new NotebookTopicPage object (UUID id, canonicalTopicId, empty cardIds array, timestamps). Display active/selected topic page with visual indicator. Handle empty state when no topics exist.",
+            "details": "",
             "status": "done",
-            "testStrategy": "Click 'New Topic Page', create new topic, verify it appears in list. Search for topics, verify filtering works. Click topic to select it.",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-07T02:21:03.677Z"
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
             "title": "Build TopicPageView with header, stats, and blocks list",
-            "description": "Create the main topic page view showing header with topic info, stats, and list of NotebookBlocks",
+            "description": "TopicPageView.tsx shows topic header (name, aliases, stats) + NotebookBlock list + footer actions.",
             "dependencies": [
               1
             ],
-            "details": "Create src/components/notebook/TopicPageView.tsx. Accept selectedPageId prop from NotebookView. Fetch topic page using window.api.notebookPages.getById(selectedPageId) and blocks using window.api.notebookBlocks.getByPage(selectedPageId). Fetch CanonicalTopic details using window.api.canonicalTopics.getById(page.canonicalTopicId) to display topic name and aliases. Header section displays topic name, aliases (as badges), card count, and source count (derived from blocks). Blocks section maps over NotebookBlock[] and renders NotebookBlock component for each. Footer with '+ Add from Knowledge Bank' button (will open AddBlockModal) and 'Generate All Cards' placeholder button (disabled with tooltip 'Coming in T42'). Handle loading states and empty blocks state with helpful message. Sort blocks by position field ascending.",
+            "details": "",
             "status": "done",
-            "testStrategy": "Select topic page, verify header shows correct topic name and stats. Verify blocks list renders. Click footer buttons to verify behavior.",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-07T02:21:03.679Z"
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
             "title": "Create NotebookBlock component with source deep link and actions",
-            "description": "Build the individual block component displaying source excerpt, annotations, and action buttons",
+            "description": "NotebookBlock.tsx: Card with content, source deep link, [Edit] [→ Source] [Generate Card] actions.",
             "dependencies": [
               3
             ],
-            "details": "Create src/components/notebook/NotebookBlock.tsx accepting NotebookBlock as prop. Use shadcn Card component for container with hover effects. Fetch SourceItem details using window.api.sourceItems.getById(block.sourceItemId) to display source reference. Display source reference as clickable link that calls useAppStore.setCurrentView('knowledgebank', block.sourceItemId) to navigate to Knowledge Bank with item highlighted. Show block content (full content, not excerpt per scope). If block.annotations exists, display in muted text below content. If block.mediaPath exists, display image preview. Actions row with [Edit] button (opens inline textarea to edit block.content and block.annotations, saves via window.api.notebookBlocks.update), [→ Source] button (same as clicking source reference), and [Generate Card] placeholder button (disabled with tooltip 'Coming in T42'). Delete button in dropdown menu calls window.api.notebookBlocks.delete(block.id).",
+            "details": "",
             "status": "done",
-            "testStrategy": "Verify block displays source reference correctly. Click source deep link, verify navigation to Knowledge Bank. Edit block content and annotations, verify saves. Click Generate Card placeholder, verify tooltip shows.",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-07T02:21:03.681Z"
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
             "title": "Build AddBlockModal for selecting sources from Knowledge Bank",
-            "description": "Create modal dialog for adding blocks from Knowledge Bank SourceItems to current topic page",
+            "description": "AddBlockModal.tsx: Select processed/curated SourceItems, create NotebookBlock, update status to curated.",
             "dependencies": [
               3
             ],
-            "details": "Create src/components/notebook/AddBlockModal.tsx using shadcn Dialog. Accept props: open, onOpenChange, notebookTopicPageId, onSuccess. Fetch SourceItems filtered by status='processed' or status='curated' (exclude inbox per spec) using window.api.sourceItems.getAll() then filter locally. Display vertical list similar to KnowledgeBankView with SourceItemRow-like cards showing title, source type badge, topic tags. Add search/filter input to filter by title or tags. On item selection, create NotebookBlock: fetch existing blocks for page to determine max position, create block with UUID id, notebookTopicPageId, sourceItemId, content=sourceItem.rawContent (full content per scope), annotations=null, mediaPath=sourceItem.mediaPath, position=maxPosition+1. Call window.api.notebookBlocks.create(block). Update SourceItem status to 'curated' via window.api.sourceItems.update(id, {status: 'curated'}). Show success toast and trigger onSuccess callback to refresh parent.",
+            "details": "",
             "status": "done",
-            "testStrategy": "Open AddBlockModal from topic page footer. Search for sources, verify filtering. Select source item, verify block is created and appears in blocks list. Verify source status updated to curated.",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-07T02:21:03.683Z"
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 6,
             "title": "Wire up Notebook view navigation and integrate with app routing",
-            "description": "Connect Notebook view to sidebar navigation and ensure proper state management integration",
+            "description": "AppLayout routing, sidebar navigation, notebook count badge in useAppStore.",
             "dependencies": [
               2,
               3,
               4,
               5
             ],
-            "details": "Update AppLayout.tsx to import and render NotebookView component instead of placeholder when currentView='notebook'. Ensure SmartViewSidebar.tsx or Sidebar.tsx has proper navigation to notebook view using useAppStore.setCurrentView('notebook'). Add notebook count to smartViewCounts in useAppStore.ts by fetching window.api.notebookPages.getAll() and counting total pages. Update refreshSmartViewCounts to include notebook count. Test navigation flow: Knowledge Bank → Add to Notebook → View in Notebook should work seamlessly. Ensure selectedItemId from store is used to highlight/scroll to specific item when navigating from deep links. Add loading and error states for all async operations. Verify IpcResult error handling follows established patterns.",
+            "details": "",
             "status": "done",
-            "testStrategy": "Navigate to notebook from sidebar, verify correct view loads. Add source to notebook from Knowledge Bank, click 'View in Notebook' link, verify navigation and item highlight. Check notebook count badge in sidebar updates correctly.",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-07T02:21:03.685Z"
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ],
         "updatedAt": "2026-01-07T02:21:03.685Z"
@@ -905,15 +832,104 @@
       {
         "id": "42",
         "title": "Card Generation from Notebook Blocks",
-        "description": "AI suggests cards from notebook blocks, user confirms, cards get provenance linked to source.",
-        "details": "CARD GENERATION FLOW:\n\n1. USER INITIATES:\n- Click 'Generate Card' on a block\n- Or 'Generate All Cards' for entire topic page\n\n2. AI CARD SUGGESTION:\n- Call AI to analyze block content\n- Suggest card format (Q&A, cloze, vignette)\n- Generate front/back content\n- Return multiple card suggestions if content-rich\n\n3. USER DECISION:\n- Preview suggested cards\n- [Create Card] - proceeds with creation\n- [Edit First] - allows editing before creation\n- [Skip] - doesn't create card\n\n4. CARD CREATION:\n- Create card with:\n  - notebookTopicPageId (required)\n  - sourceBlockId (specific block)\n  - tags from topic\n  - FSRS defaults\n- Update NotebookTopicPage.cardIds array\n\nCOMPONENTS:\n- src/components/notebook/CardGenerationModal.tsx\n- src/components/notebook/CardSuggestionPreview.tsx\n\nAI FUNCTIONS in electron/ai-service.ts:\n- generateCardFromBlock(blockContent: string, topicContext: string): Promise<CardSuggestion[]>",
-        "testStrategy": "Generate card from medical fact block, verify AI suggests appropriate format. Verify all created cards have required provenance fields (notebookTopicPageId, sourceBlockId).",
+        "description": "Select text in NotebookBlock → AI suggests cards with format intelligence and card-worthiness feedback → user confirms → card created with provenance. Post-creation: blocks with cards show muted visual indicator.",
+        "details": "CORE PHILOSOPHY:\nThe Notebook is the 'What Boards Test' registry—curated, clinically-relevant content. Card generation treats text selection as a conversation starter with AI, not a binding specification. User identifies what confuses them; AI becomes collaborative tutor evaluating whether confusion merits a flashcard.\n\nINTERACTION FLOW:\n1. HOVER & SELECT:\n- Hover over text in NotebookBlock shows subtle highlight\n- Click activates selection mode with context-aware bounding box (expands to semantic units: sentences, clinical facts, procedural steps)\n- Floating 'Generate Card' button anchors to selection\n- Click-to-activate prevents accidental triggers\n\n2. AI CONTEXT STRATEGY:\n- Full NotebookBlock content as context (prevents 'lost in the middle')\n- Highlighted portion marked with semantic emphasis\n- Optional 'Why do you want to learn this?' text field (teaching moment + format hint)\n- If user writes 'I keep confusing X with Y' → AI suggests discriminative format\n\n3. FORMAT INTELLIGENCE:\nAI auto-suggests one of five formats with visual explanation:\n- Clinical Vignette Q&A: diagnostic reasoning\n- Overlapping Cloze: lists that risk sibling contamination\n- Single-Fact Cloze: discrete knowledge\n- Image Occlusion: when images referenced\n- Procedural Sequential: step-based skills\nFormat shown as labeled dropdown, default is AI suggestion, instant override available.\n\n4. CARD-WORTHINESS SOFT-GATE (integrated, not separate F6):\n- Quality panel shows 3 traffic lights: Testable? One Concept? Discriminative?\n- Yellow/red indicators have expandable explanation panel\n- Options: [Edit First] [Create Anyway] (tracked) [Skip]\n- Teaches effective card design through use, not blocking\n\n5. PROCEDURAL CARDS (MVP):\n- AI detects procedural content (keywords: steps, procedure, technique, how to)\n- Generates two-part card: Front=supplies checklist (pre-revealed), Back=numbered steps\n- Uses standard card template; voice-activated equipment reveal deferred (see DEFERRED: Procedural Simulation Mode)\n\n6. CARD CREATION:\n- Card saved with: notebookTopicPageId, sourceBlockId, tags from topic, FSRS defaults\n- Toast: 'Card created' with [View] link\n- NotebookBlock shows muted visual indicator (subtle box around text) showing content has been turned into card(s)\n- Indicator is non-distracting (muted colors, optional hover to reveal)\n\n7. USER TEACHING MOMENTS:\n- When user creates basic list card, card-worthiness flags it\n- AI offers auto-generate improved versions (overlapping cloze, individual vignettes)\n\nPERFORMANCE TARGET:\n- Text selection to created card: <20 seconds including AI processing\n- Optimistic UI: AI thinking indicator immediately, streaming preview updates, editable fields before AI completes\n- Database writes async after Create click, local state updates first\n\nCOMPONENTS:\n- src/components/notebook/CardGenerationModal.tsx\n- src/components/notebook/CardSuggestionPreview.tsx\n- src/components/notebook/FormatSelector.tsx\n- src/components/notebook/CardWorthinessPanel.tsx\n- Update NotebookBlock.tsx: Add selection handling + card indicator styling\n\nAI FUNCTIONS in electron/ai-service.ts:\n- generateCardFromBlock(blockContent: string, topicContext: string, userIntent?: string): Promise<CardSuggestion[]>\n- evaluateCardWorthiness(cardContent: string): Promise<WorthinessResult>",
+        "testStrategy": "1. Hover text in block, verify highlight appears. 2. Select text, verify Generate Card button anchors. 3. Generate card from medical fact, verify AI suggests appropriate format. 4. Create list card, verify card-worthiness warning appears. 5. Create card, verify provenance fields (notebookTopicPageId, sourceBlockId). 6. Verify block shows muted indicator after card creation. 7. Performance: <20s from selection to created card.",
         "priority": "high",
         "dependencies": [
           "41"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "in-progress",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define CardSuggestion types and AI generateCardFromBlock function",
+            "description": "Create CardSuggestion type (format, front, back, confidence, worthinessResult) in src/types/ai.ts. Implement generateCardFromBlock() in ai-service.ts with format detection logic (QA, Cloze, Vignette, ImageOcclusion, Procedural). Handle procedural keyword detection, list detection for overlapping cloze. Put highlighted text at START of context window to avoid 'lost in the middle' issue.",
+            "dependencies": [],
+            "details": "Format detection heuristics: procedural keywords (steps, procedure, technique, how to), list patterns for overlapping cloze, clinical vignette triggers. Return array for multi-card suggestions from lists.",
+            "status": "done",
+            "testStrategy": "Unit test with sample medical content: clinical fact → QA, list of causes → overlapping cloze, procedure steps → procedural format.",
+            "updatedAt": "2026-01-07T23:30:16.319Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Wire IPC handler for ai:generateCardFromBlock",
+            "description": "Add ai:generateCardFromBlock handler in ipc-handlers.ts, expose in preload.ts, add type to electron.d.ts. Handler calls ai-service.generateCardFromBlock() with blockContent, topicContext, optional userIntent.",
+            "dependencies": [
+              1
+            ],
+            "details": "Cache key should include blockId to avoid regenerating. Return CardSuggestion[] to renderer.",
+            "status": "done",
+            "testStrategy": "Call from renderer, verify CardSuggestion[] returns with correct format.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-07T23:30:16.322Z"
+          },
+          {
+            "id": 3,
+            "title": "Build CardGenerationModal with FormatSelector and preview",
+            "description": "Create CardGenerationModal.tsx with: optional 'Why do you want to learn this?' textarea, FormatSelector.tsx dropdown (5 formats with visual labels), CardSuggestionPreview.tsx showing front/back. Streaming UI: show AI thinking indicator immediately, update preview as response arrives. Buttons: [Edit First] [Create Card] [Skip].",
+            "dependencies": [
+              1
+            ],
+            "details": "Modal receives selectedText and blockId as props. Format dropdown defaults to AI suggestion but allows override. Preview shows editable front/back fields.",
+            "status": "pending",
+            "testStrategy": "Open modal with test text, verify format selector works, edit preview fields, confirm buttons work.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Build CardWorthinessPanel with traffic-light feedback",
+            "description": "Create CardWorthinessPanel.tsx with compact traffic-light strip showing 3 criteria. Each criterion has green/yellow/red indicator with expandable explanation. Track [Create Anyway] clicks for analytics.",
+            "dependencies": [
+              1
+            ],
+            "details": "THREE CRITERIA:\n\n1. TESTABLE - Has one clear correct answer; survives rephrasing\n   Pass: 'What marker rises first in MI?' → Troponin\n   Fail: 'Describe MI pathophysiology' (essay, no single answer)\n\n2. ONE CONCEPT - Tests exactly one retrievable fact\n   Pass: 'Door-to-balloon target?' → <90 min\n   Fail: 'Name 5 STEMI criteria' (list = multiple facts)\n\n3. DISCRIMINATIVE - Distinguishes from similar concepts\n   Pass: 'Troponin vs CK-MB timing?' (forces comparison)\n   Fail: 'What's a cardiac marker?' (too generic, no discrimination)\n\nUI: Compact traffic-light strip (horizontal row of 3 circles). Hover/click on indicator → expands explanation panel with pass/fail examples. Yellow = borderline, Red = clear violation. Teaching moment: when red, suggest alternative format (e.g., 'Consider overlapping cloze for lists').",
+            "status": "done",
+            "testStrategy": "Test with: (1) 'Name 5 causes of chest pain' → One Concept should be red, (2) 'Describe pathophysiology of MI' → Testable should be red, (3) 'What is a troponin?' → Discriminative should be yellow, (4) 'Troponin rises before CK-MB. True/False?' → All green.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-07T23:37:56.504Z"
+          },
+          {
+            "id": 5,
+            "title": "Add text selection UI to NotebookBlock",
+            "description": "Add hover highlight effect on NotebookBlock text (subtle, context-aware bounding). Click-to-activate selection mode. Floating 'Generate Card' button anchored to selection. Clear selection after modal opens. Debounce selection detection for performance.",
+            "dependencies": [],
+            "details": "Use window.getSelection() API. Context-aware bounding expands to sentence/paragraph boundaries. Avoid modal pop-up on accidental clicks with activation delay or minimum selection length.",
+            "status": "done",
+            "testStrategy": "Hover text, verify highlight. Select text, verify floating button appears. Click button, verify modal opens with selection.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-07T23:30:16.324Z"
+          },
+          {
+            "id": 6,
+            "title": "Wire modal to IPC and card creation flow",
+            "description": "Connect CardGenerationModal to ai:generateCardFromBlock IPC. On [Create Card]: call cards:create with notebookTopicPageId, sourceBlockId, front, back, format. Use transaction: insert card + update NotebookBlock.cardCount atomically. Show toast 'Card created' with [View] link.",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "details": "FSRS defaults for new cards: state=0, reps=0, lapses=0. Card ID via crypto.randomUUID(). Performance target: <20s from selection to created card.",
+            "status": "pending",
+            "testStrategy": "Select text, generate card, verify card in database with provenance fields. Verify toast appears.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 7,
+            "title": "Add muted indicator styling for blocks with cards",
+            "description": "NotebookBlock shows visual indicator when cardCount > 0. Muted, non-distracting styling (subtle left border or background tint). Optional hover to reveal 'X cards created from this block'. Update cardCount badge in real-time after card creation.",
+            "dependencies": [
+              6
+            ],
+            "details": "Consider: subtle left border (2px muted color), or very light background overlay. Badge shows count. Hover reveals list of linked cards.",
+            "status": "pending",
+            "testStrategy": "Create card from block, verify indicator appears. Verify cardCount badge updates without page refresh.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-01-07T23:37:56.504Z"
       },
       {
         "id": "44",
@@ -1020,67 +1036,62 @@
           {
             "id": 1,
             "title": "Update Sidebar.tsx: Add Capture at top and restructure sections",
-            "description": "Move Capture to top of sidebar (above sections), rename 'Main' section to 'DO NOW', and add Inbox as new nav item with unprocessed count",
+            "description": "Capture above sections, 'DO NOW' header, Inbox nav item with badge.",
             "dependencies": [],
-            "details": "In src/components/layout/Sidebar.tsx: (1) Extract Capture from mainNavItems array, (2) Render Capture button above nav sections at line ~164, (3) Change section header 'Main' to 'DO NOW' at line 175, (4) Add Inbox import from lucide-react at line 2-12, (5) Create new NavItem for Inbox with id='inbox', icon=Inbox, badge=inboxCount (reusing existing inboxCount from line 42), (6) Add Inbox to mainNavItems array after Review button, (7) Keep existing NavButton component pattern for consistency",
+            "details": "",
             "status": "done",
-            "testStrategy": "Verify Capture button appears at top above sections, DO NOW section header displays correctly, Inbox nav item renders with badge count",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-07T02:20:58.222Z"
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
             "title": "Add Review emphasis styling with subtle glow when cards due",
-            "description": "Enhance Review button styling to show subtle glow ring effect when dueCount > 0 for visual emphasis",
+            "description": "Ring glow on Review button when dueCount > 0.",
             "dependencies": [
               1
             ],
-            "details": "In src/components/layout/Sidebar.tsx NavButton component (line 89-152): Add conditional ring styling to Review button when item.id === 'review' && item.badge > 0. Apply classes: 'ring-2 ring-primary/20 ring-offset-2 ring-offset-background/50' to create subtle glow effect. This should be applied to the button element at line 94-107. Maintain existing hover and active states while adding the glow as an additional visual cue.",
+            "details": "",
             "status": "done",
-            "testStrategy": "Test with dueCount=0 (no glow) and dueCount>0 (subtle glow visible), verify glow doesn't interfere with hover/active states",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-07T02:20:58.225Z"
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
             "title": "Remove Topics and Stats from secondary navigation",
-            "description": "Delete Topics and Stats nav items from secondaryNavItems array in Sidebar.tsx",
+            "description": "secondaryNavItems only contains Notebook.",
             "dependencies": [
               1
             ],
-            "details": "In src/components/layout/Sidebar.tsx at line 74-78: Remove the Topics and Stats items from secondaryNavItems array. This array should only contain Notebook item after removal. The Tag and BarChart3 imports from lucide-react (lines 7-8) can also be removed. Keep the 'Library' section header and structure intact.",
+            "details": "",
             "status": "done",
-            "testStrategy": "Verify secondaryNavItems only contains Notebook, Topics and Stats no longer render in LIBRARY section",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-07T02:20:58.227Z"
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
             "title": "Update AppLayout.tsx: Remove SmartViewSidebar component",
-            "description": "Delete SmartViewSidebar import and rendering from AppLayout.tsx",
+            "description": "Single Sidebar only, no SmartViewSidebar aside.",
             "dependencies": [
               1,
               2,
               3
             ],
-            "details": "In src/components/layout/AppLayout.tsx: (1) Remove SmartViewSidebar import at line 11, (2) Delete the entire <aside> section containing SmartViewSidebar at lines 125-127, (3) Keep the main Sidebar component and all other layout structure intact. This removes the separate Smart Views sidebar panel from the layout, consolidating all navigation into the single Sidebar component.",
+            "details": "",
             "status": "done",
-            "testStrategy": "Verify layout renders with only single Sidebar, no second sidebar panel, main content area expands correctly",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-07T02:20:58.229Z"
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
             "title": "Delete SmartViewSidebar.tsx and clean up unused Smart View state",
-            "description": "Delete SmartViewSidebar.tsx file and remove obsolete smartViewCounts for deleted views (today, queue, weak)",
+            "description": "Deleted file, smartViewCounts only has inbox + notebook.",
             "dependencies": [
               4
             ],
-            "details": "File operations: (1) Delete src/components/layout/SmartViewSidebar.tsx entirely. State cleanup in src/stores/useAppStore.ts: (2) At line 73-79, update smartViewCounts initialization to only include inbox: 0 and notebook: 0 (remove today, queue, weak), (3) In refreshSmartViewCounts function (line 85-99), simplify counts object to only calculate inbox and notebook counts, remove today/queue/weak calculations. Note: Keep the smartViewCounts structure itself as it's used by Inbox nav item badge. Also consider if src/lib/system-views.ts SYSTEM_VIEWS array needs updating (currently defines today/queue/weak views).",
+            "details": "",
             "status": "done",
-            "testStrategy": "Verify SmartViewSidebar.tsx deleted, app runs without errors, inbox count still updates correctly in Sidebar badge",
-            "parentId": "undefined",
-            "updatedAt": "2026-01-07T01:49:40.937Z"
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ],
         "updatedAt": "2026-01-07T02:20:58.229Z"
@@ -1092,7 +1103,10 @@
         "details": "SCOPE:\n1. QuickDumpModal: Add paste handler for clipboardData.files/items (image types), add drag-drop zone, show preview thumbnail before save\n2. IPC: Create images:save handler that writes Buffer to app.getPath('userData')/images/{uuid}.{ext}, returns mediaPath\n3. SourceItem: Save mediaPath field, display image in SourceItemRow and KnowledgeBankView\n4. NotebookBlock: Display block.mediaPath images in NotebookBlock component\n5. Card display: Show images on card front/back during review\n\nDatabase schema already supports imageData BLOB and mediaPath TEXT fields.",
         "testStrategy": "Paste screenshot, verify preview shows. Save, verify file in userData/images/. View in KB, verify image displays. Add to notebook, verify image in block. Generate card, verify image on card.",
         "priority": "high",
-        "dependencies": ["38", "41"],
+        "dependencies": [
+          "38",
+          "41"
+        ],
         "status": "pending",
         "subtasks": []
       },
@@ -1114,7 +1128,10 @@
         "details": "CARD BROWSER VIEW:\n1. Access: Add 'Cards' to LIBRARY section in Sidebar\n2. Layout: Vertical list of cards with preview (front truncated)\n3. Filters:\n   - Status chips: Due / New / Learning / Review / Suspended\n   - Topic dropdown (from CanonicalTopics)\n   - Tag filter\n   - Date range (created/due)\n4. Sort: Due date, Created date, Ease, Last reviewed\n5. Actions:\n   - Click card → expand preview (front + back)\n   - [Edit] → inline edit or modal\n   - [Suspend/Unsuspend]\n   - [Delete] with confirmation\n6. Bulk actions: Select multiple → suspend/delete\n\nReplaces standalone Queue view with richer functionality.",
         "testStrategy": "Navigate to Card Browser, verify all cards display. Filter by topic, verify list updates. Sort by due date, verify order. Edit card, verify saves. Suspend card, verify status changes.",
         "priority": "high",
-        "dependencies": ["42", "45"],
+        "dependencies": [
+          "42",
+          "45"
+        ],
         "status": "pending",
         "subtasks": []
       },
@@ -1125,7 +1142,9 @@
         "details": "HTTP API SERVER:\n1. Start Express/http server on localhost:PORT (configurable, default 23847)\n2. Endpoint: POST /capture\n   - Body: { content: string, title?: string, sourceType: 'qbank'|'article'|'web', url?: string, imageBase64?: string }\n   - Returns: { success: boolean, sourceItemId?: string, error?: string }\n3. Security: localhost only, optional API key in header\n4. On receive: Create SourceItem in inbox, trigger refreshSmartViewCounts\n5. Settings UI: Enable/disable HTTP capture, show port, regenerate API key\n\nTAMPERMONKEY INTEGRATION:\n- User installs script that adds 'Send to DougHub' button on PeerPrep/MKSAP pages\n- Script extracts question HTML, sends to localhost endpoint\n- DougHub shows toast 'Captured from PeerPrep'\n\nNote: User has existing script to adapt.",
         "testStrategy": "Start app, verify HTTP server running. POST to /capture with test content, verify SourceItem created in inbox. Test from Tampermonkey script on actual qbank site.",
         "priority": "high",
-        "dependencies": ["38"],
+        "dependencies": [
+          "38"
+        ],
         "status": "pending",
         "subtasks": []
       },
@@ -1136,7 +1155,9 @@
         "details": "LEARNING MODE ENTRY:\n1. After review session ends (no more due cards or user exits):\n   - If mistakes > 0: Show modal 'Review X mistakes?'\n   - [Review Now] / [Skip]\n2. Mistakes Review UI:\n   - Vertical scroll through each mistake\n   - Show: Card front, your timing/grade, correct answer\n   - AI elaborated feedback: 'Why this is wrong: ...'\n   - 'Why correct answer is right: ...'\n   - Related concept hints\n3. AI Function: generateElaboratedFeedback(card, userResponse)\n   - Uses card content + topic context\n   - Returns { whyWrong: string, whyRight: string, relatedConcepts: string[] }\n4. End of mistakes: 'All reviewed!' with summary stats\n\nThis is the highest-yield learning pipeline feature. Other learning mode features (T94-T107) remain in DEFERRED.md for future implementation.",
         "testStrategy": "Complete review session with 2+ mistakes. Verify prompt appears. Click Review Now, verify mistakes display with AI feedback. Verify all mistakes can be scrolled through.",
         "priority": "high",
-        "dependencies": ["45"],
+        "dependencies": [
+          "45"
+        ],
         "status": "pending",
         "subtasks": []
       },
@@ -1147,15 +1168,17 @@
         "details": "TWO-MODE CAPTURE PRINCIPLE:\n\n1. SINGLE CAPTURE MODAL (QuickDumpModal expansion):\n- Opened via FAB (+), global shortcut, drag-drop, or Tampermonkey prefill\n- Plaintext textarea with auto-detect: Text / URL / PDF / Image / QBank\n- AI auto-title (debounced, editable, fallback to truncation)\n\n2. TWO EXITS:\n- [Save to Inbox] (primary): Create SourceItem, close modal, show toast\n- [Process Now] (secondary, disabled initially): Create SourceItem, enter guided processing\n\n3. AUTO-CLASSIFICATION:\n- Detect content type from paste/drop\n- Show badge indicating detected type\n- Set sourceType field automatically\n\n4. PROCESS NOW BUTTON:\n- Initially disabled with tooltip 'Coming soon - complete Learning Mode first'\n- Enabled after T117 (Learning Mode) is complete\n- When enabled: saves to inbox then navigates to guided processing flow\n\nNOTE: This expands T38's basic capture with the two-mode principle. Inbox remains derived view (status='inbox').",
         "testStrategy": "Paste text, verify auto-title generates. Verify Save to Inbox creates SourceItem. Verify Process Now button is disabled. Test content type detection for URL vs plain text.",
         "priority": "high",
-        "dependencies": ["38"],
+        "dependencies": [
+          "38"
+        ],
         "status": "pending",
         "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-07T02:21:03.686Z",
-      "taskCount": 18,
+      "lastModified": "2026-01-07T23:37:56.505Z",
+      "taskCount": 23,
       "completedCount": 15,
       "tags": [
         "master"

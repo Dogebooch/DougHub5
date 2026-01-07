@@ -95,11 +95,11 @@ collected from day one.
 ### Phase 4: Layer 3 - Card Generation
 | # | Feature | Task | Status |
 |---|---------|------|--------|
-| 8 | Card generation from notebook | AI suggests cards from Notebook blocks ONLY | T42 |
-| 9 | Card-worthiness gate | Rubric (board-relevant? testable? discriminative?) | T43 |
+| 8 | Card generation from notebook | AI suggests cards from Notebook blocks | T42 |
+| 9 | Card-worthiness gate | Deferred to POST-MVP (F6) | - |
 | 10 | FSRS integration | Response time tracking, provenance display | T45 |
 
-> **Note:** Low-ease detection (T46) deferred to post-MVP. Core FSRS review works without it.
+> **Note:** Card-worthiness gate (F6) and low-ease detection deferred to post-MVP. Core FSRS review works without them.
 
 ### Phase 5: Cross-Cutting Polish (POST-MVP)
 | # | Feature | Status |

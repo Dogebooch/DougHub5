@@ -168,6 +168,10 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
                 key={block.id}
                 block={block}
                 onRefresh={fetchData}
+                onGenerateCard={(text) => {
+                  console.log("Generating card from block selection:", text);
+                  // Modal implementation will go here in next task
+                }}
               />
             ))}
           </div>

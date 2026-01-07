@@ -20,12 +20,10 @@
 
 > **Note:** These features are first in line after MVP completion. They build on core functionality and provide high value.
 
-### Card-Worthiness Gate (F6)
-**Description:** Before card creation, AI evaluates: Is this testable? One concept? Discriminative? Shows warning if fails, user can override. Flow: User selects block for card generation → AI evaluates against rubric → Pass: Generate card normally → Fail: Yellow warning "This may not make an effective card because [reason]" with options [Create Anyway] | [Edit First] | [Skip].
-**Priority:** High
-**Source:** Canonical MVP Post-MVP list (2026-01-07)
-**Dependency:** T42 (Card Generation)
-**Notes:** Later expansion: uniform card formats for EKG findings, physical exam findings, crossover confusion topics, lists, etc.
+### Card-Worthiness Gate (F6) — INTEGRATED INTO T42
+**Description:** Card-worthiness soft-gate is now integrated into T42 (Card Generation). Traffic-light panel (Testable? One Concept? Discriminative?) shows during card creation, not as a separate gate.
+**Status:** Merged into T42 (2026-01-07)
+**Remaining for POST-MVP:** Advanced card format templates for uniform patterns: EKG findings, physical exam findings, crossover confusion topics, medication side effects, lab value interpretations, procedural complications.
 
 ### AI Duplicate Detection (F2)
 **Description:** AI-powered detection of duplicate or near-duplicate content in Knowledge Bank and Notebook. Warns user before creating redundant entries. Prep: Add embedding columns to schema now for future similarity search.
@@ -53,6 +51,42 @@
 **Source:** Canonical MVP Post-MVP list (2026-01-07)
 **Dependency:** T45 (FSRS Integration), F2 (embeddings)
 **Notes:** High-value for medical education - addresses common confusion pairs.
+
+---
+
+## Insights Sidebar Section (POST-MVP)
+
+> **Concept:** Add an INSIGHTS section to sidebar below LIBRARY for analytics and learning feedback. Requires routing, views, and state management for each item.
+
+### Sidebar Insights Section Layout
+```
+├─ INSIGHTS ─────────────────┤
+│  📊 Stats                  │  ← Review analytics, retention trends
+│  📚 Mistakes        (3)    │  ← Unreviewed misses from T117
+│  ⚠️ Weak Topics            │  ← Topics with low retention
+└────────────────────────────┘
+```
+
+### Insights: Stats View
+**Description:** Dashboard showing review analytics: cards reviewed today/week/month, retention rate trends, time spent studying, FSRS performance metrics.
+**Priority:** Medium
+**Dependency:** T45 (FSRS Integration)
+**Tasks Required:** Stats view component, SQL aggregation queries, chart components (optional), sidebar routing
+**Notes:** Data already being collected in review_logs. This is display layer only.
+
+### Insights: Mistakes View
+**Description:** Dedicated view for unreviewed mistakes from Learning Mode (T117). Shows cards that were missed with AI elaborated feedback, links back to source.
+**Priority:** Medium
+**Dependency:** T117 (Learning Mode)
+**Tasks Required:** Mistakes view component, mistake tracking state in useAppStore, badge count logic, sidebar routing
+**Notes:** T117 shows mistakes in post-review modal. This view provides persistent access to review mistakes later.
+
+### Insights: Weak Topics View
+**Description:** Topics and cards with low retention. Two sub-views: (1) Weak Notebook Topics - topics with low overall retention rate or high lapse count, (2) Weak Cards - individual cards with low ease or high lapse count. Shows retention %, card/topic count, last reviewed date. Click to navigate to topic in Notebook or card in Card Browser.
+**Priority:** Medium
+**Dependency:** T45 (FSRS Integration), F9 (Topic Maturity Dashboard)
+**Tasks Required:** Weak topics view component, SQL queries for low-retention topics AND cards, badge count logic, sidebar routing
+**Notes:** Helps identify knowledge gaps at both topic and card level. Threshold: retention < 70% or not reviewed in 14+ days.
 
 ---
 
@@ -258,13 +292,6 @@
 **Source:** Task T47 (Legacy)
 **Notes:** Apply incrementally as we build. Don't need a dedicated task.
 
-
-### Evidence-Based Card Validation
-**Description:** Real-time warnings for pattern-matching cards, multi-fact violations.
-**Priority:** Medium
-**Source:** Task T15 (Legacy)
-**Notes:** Overlaps with card-worthiness gate (T43). May merge concepts.
-
 ---
 
 ## AI & Extraction
@@ -454,11 +481,12 @@
 **Source:** Task T51 (Legacy)
 **Notes:** Exploratory. Cool but not essential for core learning loop.
 
-### Procedural Simulation Mode
-**Description:** Interactive procedure review with equipment recall and sequential steps. "You're about to intubate—what equipment do you need?" before revealing steps.
+### Procedural Simulation Mode (Enhanced)
+**Description:** Advanced interactive procedure review beyond T42's basic procedural cards. Features: (1) Voice-activated equipment reveal—user verbally recalls supplies before seeing checklist, (2) Split-screen interface showing equipment on left and steps on right, (3) Sequential step reveal with confirmation, (4) Haptic/audio feedback for correctness, (5) Procedure timer with target ranges.
 **Priority:** Low
-**Source:** Task T52 (Legacy)
-**Notes:** Requires medical list processing first. Advanced learning mode.
+**Source:** Task T52 (Legacy), T42 implementation narrative (2026-01-07)
+**Dependency:** T42 (Card Generation) provides basic procedural card format
+**Notes:** T42 MVP includes basic two-part procedural cards (supplies + steps). This entry covers the advanced simulation mode with voice activation, split-screen UI, and gamified step-by-step reveal. Requires Web Speech API research, audio integration.
 
 ---
 

@@ -40,22 +40,16 @@ npm run lint     # ESLint (zero warnings)
 - Search: <200ms response
 - Save feedback: <500ms visible confirmation
 
-## AI-Assisted Workflows (Planned)
+## Capture & Card Workflows (v2)
 
 ### Capture Flow
-1. User pastes content → AI analyzes and suggests extractable concepts
-2. AI recommends card format (cloze vs Q&A) per concept
-3. User confirms/rejects/edits via checkboxes → cards created with auto-linked notes
-4. AI suggests related existing notes and medical domain tags
+1. User pastes content → AI auto-titles → Save to Inbox (SourceItem)
+2. Later: Triage from Inbox → Add to Notebook topic page
+3. Card generation: From Notebook blocks (or Card Browser "New Card")
 
-### Card Validation
-- AI enforces minimum information principle (one concept per card)
-- Medical lists ("5 causes of X") converted to clinical vignette scenarios
-- Warnings for pattern-matching cards that test format recognition vs knowledge
-
-### Quick Capture → Queue
-- Emergency capture when exhausted (no AI processing)
-- Later: process from queue with same AI-guided workflow
+### Quick Capture → Inbox
+- Zero-friction capture when exhausted (status: inbox)
+- Process later via Inbox view when mentally fresh
 
 ## Domain Rules (Non-Negotiable)
 

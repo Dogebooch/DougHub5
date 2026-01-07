@@ -21,6 +21,7 @@ import type {
   MedicalListDetection,
   VignetteConversion,
   SemanticMatch,
+  CardSuggestion,
 } from "../src/types/ai";
 import type { DbNote } from "./database";
 import OpenAI from "openai";
@@ -598,13 +599,50 @@ Respond ONLY with a JSON object in this exact format (no markdown, no code block
 {
   "tags": ["tag1", "tag2", "tag3"]
 }`,
-} as const;
 
-// ============================================================================
-// Helper Functions
-// ============================================================================
+  cardGeneration: `You are a medical education AI assistant that generates high-quality flashcards.
+Your goal is to transform the provided medical text into effective, testable, and discrete flashcards.
 
-/**
+Worthiness Criteria (Evaluate each card):
+1. TESTABLE: Does it have one clear correct answer? (fail: essays, open-ended)
+2. ONE CONCEPT: Does it test exactly one retrievable fact? (fail: lists, multiple facts)
+3. DISCRIMINATIVE: Does it distinguish from similar concepts? (fail: too generic)
+
+Format Detection Heuristics:
+- Procedural keywords (steps, procedure, technique, how to) → format: 'procedural' (use Q&A style)
+- List patterns (numbered, "causes of", "types of") → format: 'overlapping-cloze' (generate one card per item)
+- Image references or visual descriptions → format: 'image-occlusion' (describe what should be occluded)
+- Single fact or definition → format: 'cloze' (use {{c1::answer}} syntax)
+- Reasoning, comparison, or "why" questions → format: 'qa'
+
+Guidelines:
+- Put clinical scenarios into 'qa' or 'cloze' format.
+- For lists, return a separate CardSuggestion for EACH item in the list (overlapping clozes).
+- Use green/yellow/red for worthiness ratings.
+- Provide brief, specific explanations for worthiness ratings.
+
+Respond ONLY with a JSON object in this exact format (no markdown, no code blocks):
+{
+  "suggestions": [
+    {
+      "format": "qa|cloze|overlapping-cloze|image-occlusion|procedural",
+      "front": "Front of card",
+      "back": "Back of card (if applicable)",
+      "confidence": 0.9,
+      "worthiness": {
+        "testable": "green|yellow|red",
+        "oneConcept": "green|yellow|red",
+        "discriminative": "green|yellow|red",
+        "explanations": {
+          "testable": "reason",
+          "oneConcept": "reason",
+          "discriminative": "reason"
+        }
+      },
+      "formatReason": "Why this format was chosen"
+    }
+  ]
+}`,
  * Wrap a promise with a timeout.
  *
  * @param promise Promise to wrap
@@ -1099,6 +1137,103 @@ export async function suggestTags(content: string): Promise<string[]> {
 }
 
 // ============================================================================
+// Card Generation
+// ============================================================================
+
+/** Response format for card generation */
+interface CardGenerationResponse {
+  suggestions: CardSuggestion[];
+}
+
+/**
+ * Generate high-quality flashcards from a specific block of content.
+ * Puts highlighted content at START of prompt to avoid "lost in the middle" effect.
+ *
+ * @param blockContent The specific text selected for card generation
+ * @param topicContext The broader topic context (title, related concepts)
+ * @param userIntent Optional user instruction (e.g., "make it a vignette")
+ * @returns Array of suggested flashcards with worthiness evaluations
+ */
+export async function generateCardFromBlock(
+  blockContent: string,
+  topicContext: string,
+  userIntent?: string
+): Promise<CardSuggestion[]> {
+  if (!blockContent.trim()) {
+    return [];
+  }
+
+  const cacheKey = aiCache.key(
+    "generateCard",
+    blockContent,
+    topicContext,
+    userIntent || ""
+  );
+  const cached = aiCache.get<CardSuggestion[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // Construct user message with content at the START to avoid "lost in the middle"
+    const userMessage = `HIGHLIGHTED CONTENT:
+${blockContent}
+
+TOPIC CONTEXT:
+${topicContext}
+
+${userIntent ? `USER INTENT: ${userIntent}\n` : ""}Please generate high-quality card suggestions from the highlighted content.`;
+
+    const response = await withRetry(async () => {
+      return await callAI(PROMPTS.cardGeneration, userMessage);
+    });
+
+    const parsed = parseAIResponse<CardGenerationResponse | CardSuggestion[]>(
+      response
+    );
+
+    // Handle both {suggestions: [...]} and direct array [...] formats
+    let suggestions: CardSuggestion[];
+    if (Array.isArray(parsed)) {
+      suggestions = parsed;
+    } else if (parsed && Array.isArray(parsed.suggestions)) {
+      suggestions = parsed.suggestions;
+    } else {
+      console.error(
+        "[AI Service] Invalid card generation response structure:",
+        parsed
+      );
+      throw new Error("Invalid response structure for card generation");
+    }
+
+    // Basic normalization and validation
+    const normalizedSuggestions = suggestions.map((s) => ({
+      format: s.format || "qa",
+      front: s.front || "",
+      back: s.back || "",
+      confidence: typeof s.confidence === "number" ? s.confidence : 0.8,
+      worthiness: s.worthiness || {
+        testable: "yellow",
+        oneConcept: "yellow",
+        discriminative: "yellow",
+        explanations: {
+          testable: "Auto-generated",
+          oneConcept: "Auto-generated",
+          discriminative: "Auto-generated",
+        },
+      },
+      formatReason: s.formatReason || "AI suggestion",
+    }));
+
+    // Store in cache
+    aiCache.set(cacheKey, normalizedSuggestions);
+
+    return normalizedSuggestions;
+  } catch (error) {
+    console.error("[AI Service] Card generation failed:", error);
+    throw error;
+  }
+}
+
+// ============================================================================
 // Semantic Similarity (Keyword-based for MVP)
 // ============================================================================
 
@@ -1210,4 +1345,6 @@ export {
   type MedicalListDetection,
   type VignetteConversion,
   type SemanticMatch,
+  type CardSuggestion,
+  type WorthinessResult,
 } from "../src/types/ai";

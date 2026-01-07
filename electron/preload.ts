@@ -123,6 +123,17 @@ const api = {
       ipcRenderer.invoke("ai:detectMedicalList", content),
     convertToVignette: (listItem: string, context: string) =>
       ipcRenderer.invoke("ai:convertToVignette", listItem, context),
+    generateCards: (
+      blockContent: string,
+      topicContext: string,
+      userIntent?: string
+    ) =>
+      ipcRenderer.invoke(
+        "ai:generateCards",
+        blockContent,
+        topicContext,
+        userIntent
+      ),
     suggestTags: (content: string) =>
       ipcRenderer.invoke("ai:suggestTags", content),
     findRelatedNotes: (
