@@ -146,6 +146,9 @@ export interface ElectronAPI {
   };
   notebookBlocks: {
     getByPage: (pageId: string) => Promise<IpcResult<NotebookBlock[]>>;
+    getBySourceId: (
+      sourceId: string
+    ) => Promise<IpcResult<NotebookBlock | null>>;
     create: (block: NotebookBlock) => Promise<IpcResult<NotebookBlock>>;
     update: (
       id: string,

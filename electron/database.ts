@@ -1544,6 +1544,18 @@ export const notebookBlockQueries = {
     return rows.map(parseNotebookBlockRow);
   },
 
+  getBySourceId(sourceId: string): DbNotebookBlock | null {
+    const stmt = getDatabase().prepare(`
+      SELECT b.*, 
+        (SELECT COUNT(*) FROM cards c WHERE c.sourceBlockId = b.id) as cardCount 
+      FROM notebook_blocks b 
+      WHERE b.sourceItemId = ? 
+      LIMIT 1
+    `);
+    const row = stmt.get(sourceId) as NotebookBlockRow | undefined;
+    return row ? parseNotebookBlockRow(row) : null;
+  },
+
   insert(block: DbNotebookBlock): void {
     const stmt = getDatabase().prepare(`
       INSERT INTO notebook_blocks (id, notebookTopicPageId, sourceItemId, content, annotations, mediaPath, position)

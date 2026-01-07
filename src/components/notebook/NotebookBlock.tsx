@@ -6,14 +6,15 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { NotebookBlock } from '@/types';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
-} from '@/components/ui/tooltip';
+import { useAppStore } from "@/stores/useAppStore";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface NotebookBlockProps {
   block: NotebookBlock;
@@ -23,6 +24,7 @@ interface NotebookBlockProps {
 export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
   block,
 }) => {
+  const { setCurrentView } = useAppStore();
   const [sourceTitle, setSourceTitle] = useState<string | null>(null);
   const [loadingSource, setLoadingSource] = useState(false);
 
@@ -49,6 +51,12 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
     fetchSource();
   }, [block.sourceItemId]);
 
+  const handleSourceClick = () => {
+    if (block.sourceItemId) {
+      setCurrentView("knowledgebank", block.sourceItemId);
+    }
+  };
+
   return (
     <div className="group relative rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-200">
       {/* Header Row */}
@@ -67,13 +75,16 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
           </Badge>
 
           {block.sourceItemId && (
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full border border-border/50">
+            <button
+              onClick={handleSourceClick}
+              className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 hover:bg-muted px-2 py-0.5 rounded-full border border-border/50 transition-colors"
+            >
               <LinkIcon className="w-3 h-3" />
               <span className="max-w-[150px] truncate">
                 {loadingSource ? "Loading..." : sourceTitle}
               </span>
               <ExternalLink className="w-2.5 h-2.5 opacity-50 ml-0.5" />
-            </div>
+            </button>
           )}
         </div>
       </div>

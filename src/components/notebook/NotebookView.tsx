@@ -12,13 +12,22 @@ import { TopicPageView } from "./TopicPageView";
  * Implements a list/detail pattern for Topic Pages.
  */
 export const NotebookView = () => {
-  const { selectedItemId } = useAppStore();
+  const { selectedItemId, setCurrentView } = useAppStore();
   const [pages, setPages] = useState<NotebookTopicPage[]>([]);
   const [topics, setTopics] = useState<Map<string, CanonicalTopic>>(new Map());
   const [selectedPageId, setSelectedPageId] = useState<string | null>(
     selectedItemId || null
   );
   const [isLoading, setIsLoading] = useState(true);
+
+  // Sync selectedPageId with store's selectedItemId (deep linking)
+  useEffect(() => {
+    if (selectedItemId && selectedItemId !== selectedPageId) {
+      setSelectedPageId(selectedItemId);
+      // Clear the deep link after it's been handled to prevent recursion/stale state
+      setCurrentView("notebook", null);
+    }
+  }, [selectedItemId, selectedPageId, setCurrentView]);
 
   // Load data - extracted to useCallback for child components
   const fetchData = useCallback(async () => {

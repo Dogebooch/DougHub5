@@ -82,12 +82,16 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   refreshSmartViewCounts: async () => {
     if (typeof window !== "undefined" && window.api) {
-      const itemsResult = await window.api.sourceItems.getAll();
+      const [itemsResult, pagesResult] = await Promise.all([
+        window.api.sourceItems.getAll(),
+        window.api.notebookPages.getAll(),
+      ]);
+
       if (!itemsResult.error && itemsResult.data) {
         const items = itemsResult.data;
         const counts = {
           inbox: items.filter((i) => i.status === "inbox").length,
-          notebook: 0, // Placeholder
+          notebook: pagesResult.data?.length || 0,
         };
         set({ smartViewCounts: counts });
       }

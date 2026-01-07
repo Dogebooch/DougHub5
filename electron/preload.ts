@@ -86,6 +86,8 @@ const api = {
   notebookBlocks: {
     getByPage: (pageId: string) =>
       ipcRenderer.invoke("notebookBlocks:getByPage", pageId),
+    getBySourceId: (sourceId: string) =>
+      ipcRenderer.invoke("notebookBlocks:getBySourceId", sourceId),
     create: (block: unknown) =>
       ipcRenderer.invoke("notebookBlocks:create", block),
     update: (id: string, updates: unknown) =>

@@ -12,26 +12,31 @@ import {
   CanonicalTopic 
 } from '@/types';
 import { NotebookBlockComponent } from './NotebookBlock';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
-} from '@/components/ui/tooltip';
+import { AddBlockModal } from "./AddBlockModal";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface TopicPageViewProps {
   pageId: string;
   onRefresh: () => void;
 }
 
-export const TopicPageView: React.FC<TopicPageViewProps> = ({ pageId, onRefresh }) => {
+export const TopicPageView: React.FC<TopicPageViewProps> = ({
+  pageId,
+  onRefresh,
+}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<NotebookTopicPage | null>(null);
   const [topic, setTopic] = useState<CanonicalTopic | null>(null);
   const [blocks, setBlocks] = useState<NotebookBlock[]>([]);
+  const [addBlockOpen, setAddBlockOpen] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -60,8 +65,8 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({ pageId, onRefresh 
       // Notify parent of refresh if needed (e.g. updating sidebar counts)
       onRefresh();
     } catch (err: any) {
-      console.error('Error fetching topic page:', err);
-      setError(err.message || 'Failed to load topic page');
+      console.error("Error fetching topic page:", err);
+      setError(err.message || "Failed to load topic page");
     } finally {
       setLoading(false);
     }
@@ -84,8 +89,12 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({ pageId, onRefresh 
     return (
       <div className="flex flex-col items-center justify-center h-full text-destructive p-8 text-center">
         <p className="font-semibold mb-2">Error Loading Page</p>
-        <p className="text-sm opacity-80 mb-4">{error || 'Something went wrong'}</p>
-        <Button variant="outline" onClick={fetchData}>Try Again</Button>
+        <p className="text-sm opacity-80 mb-4">
+          {error || "Something went wrong"}
+        </p>
+        <Button variant="outline" onClick={fetchData}>
+          Try Again
+        </Button>
       </div>
     );
   }
@@ -167,7 +176,11 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({ pageId, onRefresh 
 
       {/* FOOTER */}
       <footer className="flex-shrink-0 p-4 border-t bg-muted/30 flex justify-between items-center px-8">
-        <Button variant="default" className="gap-2 h-9">
+        <Button
+          variant="default"
+          className="gap-2 h-9"
+          onClick={() => setAddBlockOpen(true)}
+        >
           <Plus className="w-4 h-4" />
           Add from Knowledge Bank
         </Button>
@@ -192,6 +205,14 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({ pageId, onRefresh 
           </Tooltip>
         </TooltipProvider>
       </footer>
+
+      {/* ADD BLOCK MODAL */}
+      <AddBlockModal
+        open={addBlockOpen}
+        onOpenChange={setAddBlockOpen}
+        notebookTopicPageId={pageId}
+        onSuccess={fetchData}
+      />
     </div>
   );
 };

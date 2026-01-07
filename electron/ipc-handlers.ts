@@ -714,6 +714,18 @@ export function registerIpcHandlers(): void {
   );
 
   ipcMain.handle(
+    "notebookBlocks:getBySourceId",
+    async (_, sourceId: string): Promise<IpcResult<DbNotebookBlock | null>> => {
+      try {
+        const block = notebookBlockQueries.getBySourceId(sourceId);
+        return success(block);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
     "notebookBlocks:create",
     async (_, block: DbNotebookBlock): Promise<IpcResult<DbNotebookBlock>> => {
       try {

@@ -38,7 +38,7 @@ export function Sidebar({ className }: SidebarProps) {
   const setCurrentView = useAppStore((state) => state.setCurrentView);
   const getCardsDueToday = useAppStore((state) => state.getCardsDueToday);
   const isHydrated = useAppStore((state) => state.isHydrated);
-  const inboxCount = useAppStore((state) => state.inboxCount);
+  const smartViewCounts = useAppStore((state) => state.smartViewCounts);
 
   // Persist collapsed state
   useEffect(() => {
@@ -64,20 +64,25 @@ export function Sidebar({ className }: SidebarProps) {
       id: "inbox",
       label: "Inbox",
       icon: Inbox,
-      badge: inboxCount,
+      badge: smartViewCounts.inbox || 0,
       implemented: true,
     },
     {
       id: "knowledgebank",
       label: "Knowledge Bank",
       icon: Database,
-      badge: inboxCount,
       implemented: true,
     },
   ];
 
   const secondaryNavItems: NavItem[] = [
-    { id: "notebook", label: "Notebook", icon: BookOpen, implemented: true },
+    {
+      id: "notebook",
+      label: "Notebook",
+      icon: BookOpen,
+      badge: smartViewCounts.notebook || 0,
+      implemented: true,
+    },
   ];
 
   // TODO: Implement weak topics section

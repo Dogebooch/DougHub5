@@ -10,8 +10,10 @@ import { cn } from '@/lib/utils';
 interface SourceItemRowProps {
   sourceItem: SourceItem;
   isSelected: boolean;
+  isHighlighted?: boolean;
   onToggleSelect: (id: string, checked: boolean) => void;
   onAddToNotebook: (item: SourceItem) => void;
+  onViewInNotebook?: (item: SourceItem) => void;
   onOpen: (item: SourceItem) => void;
   onDelete: (item: SourceItem) => void;
 }
@@ -19,8 +21,10 @@ interface SourceItemRowProps {
 export const SourceItemRow: React.FC<SourceItemRowProps> = ({
   sourceItem,
   isSelected,
+  isHighlighted,
   onToggleSelect,
   onAddToNotebook,
+  onViewInNotebook,
   onOpen,
   onDelete,
 }) => {
@@ -52,7 +56,9 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
     <div
       className={cn(
         "group flex items-center gap-4 p-4 border-b transition-colors hover:bg-black/5 text-card-foreground",
-        isSelected && "bg-primary/10 border-primary/30"
+        isSelected && "bg-primary/10 border-primary/30",
+        isHighlighted &&
+          "bg-amber-500/10 border-l-4 border-l-amber-500 animate-pulse-subtle"
       )}
     >
       <div className="flex items-center gap-4 shrink-0">
@@ -111,6 +117,16 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
         >
           Open
         </Button>
+        {sourceItem.status === "curated" && onViewInNotebook && (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-8 text-xs font-medium"
+            onClick={() => onViewInNotebook(sourceItem)}
+          >
+            View in Notebook
+          </Button>
+        )}
         <Button
           size="sm"
           className="h-8 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
