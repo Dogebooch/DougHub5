@@ -47,6 +47,7 @@ export interface DbCard {
   listPosition: number | null; // Order within list
   notebookTopicPageId: string | null;
   sourceBlockId: string | null;
+  aiTitle: string | null;
 }
 
 export interface DbNote {
@@ -194,6 +195,27 @@ interface CardRow {
   listPosition: number | null;
   notebookTopicPageId: string | null;
   sourceBlockId: string | null;
+  aiTitle: string | null;
+}
+
+// Card Browser filter types
+export interface CardBrowserFilters {
+  status?: number[]; // Filter by state (0,1,2,3)
+  topicId?: string; // Filter by notebookTopicPageId
+  tags?: string[]; // Filter by tags (any match)
+  leechesOnly?: boolean; // Only return leeches
+  search?: string; // Search in front/back text
+}
+
+export interface CardBrowserSort {
+  field: 'dueDate' | 'createdAt' | 'difficulty' | 'lastReview';
+  direction: 'asc' | 'desc';
+}
+
+export interface CardBrowserRow extends CardRow {
+  topicName: string | null;
+  siblingCount: number;
+  isLeech: number; // 0 or 1 in SQLite
 }
 
 interface NoteRow {
@@ -1295,6 +1317,93 @@ export const cardQueries = {
     const rows = stmt.all() as WeakTopicSummary[];
     return rows;
   },
+
+  getBrowserList(
+    filters?: CardBrowserFilters,
+    sort?: CardBrowserSort
+  ): DbCard[] {
+    const db = getDatabase();
+    const whereClauses: string[] = [];
+    const params: Record<string, unknown> = {};
+
+    // Status filter (state field)
+    if (filters?.status && filters.status.length > 0) {
+      whereClauses.push(`c.state IN (${filters.status.join(',')})`);
+    }
+
+    // Topic filter
+    if (filters?.topicId) {
+      whereClauses.push('c.notebookTopicPageId = @topicId');
+      params.topicId = filters.topicId;
+    }
+
+    // Tags filter (JSON array contains any)
+    if (filters?.tags && filters.tags.length > 0) {
+      const tagConditions = filters.tags.map((_, i) => {
+        params[`tag${i}`] = `%"${filters.tags![i]}"%`;
+        return `c.tags LIKE @tag${i}`;
+      });
+      whereClauses.push(`(${tagConditions.join(' OR ')})`);
+    }
+
+    // Leeches only filter
+    if (filters?.leechesOnly) {
+      whereClauses.push(`(
+        c.lapses >= 5 
+        OR (c.lapses >= 3 AND c.difficulty > 0.7) 
+        OR (c.reps >= 5 AND c.stability < 7)
+      )`);
+    }
+
+    // Search filter
+    if (filters?.search) {
+      whereClauses.push('(c.front LIKE @search OR c.back LIKE @search)');
+      params.search = `%${filters.search}%`;
+    }
+
+    const whereClause = whereClauses.length > 0
+      ? `WHERE ${whereClauses.join(' AND ')}`
+      : '';
+
+    // Sort clause
+    const sortField = sort?.field || 'dueDate';
+    const sortDir = sort?.direction || 'asc';
+    const sortMap: Record<string, string> = {
+      dueDate: 'c.dueDate',
+      createdAt: 'c.createdAt',
+      difficulty: 'c.difficulty',
+      lastReview: 'c.lastReview',
+    };
+    const orderClause = `ORDER BY ${sortMap[sortField]} ${sortDir.toUpperCase()} NULLS LAST`;
+
+    const stmt = db.prepare(`
+      SELECT 
+        c.*,
+        ct.canonicalName as topicName,
+        (SELECT COUNT(*) FROM cards c2 
+         WHERE c2.sourceBlockId = c.sourceBlockId 
+         AND c.sourceBlockId IS NOT NULL) as siblingCount,
+        CASE WHEN c.lapses >= 5 
+          OR (c.lapses >= 3 AND c.difficulty > 0.7) 
+          OR (c.reps >= 5 AND c.stability < 7)
+          THEN 1 ELSE 0 END as isLeech
+      FROM cards c
+      LEFT JOIN notebook_topic_pages ntp ON c.notebookTopicPageId = ntp.id
+      LEFT JOIN canonical_topics ct ON ntp.canonicalTopicId = ct.id
+      ${whereClause}
+      ${orderClause}
+    `);
+
+    const rows = stmt.all(params) as CardBrowserRow[];
+
+    // Parse and return with computed fields
+    return rows.map(row => ({
+      ...parseCardRow(row as unknown as CardRow),
+      topicName: row.topicName,
+      siblingCount: row.siblingCount || 0,
+      isLeech: row.isLeech === 1,
+    })) as DbCard[];
+  },
 };
 
 function parseCardRow(row: CardRow): DbCard {
@@ -1306,6 +1415,7 @@ function parseCardRow(row: CardRow): DbCard {
     listPosition: row.listPosition,
     notebookTopicPageId: row.notebookTopicPageId,
     sourceBlockId: row.sourceBlockId,
+    aiTitle: row.aiTitle,
   };
 }
 

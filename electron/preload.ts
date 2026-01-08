@@ -17,6 +17,8 @@ const api = {
       ipcRenderer.invoke("cards:getTopicMetadata", pageId),
     getWeakTopicSummaries: () =>
       ipcRenderer.invoke("cards:getWeakTopicSummaries"),
+    getBrowserList: (filters?: unknown, sort?: unknown) =>
+      ipcRenderer.invoke("cards:getBrowserList", filters, sort),
   },
   notes: {
     getAll: () => ipcRenderer.invoke("notes:getAll"),

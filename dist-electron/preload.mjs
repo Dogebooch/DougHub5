@@ -9,7 +9,8 @@ const api = {
     update: (id, updates) => electron.ipcRenderer.invoke("cards:update", id, updates),
     remove: (id) => electron.ipcRenderer.invoke("cards:remove", id),
     getTopicMetadata: (pageId) => electron.ipcRenderer.invoke("cards:getTopicMetadata", pageId),
-    getWeakTopicSummaries: () => electron.ipcRenderer.invoke("cards:getWeakTopicSummaries")
+    getWeakTopicSummaries: () => electron.ipcRenderer.invoke("cards:getWeakTopicSummaries"),
+    getBrowserList: (filters, sort) => electron.ipcRenderer.invoke("cards:getBrowserList", filters, sort)
   },
   notes: {
     getAll: () => electron.ipcRenderer.invoke("notes:getAll"),

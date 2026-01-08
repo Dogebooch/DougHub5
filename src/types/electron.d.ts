@@ -20,6 +20,7 @@ import type {
   SearchFilter,
   SearchResult,
   WeakTopicSummary,
+  CardBrowserItem,
 } from "./index";
 import type {
   AIProviderStatus,
@@ -83,6 +84,19 @@ export interface ElectronAPI {
       pageId: string
     ) => Promise<IpcResult<{ name: string; cardCount: number } | null>>;
     getWeakTopicSummaries: () => Promise<IpcResult<WeakTopicSummary[]>>;
+    getBrowserList: (
+      filters?: {
+        status?: number[];
+        topicId?: string;
+        tags?: string[];
+        leechesOnly?: boolean;
+        search?: string;
+      },
+      sort?: {
+        field: 'dueDate' | 'createdAt' | 'difficulty' | 'lastReview';
+        direction: 'asc' | 'desc';
+      }
+    ) => Promise<IpcResult<CardBrowserItem[]>>;
   };
   notes: {
     getAll: () => Promise<IpcResult<Note[]>>;

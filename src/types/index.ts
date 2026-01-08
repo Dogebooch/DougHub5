@@ -25,6 +25,7 @@ export interface Card {
   // v2 Architecture - Notebook linking
   notebookTopicPageId?: string;
   sourceBlockId?: string;
+  aiTitle?: string | null;
 }
 
 export interface Note {

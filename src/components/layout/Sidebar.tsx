@@ -112,7 +112,7 @@ export function Sidebar({ className }: SidebarProps) {
           "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
           "hover:bg-white/10 active:scale-[0.98]",
           isActive &&
-            "bg-white/30 text-primary border-l-2 border-primary -ml-px pl-[11px]",
+            "bg-primary/20 text-foreground border-l-2 border-primary -ml-px pl-[11px]",
           !isActive && "text-muted-foreground hover:text-foreground",
           !item.implemented &&
             "opacity-40 cursor-not-allowed hover:bg-transparent",

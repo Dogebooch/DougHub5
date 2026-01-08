@@ -290,6 +290,27 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     }
   },
 
+  getBrowserList: async (
+    filters?: {
+      status?: number[];
+      topicId?: string;
+      tags?: string[];
+      leechesOnly?: boolean;
+      search?: string;
+    },
+    sort?: {
+      field: 'dueDate' | 'createdAt' | 'difficulty' | 'lastReview';
+      direction: 'asc' | 'desc';
+    }
+  ) => {
+    const result = await window.api.cards.getBrowserList(filters, sort);
+    if (result.error) {
+      console.error('[Store] Failed to get browser list:', result.error);
+      return [];
+    }
+    return result.data || [];
+  },
+
   addNote: async (note: Note) => {
     if (!note.id || !note.title) {
       console.error("Invalid note: missing required fields");

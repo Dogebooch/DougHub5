@@ -33,6 +33,8 @@ import {
   DbStatus,
   SearchFilter,
   SearchResult,
+  CardBrowserFilters,
+  CardBrowserSort,
 } from "./database";
 import {
   scheduleReview,
@@ -156,6 +158,22 @@ export function registerIpcHandlers(): void {
       try {
         const summaries = cardQueries.getWeakTopicSummaries();
         return success(summaries);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "cards:getBrowserList",
+    async (
+      _event,
+      filters?: CardBrowserFilters,
+      sort?: CardBrowserSort
+    ): Promise<IpcResult<DbCard[]>> => {
+      try {
+        const items = cardQueries.getBrowserList(filters, sort);
+        return success(items);
       } catch (error) {
         return failure(error);
       }
