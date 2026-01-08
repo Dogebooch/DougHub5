@@ -104,9 +104,9 @@ export function Sidebar({ className }: SidebarProps) {
         disabled={!item.implemented}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-          "hover:bg-white/5 active:scale-[0.98]",
+          "hover:bg-white/10 active:scale-[0.98]",
           isActive &&
-            "bg-white/10 text-primary border-l-2 border-primary -ml-px pl-[11px]",
+            "bg-white/30 text-primary border-l-2 border-primary -ml-px pl-[11px]",
           !isActive && "text-muted-foreground hover:text-foreground",
           !item.implemented &&
             "opacity-40 cursor-not-allowed hover:bg-transparent",
@@ -115,7 +115,7 @@ export function Sidebar({ className }: SidebarProps) {
           item.id === "review" &&
             item.badge &&
             item.badge > 0 &&
-            "ring-2 ring-primary/30 ring-offset-1 ring-offset-background"
+            "ring-2 ring-primary/60 ring-offset-1 ring-offset-background"
         )}
       >
         <Icon
@@ -129,7 +129,7 @@ export function Sidebar({ className }: SidebarProps) {
                 variant="secondary"
                 className={cn(
                   "h-5 min-w-[20px] px-1.5 text-[10px] font-bold",
-                  isActive ? "bg-primary/20 text-primary" : "bg-white/10"
+                  isActive ? "bg-primary/30 text-primary" : "bg-white/10"
                 )}
               >
                 {item.badge}
@@ -168,7 +168,7 @@ export function Sidebar({ className }: SidebarProps) {
     <TooltipProvider>
       <aside
         className={cn(
-          "flex flex-col h-[calc(100vh-80px)] m-3 bg-muted/20 backdrop-blur-md border border-border/40 rounded-xl shadow-2xl transition-all duration-200 z-20",
+          "flex flex-col h-[calc(100vh-80px)] m-3 bg-surface-elevated border border-border/20 rounded-xl elevation-2 transition-all duration-200 z-20",
           collapsed ? "w-14" : "w-52",
           className
         )}

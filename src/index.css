@@ -3,12 +3,18 @@
 @config "../tailwind.config.ts";
 
 :root, .dark {
-  --background: 120 10% 8%;
+  --background: 120 6% 11%;
   --foreground: 40 10% 90%;
-  --card: 38 30% 84%;
+  
+  /* Elevation system */
+  --surface-base: var(--background);
+  --surface-elevated: 120 6% 14%;
+  --surface-overlay: 120 6% 16%;
+  
+  --card: 42 22% 94%;
   --card-foreground: 120 25% 10%;
-  --card-muted-foreground: 38 15% 35%;
-  --popover: 120 12% 8%;
+  --card-muted-foreground: 42 15% 35%;
+  --popover: var(--surface-overlay);
   --popover-foreground: 40 10% 90%;
   --primary: 175 30% 45%;
   --primary-foreground: 120 10% 6%;
@@ -20,6 +26,8 @@
   --accent-foreground: 40 10% 90%;
   --destructive: 12 40% 48%;
   --destructive-foreground: 40 10% 90%;
+  --warning: 35 50% 45%;
+  --warning-foreground: 40 10% 90%;
   --border: 120 8% 12%;
   --input: 120 8% 10%;
   --ring: 175 30% 45%;
@@ -40,11 +48,11 @@
   --transition-slow: 400ms ease-out;
 }
 
-/* Scoped Overrides for Manilla Cards */
+/* Scoped Overrides for Manila Cards */
 .bg-card {
-  --muted: 38 20% 80%;
+  --muted: 42 20% 88%;
   --muted-foreground: var(--card-muted-foreground);
-  --border: 38 15% 76%; /* Defined edge for the paper */
+  --border: 42 15% 85%; /* Defined edge for the paper */
   --destructive-foreground: 12 45% 15%; /* Deep blood red */
   --success-foreground: 145 35% 15%; /* Deep forest green */
 }
@@ -80,17 +88,29 @@
 }
 
 @layer components {
-  /* Refined shadow hierarchy */
+  /* Refined shadow hierarchy (Elevation System) */
+  .elevation-1 {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  .elevation-2 {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .elevation-3 {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  }
+  
   .shadow-subtle {
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
   
   .shadow-soft {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
   
   .shadow-heavy {
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   }
   
   /* Smooth transitions by default */

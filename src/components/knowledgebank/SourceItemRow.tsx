@@ -55,7 +55,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
   return (
     <div
       className={cn(
-        "group flex items-center gap-4 p-4 border-b transition-colors hover:bg-black/5 text-card-foreground",
+        "group flex items-center gap-4 py-2 px-4 border-b border-border/30 transition-colors hover:bg-white/10 text-foreground",
         isSelected && "bg-primary/10 border-primary/30",
         isHighlighted &&
           "bg-amber-500/10 border-l-4 border-l-amber-500 animate-pulse-subtle"

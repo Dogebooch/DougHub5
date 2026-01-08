@@ -211,9 +211,9 @@ export function InboxView() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background overflow-hidden">
+    <div className="flex flex-col h-full bg-surface-base overflow-hidden">
       {/* Header with sticky behavior */}
-      <header className="flex-none p-4 border-b space-y-4 bg-background z-10">
+      <header className="flex-none p-4 border-b border-border/30 space-y-4 bg-surface-base z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Inbox className="h-6 w-6 text-primary" />
@@ -259,13 +259,27 @@ export function InboxView() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types ({items.length})</SelectItem>
-                <SelectItem value="qbank">QBank ({sourceTypeCounts.qbank})</SelectItem>
-                <SelectItem value="article">Article ({sourceTypeCounts.article})</SelectItem>
-                <SelectItem value="pdf">PDF ({sourceTypeCounts.pdf})</SelectItem>
-                <SelectItem value="image">Image ({sourceTypeCounts.image})</SelectItem>
-                <SelectItem value="audio">Audio ({sourceTypeCounts.audio})</SelectItem>
-                <SelectItem value="quickcapture">Quick Capture ({sourceTypeCounts.quickcapture})</SelectItem>
-                <SelectItem value="manual">Manual ({sourceTypeCounts.manual})</SelectItem>
+                <SelectItem value="qbank">
+                  QBank ({sourceTypeCounts.qbank})
+                </SelectItem>
+                <SelectItem value="article">
+                  Article ({sourceTypeCounts.article})
+                </SelectItem>
+                <SelectItem value="pdf">
+                  PDF ({sourceTypeCounts.pdf})
+                </SelectItem>
+                <SelectItem value="image">
+                  Image ({sourceTypeCounts.image})
+                </SelectItem>
+                <SelectItem value="audio">
+                  Audio ({sourceTypeCounts.audio})
+                </SelectItem>
+                <SelectItem value="quickcapture">
+                  Quick Capture ({sourceTypeCounts.quickcapture})
+                </SelectItem>
+                <SelectItem value="manual">
+                  Manual ({sourceTypeCounts.manual})
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -553,7 +553,7 @@ export function CaptureInterface() {
 
       <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-700">
         {/* Phase 1: Paste Area */}
-        <Card className="bg-card border border-border/60 shadow-lg overflow-hidden rounded-2xl transition-all hover:shadow-xl text-card-foreground">
+        <Card className="bg-card border border-border/20 elevation-2 overflow-hidden rounded-2xl transition-all text-card-foreground">
           <CardHeader className="py-3 px-5 border-b border-border/40">
             <CardTitle className="text-[10px] uppercase tracking-widest font-bold text-card-muted">
               Initial Capture
@@ -577,7 +577,7 @@ export function CaptureInterface() {
                   onClick={() => handleExtractConcepts()}
                   disabled={isProcessing}
                   size="lg"
-                  className="gap-2 shadow-md rounded-lg"
+                  className="gap-2 elevation-1 rounded-lg"
                 >
                   {processingState === "extracting" ? (
                     <>
@@ -598,7 +598,7 @@ export function CaptureInterface() {
 
         {/* Phase 2: Extracted Concepts */}
         {extractedConcepts.length > 0 && (
-          <Card className="bg-card border border-border/60 shadow-lg rounded-2xl overflow-hidden text-card-foreground">
+          <Card className="bg-card border border-border/20 elevation-2 rounded-2xl overflow-hidden text-card-foreground">
             <CardHeader className="py-3 px-5 border-b border-border/40 flex flex-row items-center justify-between">
               <CardTitle className="text-[10px] uppercase tracking-widest font-bold text-card-muted">
                 Refine & Confirm

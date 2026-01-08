@@ -451,7 +451,7 @@ export function ReviewInterface() {
       {/* Card display */}
       <div
         className={cn(
-          "bg-card border border-border/60 rounded-2xl p-8 space-y-6 shadow-lg relative overflow-hidden min-h-[320px] flex flex-col justify-center transition-all duration-300 hover:shadow-xl text-card-foreground",
+          "bg-card border border-border/20 rounded-2xl p-8 space-y-6 elevation-2 relative overflow-hidden min-h-[320px] flex flex-col justify-center transition-all duration-300 text-card-foreground",
           isUrgentDifficulty
             ? "ring-2 ring-destructive/50"
             : isHighDifficulty
@@ -484,7 +484,7 @@ export function ReviewInterface() {
           )}
 
           {answerVisible && (
-            <div className="pt-6 border-t border-black/5 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="pt-6 border-t border-border/30 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
               {/* Back - Use cloze answer for cloze types */}
               {currentCard.cardType === "cloze" ||
               currentCard.cardType === "list-cloze" ? (
@@ -531,7 +531,7 @@ export function ReviewInterface() {
           </div>
         )}
 
-        <div className="text-center text-[10px] text-card-muted/70 pt-6 border-t border-black/5 font-medium uppercase tracking-widest">
+        <div className="text-center text-[10px] text-card-muted/70 pt-6 border-t border-border/30 font-medium uppercase tracking-widest">
           <span className="opacity-50">From:</span>{" "}
           {currentCard.notebookTopicPageId ? (
             <button
@@ -621,7 +621,7 @@ export function ReviewInterface() {
                 size="lg"
                 onClick={handleContinue}
                 disabled={isSubmitting}
-                className="min-w-[220px] h-12 text-base font-semibold bg-white/5 hover:bg-white/10 text-foreground border border-white/10 rounded-xl shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all duration-200"
+                className="min-w-[220px] h-12 text-base font-semibold bg-white/10 hover:bg-white/30 text-foreground border border-white/10 rounded-xl elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all duration-200"
               >
                 Continue
                 <span className="ml-3 text-[10px] opacity-40 font-mono">
@@ -647,7 +647,7 @@ export function ReviewInterface() {
                   variant="destructive"
                   onClick={() => handleManualGrade(Rating.Again)}
                   disabled={isSubmitting}
-                  className="min-w-[100px] h-12 shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all bg-[#8c3a2e] hover:bg-[#a64536] border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                  className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-destructive hover:bg-destructive/90 border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
                 >
                   <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
                     Forgot
@@ -659,7 +659,7 @@ export function ReviewInterface() {
                 <Button
                   onClick={() => handleManualGrade(Rating.Hard)}
                   disabled={isSubmitting}
-                  className="min-w-[100px] h-12 shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all bg-[#b58135] hover:bg-[#cf943c] text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                  className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-warning hover:bg-warning/90 text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
                 >
                   <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
                     Struggled
@@ -671,7 +671,7 @@ export function ReviewInterface() {
                 <Button
                   onClick={() => handleManualGrade(Rating.Good)}
                   disabled={isSubmitting}
-                  className="min-w-[100px] h-12 shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all bg-[#3d5e7a] hover:bg-[#4a7294] text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                  className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-info hover:bg-info/90 text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
                 >
                   <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
                     Recalled
@@ -683,7 +683,7 @@ export function ReviewInterface() {
                 <Button
                   onClick={() => handleManualGrade(Rating.Easy)}
                   disabled={isSubmitting}
-                  className="min-w-[100px] h-12 shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all bg-[#3e5e40] hover:bg-[#4b724e] text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                  className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-success hover:bg-success/90 text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
                 >
                   <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
                     Mastered

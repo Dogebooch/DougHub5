@@ -120,7 +120,8 @@ export function WeakTopicsView() {
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">Weak Topics</h1>
           <p className="text-muted-foreground">
-            {topics.length} topic{topics.length !== 1 ? 's' : ''} with high-difficulty cards.
+            {topics.length} topic{topics.length !== 1 ? "s" : ""} with
+            high-difficulty cards.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -132,13 +133,25 @@ export function WeakTopicsView() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setSortBy('difficulty')}>Difficulty</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy('count')}>Struggling Cards</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy('recent')}>Recently Seen</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy('name')}>Alphabetical</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("difficulty")}>
+                Difficulty
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("count")}>
+                Struggling Cards
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("recent")}>
+                Recently Seen
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("name")}>
+                Alphabetical
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button onClick={handleStartReview} size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
+          <Button
+            onClick={handleStartReview}
+            size="sm"
+            className="bg-warning hover:bg-warning/90 text-white"
+          >
             <Play className="h-4 w-4 mr-2" /> Review All Weak Cards
           </Button>
         </div>
@@ -148,13 +161,13 @@ export function WeakTopicsView() {
         {sortedTopics.map((topic) => (
           <div
             key={topic.topicId}
-            className="group relative overflow-hidden bg-card rounded-xl border border-border/50 hover:border-amber-500/50 transition-all duration-300 shadow-sm hover:shadow-md"
+            className="group relative overflow-hidden bg-card rounded-xl border border-border/20 elevation-1 hover:elevation-2 transition-all duration-300"
           >
             <div className="p-5 flex items-start gap-4">
               <div className="mt-1 bg-amber-500/10 p-2 rounded-lg group-hover:bg-amber-500/20 transition-colors">
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
               </div>
-              
+
               <div className="flex-1 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -164,12 +177,16 @@ export function WeakTopicsView() {
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <BookOpen className="h-3 w-3" />
-                        {topic.cardCount} card{topic.cardCount !== 1 ? 's' : ''} struggling
+                        {topic.cardCount} card{topic.cardCount !== 1 ? "s" : ""}{" "}
+                        struggling
                       </span>
                       {topic.lastReviewDate && (
                         <span className="flex items-center gap-1">
                           <History className="h-3 w-3" />
-                          Last: {formatDistanceToNow(new Date(topic.lastReviewDate), { addSuffix: true })}
+                          Last:{" "}
+                          {formatDistanceToNow(new Date(topic.lastReviewDate), {
+                            addSuffix: true,
+                          })}
                         </span>
                       )}
                     </div>
@@ -182,10 +199,10 @@ export function WeakTopicsView() {
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground/70">
                     <span>Topic Retention Health</span>
-                    <span>{Math.round(100 - (topic.avgDifficulty * 10))}%</span>
+                    <span>{Math.round(100 - topic.avgDifficulty * 10)}%</span>
                   </div>
-                  <Progress 
-                    value={100 - (topic.avgDifficulty * 10)} 
+                  <Progress
+                    value={100 - topic.avgDifficulty * 10}
                     className="h-1.5"
                     indicatorClassName={cn(
                       topic.avgDifficulty > 9 ? "bg-red-500" : "bg-amber-500"
@@ -195,30 +212,43 @@ export function WeakTopicsView() {
               </div>
 
               <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
+                <Button
+                  size="sm"
+                  variant="ghost"
                   className="h-8 px-2 hover:bg-amber-50/50 hover:text-amber-700"
-                  onClick={() => setCurrentView('notebook', topic.notebookPageId, { filter: 'weak' })}
+                  onClick={() =>
+                    setCurrentView("notebook", topic.notebookPageId, {
+                      filter: "weak",
+                    })
+                  }
                 >
                   View
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
+                <Button
+                  size="sm"
+                  variant="ghost"
                   className="h-8 px-2 hover:bg-amber-50/50 hover:text-amber-700 font-bold"
-                  onClick={() => setCurrentView('review', null, { filter: 'weak', topicId: topic.topicId })}
+                  onClick={() =>
+                    setCurrentView("review", null, {
+                      filter: "weak",
+                      topicId: topic.topicId,
+                    })
+                  }
                 >
                   Study
                 </Button>
               </div>
             </div>
             {/* Subtle accent bar */}
-            <div className={cn(
-              "absolute bottom-0 left-0 right-0 h-0.5 transition-all duration-300",
-              topic.avgDifficulty > 9 ? "bg-red-500/20 group-hover:bg-red-500" : "bg-amber-500/20 group-hover:bg-amber-500"
-            )} />
+            <div
+              className={cn(
+                "absolute bottom-0 left-0 right-0 h-0.5 transition-all duration-300",
+                topic.avgDifficulty > 9
+                  ? "bg-red-500/20 group-hover:bg-red-500"
+                  : "bg-amber-500/20 group-hover:bg-amber-500"
+              )}
+            />
           </div>
         ))}
       </div>

@@ -130,17 +130,17 @@ export const TopicPageList = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-muted/30">
+    <div className="flex flex-col h-full bg-surface-base">
       {/* Header & Search */}
-      <div className="p-4 space-y-4 border-b bg-background/50">
+      <div className="p-4 space-y-4 border-b border-border/30 bg-surface-elevated/50">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Topic Pages
           </h2>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-6 w-6" 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
             onClick={() => setIsDialogOpen(true)}
             title="New Topic Page"
           >
@@ -158,8 +158,8 @@ export const TopicPageList = ({
           />
         </div>
 
-        <Button 
-          className="w-full h-8 text-xs" 
+        <Button
+          className="w-full h-8 text-xs"
           variant="outline"
           onClick={() => setIsDialogOpen(true)}
         >
@@ -190,16 +190,20 @@ export const TopicPageList = ({
                   key={page.id}
                   onClick={() => onSelect(page.id)}
                   className={cn(
-                    "w-full flex items-center justify-between px-4 py-2 text-sm transition-colors hover:bg-accent/50 group",
-                    isActive ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground"
+                    "w-full flex items-center justify-between px-4 py-2 text-sm transition-colors hover:bg-white/5 group",
+                    isActive
+                      ? "bg-primary/20 text-primary font-medium"
+                      : "text-foreground"
                   )}
                 >
                   <span className="truncate mr-2">{getTopicName(page)}</span>
-                  <Badge 
-                    variant="secondary" 
+                  <Badge
+                    variant="secondary"
                     className={cn(
                       "h-5 px-1.5 text-[10px] min-w-[20px] justify-center",
-                      isActive ? "bg-background/50" : "bg-muted group-hover:bg-background/50"
+                      isActive
+                        ? "bg-background/50"
+                        : "bg-muted group-hover:bg-background/50"
                     )}
                   >
                     {page.cardIds.length}
@@ -217,7 +221,7 @@ export const TopicPageList = ({
           <DialogHeader>
             <DialogTitle>Create Topic Page</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Topic Name</label>
@@ -228,7 +232,7 @@ export const TopicPageList = ({
                   value={newTopicName}
                   onChange={(e) => setNewTopicName(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newTopicName.trim()) {
+                    if (e.key === "Enter" && newTopicName.trim()) {
                       handleCreatePage(newTopicName);
                     }
                   }}
@@ -249,12 +253,17 @@ export const TopicPageList = ({
                     onClick={() => handleCreatePage(suggestion.canonicalName)}
                   >
                     <span>{suggestion.canonicalName}</span>
-                    <span className="text-[10px] text-muted-foreground uppercase">{suggestion.domain}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase">
+                      {suggestion.domain}
+                    </span>
                   </button>
                 ))}
-                
+
                 {/* Always show option to create new if not an exact match */}
-                {!suggestions.some(s => s.canonicalName.toLowerCase() === newTopicName.toLowerCase()) && (
+                {!suggestions.some(
+                  (s) =>
+                    s.canonicalName.toLowerCase() === newTopicName.toLowerCase()
+                ) && (
                   <button
                     className="w-full text-left px-3 py-2 hover:bg-accent transition-colors text-primary flex items-center"
                     onClick={() => handleCreatePage(newTopicName)}
@@ -263,7 +272,7 @@ export const TopicPageList = ({
                     Create "{newTopicName}"
                   </button>
                 )}
-                
+
                 {suggestions.length === 0 && !isSearching && (
                   <div className="px-3 py-2 text-muted-foreground italic text-xs">
                     No matching topics found.
@@ -277,8 +286,8 @@ export const TopicPageList = ({
             <Button variant="secondary" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button 
-              disabled={!newTopicName.trim()} 
+            <Button
+              disabled={!newTopicName.trim()}
               onClick={() => handleCreatePage(newTopicName)}
             >
               Create Page

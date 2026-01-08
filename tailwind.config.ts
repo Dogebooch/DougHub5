@@ -18,6 +18,11 @@ const config: Config = {
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        surface: {
+          base: "hsl(var(--surface-base))",
+          elevated: "hsl(var(--surface-elevated))",
+          overlay: "hsl(var(--surface-overlay))",
+        },
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
@@ -54,6 +59,10 @@ const config: Config = {
         info: {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
