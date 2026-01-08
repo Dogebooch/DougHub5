@@ -95,6 +95,24 @@
 **Schema Prep:** Add `userAnswer TEXT` column to review_logs table (nullable, zero-cost prep for future).
 **Notes:** Enables active recall (typing > recognition) and provides rich data for F12 (Confusion Clusters) and F19 (Adaptive Learning Assistant). Consider speech-to-text integration (T50) as alternative input mode.
 
+### Card Browser Performance Optimization (F20)
+**Description:** Implement dedicated batch IPC channels for card operations (suspend, delete, move). Current implementation uses sequential IPC calls which may lag for 500+ cards.
+**Priority:** Low
+**Source:** T115.10 implementation (2026-01-08)
+**Notes:** Sequential iteration is fine for typical resident workflows (<100 cards), but lacks scalability.
+
+### Card Browser Shift+Click Selection (F21)
+**Description:** Support range selection via Shift+Click in the Card Browser.
+**Priority:** Low
+**Source:** T115.10 implementation (2026-01-08)
+**Notes:** More intuitive UX for desktop users. Requires tracking selection anchor and calculating range within filtered/sorted list state.
+
+### Batch IPC Channel for Card Operations (F33)
+**Description:** Dedicated batch IPC channels (`cards:batchSuspend`, `cards:batchDelete`) that accept arrays of card IDs and perform operations in a single database transaction. Current implementation iterates sequential IPC calls which may lag for 500+ card selections.
+**Priority:** Low
+**Source:** T115.10 performance consideration (2026-01-08)
+**Notes:** Sequential iteration is acceptable for typical workflows (<100 cards). Optimization candidate if real-world usage shows performance issues with large selections.
+
 ### Adaptive Learning Assistant (F19)
 **Description:** AI tutor that proactively detects learning patterns and offers targeted interventions. Three intervention types:
 1. **Confusion Pairs:** "You confuse Methotrexate and Methylnaltrexone - want a contrast card or mnemonic?"
@@ -873,4 +891,4 @@
 
 ---
 
-*Last updated: 2026-01-08 (Added QoL features from comprehensive review)*
+*Last updated: 2026-01-08 (Added F33: Batch IPC Channel for Card Operations)*

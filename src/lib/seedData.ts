@@ -2,6 +2,78 @@ import { sampleNotes, sampleCards } from '@/data/sampleData'
 import { CardWithFSRS, IpcResult, Note } from '@/types'
 
 /**
+ * FSRS state constants
+ */
+const FSRS_STATE = {
+  NEW: 0,
+  LEARNING: 1,
+  REVIEW: 2,
+  RELEARNING: 3,
+  SUSPENDED: 4,
+} as const
+
+/**
+ * Card-specific FSRS overrides to test various Card Browser features
+ * Keys are card IDs, values are partial FSRS fields
+ */
+const CARD_FSRS_OVERRIDES: Record<string, Partial<CardWithFSRS>> = {
+  // Leech card (high lapses, high difficulty)
+  'card-troponin-001': {
+    stability: 2.5,
+    difficulty: 8.5,
+    reps: 12,
+    lapses: 9, // Leech threshold is typically 8+
+    state: FSRS_STATE.RELEARNING,
+    lastReview: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  // Another leech
+  'card-stroke-002': {
+    stability: 1.2,
+    difficulty: 9.2,
+    reps: 15,
+    lapses: 11,
+    state: FSRS_STATE.REVIEW,
+    lastReview: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  // Suspended card
+  'card-ef-001': {
+    stability: 5.0,
+    difficulty: 4.0,
+    reps: 5,
+    lapses: 1,
+    state: FSRS_STATE.SUSPENDED,
+    lastReview: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  // Learning state card
+  'card-copd-001': {
+    stability: 0.5,
+    difficulty: 5.0,
+    reps: 2,
+    lapses: 0,
+    state: FSRS_STATE.LEARNING,
+    lastReview: new Date().toISOString(),
+  },
+  // Well-studied Review card
+  'card-pe-001': {
+    stability: 30.0,
+    difficulty: 3.5,
+    reps: 8,
+    lapses: 0,
+    state: FSRS_STATE.REVIEW,
+    lastReview: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  // Another suspended
+  'card-asthma-001': {
+    stability: 10.0,
+    difficulty: 6.0,
+    reps: 4,
+    lapses: 2,
+    state: FSRS_STATE.SUSPENDED,
+    lastReview: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+}
+
+/**
  * Default FSRS values for new cards
  */
 const DEFAULT_FSRS = {
@@ -49,11 +121,13 @@ export async function seedSampleData(): Promise<{ success: boolean; error?: stri
     }
     console.log(`[Seed] Inserted ${sampleNotes.length} notes`)
 
-    // Insert cards with FSRS defaults
+    // Insert cards with FSRS defaults (with overrides for specific cards)
     for (const card of sampleCards) {
+      const overrides = CARD_FSRS_OVERRIDES[card.id] || {}
       const cardWithFSRS: CardWithFSRS = {
         ...card,
         ...DEFAULT_FSRS,
+        ...overrides,
       }
       const cardResult: IpcResult<CardWithFSRS> = await window.api.cards.create(cardWithFSRS)
       if (cardResult.error) {
@@ -61,7 +135,7 @@ export async function seedSampleData(): Promise<{ success: boolean; error?: stri
         return { success: false, error: `Failed to insert card: ${cardResult.error}` }
       }
     }
-    console.log(`[Seed] Inserted ${sampleCards.length} cards`)
+    console.log(`[Seed] Inserted ${sampleCards.length} cards (${Object.keys(CARD_FSRS_OVERRIDES).length} with custom FSRS states)`)
 
     console.log('[Seed] Sample data seeded successfully')
     return { success: true }

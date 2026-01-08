@@ -20,6 +20,8 @@ import {
   LayoutList,
   LayoutGrid,
   Info,
+  ExternalLink,
+  X,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,9 +32,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,10 +50,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useAppStore } from "@/stores/useAppStore";
 import { useToast } from "@/hooks/use-toast";
-import type { CardBrowserItem } from "@/types";
+import type { CardBrowserItem, NotebookBlock } from "@/types";
 import { cn } from "@/lib/utils";
 import { CardEditModal } from "./CardEditModal";
 
@@ -67,10 +82,14 @@ interface CardRowData {
   onEdit: (card: CardBrowserItem) => void;
   onSuspend: (card: CardBrowserItem) => void;
   onDelete: (card: CardBrowserItem) => void;
+  onViewSource: (card: CardBrowserItem) => void;
   suspendingCardId: string | null;
   isCompact: boolean;
   focusedCardIndex: number | null;
   onSetFocus: (index: number) => void;
+  selectedCardIds: Set<string>;
+  onToggleSelect: (cardId: string) => void;
+  isSelectionMode: boolean;
 }
 
 // Full props received by CardRow component
@@ -91,15 +110,20 @@ function CardRow({
   onEdit,
   onSuspend,
   onDelete,
+  onViewSource,
   suspendingCardId,
   isCompact,
   onSetFocus,
+  selectedCardIds,
+  onToggleSelect,
+  isSelectionMode,
 }: CardRowProps) {
   const setCurrentView = useAppStore((state) => state.setCurrentView);
 
   const card = cards[index];
   const isExpanded = card.id === expandedCardId;
   const isSuspending = suspendingCardId === card.id;
+  const isSelected = selectedCardIds.has(card.id);
   // Suspended cards have state = 4 (FSRS convention)
   const isSuspended = card.state === 4;
 
@@ -148,8 +172,12 @@ function CardRow({
     card.front.length > 60 ? card.front.substring(0, 60) + "..." : card.front;
 
   const handleClick = () => {
-    onSetFocus(index);
-    onToggleExpand(card.id);
+    if (isSelectionMode) {
+      onToggleSelect(card.id);
+    } else {
+      onSetFocus(index);
+      onToggleExpand(card.id);
+    }
   };
 
   const handleTopicClick = (e: React.MouseEvent) => {
@@ -179,19 +207,43 @@ function CardRow({
       style={style}
       onClick={handleClick}
       className={cn(
-        "flex flex-col border-b border-border transition-colors cursor-pointer group",
+        "relative flex flex-col border-b border-border transition-colors cursor-pointer group",
         isExpanded
           ? "bg-muted/30 border-l-2 border-l-primary"
+          : isSelected
+          ? "bg-primary/5 border-l-2 border-l-primary"
           : card.isLeech
           ? "bg-amber-500/5 hover:bg-amber-500/10 border-l-2 border-l-amber-500"
           : "hover:bg-muted/50 border-l-2 border-l-transparent"
       )}
     >
       {/* Collapsed view - always visible */}
-      <div className={cn(
-        "flex items-center gap-3 px-4",
-        isCompact ? "h-[29px]" : "h-[59px]"
-      )}>
+      <div
+        className={cn(
+          "flex items-center gap-3 px-4",
+          isCompact ? "h-[29px]" : "h-[59px]"
+        )}
+      >
+        {/* Selection Checkbox (v2.2.5) */}
+        <div
+          className={cn(
+            "flex items-center justify-center w-5 h-5 transition-opacity",
+            isSelectionMode
+              ? "opacity-100"
+              : "opacity-0 group-hover:opacity-100"
+          )}
+        >
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect(card.id)}
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              "h-4 w-4 border-muted-foreground/50",
+              isSelected && "bg-primary border-primary"
+            )}
+          />
+        </div>
+
         {/* Expand indicator */}
         <ChevronRight
           className={cn(
@@ -229,26 +281,26 @@ function CardRow({
 
           {!isCompact && (
             <div className="flex items-center gap-3 mt-1">
-            {card.topicName && (
-              <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate max-w-[150px]">
-                <Layers className="w-3 h-3 shrink-0" />
-                <span className="truncate">{card.topicName}</span>
-              </div>
-            )}
+              {card.topicName && (
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate max-w-[150px]">
+                  <Layers className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{card.topicName}</span>
+                </div>
+              )}
 
-            {card.dueDate && (
-              <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                <Calendar className="w-3 h-3 shrink-0" />
-                <span>{new Date(card.dueDate).toLocaleDateString()}</span>
-              </div>
-            )}
+              {card.dueDate && (
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <Calendar className="w-3 h-3 shrink-0" />
+                  <span>{new Date(card.dueDate).toLocaleDateString()}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         {/* Deck Visual Indicator (v2.2.4) - absolutely positioned relative to main row item */}
         {card.siblingCount > 1 && (
-          <div 
+          <div
             className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 z-20"
             onClick={(e) => {
               e.stopPropagation();
@@ -269,10 +321,12 @@ function CardRow({
         )}
 
         {/* Hover action buttons */}
-        <div className={cn(
-          "flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mr-2",
-          card.siblingCount > 1 && "mr-10" // Make room for deck visual
-        )}>
+        <div
+          className={cn(
+            "flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mr-2",
+            card.siblingCount > 1 && "mr-10" // Make room for deck visual
+          )}
+        >
           <Button
             variant="ghost"
             size="icon"
@@ -419,12 +473,27 @@ function CardRow({
                 </button>
               )}
               {card.sourceBlockId && (
-                <div className="flex items-center gap-1 opacity-60">
-                  <span className="text-[10px]">ID:</span>
-                  <code className="bg-muted px-1 rounded text-[9px] font-mono">
-                    {card.sourceBlockId.slice(0, 8)}
-                  </code>
-                </div>
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewSource(card);
+                    }}
+                    className="h-auto p-0 flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors hover:underline underline-offset-4 font-normal"
+                    aria-label="View original source content"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    View Source
+                  </Button>
+                  <div className="flex items-center gap-1 opacity-60">
+                    <span className="text-[10px]">ID:</span>
+                    <code className="bg-muted px-1 rounded text-[9px] font-mono">
+                      {card.sourceBlockId.slice(0, 8)}
+                    </code>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -455,15 +524,17 @@ function CardRow({
               {siblingCards.length + 1} cards from this block
             </span>
           </div>
-          
+
           <div className="space-y-1">
             {siblingCards.map((sibling, idx) => (
-              <div 
+              <div
                 key={sibling.id}
                 className="flex items-center gap-3 p-2.5 rounded-md hover:bg-primary/5 transition-all cursor-pointer group/sibling border border-transparent hover:border-primary/10"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const siblingIndex = cards.findIndex(c => c.id === sibling.id);
+                  const siblingIndex = cards.findIndex(
+                    (c) => c.id === sibling.id
+                  );
                   if (siblingIndex !== -1) {
                     onSetFocus(siblingIndex);
                     onToggleExpand(sibling.id);
@@ -480,10 +551,17 @@ function CardRow({
                     {sibling.front}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase tracking-tighter font-semibold opacity-70">
-                    {sibling.state === 0 ? 'New' : sibling.state === 4 ? 'Susp' : 'Study'}
+                  <Badge
+                    variant="outline"
+                    className="text-[8px] h-4 px-1 uppercase tracking-tighter font-semibold opacity-70"
+                  >
+                    {sibling.state === 0
+                      ? "New"
+                      : sibling.state === 4
+                      ? "Susp"
+                      : "Study"}
                   </Badge>
                   <ChevronRight className="w-3 h-3 text-muted-foreground/40 group-hover/sibling:text-primary group-hover/sibling:translate-x-0.5 transition-all" />
                 </div>
@@ -508,9 +586,8 @@ function CardPreviewPane({ card }: { card: CardBrowserItem | null }) {
     );
   }
 
-  const truncatedBack = card.back.length > 150 
-    ? card.back.substring(0, 150) + '...' 
-    : card.back;
+  const truncatedBack =
+    card.back.length > 150 ? card.back.substring(0, 150) + "..." : card.back;
 
   return (
     <div className="h-[120px] border-t bg-muted/40 flex flex-col p-3 gap-2 overflow-hidden shadow-inner">
@@ -519,32 +596,53 @@ function CardPreviewPane({ card }: { card: CardBrowserItem | null }) {
           {truncatedBack}
         </p>
       </div>
-      
+
       <div className="flex items-center gap-6 pt-2 border-t border-border/30">
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground" title="FSRS Difficulty">
+        <div
+          className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
+          title="FSRS Difficulty"
+        >
           <Zap className="w-3.5 h-3.5 text-warning" />
-          <span className="font-medium text-foreground">{(card.difficulty * 10).toFixed(1)}%</span>
+          <span className="font-medium text-foreground">
+            {(card.difficulty * 10).toFixed(1)}%
+          </span>
           <span>Difficulty</span>
         </div>
-        
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground" title="Scheduled Due Date">
+
+        <div
+          className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
+          title="Scheduled Due Date"
+        >
           <Calendar className="w-3.5 h-3.5 text-primary" />
           <span className="font-medium text-foreground">
-            {card.dueDate ? new Date(card.dueDate).toLocaleDateString() : 'New'}
+            {card.dueDate ? new Date(card.dueDate).toLocaleDateString() : "New"}
           </span>
           <span>Due</span>
         </div>
 
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground" title="Review Lapses">
-          <AlertTriangle className={cn("w-3.5 h-3.5", card.lapses > 5 ? "text-destructive" : "text-muted-foreground")} />
+        <div
+          className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
+          title="Review Lapses"
+        >
+          <AlertTriangle
+            className={cn(
+              "w-3.5 h-3.5",
+              card.lapses > 5 ? "text-destructive" : "text-muted-foreground"
+            )}
+          />
           <span className="font-medium text-foreground">{card.lapses}</span>
           <span>Lapses</span>
         </div>
 
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground" title="Last Reviewed">
+        <div
+          className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
+          title="Last Reviewed"
+        >
           <Clock className="w-3.5 h-3.5 text-info" />
           <span className="font-medium text-foreground">
-            {card.lastReview ? new Date(card.lastReview).toLocaleDateString() : 'Never'}
+            {card.lastReview
+              ? new Date(card.lastReview).toLocaleDateString()
+              : "Never"}
           </span>
           <span>Last Review</span>
         </div>
@@ -570,10 +668,23 @@ export function CardBrowserView() {
 
   // Expand state, focus state, and list ref
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
-  const [expandedSiblingsCardId, setExpandedSiblingsCardId] = useState<string | null>(null);
+  const [expandedSiblingsCardId, setExpandedSiblingsCardId] = useState<
+    string | null
+  >(null);
   const [siblingCards, setSiblingCards] = useState<CardBrowserItem[]>([]);
   const [focusedCardIndex, setFocusedCardIndex] = useState<number | null>(null);
   const listRef = useRef<ListImperativeAPI>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+
+  // Source drawer state
+  const [sourceDrawerOpen, setSourceDrawerOpen] = useState(false);
+  const [sourceDrawerLoading, setSourceDrawerLoading] = useState(false);
+  const [sourceBlockData, setSourceBlockData] = useState<{
+    block: NotebookBlock | null;
+    cards: CardBrowserItem[];
+  } | null>(null);
 
   // Action modal/dialog state
   const [editingCard, setEditingCard] = useState<CardBrowserItem | null>(null);
@@ -582,6 +693,13 @@ export function CardBrowserView() {
   );
   const [suspendingCardId, setSuspendingCardId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Selection state
+  const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
 
   const getBrowserList = useAppStore((state) => state.getBrowserList);
   const { toast } = useToast();
@@ -645,63 +763,190 @@ export function CardBrowserView() {
       if (!card) return 60;
 
       let height = compactMode ? 30 : 60;
-      
+
       // Add expanded details height
       if (card.id === expandedCardId) {
-        height = card.isLeech ? 280 : 220; 
+        height = card.isLeech ? 280 : 220;
       }
-      
+
       // Add siblings list height if expanded (even if parent not expanded)
       if (card.id === expandedSiblingsCardId && siblingCards.length > 0) {
         // base height (from above) + sibling header + each sibling row + padding
-        const siblingHeight = (siblingCards.length * 36) + 30;
+        const siblingHeight = siblingCards.length * 36 + 30;
         height += siblingHeight;
       }
-      
+
       return height;
     },
-    [filteredCards, expandedCardId, expandedSiblingsCardId, siblingCards, compactMode]
+    [
+      filteredCards,
+      expandedCardId,
+      expandedSiblingsCardId,
+      siblingCards,
+      compactMode,
+    ]
   );
 
   const handleToggleExpand = useCallback((cardId: string) => {
     setExpandedCardId((prev) => (prev === cardId ? null : cardId));
-    
+
     // Auto-collapse siblings when toggling or switching card expansion
     setExpandedSiblingsCardId(null);
     setSiblingCards([]);
   }, []);
 
-  const handleToggleSiblings = useCallback(async (cardId: string, sourceBlockId: string) => {
-    if (expandedSiblingsCardId === cardId) {
-      setExpandedSiblingsCardId(null);
-      setSiblingCards([]);
-      return;
-    }
-
-    try {
-      const result = await window.api.cards.getBySiblings(sourceBlockId);
-      if (result.data) {
-        // Filter out the current card to only show TRUE siblings
-        const actualSiblings = result.data.filter(c => c.id !== cardId);
-        setSiblingCards(actualSiblings);
-        setExpandedSiblingsCardId(cardId);
+  const handleToggleSiblings = useCallback(
+    async (cardId: string, sourceBlockId: string) => {
+      if (expandedSiblingsCardId === cardId) {
+        setExpandedSiblingsCardId(null);
+        setSiblingCards([]);
+        return;
       }
-    } catch (error) {
-      console.error("Failed to fetch sibling cards:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load sibling cards.",
-        variant: "destructive"
-      });
-    }
-  }, [expandedSiblingsCardId, toast]);
-  
+
+      try {
+        const result = await window.api.cards.getBySiblings(sourceBlockId);
+        if (result.data) {
+          // Filter out the current card to only show TRUE siblings
+          const actualSiblings = result.data.filter((c) => c.id !== cardId);
+          setSiblingCards(actualSiblings);
+          setExpandedSiblingsCardId(cardId);
+        }
+      } catch (error) {
+        console.error("Failed to fetch sibling cards:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load sibling cards.",
+          variant: "destructive",
+        });
+      }
+    },
+    [expandedSiblingsCardId, toast]
+  );
+
   const handleSetFocus = useCallback((index: number) => {
     setFocusedCardIndex(index);
   }, []);
 
+  // Selection handlers
+  const handleToggleSelect = useCallback((cardId: string) => {
+    setSelectedCardIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(cardId)) {
+        next.delete(cardId);
+      } else {
+        next.add(cardId);
+        setIsSelectionMode(true);
+      }
+      if (next.size === 0) {
+        setIsSelectionMode(false);
+      }
+      return next;
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedCardIds(new Set());
+    setIsSelectionMode(false);
+  }, []);
+
+  const handleBatchSuspend = useCallback(async () => {
+    if (selectedCardIds.size === 0) return;
+
+    setIsBatchProcessing(true);
+    const selectedCards = cards.filter((c) => selectedCardIds.has(c.id));
+    const anyUnsuspended = selectedCards.some((c) => c.state !== 4);
+    const newState = anyUnsuspended ? 4 : 2; // Suspend all or Unsuspend all
+
+    try {
+      // Process sequentially as per clarification
+      for (const cardId of selectedCardIds) {
+        await window.api.cards.update(cardId, { state: newState });
+      }
+
+      toast({
+        title: anyUnsuspended ? "Cards suspended" : "Cards unsuspended",
+        description: `Successfully updated ${selectedCardIds.size} cards.`,
+      });
+      clearSelection();
+      fetchCards();
+    } catch (error) {
+      console.error("Batch suspend failed:", error);
+      toast({
+        title: "Batch update failed",
+        description: "An error occurred during the batch operation.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  }, [selectedCardIds, cards, fetchCards, toast, clearSelection]);
+
+  const handleBatchDelete = useCallback(async () => {
+    if (selectedCardIds.size === 0) return;
+
+    setIsBatchProcessing(true);
+    try {
+      for (const cardId of selectedCardIds) {
+        await window.api.cards.remove(cardId);
+      }
+
+      toast({
+        title: "Cards deleted",
+        description: `Successfully deleted ${selectedCardIds.size} cards.`,
+      });
+      clearSelection();
+      fetchCards();
+    } catch (error) {
+      console.error("Batch delete failed:", error);
+      toast({
+        title: "Batch delete failed",
+        description: "An error occurred during the batch operation.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  }, [selectedCardIds, fetchCards, toast, clearSelection]);
+
+  const handleViewSource = useCallback(
+    async (card: CardBrowserItem) => {
+      if (!card.sourceBlockId) return;
+
+      setSourceDrawerOpen(true);
+      setSourceDrawerLoading(true);
+      setSourceBlockData(null); // Clear previous content
+
+      try {
+        // Fetch block content and sibling cards in parallel
+        const [blockResult, siblingsResult] = await Promise.all([
+          window.api.notebookBlocks.getById(card.sourceBlockId),
+          window.api.cards.getBySiblings(card.sourceBlockId),
+        ]);
+
+        setSourceBlockData({
+          block: blockResult.data || null,
+          cards: siblingsResult.data || [],
+        });
+      } catch (error) {
+        console.error("Failed to fetch source block:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load source block content.",
+          variant: "destructive",
+        });
+      } finally {
+        setSourceDrawerLoading(false);
+      }
+    },
+    [toast]
+  );
+
   const focusedCard = useMemo(() => {
-    if (focusedCardIndex === null || focusedCardIndex < 0 || focusedCardIndex >= filteredCards.length) {
+    if (
+      focusedCardIndex === null ||
+      focusedCardIndex < 0 ||
+      focusedCardIndex >= filteredCards.length
+    ) {
       return null;
     }
     return filteredCards[focusedCardIndex];
@@ -801,22 +1046,146 @@ export function CardBrowserView() {
         return;
       }
 
-      // Ignore if typing in search input
-      if (document.activeElement?.tagName === "INPUT") return;
+      // Ignore if typing in an input/textarea
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
+      // / (forward slash): Focus search input
+      if (e.key === "/" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      // ? or Shift+/: Show keyboard shortcuts help
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        setShowShortcutsHelp((prev) => !prev);
+        return;
+      }
+
+      // E: Edit focused card
+      if (
+        e.key.toLowerCase() === "e" &&
+        focusedCardIndex !== null &&
+        filteredCards[focusedCardIndex]
+      ) {
+        e.preventDefault();
+        handleEdit(filteredCards[focusedCardIndex]);
+        return;
+      }
+
+      // S: Suspend/unsuspend focused card
+      if (
+        e.key.toLowerCase() === "s" &&
+        focusedCardIndex !== null &&
+        filteredCards[focusedCardIndex]
+      ) {
+        e.preventDefault();
+        handleSuspend(filteredCards[focusedCardIndex]);
+        return;
+      }
+
+      // Delete/Backspace: Delete focused card (opens confirmation)
+      if (
+        (e.key === "Delete" || e.key === "Backspace") &&
+        focusedCardIndex !== null &&
+        filteredCards[focusedCardIndex]
+      ) {
+        e.preventDefault();
+        handleDelete(filteredCards[focusedCardIndex]);
+        return;
+      }
+
+      // L: Switch to Leeches tab
+      if (e.key.toLowerCase() === "l") {
+        e.preventDefault();
+        setActiveTab("leeches");
+        return;
+      }
+
+      // 1/2/3: Switch filter tabs (1=Due, 2=Leeches, 3=All)
+      if (e.key === "1") {
+        e.preventDefault();
+        setActiveTab("due");
+        return;
+      }
+      if (e.key === "2") {
+        e.preventDefault();
+        setActiveTab("leeches");
+        return;
+      }
+      if (e.key === "3") {
+        e.preventDefault();
+        setActiveTab("all");
+        return;
+      }
+
+      // N: Next leech card (only in leeches tab)
+      if (
+        e.key.toLowerCase() === "n" &&
+        activeTab === "leeches" &&
+        filteredCards.length > 0
+      ) {
+        e.preventDefault();
+        const currentIdx = focusedCardIndex ?? -1;
+        const nextIdx = (currentIdx + 1) % filteredCards.length; // Wraparound
+        setFocusedCardIndex(nextIdx);
+        setExpandedCardId(filteredCards[nextIdx].id);
+        listRef.current?.scrollToRow({ index: nextIdx, align: "smart" });
+        return;
+      }
+
+      // P: Previous leech card (only in leeches tab)
+      if (
+        e.key.toLowerCase() === "p" &&
+        activeTab === "leeches" &&
+        filteredCards.length > 0
+      ) {
+        e.preventDefault();
+        const currentIdx = focusedCardIndex ?? 0;
+        const prevIdx =
+          currentIdx <= 0 ? filteredCards.length - 1 : currentIdx - 1; // Wraparound
+        setFocusedCardIndex(prevIdx);
+        setExpandedCardId(filteredCards[prevIdx].id);
+        listRef.current?.scrollToRow({ index: prevIdx, align: "smart" });
+        return;
+      }
+
+      // Ctrl+A: Select all visible cards (v2.2.5)
+      if (e.ctrlKey && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        if (filteredCards.length > 0) {
+          const allIds = new Set(filteredCards.map((c) => c.id));
+          setSelectedCardIds(allIds);
+          setIsSelectionMode(true);
+        }
+        return;
+      }
+
       if (!filteredCards.length) return;
 
       const currentIndex = focusedCardIndex ?? -1;
 
       switch (e.key) {
         case "Escape": {
-          // Clear focus
+          // Clear selection first, then focus
           e.preventDefault();
-          setFocusedCardIndex(null);
-          setExpandedCardId(null);
+          if (selectedCardIds.size > 0) {
+            clearSelection();
+          } else {
+            setFocusedCardIndex(null);
+            setExpandedCardId(null);
+          }
           break;
         }
 
         case "ArrowRight": {
+          if (isSelectionMode) return;
           // Expand focused card
           if (currentIndex >= 0 && filteredCards[currentIndex]) {
             setExpandedCardId(filteredCards[currentIndex].id);
@@ -830,6 +1199,7 @@ export function CardBrowserView() {
         }
 
         case "ArrowLeft": {
+          if (isSelectionMode) return;
           // Collapse current
           setExpandedCardId(null);
           break;
@@ -837,13 +1207,18 @@ export function CardBrowserView() {
 
         case "ArrowDown": {
           e.preventDefault();
-          const nextIndex = currentIndex === -1 ? 0 : Math.min(
-            currentIndex + 1,
-            filteredCards.length - 1
-          );
+          const nextIndex =
+            currentIndex === -1
+              ? 0
+              : Math.min(currentIndex + 1, filteredCards.length - 1);
+
           if (nextIndex >= 0) {
             setFocusedCardIndex(nextIndex);
-            setExpandedCardId(filteredCards[nextIndex].id);
+            if (e.shiftKey) {
+              handleToggleSelect(filteredCards[nextIndex].id);
+            } else if (!isSelectionMode) {
+              setExpandedCardId(filteredCards[nextIndex].id);
+            }
             listRef.current?.scrollToRow({ index: nextIndex, align: "smart" });
           }
           break;
@@ -851,10 +1226,16 @@ export function CardBrowserView() {
 
         case "ArrowUp": {
           e.preventDefault();
-          const prevIndex = currentIndex === -1 ? 0 : Math.max(currentIndex - 1, 0);
+          const prevIndex =
+            currentIndex === -1 ? 0 : Math.max(currentIndex - 1, 0);
+
           if (prevIndex >= 0) {
             setFocusedCardIndex(prevIndex);
-            setExpandedCardId(filteredCards[prevIndex].id);
+            if (e.shiftKey) {
+              handleToggleSelect(filteredCards[prevIndex].id);
+            } else if (!isSelectionMode) {
+              setExpandedCardId(filteredCards[prevIndex].id);
+            }
             listRef.current?.scrollToRow({ index: prevIndex, align: "smart" });
           }
           break;
@@ -864,7 +1245,19 @@ export function CardBrowserView() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [filteredCards, focusedCardIndex, compactMode]);
+  }, [
+    filteredCards,
+    focusedCardIndex,
+    compactMode,
+    selectedCardIds,
+    isSelectionMode,
+    handleToggleSelect,
+    clearSelection,
+    activeTab,
+    handleEdit,
+    handleSuspend,
+    handleDelete,
+  ]);
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
@@ -874,6 +1267,7 @@ export function CardBrowserView() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
+              ref={searchInputRef}
               placeholder="Search cards..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -1033,15 +1427,111 @@ export function CardBrowserView() {
                   onEdit: handleEdit,
                   onSuspend: handleSuspend,
                   onDelete: handleDelete,
+                  onViewSource: handleViewSource,
                   suspendingCardId,
                   isCompact: compactMode,
                   focusedCardIndex,
                   onSetFocus: handleSetFocus,
+                  selectedCardIds,
+                  onToggleSelect: handleToggleSelect,
+                  isSelectionMode,
                 }}
                 className="scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
               />
             )}
           </AutoSizerComponent>
+        )}
+
+        {/* Batch Actions Bar (v2.2.5) */}
+        {selectedCardIds.size > 0 && (
+          <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="bg-background border-2 shadow-2xl rounded-full px-6 py-3 flex items-center gap-6 min-w-[450px] justify-between border-primary/20 bg-background/95 backdrop-blur-sm">
+              <div className="flex items-center gap-3 border-r pr-6 border-border">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+                  {selectedCardIds.size}
+                </span>
+                <span className="text-sm font-medium whitespace-nowrap">
+                  {selectedCardIds.size === 1
+                    ? "card selected"
+                    : "cards selected"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={clearSelection}
+                  className="text-muted-foreground hover:text-foreground rounded-full h-9"
+                  disabled={isBatchProcessing}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Clear
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleBatchSuspend}
+                  className="rounded-full h-9 px-4 border-primary/20 hover:border-primary/40"
+                  disabled={isBatchProcessing}
+                >
+                  {isBatchProcessing ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : cards
+                      .filter((c) => selectedCardIds.has(c.id))
+                      .some((c) => c.state !== 4) ? (
+                    <Pause className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Play className="h-4 w-4 mr-2" />
+                  )}
+                  {cards
+                    .filter((c) => selectedCardIds.has(c.id))
+                    .some((c) => c.state !== 4)
+                    ? "Suspend All"
+                    : "Unsuspend All"}
+                </Button>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="rounded-full h-9 px-4"
+                      disabled={isBatchProcessing}
+                    >
+                      {isBatchProcessing ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 mr-2" />
+                      )}
+                      Delete All
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Delete {selectedCardIds.size} cards?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. These cards will be
+                        permanently removed from your database.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleBatchDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete Permanently
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
@@ -1053,8 +1543,126 @@ export function CardBrowserView() {
         <div className="flex gap-4">
           <span>Total: {cards.length}</span>
           <span>Filtered: {filteredCards.length}</span>
-          {focusedCardIndex !== null && <span className="text-primary">Selected: {focusedCardIndex + 1}</span>}
+          {focusedCardIndex !== null && (
+            <span className="text-primary">
+              Selected: {focusedCardIndex + 1}
+            </span>
+          )}
         </div>
+
+        <div className="flex items-center gap-3 text-[9px] normal-case tracking-normal opacity-70">
+          <span>
+            <kbd className="px-1 py-0.5 rounded bg-muted border text-[8px]">
+              /
+            </kbd>{" "}
+            Search
+          </span>
+          <span>
+            <kbd className="px-1 py-0.5 rounded bg-muted border text-[8px]">
+              E
+            </kbd>{" "}
+            Edit
+          </span>
+          <span>
+            <kbd className="px-1 py-0.5 rounded bg-muted border text-[8px]">
+              S
+            </kbd>{" "}
+            Suspend
+          </span>
+          <div className="flex items-center gap-0.5">
+            <kbd className="px-1 py-0.5 rounded bg-muted border text-[8px]">
+              1
+            </kbd>
+            <kbd className="px-1 py-0.5 rounded bg-muted border text-[8px]">
+              2
+            </kbd>
+            <kbd className="px-1 py-0.5 rounded bg-muted border text-[8px]">
+              3
+            </kbd>
+            <span className="ml-1">Tabs</span>
+          </div>
+
+          <Popover open={showShortcutsHelp} onOpenChange={setShowShortcutsHelp}>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-1 hover:text-foreground transition-colors cursor-help">
+                <kbd className="px-1 py-0.5 rounded bg-muted border text-[8px]">
+                  ?
+                </kbd>
+                <span>Help</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-64 p-4 text-[11px] normal-case tracking-normal"
+              side="top"
+              align="end"
+            >
+              <div className="space-y-2">
+                <h4 className="font-bold border-b pb-1 mb-2">
+                  Keyboard Shortcuts
+                </h4>
+                <div className="grid grid-cols-[1fr,2fr] gap-y-1.5 items-center">
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    /
+                  </kbd>{" "}
+                  <span>Focus search</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    ↑↓
+                  </kbd>{" "}
+                  <span>Navigate cards</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    ←→
+                  </kbd>{" "}
+                  <span>Collapse/Expand</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    E
+                  </kbd>{" "}
+                  <span>Edit card</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    S
+                  </kbd>{" "}
+                  <span>Suspend/Unsuspend</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    Del
+                  </kbd>{" "}
+                  <span>Delete card</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    1
+                  </kbd>{" "}
+                  <span>Due tab</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    2
+                  </kbd>{" "}
+                  <span>Leeches tab</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    3
+                  </kbd>{" "}
+                  <span>All tab</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    L
+                  </kbd>{" "}
+                  <span>Jump to Leeches</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    N/P
+                  </kbd>{" "}
+                  <span>Next/Prev leech</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    Ctrl+A
+                  </kbd>{" "}
+                  <span>Select all</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    Shift+↑↓
+                  </kbd>{" "}
+                  <span>Extend selection</span>
+                  <kbd className="justify-self-start border px-1 rounded bg-muted/50">
+                    Esc
+                  </kbd>{" "}
+                  <span>Clear selection</span>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
         {activeTab === "due" && (
           <span className="flex items-center gap-1 text-primary font-bold">
             <Zap className="w-3 h-3" />
@@ -1110,6 +1718,131 @@ export function CardBrowserView() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Source Context Sheet */}
+      <Sheet open={sourceDrawerOpen} onOpenChange={setSourceDrawerOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-[600px] overflow-y-auto"
+        >
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Layers className="w-4 h-4" />
+              Source Block
+            </SheetTitle>
+          </SheetHeader>
+
+          {sourceDrawerLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4 text-muted-foreground">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <p className="text-sm font-medium animate-pulse">
+                Loading source context...
+              </p>
+            </div>
+          ) : (
+            sourceBlockData && (
+              <div className="mt-6 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                {/* Block Content */}
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Original Content
+                  </Label>
+                  <div className="p-4 rounded-lg bg-muted/30 border text-sm leading-relaxed whitespace-pre-wrap selection:bg-primary/20">
+                    {sourceBlockData.block?.content ||
+                      "Block content not available"}
+                  </div>
+                </div>
+
+                {/* Cards from this block */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Cards Generated ({sourceBlockData.cards.length})
+                    </Label>
+                  </div>
+
+                  <div className="space-y-2">
+                    {sourceBlockData.cards.length === 0 ? (
+                      <div className="p-8 text-center border rounded-lg border-dashed">
+                        <p className="text-sm text-muted-foreground">
+                          No sibling cards found.
+                        </p>
+                      </div>
+                    ) : (
+                      sourceBlockData.cards.map((card) => (
+                        <div
+                          key={card.id}
+                          className="group p-3 rounded-lg border bg-background hover:bg-muted/50 hover:border-primary/20 transition-all cursor-pointer"
+                          onClick={() => {
+                            // Try to find the card in the currently filtered list
+                            let cardIndex = filteredCards.findIndex(
+                              (c) => c.id === card.id
+                            );
+
+                            // If not found in current tab, switch to "All Cards"
+                            if (cardIndex === -1 && activeTab !== "all") {
+                              setActiveTab("all");
+                              // We need to wait for the next render for filteredCards to update
+                              // OR we can find it in the 'cards' array which represents the 'all' tab
+                              cardIndex = cards.findIndex(
+                                (c) => c.id === card.id
+                              );
+                            }
+
+                            if (cardIndex !== -1) {
+                              setFocusedCardIndex(cardIndex);
+                              setExpandedCardId(card.id);
+                              listRef.current?.scrollToRow({
+                                index: cardIndex,
+                                align: "center",
+                              });
+                              setSourceDrawerOpen(false);
+                            } else {
+                              toast({
+                                title: "Card not found",
+                                description:
+                                  "This card could not be located in the current view.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          <div className="flex justify-between items-start gap-4">
+                            <p className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                              {card.front}
+                            </p>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0 mt-0.5" />
+                          </div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge
+                              variant="outline"
+                              className="text-[9px] h-4 py-0 uppercase tracking-tighter"
+                            >
+                              {card.state === 0
+                                ? "New"
+                                : card.state === 4
+                                ? "Suspended"
+                                : "Studied"}
+                            </Badge>
+                            {card.isLeech && (
+                              <Badge
+                                variant="outline"
+                                className="text-[9px] h-4 py-0 border-amber-500 text-amber-500 bg-amber-500/5"
+                              >
+                                Leech
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

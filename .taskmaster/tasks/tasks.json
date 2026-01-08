@@ -1295,9 +1295,10 @@
               4
             ],
             "details": "1. CardRow checks if siblingCount > 1, renders deck visual below card: 2-3 div elements with absolute positioning, offset 2px down and 4px right, muted border, decreasing opacity. 2. Click deck visual to expand siblings list below parent row. 3. Query siblings: cards.getBySiblings(sourceBlockId) returns cards WHERE sourceBlockId = X. 4. Render sibling cards as nested indented rows (ml-8) with connecting lines (border-l). 5. Show sibling index/count: '2 of 5 cards from this block'. 6. Clicking sibling row navigates to that card (focus + expand). 7. Collapse siblings by clicking deck visual again or clicking elsewhere.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Find card with siblings (siblingCount > 1). Verify deck visual renders below card. Click deck and confirm siblings expand in nested list. Click sibling and verify it focuses. Click deck again to collapse.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T18:24:14.774Z"
           },
           {
             "id": 8,
@@ -1321,9 +1322,10 @@
               4
             ],
             "details": "1. Use shadcn/ui Sheet component (install if needed: npx shadcn@latest add sheet). 2. Add 'View Source' link in expanded card row (only if sourceBlockId exists). 3. Sheet slides in from right, ~600px width. 4. Top section: NotebookBlock content preview (full text, read-only). 5. Bottom section: List of cards from this block (query cards WHERE sourceBlockId = X). 6. Each card shows front (truncated), tags, status badge. 7. Click card in drawer to focus it in main browser (close drawer, scroll to card, expand). 8. Sheet header shows topic name and block creation date. 9. Close button (X) in top-right corner.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Expand card with sourceBlockId, click 'View Source' link. Verify Sheet opens from right. Confirm NotebookBlock content displays. Check list of sibling cards renders. Click card in drawer and verify main browser focuses that card.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T18:24:14.776Z"
           },
           {
             "id": 10,
@@ -1334,9 +1336,10 @@
               5
             ],
             "details": "1. Add selectedCardIds Set to CardBrowserView state. 2. Show checkbox on left side of row on hover (or always visible in compact mode). 3. Click checkbox to toggle selection. 4. When selectedCardIds.size > 0, show BatchActions component (adapt from src/components/knowledgebank/BatchActions.tsx). 5. BatchActions bar shows: count, Clear button, Suspend All button, Delete All button (with confirmation). 6. Ctrl+A selects all visible cards (filtered results). 7. Shift+↑/↓ extends selection from focused card. 8. Batch operations: map over selectedCardIds, call suspend/delete for each, show progress. 9. Clear selection after batch action completes.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Hover card row and verify checkbox appears. Click checkbox to select. Select multiple cards and verify BatchActions bar appears. Click Suspend All and confirm all selected cards suspended. Press Ctrl+A and verify all cards selected. Press Shift+↓ and verify selection extends.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T18:35:25.606Z"
           },
           {
             "id": 11,
@@ -1368,7 +1371,7 @@
             "updatedAt": "2026-01-08T17:51:32.093Z"
           }
         ],
-        "updatedAt": "2026-01-08T17:51:32.093Z"
+        "updatedAt": "2026-01-08T18:35:25.606Z"
       },
       {
         "id": "116",
@@ -1568,7 +1571,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-08T17:51:32.093Z",
+      "lastModified": "2026-01-08T18:35:25.607Z",
       "taskCount": 23,
       "completedCount": 19,
       "tags": [

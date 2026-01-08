@@ -10,7 +10,8 @@ const api = {
     remove: (id) => electron.ipcRenderer.invoke("cards:remove", id),
     getTopicMetadata: (pageId) => electron.ipcRenderer.invoke("cards:getTopicMetadata", pageId),
     getWeakTopicSummaries: () => electron.ipcRenderer.invoke("cards:getWeakTopicSummaries"),
-    getBrowserList: (filters, sort) => electron.ipcRenderer.invoke("cards:getBrowserList", filters, sort)
+    getBrowserList: (filters, sort) => electron.ipcRenderer.invoke("cards:getBrowserList", filters, sort),
+    getBySiblings: (sourceBlockId) => electron.ipcRenderer.invoke("cards:getBySiblings", sourceBlockId)
   },
   notes: {
     getAll: () => electron.ipcRenderer.invoke("notes:getAll"),
@@ -63,6 +64,7 @@ const api = {
   },
   notebookBlocks: {
     getByPage: (pageId) => electron.ipcRenderer.invoke("notebookBlocks:getByPage", pageId),
+    getById: (id) => electron.ipcRenderer.invoke("notebookBlocks:getById", id),
     getBySourceId: (sourceId) => electron.ipcRenderer.invoke("notebookBlocks:getBySourceId", sourceId),
     create: (block) => electron.ipcRenderer.invoke("notebookBlocks:create", block),
     update: (id, updates) => electron.ipcRenderer.invoke("notebookBlocks:update", id, updates),
