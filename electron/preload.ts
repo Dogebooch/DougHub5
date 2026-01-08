@@ -190,6 +190,16 @@ const api = {
     getParsed: (key: string, defaultValue: unknown) =>
       ipcRenderer.invoke("settings:getParsed", key, defaultValue),
   },
+  capture: {
+    process: (payload: unknown) =>
+      ipcRenderer.invoke("capture:process", payload),
+    onReceived: (callback: (payload: unknown) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, payload: unknown) =>
+        callback(payload);
+      ipcRenderer.on("capture:received", handler);
+      return () => ipcRenderer.removeListener("capture:received", handler);
+    },
+  },
   reloadApp: () => ipcRenderer.invoke("app:reload"),
 };
 

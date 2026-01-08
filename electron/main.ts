@@ -1,9 +1,20 @@
 import { app, BrowserWindow, Menu } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { initDatabase, closeDatabase } from "./database";
-import { registerIpcHandlers } from "./ipc-handlers";
+import crypto from "node:crypto";
+import {
+  initDatabase,
+  closeDatabase,
+  sourceItemQueries,
+  DbSourceItem,
+} from "./database";
+import { registerIpcHandlers, processCapture } from "./ipc-handlers";
 import { ensureBackupsDir, cleanupOldBackups } from "./backup-service";
+import {
+  startCaptureServer,
+  stopCaptureServer,
+  CapturePayload,
+} from "./capture-server";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -90,12 +101,40 @@ app.whenReady().then(() => {
   // Register IPC handlers for renderer communication
   registerIpcHandlers();
 
+  // Start the Capture Server for browser extension captures
+  startCaptureServer(async (payload: CapturePayload) => {
+    try {
+      // Auto-process the capture in the background
+      const result = await processCapture(payload);
+
+      // Notify renderer of the new capture (for UI refresh if open)
+      if (win) {
+        win.webContents.send("capture:received", payload);
+        // Also send sourceItems:new to refresh lists
+        const newItem = sourceItemQueries.getById(result.id);
+        if (newItem) {
+          win.webContents.send("sourceItems:new", newItem);
+        }
+      }
+
+      return result.id;
+    } catch (error) {
+      console.error("[Capture Server] Auto-process failed:", error);
+      // Still notify renderer even on failure so it can show an error
+      if (win) {
+        win.webContents.send("capture:received", { ...payload, error });
+      }
+      throw error;
+    }
+  });
+
   // Create the main window
   createWindow();
 });
 
 // Clean up database connection on quit
 app.on("before-quit", () => {
+  stopCaptureServer();
   closeDatabase();
   console.log("[Database] Connection closed");
 });

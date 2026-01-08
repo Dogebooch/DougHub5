@@ -250,6 +250,12 @@ export interface ElectronAPI {
       mimeType: string
     ) => Promise<IpcResult<{ path: string }>>;
   };
+  capture: {
+    process: (
+      payload: any
+    ) => Promise<IpcResult<{ id: string; isUpdate: boolean }>>;
+    onReceived: (callback: (payload: any) => void) => () => void;
+  };
   settings: {
     get: (key: string) => Promise<IpcResult<string | null>>;
     set: (key: string, value: string) => Promise<IpcResult<void>>;

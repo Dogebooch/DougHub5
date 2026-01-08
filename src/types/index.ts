@@ -254,3 +254,59 @@ export interface SearchResult {
   queryTimeMs: number;
 }
 
+// v2 Capture - Browser extension payload
+export interface CapturePayload {
+  timestamp: string;
+  url: string;
+  hostname: string;
+  siteName: 'ACEP PeerPrep' | 'MKSAP 19';
+  pageHTML: string;
+  bodyText: string;
+  images: {
+    url: string;
+    title: string;
+    type: 'fancybox-gallery' | 'inline-image';
+    source: 'question' | 'feedback' | 'keypoints' | 'references' | 'other';
+  }[];
+}
+
+// v2 Knowledge Bank - Board Question Parsed Content
+export interface BoardAnswer {
+  letter: string;
+  html: string;
+  isCorrect: boolean;
+  isUserChoice: boolean;
+  peerPercent?: number;
+}
+
+export interface BoardImage {
+  url: string;
+  localPath: string;
+  caption?: string;
+  location: 'vignette' | 'explanation' | 'keypoint';
+}
+
+export interface BoardAttempt {
+  attemptNumber: number;
+  date: string;
+  chosenAnswer: string;
+  wasCorrect: boolean;
+  note?: string;
+}
+
+export interface BoardQuestionContent {
+  source: 'peerprep' | 'mksap';
+  questionId?: string;
+  category?: string;
+  capturedAt: string;
+  sourceUrl: string;
+  vignetteHtml: string;
+  questionStemHtml: string;
+  answers: BoardAnswer[];
+  wasCorrect: boolean;
+  explanationHtml: string;
+  keyPointsHtml?: string;
+  images: BoardImage[];
+  attempts: BoardAttempt[];
+}
+

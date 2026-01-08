@@ -1,7 +1,13 @@
-import { ipcMain, BrowserWindow, app } from "electron";
+import { ipcMain, BrowserWindow, app, Notification } from "electron";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
+import {
+  parseBoardQuestion,
+  BoardQuestionContent,
+} from "./parsers/board-question-parser";
+import { downloadBoardQuestionImages } from "./services/image-service";
+import { CapturePayload } from "./capture-server";
 import {
   cardQueries,
   noteQueries,
@@ -90,6 +96,107 @@ function success<T>(data: T): IpcResult<T> {
 function failure(error: unknown): IpcResult<never> {
   const message = error instanceof Error ? error.message : String(error);
   return { data: null, error: message };
+}
+
+/**
+ * Shared capture processing logic used by both IPC and main process auto-capture
+ */
+export async function processCapture(
+  payload: CapturePayload
+): Promise<{ id: string; isUpdate: boolean }> {
+  // 1. Parse the HTML
+  const content = parseBoardQuestion(
+    payload.pageHTML,
+    payload.siteName,
+    payload.url,
+    payload.timestamp
+  );
+
+  // 2. Download images and update localPaths
+  if (content.images.length > 0) {
+    const downloadedImages = await downloadBoardQuestionImages(
+      content.images.map((img) => ({ url: img.url, location: img.location }))
+    );
+
+    // Update localPaths in content
+    content.images = content.images.map((img) => {
+      const downloaded = downloadedImages.find(
+        (d) => d.location === img.location && d.localPath
+      );
+      return { ...img, localPath: downloaded?.localPath || img.localPath };
+    });
+  }
+
+  // 3. Check for duplicate by URL
+  // TODO: Add targeted query sourceItemQueries.getByUrl(url) for better performance
+  const existingItems = sourceItemQueries.getAll();
+  const existing = existingItems.find((item) => {
+    if (item.sourceType !== "qbank" || !item.rawContent) return false;
+    try {
+      const parsed = JSON.parse(item.rawContent) as BoardQuestionContent;
+      return parsed.sourceUrl === payload.url;
+    } catch {
+      return false;
+    }
+  });
+
+  let resultId: string;
+  let isUpdate = false;
+
+  if (existing) {
+    // Update existing: add to attempts array
+    const existingContent = JSON.parse(
+      existing.rawContent!
+    ) as BoardQuestionContent;
+    const userChoice = content.answers.find((a) => a.isUserChoice);
+
+    if (!existingContent.attempts) existingContent.attempts = [];
+
+    existingContent.attempts.push({
+      attemptNumber: existingContent.attempts.length + 1,
+      date: content.capturedAt,
+      chosenAnswer: userChoice?.letter || "?",
+      wasCorrect: content.wasCorrect,
+    });
+
+    sourceItemQueries.update(existing.id, {
+      rawContent: JSON.stringify(existingContent),
+      updatedAt: new Date().toISOString(),
+    });
+    resultId = existing.id;
+    isUpdate = true;
+  } else {
+    // Create new SourceItem
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const sourceItem: DbSourceItem = {
+      id,
+      title: `Board Question - ${content.category || content.source}`,
+      sourceType: "qbank",
+      sourceName: payload.siteName, // Required field
+      sourceUrl: payload.url,
+      rawContent: JSON.stringify(content),
+      status: "inbox",
+      createdAt: now,
+      updatedAt: now,
+      canonicalTopicIds: [], // Required field
+      tags: [payload.siteName], // Required field
+    };
+    sourceItemQueries.insert(sourceItem);
+    resultId = id;
+  }
+
+  // 4. Show system notification
+  const notification = new Notification({
+    title: isUpdate ? "Question Updated" : "Question Captured",
+    body: `${content.category || "Board Question"} - ${
+      content.wasCorrect ? "Correct!" : "Incorrect"
+    }`,
+    silent: false,
+  });
+  notification.show();
+
+  return { id: resultId, isUpdate };
 }
 
 // ============================================================================
@@ -591,6 +698,24 @@ export function registerIpcHandlers(): void {
       try {
         sourceItemQueries.delete(id);
         return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  /**
+   * Capture: Process a board question payload from the browser extension
+   */
+  ipcMain.handle(
+    "capture:process",
+    async (
+      _,
+      payload: CapturePayload
+    ): Promise<IpcResult<{ id: string; isUpdate: boolean }>> => {
+      try {
+        const result = await processCapture(payload);
+        return success(result);
       } catch (error) {
         return failure(error);
       }
