@@ -55,10 +55,10 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
   return (
     <div
       className={cn(
-        "group flex items-center gap-4 py-2 px-4 border-b border-border/30 transition-colors hover:bg-white/10 text-foreground",
+        "group flex items-center gap-4 py-2 px-4 border-b border-border/30 transition-colors hover:bg-black/5 text-card-foreground",
         isSelected && "bg-primary/10 border-primary/30",
         isHighlighted &&
-          "bg-amber-500/10 border-l-4 border-l-amber-500 animate-pulse-subtle"
+          "bg-warning/10 border-l-4 border-l-warning animate-pulse-subtle"
       )}
     >
       <div className="flex items-center gap-4 shrink-0">
@@ -77,10 +77,10 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
 
       <div className="flex-grow min-w-0 flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <h3 className="font-medium text-sm truncate leading-none">
+          <h3 className="font-medium text-sm truncate leading-none text-card-foreground">
             {sourceItem.title}
           </h3>
-          <span className="text-[10px] text-card-muted whitespace-nowrap">
+          <span className="text-[11px] text-card-muted whitespace-nowrap">
             {formatDistanceToNow(new Date(sourceItem.createdAt), {
               addSuffix: true,
             })}
@@ -92,7 +92,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
             <Badge
               key={tag}
               variant="secondary"
-              className="px-1.5 py-0 text-[10px] font-normal bg-card-muted/10 text-card-muted border-none"
+              className="px-1.5 py-0 text-[11px] font-normal bg-card-muted/10 text-card-muted border-none"
             >
               {tag}
             </Badge>
@@ -100,7 +100,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
           {remainingTagsCount > 0 && (
             <Badge
               variant="secondary"
-              className="px-1.5 py-0 text-[10px] font-normal bg-card-muted/10 text-card-muted border-none"
+              className="px-1.5 py-0 text-[11px] font-normal bg-card-muted/10 text-card-muted border-none"
             >
               +{remainingTagsCount}
             </Badge>
@@ -137,7 +137,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
         <Button
           size="icon"
           variant="ghost"
-          className="h-8 w-8 text-card-muted/70 hover:text-red-900 hover:bg-red-900/10"
+          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
           onClick={() => onDelete(sourceItem)}
         >
           <Trash2 className="h-4 w-4" />

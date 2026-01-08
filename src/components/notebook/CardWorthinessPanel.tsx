@@ -153,28 +153,39 @@ export const CardWorthinessPanel: React.FC<CardWorthinessPanelProps> = ({
             <div className="p-3 bg-muted/30 rounded-lg border border-border/50 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {React.createElement(getStatusConfig(worthiness[criterion.id]).icon, {
-                    className: cn("h-3 w-3", getStatusConfig(worthiness[criterion.id]).color.replace('bg-', 'text-'))
-                  })}
-                  <h4 className="font-semibold uppercase tracking-wider text-[10px] text-muted-foreground">
+                  {React.createElement(
+                    getStatusConfig(worthiness[criterion.id]).icon,
+                    {
+                      className: cn(
+                        "h-3 w-3",
+                        getStatusConfig(worthiness[criterion.id]).color.replace(
+                          "bg-",
+                          "text-"
+                        )
+                      ),
+                    }
+                  )}
+                  <h4 className="font-semibold uppercase tracking-wider text-[11px] text-muted-foreground">
                     {criterion.label}
                   </h4>
                 </div>
-                <div className={cn(
-                  "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                  getStatusConfig(worthiness[criterion.id]).color,
-                  "text-white shadow-sm"
-                )}>
+                <div
+                  className={cn(
+                    "px-2 py-0.5 rounded text-[11px] font-bold uppercase",
+                    getStatusConfig(worthiness[criterion.id]).color,
+                    "text-white shadow-sm"
+                  )}
+                >
                   {getStatusConfig(worthiness[criterion.id]).label}
                 </div>
               </div>
-              
+
               <p className="text-foreground/90 font-medium leading-tight">
                 {criterion.description}
               </p>
-              
+
               <div className="h-px bg-border/50 my-2" />
-              
+
               <div className="flex gap-2 text-sm text-muted-foreground italic leading-relaxed">
                 <blockquote className="border-l-2 border-primary/30 pl-3">
                   "{worthiness.explanations[criterion.id]}"
@@ -182,21 +193,27 @@ export const CardWorthinessPanel: React.FC<CardWorthinessPanelProps> = ({
               </div>
 
               {/* Teaching moments for red status as per spec */}
-              {worthiness[criterion.id] === 'red' && criterion.id === 'testable' && (
-                <p className="text-xs text-rose-500 font-medium mt-2">
-                  Tip: Rephrase as a specific question with one correct answer.
-                </p>
-              )}
-              {worthiness[criterion.id] === 'red' && criterion.id === 'oneConcept' && (
-                <p className="text-xs text-rose-500 font-medium mt-2">
-                  Tip: Consider overlapping cloze for lists, or break into multiple cards.
-                </p>
-              )}
-              {worthiness[criterion.id] === 'red' && criterion.id === 'discriminative' && (
-                <p className="text-xs text-rose-500 font-medium mt-2">
-                  Tip: Add context that distinguishes this from similar concepts.
-                </p>
-              )}
+              {worthiness[criterion.id] === "red" &&
+                criterion.id === "testable" && (
+                  <p className="text-xs text-rose-500 font-medium mt-2">
+                    Tip: Rephrase as a specific question with one correct
+                    answer.
+                  </p>
+                )}
+              {worthiness[criterion.id] === "red" &&
+                criterion.id === "oneConcept" && (
+                  <p className="text-xs text-rose-500 font-medium mt-2">
+                    Tip: Consider overlapping cloze for lists, or break into
+                    multiple cards.
+                  </p>
+                )}
+              {worthiness[criterion.id] === "red" &&
+                criterion.id === "discriminative" && (
+                  <p className="text-xs text-rose-500 font-medium mt-2">
+                    Tip: Add context that distinguishes this from similar
+                    concepts.
+                  </p>
+                )}
             </div>
           </CollapsibleContent>
         </Collapsible>

@@ -27,7 +27,7 @@ export function QuickCaptureFAB({ onClick }: QuickCaptureFABProps) {
         </TooltipTrigger>
         <TooltipContent side="left" className="flex items-center gap-2">
           <span className="text-muted-foreground/60">Quick Capture</span>
-          <kbd className="px-1 py-0.5 bg-muted/50 rounded text-[10px]">
+          <kbd className="px-1 py-0.5 bg-muted/50 rounded text-[11px]">
             Ctrl+⇧+S
           </kbd>
         </TooltipContent>

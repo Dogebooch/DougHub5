@@ -206,30 +206,36 @@ describe("ReviewInterface", () => {
   describe("Manual Overrides & Keyboard", () => {
     it("allows manual override using 1-4 keys", async () => {
       render(<ReviewInterface />);
-      
+
       fireEvent.keyDown(window, { key: " " }); // Show answer
-      
+
       // Press '2' for Hard
       fireEvent.keyDown(window, { key: "2" });
-      
-      act(() => { vi.advanceTimersByTime(1000); });
-      
-      expect(scheduleCardReview).toHaveBeenCalledWith("card-1", Rating.Hard, null);
+
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      expect(scheduleCardReview).toHaveBeenCalledWith(
+        "card-1",
+        Rating.Hard,
+        null
+      );
     });
 
-    it("exits to capture view on Escape", () => {
+    it("exits to inbox view on Escape", () => {
       render(<ReviewInterface />);
       fireEvent.keyDown(window, { key: "Escape" });
-      expect(setCurrentView).toHaveBeenCalledWith("capture");
+      expect(setCurrentView).toHaveBeenCalledWith("inbox");
     });
   });
 
   describe("Session Edge Cases", () => {
     it("pauses and requires manual grading after 60s timeout", async () => {
       render(<ReviewInterface />);
-      
+
       fireEvent.keyDown(window, { key: " " }); // Show answer
-      
+
       act(() => {
         vi.advanceTimersByTime(61000);
       });
@@ -250,11 +256,13 @@ describe("ReviewInterface", () => {
     it("re-queues the card when rated Again (1)", async () => {
       // For this test we need to let the component manage the queue
       render(<ReviewInterface />);
-      
+
       fireEvent.keyDown(window, { key: " " }); // Show answer for card 1
       fireEvent.keyDown(window, { key: "1" }); // Rate Again (Forgot)
-      
-      await act(async () => { vi.advanceTimersByTime(1100); });
+
+      await act(async () => {
+        vi.advanceTimersByTime(1100);
+      });
 
       // Card 2 should now be shown
       expect(screen.getByText("Front of card 2")).toBeInTheDocument();
@@ -262,7 +270,9 @@ describe("ReviewInterface", () => {
       // Review card 2
       fireEvent.keyDown(window, { key: " " }); // Show answer for card 2
       fireEvent.keyDown(window, { key: "4" }); // Rate Easy (Mastered)
-      await act(async () => { vi.advanceTimersByTime(1100); });
+      await act(async () => {
+        vi.advanceTimersByTime(1100);
+      });
 
       // Now card 1 should be back
       expect(screen.getByText("Front of card 1")).toBeInTheDocument();
@@ -279,16 +289,20 @@ describe("ReviewInterface", () => {
       });
 
       render(<ReviewInterface />);
-      
+
       fireEvent.keyDown(window, { key: " " }); // Show answer
       fireEvent.keyDown(window, { key: "4" }); // Rate Easy (Mastered)
-      
-      await act(async () => { vi.advanceTimersByTime(1100); });
+
+      await act(async () => {
+        vi.advanceTimersByTime(1100);
+      });
 
       expect(screen.getByText(/Session complete/i)).toBeInTheDocument();
-      
-      await act(async () => { vi.advanceTimersByTime(2100); });
-      expect(setCurrentView).toHaveBeenCalledWith("capture");
+
+      await act(async () => {
+        vi.advanceTimersByTime(2100);
+      });
+      expect(setCurrentView).toHaveBeenCalledWith("inbox");
     });
   });
 

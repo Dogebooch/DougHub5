@@ -317,15 +317,15 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
                 <Badge
                   variant="outline"
                   className={cn(
-                    "text-[10px] uppercase tracking-wider font-bold",
+                    "text-[11px] uppercase tracking-wider font-bold",
                     detectedType === "url" &&
-                      "bg-blue-500/10 text-blue-600 border-blue-200",
+                      "bg-info/10 text-info border-info/20",
                     detectedType === "qbank" &&
-                      "bg-orange-500/10 text-orange-600 border-orange-200",
+                      "bg-warning/10 text-warning border-warning/20",
                     detectedType === "image" &&
-                      "bg-green-500/10 text-green-600 border-green-200",
+                      "bg-success/10 text-success border-success/20",
                     detectedType === "text" &&
-                      "bg-gray-500/10 text-gray-600 border-gray-200"
+                      "bg-muted text-muted-foreground border-border"
                   )}
                 >
                   {detectedType}
@@ -366,14 +366,14 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
                 placeholder="Paste text or image..."
                 className="flex-1 min-h-[200px] resize-none border-2 border-border/80 focus:border-primary/50 transition-colors"
               />
-              <div className="flex items-center justify-end gap-1 text-[10px] text-muted-foreground/50 select-none">
+              <div className="flex items-center justify-end gap-1 text-[11px] text-muted-foreground select-none">
                 <Keyboard className="h-3 w-3" />
                 <span>
-                  <kbd className="px-1 py-0.5 rounded bg-muted/50 text-[9px] font-mono">
+                  <kbd className="px-1 py-0.5 rounded bg-muted/50 text-[11px] font-mono">
                     Ctrl
                   </kbd>{" "}
                   +{" "}
-                  <kbd className="px-1 py-0.5 rounded bg-muted/50 text-[9px] font-mono">
+                  <kbd className="px-1 py-0.5 rounded bg-muted/50 text-[11px] font-mono">
                     Enter
                   </kbd>{" "}
                   to save

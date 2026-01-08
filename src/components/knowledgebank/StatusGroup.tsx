@@ -34,16 +34,16 @@ export const StatusGroup = ({
   // Inbox uses primary (teal), Processed uses secondary (gray), Curated uses green outline
   const getBadgeConfig = () => {
     switch (status) {
-      case 'processed':
-        return { variant: 'secondary' as const, className: '' };
-      case 'curated':
-        return { 
-          variant: 'outline' as const, 
-          className: 'text-green-600 border-green-600 dark:text-green-400 dark:border-green-400' 
+      case "processed":
+        return { variant: "secondary" as const, className: "" };
+      case "curated":
+        return {
+          variant: "outline" as const,
+          className: "text-success border-success",
         };
-      case 'inbox':
+      case "inbox":
       default:
-        return { variant: 'default' as const, className: '' };
+        return { variant: "default" as const, className: "" };
     }
   };
 
@@ -60,7 +60,7 @@ export const StatusGroup = ({
           <div className="flex items-center gap-2">
             <ChevronRight
               className={cn(
-                "h-4 w-4 transition-transform duration-200 text-card-muted/70",
+                "h-4 w-4 transition-transform duration-200 text-card-muted",
                 isExpanded && "rotate-90"
               )}
             />
@@ -71,7 +71,7 @@ export const StatusGroup = ({
           <Badge
             variant={badgeConfig.variant}
             className={cn(
-              "px-2 py-0.5 text-[10px] font-bold",
+              "px-2 py-0.5 text-[11px] font-bold",
               badgeConfig.className
             )}
           >

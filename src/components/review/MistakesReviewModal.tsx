@@ -273,7 +273,7 @@ export function MistakesReviewModal({
                     <h4 className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-3">
                       Conceptual Gap
                     </h4>
-                    <p className="text-lg text-foreground/80 leading-relaxed italic border-l-4 border-amber-200 dark:border-amber-900/50 pl-6 py-1">
+                    <p className="text-lg text-foreground/80 leading-relaxed italic border-l-4 border-warning/30 pl-6 py-1">
                       {currentFeedback.whyWrong}
                     </p>
                   </section>
@@ -282,7 +282,7 @@ export function MistakesReviewModal({
                     <h4 className="text-xs font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-widest mb-3">
                       Clinical Pearl
                     </h4>
-                    <div className="p-6 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 text-foreground/90 leading-relaxed shadow-sm text-lg">
+                    <div className="p-6 rounded-xl bg-success/10 border border-success/30 text-foreground/90 leading-relaxed shadow-sm text-lg">
                       {currentFeedback.whyRight}
                     </div>
                   </section>

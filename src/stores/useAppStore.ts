@@ -76,7 +76,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   isHydrated: false,
   isSeeded: false,
   isLoading: true,
-  currentView: "capture",
+  currentView: "review",
   selectedItemId: null,
   inboxCount: 0,
   queueCount: 0,

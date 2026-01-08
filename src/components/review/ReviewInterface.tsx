@@ -145,8 +145,8 @@ export function ReviewInterface() {
     setResponseStartTime(Date.now());
   }, []);
 
-  const navigateToCapture = useCallback(() => {
-    setCurrentView("capture");
+  const navigateToInbox = useCallback(() => {
+    setCurrentView("inbox");
   }, [setCurrentView]);
 
   const calculateAutoRating = useCallback((responseTimeMs: number) => {
@@ -221,7 +221,7 @@ export function ReviewInterface() {
                 });
                 setSessionComplete(true);
                 redirectTimeoutRef.current = setTimeout(() => {
-                  if (isMounted.current) setCurrentView("capture");
+                  if (isMounted.current) setCurrentView("inbox");
                 }, 2000);
               }
             }
@@ -337,7 +337,7 @@ export function ReviewInterface() {
         else if (e.key === "4") handleManualGrade(Rating.Easy);
         else if (e.key === "Enter") handleContinue();
       } else if (e.key === "Escape") {
-        navigateToCapture();
+        navigateToInbox();
       } else if (
         e.key.toLowerCase() === "s" &&
         currentCard?.notebookTopicPageId
@@ -353,7 +353,7 @@ export function ReviewInterface() {
     handleShowAnswer,
     handleContinue,
     handleManualGrade,
-    navigateToCapture,
+    navigateToInbox,
     isSubmitting,
     showingFeedback,
     showManualGradeSelector,
@@ -386,11 +386,11 @@ export function ReviewInterface() {
           </p>
         </div>
         <button
-          onClick={navigateToCapture}
+          onClick={navigateToInbox}
           className="text-primary hover:underline flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Capture
+          Back to Inbox
         </button>
       </div>
     );
@@ -405,7 +405,7 @@ export function ReviewInterface() {
           </h1>
           <p className="text-muted-foreground">
             Reviewed {reviewedCount} card{reviewedCount !== 1 ? "s" : ""}.
-            Redirecting to Capture page...
+            Redirecting to Inbox...
           </p>
         </div>
       </div>
@@ -431,7 +431,7 @@ export function ReviewInterface() {
     <div className="max-w-2xl mx-auto py-6 px-4 space-y-6 animate-in fade-in duration-500">
       {/* Progress bar */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between text-[10px] uppercase tracking-widest font-semibold text-muted-foreground/50">
+        <div className="flex items-center justify-between text-[11px] uppercase tracking-widest font-semibold text-muted-foreground">
           <span className="bg-primary/10 text-primary px-2 py-0.5 rounded">
             {progressPercent}%
           </span>
@@ -520,7 +520,7 @@ export function ReviewInterface() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 text-[10px] text-muted-foreground hover:text-primary"
+                className="h-7 px-2 text-[11px] text-muted-foreground hover:text-primary"
                 onClick={() =>
                   setCurrentView("notebook", currentCard.notebookTopicPageId)
                 }
@@ -531,7 +531,7 @@ export function ReviewInterface() {
           </div>
         )}
 
-        <div className="text-center text-[10px] text-card-muted/70 pt-6 border-t border-border/30 font-medium uppercase tracking-widest">
+        <div className="text-center text-[11px] text-card-muted pt-6 border-t border-border/30 font-medium uppercase tracking-widest">
           <span className="opacity-50">From:</span>{" "}
           {currentCard.notebookTopicPageId ? (
             <button
@@ -560,7 +560,7 @@ export function ReviewInterface() {
             </span>
           )}
           {currentCard.state > 0 && (
-            <span className="ml-3 opacity-40 text-[9px]">
+            <span className="ml-3 text-card-muted text-[11px]">
               • S:{currentCard.stability.toFixed(1)} • D:
               {currentCard.difficulty.toFixed(1)} • R:{currentCard.reps}
             </span>
@@ -612,7 +612,9 @@ export function ReviewInterface() {
             className="min-w-[220px] h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg hover:shadow-xl hover:translate-y-[-1px] transition-all duration-200"
           >
             Show Answer
-            <span className="ml-3 text-[10px] opacity-50 font-mono">Space</span>
+            <span className="ml-3 text-[11px] text-muted-foreground font-mono">
+              Space
+            </span>
           </Button>
         ) : (
           <div className="flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
@@ -623,8 +625,8 @@ export function ReviewInterface() {
                 disabled={isSubmitting}
                 className="min-w-[220px] h-12 text-base font-semibold bg-white/10 hover:bg-white/30 text-foreground border border-white/10 rounded-xl elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all duration-200"
               >
-                Continue
-                <span className="ml-3 text-[10px] opacity-40 font-mono">
+                n Continue
+                <span className="ml-3 text-[11px] text-muted-foreground font-mono">
                   Space
                 </span>
               </Button>
@@ -635,7 +637,7 @@ export function ReviewInterface() {
                 <p className="text-base font-serif italic text-foreground/80">
                   Stepped away?
                 </p>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60">
+                <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
                   Select recall quality
                 </p>
               </div>
@@ -649,7 +651,7 @@ export function ReviewInterface() {
                   disabled={isSubmitting}
                   className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-destructive hover:bg-destructive/90 border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
                 >
-                  <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
+                  <span className="text-[11px] uppercase tracking-wider font-semibold text-destructive-foreground/80">
                     Forgot
                   </span>
                   <span className="font-serif font-bold text-base italic">
@@ -661,7 +663,7 @@ export function ReviewInterface() {
                   disabled={isSubmitting}
                   className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-warning hover:bg-warning/90 text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
                 >
-                  <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
+                  <span className="text-[11px] uppercase tracking-wider font-semibold text-warning-foreground/80">
                     Struggled
                   </span>
                   <span className="font-serif font-bold text-base italic">
@@ -673,7 +675,7 @@ export function ReviewInterface() {
                   disabled={isSubmitting}
                   className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-info hover:bg-info/90 text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
                 >
-                  <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
+                  <span className="text-[11px] uppercase tracking-wider font-semibold text-info-foreground/80">
                     Recalled
                   </span>
                   <span className="font-serif font-bold text-base italic">
@@ -685,7 +687,7 @@ export function ReviewInterface() {
                   disabled={isSubmitting}
                   className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-success hover:bg-success/90 text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
                 >
-                  <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">
+                  <span className="text-[11px] uppercase tracking-wider font-semibold text-success-foreground/80">
                     Mastered
                   </span>
                   <span className="font-serif font-bold text-base italic">
@@ -694,7 +696,7 @@ export function ReviewInterface() {
                 </Button>
               </div>
             )}
-            <p className="text-[9px] uppercase tracking-widest text-muted-foreground/40">
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
               Keys 1-4
             </p>
           </div>
@@ -704,11 +706,11 @@ export function ReviewInterface() {
       {/* Back navigation */}
       <div className="text-center pt-4">
         <button
-          onClick={navigateToCapture}
+          onClick={navigateToInbox}
           className="text-sm text-muted-foreground/60 hover:text-foreground transition-colors inline-flex items-center gap-1.5"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to Capture
+          Back to Inbox
         </button>
       </div>
 
@@ -722,7 +724,7 @@ export function ReviewInterface() {
           }}
           onClose={() => {
             setShowMistakesModal(false);
-            setCurrentView("capture");
+            setCurrentView("inbox");
           }}
         />
       )}

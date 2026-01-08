@@ -29,7 +29,7 @@ export function WeakTopicsView() {
   const [topics, setTopics] = useState<WeakTopicSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>('difficulty');
+  const [sortBy, setSortBy] = useState<SortOption>("difficulty");
 
   const fetchWeakTopics = async () => {
     setIsLoading(true);
@@ -42,7 +42,7 @@ export function WeakTopicsView() {
         setTopics(result.data);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch weak topics');
+      setError(err.message || "Failed to fetch weak topics");
     } finally {
       setIsLoading(false);
     }
@@ -55,20 +55,28 @@ export function WeakTopicsView() {
   const sortedTopics = useMemo(() => {
     return [...topics].sort((a, b) => {
       switch (sortBy) {
-        case 'difficulty': return b.avgDifficulty - a.avgDifficulty;
-        case 'count': return b.cardCount - a.cardCount;
-        case 'name': return a.topicName.localeCompare(b.topicName);
-        case 'recent': 
-          const dateA = a.lastReviewDate ? new Date(a.lastReviewDate).getTime() : 0;
-          const dateB = b.lastReviewDate ? new Date(b.lastReviewDate).getTime() : 0;
+        case "difficulty":
+          return b.avgDifficulty - a.avgDifficulty;
+        case "count":
+          return b.cardCount - a.cardCount;
+        case "name":
+          return a.topicName.localeCompare(b.topicName);
+        case "recent":
+          const dateA = a.lastReviewDate
+            ? new Date(a.lastReviewDate).getTime()
+            : 0;
+          const dateB = b.lastReviewDate
+            ? new Date(b.lastReviewDate).getTime()
+            : 0;
           return dateB - dateA;
-        default: return 0;
+        default:
+          return 0;
       }
     });
   }, [topics, sortBy]);
 
   const handleStartReview = () => {
-    setCurrentView('review', null, { filter: 'weak' });
+    setCurrentView("review", null, { filter: "weak" });
   };
 
   if (isLoading) {
@@ -104,10 +112,11 @@ export function WeakTopicsView() {
         <div className="text-center">
           <h2 className="text-2xl font-bold">No Weak Topics!</h2>
           <p className="text-muted-foreground max-w-xs mx-auto">
-            Great job! You''ve mastered your current curriculum. Keep up the consistent reviews to stay sharp.
+            Great job! You''ve mastered your current curriculum. Keep up the
+            consistent reviews to stay sharp.
           </p>
         </div>
-        <Button onClick={() => setCurrentView('review')} className="mt-4">
+        <Button onClick={() => setCurrentView("review")} className="mt-4">
           <Play className="h-4 w-4 mr-2" /> Continue Regular Study
         </Button>
       </div>
@@ -164,14 +173,14 @@ export function WeakTopicsView() {
             className="group relative overflow-hidden bg-card rounded-xl border border-border/20 elevation-1 hover:elevation-2 transition-all duration-300"
           >
             <div className="p-5 flex items-start gap-4">
-              <div className="mt-1 bg-amber-500/10 p-2 rounded-lg group-hover:bg-amber-500/20 transition-colors">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <div className="mt-1 bg-warning/10 p-2 rounded-lg group-hover:bg-warning/20 transition-colors">
+                <AlertTriangle className="h-5 w-5 text-warning" />
               </div>
 
               <div className="flex-1 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <h3 className="font-bold text-lg leading-none group-hover:text-amber-600 transition-colors">
+                    <h3 className="font-bold text-lg leading-none group-hover:text-warning transition-colors">
                       {topic.topicName}
                     </h3>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -197,7 +206,7 @@ export function WeakTopicsView() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground/70">
+                  <div className="flex justify-between text-[11px] uppercase font-bold text-muted-foreground">
                     <span>Topic Retention Health</span>
                     <span>{Math.round(100 - topic.avgDifficulty * 10)}%</span>
                   </div>
@@ -215,7 +224,7 @@ export function WeakTopicsView() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 px-2 hover:bg-amber-50/50 hover:text-amber-700"
+                  className="h-8 px-2 hover:bg-warning/10 hover:text-warning"
                   onClick={() =>
                     setCurrentView("notebook", topic.notebookPageId, {
                       filter: "weak",
@@ -228,7 +237,7 @@ export function WeakTopicsView() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 px-2 hover:bg-amber-50/50 hover:text-amber-700 font-bold"
+                  className="h-8 px-2 hover:bg-warning/10 hover:text-warning font-bold"
                   onClick={() =>
                     setCurrentView("review", null, {
                       filter: "weak",
@@ -259,11 +268,12 @@ export function WeakTopicsView() {
 function DifficultyBadge({ difficulty }: { difficulty: number }) {
   const isCritical = difficulty >= 9;
   return (
-    <Badge 
+    <Badge
       variant={isCritical ? "destructive" : "secondary"}
       className={cn(
-        "font-mono h-5 px-1.5 text-[10px]",
-        !isCritical && "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200"
+        "font-mono h-5 px-1.5 text-[11px]",
+        !isCritical &&
+          "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200"
       )}
     >
       DL {difficulty.toFixed(1)}

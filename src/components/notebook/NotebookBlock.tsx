@@ -157,7 +157,7 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
           <Badge
             variant="secondary"
             className={cn(
-              "text-[10px] px-1.5 py-0 h-4 font-semibold border-none transition-colors",
+              "text-[11px] px-1.5 py-0 h-4 font-semibold border-none transition-colors",
               (block.cardCount ?? 0) > 0
                 ? "bg-primary/20 text-primary"
                 : "bg-primary/10 text-muted-foreground/70"
@@ -174,7 +174,7 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
           {block.sourceItemId && (
             <button
               onClick={handleSourceClick}
-              className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 hover:bg-muted px-2 py-0.5 rounded-full border border-border/50 transition-colors"
+              className="flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/50 hover:bg-muted px-2 py-0.5 rounded-full border border-border/50 transition-colors"
             >
               <LinkIcon className="w-3 h-3" />
               <span className="max-w-[150px] truncate">
@@ -219,7 +219,7 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
 
       {/* Footer hint */}
       <div className="mt-4 pt-3 border-t">
-        <p className="text-[10px] text-muted-foreground/60 text-center">
+        <p className="text-[11px] text-muted-foreground text-center">
           Select text above to generate cards
         </p>
       </div>

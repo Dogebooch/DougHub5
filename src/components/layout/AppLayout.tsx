@@ -4,7 +4,6 @@ import { Sidebar } from "./Sidebar";
 import { QuickCaptureFAB } from "./QuickCaptureFAB";
 import { CommandPalette } from "@/components/modals/CommandPalette";
 import { QuickCaptureModal } from "@/components/modals/QuickCaptureModal";
-import { CaptureInterface } from "@/components/capture/CaptureInterface";
 import { ReviewInterface } from "@/components/review/ReviewInterface";
 import { InboxView } from "@/components/knowledgebank/InboxView";
 import { KnowledgeBankView } from "@/components/knowledgebank/KnowledgeBankView";
@@ -14,7 +13,7 @@ import { useAppStore } from "@/stores/useAppStore";
 
 export function AppLayout() {
   const currentView = useAppStore((state) => state.currentView);
-  const selectedItemId = useAppStore((state) => state.selectedItemId);
+  const setCurrentView = useAppStore((state) => state.setCurrentView);
   const refreshCounts = useAppStore((state) => state.refreshCounts);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
@@ -98,9 +97,11 @@ export function AppLayout() {
             </p>
           </div>
         );
-      case "capture":
       default:
-        return <CaptureInterface />;
+        // Fallback: redirect to review if unknown view
+        console.warn(`Unknown view: ${currentView}, redirecting to review`);
+        setTimeout(() => setCurrentView("review"), 0);
+        return <ReviewInterface />;
     }
   };
 
@@ -110,7 +111,7 @@ export function AppLayout() {
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(63,150,143,0.04)_0%,transparent_60%)]" />
       <div className="fixed inset-0 pointer-events-none opacity-[0.02] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
-      <Header />
+      <Header openQuickCapture={openQuickCapture} />
 
       <div className="flex flex-1 relative z-10">
         <Sidebar />

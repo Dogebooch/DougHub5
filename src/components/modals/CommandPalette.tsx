@@ -30,14 +30,14 @@ export function CommandPalette({
 
   const commands: Command[] = [
     {
-      id: "capture",
-      label: "Go to Capture",
+      id: "quick-capture",
+      label: "Quick Capture",
       icon: <Home className="h-4 w-4" />,
       action: () => {
-        setCurrentView("capture");
+        onOpenQuickCapture();
         onClose();
       },
-      keywords: ["capture", "home", "main"],
+      keywords: ["capture", "add", "new", "create"],
     },
     {
       id: "review",

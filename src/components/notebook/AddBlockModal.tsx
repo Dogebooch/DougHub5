@@ -207,14 +207,18 @@ export function AddBlockModal({
             </div>
           ) : sources.length === 0 ? (
             <div className="text-center py-12 space-y-2">
-              <p className="text-muted-foreground">No processed sources available</p>
+              <p className="text-muted-foreground">
+                No processed sources available
+              </p>
               <p className="text-xs text-muted-foreground">
                 Process items from Inbox or Capture new content first
               </p>
             </div>
           ) : filteredSources.length === 0 ? (
             <div className="text-center py-12 space-y-2">
-              <p className="text-muted-foreground">No sources match "{search}"</p>
+              <p className="text-muted-foreground">
+                No sources match "{search}"
+              </p>
               <p className="text-xs text-muted-foreground">
                 Try a different search term
               </p>
@@ -232,13 +236,14 @@ export function AddBlockModal({
                     <h4 className="font-medium text-sm line-clamp-1">
                       {source.title}
                     </h4>
-                    <Badge variant="secondary" className="text-[10px] shrink-0">
-                      {SOURCE_TYPE_LABELS[source.sourceType] || source.sourceType}
+                    <Badge variant="secondary" className="text-[11px] shrink-0">
+                      {SOURCE_TYPE_LABELS[source.sourceType] ||
+                        source.sourceType}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground line-clamp-2">
                     {source.rawContent.substring(0, 100)}
-                    {source.rawContent.length > 100 ? '...' : ''}
+                    {source.rawContent.length > 100 ? "..." : ""}
                   </p>
                 </button>
               ))}

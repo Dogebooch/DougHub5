@@ -182,13 +182,18 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] flex flex-col overflow-hidden" onKeyDown={handleKeyDown}>
+      <DialogContent
+        className="max-w-xl max-h-[90vh] flex flex-col overflow-hidden"
+        onKeyDown={handleKeyDown}
+      >
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
             <DialogTitle>Generate Card</DialogTitle>
           </div>
-          <div className="text-sm text-muted-foreground">Topic: {topicName}</div>
+          <div className="text-sm text-muted-foreground">
+            Topic: {topicName}
+          </div>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-2">
@@ -198,11 +203,11 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
               &quot;{displayText}&quot;
             </div>
             {isLongText && (
-              <button 
+              <button
                 onClick={() => setShowFullText(!showFullText)}
                 className="text-xs text-primary mt-1 hover:underline"
               >
-                {showFullText ? 'Show less' : 'Show more'}
+                {showFullText ? "Show less" : "Show more"}
               </button>
             )}
           </div>
@@ -210,7 +215,7 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
           {/* User Intent / Context */}
           <div className="space-y-2">
             {!showIntent ? (
-              <button 
+              <button
                 onClick={() => setShowIntent(true)}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
               >
@@ -219,7 +224,9 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
               </button>
             ) : (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
-                <Label htmlFor="intent" className="text-xs font-semibold">Learning Context</Label>
+                <Label htmlFor="intent" className="text-xs font-semibold">
+                  Learning Context
+                </Label>
                 <div className="relative">
                   <Textarea
                     id="intent"
@@ -229,10 +236,10 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
                     className="text-sm h-16 min-h-[40px]"
                     autoFocus
                   />
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="absolute bottom-1 right-1 h-6 text-[10px]"
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute bottom-1 right-1 h-6 text-[11px]"
                     onClick={fetchSuggestions}
                     disabled={isLoading}
                   >
@@ -248,7 +255,9 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground animate-pulse">Analyzing selection...</p>
+              <p className="text-sm text-muted-foreground animate-pulse">
+                Analyzing selection...
+              </p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-4 text-center">
@@ -256,7 +265,9 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium">Failed to generate suggestions</p>
+                <p className="text-sm font-medium">
+                  Failed to generate suggestions
+                </p>
                 <p className="text-xs text-muted-foreground">{error}</p>
               </div>
               <Button onClick={fetchSuggestions} variant="outline" size="sm">
@@ -268,7 +279,10 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
               {/* Format Selector */}
               <div className="space-y-2">
                 <Label className="text-xs font-semibold">Card Format</Label>
-                <Select value={currentSuggestion.format} onValueChange={(v) => handleFormatChange(v as CardFormat)}>
+                <Select
+                  value={currentSuggestion.format}
+                  onValueChange={(v) => handleFormatChange(v as CardFormat)}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select format" />
                   </SelectTrigger>
@@ -278,9 +292,15 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
                         <div className="flex flex-col items-start py-1">
                           <span className="text-sm font-medium">
                             {opt.label}
-                            {opt.value === suggestions?.[0]?.format && <span className="ml-2 text-[10px] text-primary/70 font-normal underline decoration-primary/30 underline-offset-2">(Recommended)</span>}
+                            {opt.value === suggestions?.[0]?.format && (
+                              <span className="ml-2 text-[11px] text-primary/70 font-normal underline decoration-primary/30 underline-offset-2">
+                                (Recommended)
+                              </span>
+                            )}
                           </span>
-                          <span className="text-[10px] text-muted-foreground leading-tight">{opt.description}</span>
+                          <span className="text-[11px] text-muted-foreground leading-tight">
+                            {opt.description}
+                          </span>
                         </div>
                       </SelectItem>
                     ))}
@@ -291,10 +311,13 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
               {/* Edit Preview */}
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="front" className="text-xs font-semibold flex justify-between">
+                  <Label
+                    htmlFor="front"
+                    className="text-xs font-semibold flex justify-between"
+                  >
                     Front
                     {currentSuggestion.confidence < 0.6 && (
-                      <span className="text-[10px] text-amber-500 flex items-center gap-1">
+                      <span className="text-[11px] text-warning flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />
                         Low confidence - review carefully
                       </span>
@@ -310,32 +333,41 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
                     className="text-sm min-h-[60px]"
                   />
                 </div>
-                {currentSuggestion.format !== 'cloze' && currentSuggestion.format !== 'overlapping-cloze' && (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="back" className="text-xs font-semibold text-muted-foreground">Back</Label>
-                    <Textarea
-                      id="back"
-                      value={editedBack}
-                      onChange={(e) => {
-                        setEditedBack(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      className="text-sm min-h-[60px]"
-                    />
-                  </div>
-                )}
+                {currentSuggestion.format !== "cloze" &&
+                  currentSuggestion.format !== "overlapping-cloze" && (
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="back"
+                        className="text-xs font-semibold text-muted-foreground"
+                      >
+                        Back
+                      </Label>
+                      <Textarea
+                        id="back"
+                        value={editedBack}
+                        onChange={(e) => {
+                          setEditedBack(e.target.value);
+                          setIsDirty(true);
+                        }}
+                        className="text-sm min-h-[60px]"
+                      />
+                    </div>
+                  )}
               </div>
 
               {/* Worthiness Panel */}
               <div className="pt-2">
-                <CardWorthinessPanel worthiness={currentSuggestion.worthiness} />
+                <CardWorthinessPanel
+                  worthiness={currentSuggestion.worthiness}
+                />
               </div>
 
               {/* Format Change Warning */}
               {isDirty && (
-                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <Info className="w-3 h-3" />
-                  You have manual edits. Changing format or suggestion will overwrite them.
+                  You have manual edits. Changing format or suggestion will
+                  overwrite them.
                 </div>
               )}
             </div>
@@ -346,35 +378,43 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
           <div className="flex items-center gap-2">
             {suggestions && suggestions.length > 1 && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary/30 px-2 py-1 rounded-full">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="w-6 h-6 p-0" 
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-6 h-6 p-0"
                   disabled={selectedIndex === 0 || isLoading}
-                  onClick={() => setSelectedIndex(prev => prev - 1)}
+                  onClick={() => setSelectedIndex((prev) => prev - 1)}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <span>{selectedIndex + 1} of {suggestions.length}</span>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <span>
+                  {selectedIndex + 1} of {suggestions.length}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="w-6 h-6 p-0"
-                  disabled={selectedIndex === suggestions.length - 1 || isLoading}
-                  onClick={() => setSelectedIndex(prev => prev + 1)}
+                  disabled={
+                    selectedIndex === suggestions.length - 1 || isLoading
+                  }
+                  onClick={() => setSelectedIndex((prev) => prev + 1)}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             )}
-            <Button variant="ghost" onClick={() => onOpenChange(false)} size="sm">
+            <Button
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              size="sm"
+            >
               Skip
             </Button>
           </div>
-          
-          <Button 
-            onClick={handleCreateCard} 
-            disabled={isLoading || !currentSuggestion} 
+
+          <Button
+            onClick={handleCreateCard}
+            disabled={isLoading || !currentSuggestion}
             size="sm"
             className="px-6"
           >

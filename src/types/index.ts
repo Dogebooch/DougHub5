@@ -124,7 +124,6 @@ export interface WeakTopicSummary {
 
 // v2 Architecture - Smart Views
 export type AppView =
-  | "capture"
   | "review"
   | "settings"
   | "inbox"

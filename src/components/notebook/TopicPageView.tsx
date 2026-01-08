@@ -188,7 +188,7 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
                   <Badge
                     key={alias}
                     variant="secondary"
-                    className="text-[10px] px-1.5 py-0 font-medium h-5"
+                    className="text-[11px] px-1.5 py-0 font-medium h-5"
                   >
                     {alias}
                   </Badge>
@@ -203,13 +203,13 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
           <div className="flex gap-4 text-right">
             <div className="flex flex-col items-end">
               <div className="text-2xl font-bold">{totalCards}</div>
-              <div className="text-[10px] uppercase font-bold text-muted-foreground leading-none">
+              <div className="text-[11px] uppercase font-bold text-muted-foreground leading-none">
                 Cards
               </div>
             </div>
             <div className="flex flex-col items-end border-l pl-4">
               <div className="text-2xl font-bold">{blocks.length}</div>
-              <div className="text-[10px] uppercase font-bold text-muted-foreground leading-none">
+              <div className="text-[11px] uppercase font-bold text-muted-foreground leading-none">
                 Blocks
               </div>
             </div>

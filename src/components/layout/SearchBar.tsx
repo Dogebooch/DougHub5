@@ -26,9 +26,12 @@ function highlightSnippet(snippet: string): React.ReactNode {
 
 function getResultIcon(type: SearchResultItem['type']) {
   switch (type) {
-    case 'card': return <CreditCard className="h-4 w-4 text-purple-400" />;
-    case 'note': return <FileText className="h-4 w-4 text-blue-400" />;
-    case 'source_item': return <Inbox className="h-4 w-4 text-amber-400" />;
+    case "card":
+      return <CreditCard className="h-4 w-4 text-primary" />;
+    case "note":
+      return <FileText className="h-4 w-4 text-info" />;
+    case "source_item":
+      return <Inbox className="h-4 w-4 text-warning" />;
   }
 }
 

@@ -43,11 +43,11 @@ export function BatchActions({
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="bg-background border shadow-2xl rounded-full px-6 py-3 flex items-center gap-6 min-w-[400px] justify-between border-primary/20 bg-background/95 backdrop-blur-sm">
         <div className="flex items-center gap-3 border-r pr-6 border-border">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
             {selectedCount}
           </span>
           <span className="text-sm font-medium whitespace-nowrap">
-            {selectedCount === 1 ? 'item selected' : 'items selected'}
+            {selectedCount === 1 ? "item selected" : "items selected"}
           </span>
         </div>
 
@@ -89,7 +89,9 @@ export function BatchActions({
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete {selectedCount} items?</AlertDialogTitle>
+                <AlertDialogTitle>
+                  Delete {selectedCount} items?
+                </AlertDialogTitle>
                 <AlertDialogDescription>
                   This action cannot be undone. These items will be permanently
                   removed from your inbox.

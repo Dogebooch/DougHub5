@@ -200,10 +200,10 @@ export const TopicPageList = ({
                   <Badge
                     variant="secondary"
                     className={cn(
-                      "h-5 px-1.5 text-[10px] min-w-[20px] justify-center",
+                      "h-5 px-1.5 text-[11px] min-w-[20px] justify-center",
                       isActive
                         ? "bg-background/50"
-                        : "bg-muted group-hover:bg-background/50"
+                        : "bg-muted group-hover:bg-muted/80"
                     )}
                   >
                     {page.cardIds.length}
@@ -253,7 +253,7 @@ export const TopicPageList = ({
                     onClick={() => handleCreatePage(suggestion.canonicalName)}
                   >
                     <span>{suggestion.canonicalName}</span>
-                    <span className="text-[10px] text-muted-foreground uppercase">
+                    <span className="text-[11px] text-muted-foreground uppercase">
                       {suggestion.domain}
                     </span>
                   </button>

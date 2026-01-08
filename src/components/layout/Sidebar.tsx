@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import {
-  Database,
+  Brain,
   Play,
-  Plus,
   Inbox,
   BookOpen,
   Settings,
@@ -67,12 +66,6 @@ export function Sidebar({ className }: SidebarProps) {
       badge: smartViewCounts.inbox || 0,
       implemented: true,
     },
-    {
-      id: "knowledgebank",
-      label: "Knowledge Bank",
-      icon: Database,
-      implemented: true,
-    },
   ];
 
   const secondaryNavItems: NavItem[] = [
@@ -83,6 +76,19 @@ export function Sidebar({ className }: SidebarProps) {
       badge: smartViewCounts.notebook || 0,
       implemented: true,
     },
+    {
+      id: "knowledgebank",
+      label: "Knowledge Bank",
+      icon: Brain,
+      implemented: true,
+    },
+    // TODO (T115): Add Cards view
+    // {
+    //   id: "cards",
+    //   label: "Cards",
+    //   icon: Layers,
+    //   implemented: false,
+    // },
   ];
 
   // TODO: Implement weak topics section
@@ -128,7 +134,7 @@ export function Sidebar({ className }: SidebarProps) {
               <Badge
                 variant="secondary"
                 className={cn(
-                  "h-5 min-w-[20px] px-1.5 text-[10px] font-bold",
+                  "h-5 min-w-[20px] px-1.5 text-[11px] font-bold",
                   isActive ? "bg-primary/30 text-primary" : "bg-white/10"
                 )}
               >
@@ -136,7 +142,7 @@ export function Sidebar({ className }: SidebarProps) {
               </Badge>
             )}
             {!item.implemented && (
-              <span className="text-[9px] uppercase tracking-wider opacity-50">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
                 Soon
               </span>
             )}
@@ -152,7 +158,7 @@ export function Sidebar({ className }: SidebarProps) {
           <TooltipContent side="right" className="flex items-center gap-2">
             {item.label}
             {item.badge !== undefined && item.badge > 0 && (
-              <Badge variant="secondary" className="h-4 text-[10px]">
+              <Badge variant="secondary" className="h-4 text-[11px]">
                 {item.badge}
               </Badge>
             )}
@@ -173,18 +179,6 @@ export function Sidebar({ className }: SidebarProps) {
           className
         )}
       >
-        {/* Quick Action */}
-        <div className="p-2 border-b border-white/5">
-          <NavButton
-            item={{
-              id: "capture",
-              label: "Capture",
-              icon: Plus,
-              implemented: true,
-            }}
-          />
-        </div>
-
         {/* Nav sections */}
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {/* Main navigation */}
@@ -196,7 +190,7 @@ export function Sidebar({ className }: SidebarProps) {
               )}
             >
               {!collapsed && (
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                   DO NOW
                 </p>
               )}
@@ -227,7 +221,7 @@ export function Sidebar({ className }: SidebarProps) {
           {/* Secondary navigation */}
           <div className="space-y-0.5">
             {!collapsed && (
-              <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+              <p className="px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                 Library
               </p>
             )}
@@ -243,7 +237,7 @@ export function Sidebar({ className }: SidebarProps) {
               <div className="my-3 mx-3 border-t border-white/5" />
               <div className="space-y-0.5">
                 {!collapsed && (
-                  <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-amber-500/70 flex items-center gap-1.5">
+                  <p className="px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-warning flex items-center gap-1.5">
                     <AlertTriangle className="h-3 w-3" />
                     Weak Topics
                   </p>
