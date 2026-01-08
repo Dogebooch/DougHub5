@@ -9,6 +9,7 @@ import { ReviewInterface } from "@/components/review/ReviewInterface";
 import { InboxView } from "@/components/knowledgebank/InboxView";
 import { KnowledgeBankView } from "@/components/knowledgebank/KnowledgeBankView";
 import { NotebookView } from "@/components/notebook/NotebookView";
+import { WeakTopicsView } from "@/components/smartviews/WeakTopicsView";
 import { useAppStore } from "@/stores/useAppStore";
 
 export function AppLayout() {

@@ -27,6 +27,7 @@ import {
   DbNotebookTopicPage,
   DbNotebookBlock,
   DbSmartView,
+  WeakTopicSummary,
   ExtractionStatus,
   SourceItemStatus,
   DbStatus,
@@ -147,14 +148,17 @@ export function registerIpcHandlers(): void {
     }
   );
 
-  ipcMain.handle("cards:getWeakTopics", async (): Promise<IpcResult<any[]>> => {
-    try {
-      const weakTopics = cardQueries.getWeakTopics();
-      return success(weakTopics);
-    } catch (error) {
-      return failure(error);
+  ipcMain.handle(
+    "cards:getWeakTopicSummaries",
+    async (): Promise<IpcResult<WeakTopicSummary[]>> => {
+      try {
+        const summaries = cardQueries.getWeakTopicSummaries();
+        return success(summaries);
+      } catch (error) {
+        return failure(error);
+      }
     }
-  });
+  );
 
   ipcMain.handle(
     "cards:create",

@@ -80,7 +80,7 @@ export interface ElectronAPI {
     getTopicMetadata: (
       pageId: string
     ) => Promise<IpcResult<{ name: string; cardCount: number } | null>>;
-    getWeakTopics: () => Promise<IpcResult<WeakTopicSummary[]>>;
+    getWeakTopicSummaries: () => Promise<IpcResult<WeakTopicSummary[]>>;
   };
   notes: {
     getAll: () => Promise<IpcResult<Note[]>>;

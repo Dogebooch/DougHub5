@@ -158,6 +158,17 @@ export interface DbSmartView {
   isSystem: boolean;
 }
 
+export interface WeakTopicSummary {
+  topicId: string; // canonicalTopicId
+  topicName: string; // canonicalName
+  cardCount: number; // count of struggling cards
+  avgDifficulty: number; // average difficulty of struggling cards
+  notebookPageId: string; // for navigation
+  worstDifficulty: number;
+  worstCardId: string;
+  lastReviewDate: string | null;
+}
+
 // Raw row types (JSON fields are strings in SQLite)
 interface CardRow {
   id: string;
@@ -877,6 +888,33 @@ function migrateToV7(dbPath: string): void {
 }
 
 /**
+ * Migrate database from v7 to v8.
+ * Adds performance index on cards(difficulty) for weak topic queries.
+ */
+function migrateToV8(dbPath: string): void {
+  console.log(
+    "[Migration] Starting migration to schema version 8 (Difficulty Index)..."
+  );
+
+  const database = getDatabase();
+
+  try {
+    database.transaction(() => {
+      database.exec(
+        `CREATE INDEX IF NOT EXISTS idx_cards_difficulty ON cards(difficulty)`
+      );
+      console.log("[Migration] Created idx_cards_difficulty index");
+      setSchemaVersion(8);
+    })();
+
+    console.log("[Migration] Successfully migrated to schema version 8");
+  } catch (error) {
+    console.error("[Migration] Failed migration to v8:", error);
+    throw error;
+  }
+}
+
+/**
  * Initialize the SQLite database.
  * Call this from main.ts after app.whenReady().
  *
@@ -986,6 +1024,11 @@ export function initDatabase(dbPath: string): Database.Database {
   // Migration to v7 (Response Modifier)
   if (getSchemaVersion() < 7) {
     migrateToV7(dbPath);
+  }
+
+  // Migration to v8 (Difficulty Index)
+  if (getSchemaVersion() < 8) {
+    migrateToV8(dbPath);
   }
 
   // Seed system smart views (v3)
@@ -1118,9 +1161,10 @@ export const cardQueries = {
     return row || null;
   },
 
-  getWeakTopics(): any[] {
-    // A card is "weak" if difficulty > 7.0 (FSRS scale)
-    // We group by topic and calculate stats
+  getWeakTopicSummaries(): WeakTopicSummary[] {
+    // A card is "weak" if difficulty >= 8.0 (FSRS high difficulty threshold)
+    // We group by topic and calculate aggregated stats
+    // worstCardId is deterministically selected using tie-breakers
     const stmt = getDatabase().prepare(`
       SELECT 
         ct.id as topicId,
@@ -1129,16 +1173,20 @@ export const cardQueries = {
         COUNT(c.id) as cardCount,
         AVG(c.difficulty) as avgDifficulty,
         MAX(c.difficulty) as worstDifficulty,
-        (SELECT id FROM cards WHERE notebookTopicPageId = ntp.id ORDER BY difficulty DESC LIMIT 1) as worstCardId,
+        (SELECT id FROM cards 
+         WHERE notebookTopicPageId = ntp.id 
+         AND difficulty >= 8.0 
+         ORDER BY difficulty DESC, lastReview DESC, id ASC 
+         LIMIT 1) as worstCardId,
         MAX(c.lastReview) as lastReviewDate
       FROM cards c
       JOIN notebook_topic_pages ntp ON c.notebookTopicPageId = ntp.id
       JOIN canonical_topics ct ON ntp.canonicalTopicId = ct.id
-      WHERE c.difficulty > 7.0
+      WHERE c.difficulty >= 8.0
       GROUP BY ct.id, ntp.id
       ORDER BY avgDifficulty DESC
     `);
-    const rows = stmt.all();
+    const rows = stmt.all() as WeakTopicSummary[];
     return rows;
   },
 };
