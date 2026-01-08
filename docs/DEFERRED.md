@@ -50,7 +50,9 @@
 **Priority:** High
 **Source:** Canonical MVP Post-MVP list (2026-01-07)
 **Dependency:** T45 (FSRS Integration), F2 (embeddings), F18 (userAnswer logging)
-**Notes:** High-value for medical education - addresses common confusion pairs. Enhanced by F18 typed answer data for richer pattern detection. Feeds into F19 (Adaptive Learning Assistant) for AI coaching interventions like "You confuse Methotrexate and Methylnaltrexone - want a contrast card?"
+**MVP Status:** Basic confusion tagging implemented in T121 (AI Insight Evaluation). confusionTags[] stored on NotebookBlock.aiEvaluation. Aggregation in T123 (Weak Points Panel).
+**Remaining for POST-MVP:** Embedding-based semantic clustering to automatically detect similar concepts without manual AI tagging. Cross-topic confusion pair detection. Integration with F19 (Adaptive Learning Assistant) for "You confuse X and Y - want a contrast card?" interventions.
+**Notes:** High-value for medical education - addresses common confusion pairs. Enhanced by F18 typed answer data for richer pattern detection.
 
 ### Response Time Signal (F13)
 **Description:** Cards answered fast (<5s) get +15% interval boost; slow answers (>15s) get -15% interval reduction. Applied as multiplier on top of base FSRS calculation.
@@ -95,7 +97,7 @@
 **Schema Prep:** Add `userAnswer TEXT` column to review_logs table (nullable, zero-cost prep for future).
 **Notes:** Enables active recall (typing > recognition) and provides rich data for F12 (Confusion Clusters) and F19 (Adaptive Learning Assistant). Consider speech-to-text integration (T50) as alternative input mode.
 
-### Card Browser Performance Optimization (F20)
+### Card Browser Performance Optimization (F35)
 **Description:** Implement dedicated batch IPC channels for card operations (suspend, delete, move). Current implementation uses sequential IPC calls which may lag for 500+ cards.
 **Priority:** Low
 **Source:** T115.10 implementation (2026-01-08)
@@ -120,7 +122,7 @@
 3. **Knowledge Gap Remediation:** "You have poor understanding of Type 4 RTA. I found resources in your Knowledge Bank - review them, then run a targeted flashcard session?"
 **Priority:** High
 **Source:** User vision (2026-01-07)
-**Dependency:** F2 (embeddings), F12 (confusion detection), F16 (session history), F18 (answer logging), F20 (exam traps)
+**Dependency:** F2 (embeddings), F12 (confusion detection), F16 (session history), F18 (answer logging), F34 (exam traps)
 **Components:**
 - Confusion pair detection algorithm (embeddings + answer pattern matching)
 - Topic weakness aggregation (builds on T45.3 getLowDifficultyCardsByTopic)
@@ -128,29 +130,27 @@
 - Practice question generation (AI generates board-style questions from weak topics)
 - Contrast card creation (AI generates cards distinguishing confused concepts)
 - Mnemonic suggestion (AI proposes memory aids for confusion pairs)
-- Exam trap coaching (F20 pattern → targeted question parsing practice)
+- Exam trap coaching (F34 pattern → targeted question parsing practice)
 **Notes:** This is the "AI Jarvis" vision - an intelligent tutor, not just passive analytics. Requires significant ML/AI infrastructure but is the long-term differentiator for DougHub.
 
-### Exam Trap Detection (F20)
-**Description:** Track WHY users miss questions, not just WHAT they missed. After a mistake, prompt "Why do you think you missed this?" User explanation is AI-classified into error types: Knowledge Gap vs Exam Trap. Exam traps categorized: Qualifier Misread, Negation Blindness, Age/Population Skip, Absolute Terms, Best-vs-Correct, Timeline Confusion.
+### Exam Trap Detection (F34)
+**Description:** Track WHY users miss questions, not just WHAT they missed. AI classifies error types: Knowledge Gap vs Exam Trap. Exam traps categorized: Qualifier Misread, Negation Blindness, Age/Population Skip, Absolute Terms, Best-vs-Correct, Timeline Confusion.
 **Priority:** High
 **Source:** User vision (2026-01-07)
 **Dependency:** T117 (Basic Learning Mode), F18 (answer logging)
-**Schema Prep:** Add `userExplanation TEXT` column to review_logs (nullable, alongside userAnswer).
-**Example Flow:**
-- Q: "What is the most common EKG finding in PE?" A: Normal
-- User picked: Tachycardia
-- User explanation: "I thought it was asking for most common abnormality"
-- AI classification: Exam Trap → Qualifier Misread
-- Pattern aggregation: "You've misread qualifiers 5 times this month"
-- F19 intervention: "Want to practice parsing tricky question stems?"
-**Exam Trap Categories:**
-1. Qualifier Misread - "most common" vs "most common abnormality"
-2. Negation Blindness - "Which is NOT associated with..."
-3. Age/Population Skip - Missing "in children" or "in pregnant women"
-4. Absolute Terms - "always", "never", "only" (usually wrong)
-5. Best vs Correct - Multiple correct answers, one is "best"
-6. Timeline Confusion - "initial management" vs "definitive treatment"
+**MVP Status:** Basic exam trap classification implemented in T121 (AI Insight Evaluation). examTrapType stored on NotebookBlock.aiEvaluation when source marked incorrect. Aggregation in T123 (Weak Points Panel) shows trap type breakdown.
+**Remaining for POST-MVP:**
+- User self-explanation prompt ("Why do you think you missed this?") with userExplanation column on review_logs
+- Cross-session trap pattern aggregation ("You've misread qualifiers 5 times this month")
+- F19 integration: "Want to practice parsing tricky question stems?"
+- Advanced trap-specific remediation suggestions
+**Exam Trap Categories (implemented in T121):**
+1. qualifier-misread - "most common" vs "most common abnormality"
+2. negation-blindness - "Which is NOT associated with..."
+3. age-population-skip - Missing "in children" or "in pregnant women"
+4. absolute-terms - "always", "never", "only" (usually wrong)
+5. best-vs-correct - Multiple correct answers, one is "best"
+6. timeline-confusion - "initial management" vs "definitive treatment"
 **Notes:** Distinguishes test-taking errors from knowledge gaps. Unique differentiator - no competitor does this well. High value for board prep where question parsing is half the battle.
 
 ---
@@ -891,4 +891,83 @@
 
 ---
 
-*Last updated: 2026-01-08 (Added F33: Batch IPC Channel for Card Operations)*
+## Notebook & Card Generation Enhancements (POST-MVP)
+
+### Smart Card Generation from Gaps (F36)
+**Description:** Card generation prompt includes AI evaluation gaps to target weak areas. When generating cards from a NotebookBlock that has aiEvaluation.gaps[], the AI prompt should incorporate these gaps to create cards that specifically address identified weaknesses.
+**Priority:** Medium
+**Source:** AI Workflow Planning Session (2026-01-08)
+**Dependency:** T121 (AI Insight Evaluation), T42 (Card Generation)
+**Notes:** Currently cards are generated without gap context. This enhancement makes card generation "smarter" by targeting YOUR specific weaknesses identified during the insight writing step.
+
+### Link to Existing Block Enhancement (F37)
+**Description:** When linking a new source to an existing NotebookBlock (via T119's "Link to existing block?" flow), optionally prompt "Anything to add?" to append supplementary insight to the existing userInsight field.
+**Priority:** Low
+**Source:** AI Workflow Planning Session (2026-01-08)
+**Dependency:** T119 (Insight Writing Modal)
+**Notes:** Currently linking just associates the source. This allows users to add incremental learning without creating a new block. Useful when multiple sources teach the same concept with minor additions.
+
+---
+
+## Personalized Learning & Scheduling (SOMEDAY)
+
+> **Note:** These features require significant review data (~500-1000+ reviews) and advanced ML infrastructure. Implement after core learning loop has accumulated enough user data.
+
+### Response Time Interval Weighting (F38)
+**Description:** After ~500 reviews, apply response time weighting to FSRS intervals. Fast correct answers (<5s) get +15% interval boost; slow correct answers (>15s) get -15% reduction. Leverages existing responseTimeMs in review_logs.
+**Priority:** Medium
+**Source:** User POST-MVP roadmap (2026-01-08)
+**Dependency:** T125 (Data Logging Framework), F13 (Response Time Signal)
+**Trigger:** Enable after 500+ reviews
+**Notes:** Extension of F13. F13 adds the basic signal; this adds milestone-based activation.
+
+### Aggregated Confusion Reports (F39)
+**Description:** After ~1000 reviews, generate periodic reports: "You confuse X and Y across 5 topics". Weekly summary email/notification with top 3 confusion pairs and suggested actions.
+**Priority:** Medium
+**Source:** User POST-MVP roadmap (2026-01-08)
+**Dependency:** F12 (Confusion Cluster Detection), T125 (Data Logging Framework)
+**Trigger:** Enable after 1000+ reviews
+**Notes:** Builds on F12's detection to create actionable summaries. Different from real-time detection.
+
+### Auto-Generated Comparison Cards (F40)
+**Description:** When a confusion pair is detected N times (threshold TBD), automatically generate a comparison card that disambiguates the concepts. Example: "Methotrexate vs Methylnaltrexone: Key Differences".
+**Priority:** Medium
+**Source:** User POST-MVP roadmap (2026-01-08)
+**Dependency:** F12 (Confusion Cluster Detection), T42 (Card Generation)
+**Notes:** Related to T98 (Discrimination Training) but auto-generates cards rather than surfacing existing ones.
+
+### AI Practice Questions for Weak Trap Types (F41)
+**Description:** After Learning Tab has sufficient data, generate board-style practice questions targeting your weak exam trap types. "You struggle with negation blindness - here are 5 practice questions with tricky negations."
+**Priority:** Medium
+**Source:** User POST-MVP roadmap (2026-01-08)
+**Dependency:** T123 (Weak Points Panel), F34 (Exam Trap Detection), T125 (Data Logging Framework)
+**Notes:** Part of F19 (Adaptive Learning Assistant) vision. This is the targeted question generation component.
+
+### 7-Step Adaptive Learning Pipeline (F42)
+**Description:** Full adaptive gating based on confidence + correctness matrix. Routes cards through different pathways:
+1. High confidence + Correct → Extended interval
+2. Low confidence + Correct → "Lucky guess" path (shorter interval)
+3. High confidence + Incorrect → "Misconception" path (elaborated feedback + related cards)
+4. Low confidence + Incorrect → Standard relearning
+**Priority:** Low
+**Source:** User POST-MVP roadmap (2026-01-08)
+**Dependency:** T125 (confidenceRating field), T97 (Adaptive Gating Logic)
+**Notes:** Expands T97's basic gating to full 7-step pipeline. Requires confidenceRating data from T125.
+
+### Individual Forgetting Curves (F43)
+**Description:** Per-concept prediction of when user will forget. Goes beyond FSRS's general model to track individual concept retention patterns. "You forget drug mechanisms faster than diagnostic criteria."
+**Priority:** Low
+**Source:** User POST-MVP roadmap (2026-01-08) - SOMEDAY
+**Dependency:** FSRS Integration, 1000+ reviews per topic category
+**Notes:** Research-heavy. May require custom ML model training per user. High value for personalized learning.
+
+### Rotation-Aware Scheduling (F44)
+**Description:** Prioritize cards relevant to user's current clinical rotation. When user sets "On Cardiology rotation", bump cardiology cards in queue, reduce interval on related topics.
+**Priority:** Low
+**Source:** User POST-MVP roadmap (2026-01-08) - SOMEDAY
+**Dependency:** Rotation tracking UI, topic-rotation mapping
+**Notes:** Unique differentiator for medical residents. Requires rotation schedule input and topic classification.
+
+---
+
+*Last updated: 2026-01-08 (Added T124-T125 MVP tasks, F38-F44 deferred features for personalized learning)*

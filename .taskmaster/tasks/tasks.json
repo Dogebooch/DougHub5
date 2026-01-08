@@ -1207,7 +1207,7 @@
           "42",
           "45"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1352,9 +1352,10 @@
               6
             ],
             "details": "1. Add global keydown listener in CardBrowserView. 2. / (forward slash): focus search input. 3. E: edit focused card (same as clicking Edit button). 4. S: suspend/unsuspend focused card. 5. Delete/Backspace: delete focused card (with confirmation). 6. L: switch to Leeches filter tab. 7. N: jump to next leech card in list (wraparound). 8. P: jump to previous leech. 9. 1/2/3: switch to Due/Leeches/All filter tabs. 10. Ctrl+G: open 'Jump to Card' dialog with search. 11. Add visible keyboard shortcuts legend in footer or help tooltip (?).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Press / and verify search input focused. Press E on focused card and confirm edit modal opens. Press S and verify card suspends. Press L and confirm Leeches tab active. Press N/P to navigate leeches. Press 1/2/3 to switch tabs. Press Ctrl+G and verify jump dialog opens.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T19:05:35.357Z"
           },
           {
             "id": 12,
@@ -1371,7 +1372,7 @@
             "updatedAt": "2026-01-08T17:51:32.093Z"
           }
         ],
-        "updatedAt": "2026-01-08T18:35:25.606Z"
+        "updatedAt": "2026-01-08T19:05:35.357Z"
       },
       {
         "id": "116",
@@ -1567,13 +1568,97 @@
           }
         ],
         "updatedAt": "2026-01-08T03:37:08.318Z"
+      },
+      {
+        "id": "119",
+        "title": "Insight Writing Modal: Redesign Add to Notebook Flow",
+        "description": "Redesign AddToNotebookDialog with source preview, 'What did you learn?' textarea, and dual buttons (Save Draft / Get AI Feedback). Kill batch flow entirely. Single-item processing only.",
+        "details": "INSIGHT WRITING MODAL DESIGN:\n\n1. MODAL STRUCTURE:\n- Source preview panel (read-only rawContent from SourceItem, scrollable)\n- 'What did you learn?' textarea (required, min 20 chars)\n- Topic selector (existing functionality)\n- 'Link to existing block?' prompt when topic already has blocks\n\n2. TWO BUTTONS:\n- [Save Draft] (ghost/outline): Save userInsight to NotebookBlock without AI evaluation\n- [Get AI Feedback] (primary): Submit for AI evaluation before saving\n\n3. LINK TO EXISTING BLOCK:\n- When selected topic has existing blocks, show list of block summaries\n- User can choose 'Link to existing block' (adds sourceItemId to existing block's sources)\n- Or 'Create new block' (proceeds with insight writing)\n- Linking = no new writing needed, just association\n\n4. KILL BATCH FLOW:\n- Remove batchAddToNotebook from database.ts, ipc-handlers, preload, store\n- Remove BatchActions UI components that use batch notebook operations\n- Single-item 'Add to Notebook' is the only path\n\nPRINCIPLE: 'Extraction IS the learning' — each source forces articulation of what YOU learned from THAT source.",
+        "testStrategy": "Click Add to Notebook on KB item, verify modal shows source preview + insight textarea. Submit with <20 chars, verify validation error. Select topic with existing blocks, verify 'Link to existing?' prompt appears. Test Save Draft creates block without AI. Test batch actions removed from UI.",
+        "priority": "high",
+        "dependencies": ["118"],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-08T20:00:00.000Z"
+      },
+      {
+        "id": "120",
+        "title": "NotebookBlock Schema Extension for AI Evaluation",
+        "description": "Add userInsight and aiEvaluation columns to notebook_blocks table. aiEvaluation stores JSON blob with gaps, examTrapType, confusionTags, feedbackText, evaluatedAt.",
+        "details": "SCHEMA CHANGES:\n\n1. NEW COLUMNS on notebook_blocks:\n- userInsight TEXT (nullable for existing blocks)\n- aiEvaluation TEXT (JSON blob, nullable)\n\n2. aiEvaluation JSON STRUCTURE:\n{\n  gaps: string[];           // Identified knowledge gaps\n  examTrapType?: ExamTrapType; // Only set for incorrect items\n  confusionTags?: string[];  // e.g., ['Methotrexate vs Methylnaltrexone']\n  feedbackText: string;      // AI's response to user's insight\n  evaluatedAt: string;       // ISO timestamp\n}\n\n3. ExamTrapType ENUM (for T122):\n- 'qualifier-misread' // 'most common' vs 'most common abnormality'\n- 'negation-blindness' // 'NOT associated with'\n- 'age-population-skip' // Missing 'in children' or 'in pregnant women'\n- 'absolute-terms' // 'always', 'never', 'only'\n- 'best-vs-correct' // Multiple correct, one is 'best'\n- 'timeline-confusion' // 'initial' vs 'definitive'\n\n4. MIGRATION:\n- ALTER TABLE notebook_blocks ADD COLUMN userInsight TEXT\n- ALTER TABLE notebook_blocks ADD COLUMN aiEvaluation TEXT\n- Existing blocks get null values (backward compatible)\n\n5. UPDATE DbNotebookBlock INTERFACE:\n- Add userInsight?: string\n- Add aiEvaluation?: NotebookBlockAiEvaluation (typed interface)",
+        "testStrategy": "Run migration, verify columns added. Create block with userInsight, verify persistence. Create block with aiEvaluation JSON, verify JSON round-trip. Query existing blocks, verify null handling.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-08T20:00:00.000Z"
+      },
+      {
+        "id": "121",
+        "title": "AI Insight Evaluation Endpoint",
+        "description": "Create IPC handler + AI prompt for evaluating user insights. Returns gaps, examTrapType (when incorrect), confusionTags, and feedbackText.",
+        "details": "AI INSIGHT EVALUATION:\n\n1. NEW IPC HANDLER:\n- ai:evaluateInsight\n- Input: { userInsight: string, sourceContent: string, isIncorrect: boolean, topicContext?: string }\n- Output: IpcResult<NotebookBlockAiEvaluation>\n\n2. AI PROMPT DESIGN:\nYou are a medical education expert evaluating a learner's written insight.\n\nSOURCE CONTENT:\n{sourceContent}\n\nLEARNER'S INSIGHT:\n{userInsight}\n\nTOPIC CONTEXT: {topicContext}\n\nEvaluate the insight and return JSON:\n{\n  \"gaps\": [\"list of knowledge gaps or missing key points\"],\n  \"feedbackText\": \"Constructive feedback on the insight (2-3 sentences)\",\n  \"confusionTags\": [\"any concept pairs that might be confused\"],\n  \"examTrapType\": null // Only classify if this was a WRONG answer\n}\n\n3. EXAM TRAP CLASSIFICATION (only when isIncorrect=true):\nAdditional prompt section:\n\"The learner got this question WRONG. Classify the error type:\n- qualifier-misread: Misread qualifiers like 'most common' vs 'most common abnormality'\n- negation-blindness: Missed 'NOT' or 'EXCEPT' in question\n- age-population-skip: Missed population specifier (children, pregnant, elderly)\n- absolute-terms: Tricked by 'always', 'never', 'only' (usually wrong)\n- best-vs-correct: Picked correct but not BEST answer\n- timeline-confusion: Confused initial vs definitive management\n- null: Knowledge gap, not exam trap\"\n\n4. AI SERVICE FUNCTION:\n- electron/ai-service.ts: evaluateInsight()\n- Use Claude/OpenAI with JSON mode\n- Cache by hash(userInsight + sourceContent)\n\n5. IPC WIRING:\n- ipc-handlers.ts: add handler\n- preload.ts: expose window.api.ai.evaluateInsight\n- electron.d.ts: type definition",
+        "testStrategy": "Call evaluateInsight with sample insight + source, verify JSON response structure. Test with isIncorrect=true, verify examTrapType populated. Test with isIncorrect=false, verify examTrapType is null. Test caching behavior.",
+        "priority": "high",
+        "dependencies": ["120"],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-08T20:00:00.000Z"
+      },
+      {
+        "id": "122",
+        "title": "AI Feedback Panel in Insight Modal",
+        "description": "After 'Get AI Feedback' clicked, show inline panel in modal with gaps, exam trap type, confusion tags, and AI feedback. User can refine insight or accept.",
+        "details": "AI FEEDBACK PANEL UI:\n\n1. TRIGGER:\n- User clicks [Get AI Feedback] button in Insight Writing Modal (T119)\n- Button shows loading spinner during AI call\n- Panel appears below insight textarea when response received\n\n2. PANEL LAYOUT:\n┌─────────────────────────────────────────┐\n│ AI Feedback                    [Retry] │\n├─────────────────────────────────────────┤\n│ 💡 Feedback:                            │\n│ \"Your insight captures the key point   │\n│ about X, but consider adding...\"        │\n├─────────────────────────────────────────┤\n│ ⚠️ Gaps Identified:                     │\n│ • Missing: mechanism of action          │\n│ • Consider: contraindications           │\n├─────────────────────────────────────────┤\n│ 🔀 Potential Confusions:                │\n│ [Methotrexate vs Methylnaltrexone]      │\n├─────────────────────────────────────────┤\n│ 🎯 Exam Trap Detected: (only if wrong)  │\n│ Qualifier Misread - You may have...     │\n└─────────────────────────────────────────┘\n\n3. USER ACTIONS:\n- Refine insight textarea based on feedback\n- Click [Get AI Feedback] again to re-evaluate\n- Click [Save to Notebook] to save with current aiEvaluation\n- Feedback panel collapses but aiEvaluation is stored\n\n4. SAVE BEHAVIOR:\n- If AI feedback received: save both userInsight AND aiEvaluation to block\n- If Save Draft (no AI): save only userInsight, aiEvaluation is null\n\n5. STYLING:\n- Use existing shadcn Alert/Card components\n- Color-code sections (amber for gaps, red for exam trap, blue for confusions)\n- Collapsible sections if too long",
+        "testStrategy": "Click Get AI Feedback, verify loading state. Verify panel appears with all sections. Edit insight and re-submit, verify new feedback. Save to Notebook, verify both userInsight and aiEvaluation persisted. Test Save Draft path, verify aiEvaluation is null.",
+        "priority": "high",
+        "dependencies": ["119", "121"],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-08T20:00:00.000Z"
+      },
+      {
+        "id": "123",
+        "title": "Learning Tab Weak Points Panel",
+        "description": "Add collapsible panel to Learning Tab showing aggregated weakness data: trap type breakdown, top confusion pairs, weak topics by difficulty. Pulls from review_logs + notebook_blocks.aiEvaluation.",
+        "details": "WEAK POINTS PANEL:\n\n1. LOCATION:\n- Inside Learning Tab (ReviewInterface area)\n- Collapsible panel below daily review stats\n- Shows when user has review data (not on first use)\n\n2. PANEL SECTIONS:\n\n┌─────────────────────────────────────────┐\n│ 📊 Your Weak Points            [▼ Hide] │\n├─────────────────────────────────────────┤\n│ EXAM TRAPS (last 30 days)               │\n│ ┌────────────────────────────────────┐  │\n│ │ Qualifier Misread    ████████ 8    │  │\n│ │ Negation Blindness   ████ 4        │  │\n│ │ Timeline Confusion   ██ 2          │  │\n│ └────────────────────────────────────┘  │\n├─────────────────────────────────────────┤\n│ CONFUSION PAIRS                         │\n│ • Methotrexate ↔ Methylnaltrexone (3x)  │\n│ • Type 1 ↔ Type 2 RTA (2x)              │\n├─────────────────────────────────────────┤\n│ WEAK TOPICS (by card difficulty)        │\n│ • Nephrology (avg difficulty: 0.72)     │\n│ • Cardiology (avg difficulty: 0.68)     │\n│ [View all in Card Browser →]            │\n└─────────────────────────────────────────┘\n\n3. DATA SOURCES:\n- Exam traps: Aggregate examTrapType from notebook_blocks.aiEvaluation\n- Confusion pairs: Aggregate confusionTags from notebook_blocks.aiEvaluation\n- Weak topics: Existing WeakTopicSummary from T117/T45\n\n4. NEW IPC HANDLERS:\n- insights:getExamTrapBreakdown -> { trapType: string, count: number }[]\n- insights:getConfusionPairs -> { pair: string, count: number }[]\n- Reuse existing cards:getWeakTopics\n\n5. AGGREGATION QUERIES:\n- Group by examTrapType WHERE examTrapType IS NOT NULL, count, order by count DESC\n- Parse confusionTags JSON arrays, flatten, count occurrences\n- Time-bound to last 30 days for relevance\n\n6. UI INTEGRATION:\n- Add to ReviewInterface.tsx or create WeakPointsPanel.tsx component\n- Default collapsed, remembers state in localStorage\n- Only show sections with data (hide empty trap types)",
+        "testStrategy": "Create blocks with various examTrapTypes, verify aggregation. Verify confusion pair counting. Navigate to Learning Tab, verify panel renders. Toggle collapse, verify state persists. Test with no data, verify graceful empty state.",
+        "priority": "high",
+        "dependencies": ["120", "122"],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-08T20:00:00.000Z"
+      },
+      {
+        "id": "124",
+        "title": "Tampermonkey Script Integration for Quick Capture",
+        "description": "Hook up Tampermonkey script so user can auto-pull Board Questions from PeerPrep and MKSAP into Quick Capture Screen. Script sends question data to DougHub via local endpoint or clipboard, Quick Capture receives and pre-populates fields.",
+        "details": "TAMPERMONKEY INTEGRATION:\n\n1. COMMUNICATION METHOD:\n- Option A: Local HTTP server in Electron (localhost:PORT)\n- Option B: Clipboard-based with special format detection\n- Option C: Custom protocol handler (doughub://capture?data=...)\n\n2. DATA PAYLOAD FROM SCRIPT:\n- Question stem text\n- Answer choices (if MCQ)\n- Correct answer (if available)\n- Source platform (PeerPrep/MKSAP)\n- URL/reference ID\n- Any associated explanation text\n\n3. QUICK CAPTURE INTEGRATION:\n- Detect incoming data from Tampermonkey\n- Pre-populate Quick Capture fields\n- Set sourceType appropriately\n- User reviews and confirms capture\n\n4. EXISTING SCRIPT:\n- User has basic Tampermonkey script already\n- Need to flesh out data extraction for each platform\n- Need to establish communication with DougHub app",
+        "testStrategy": "Install Tampermonkey script, navigate to PeerPrep question, trigger capture. Verify data arrives in Quick Capture with fields pre-populated. Test MKSAP integration. Test error handling when DougHub not running.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-08T21:00:00.000Z"
+      },
+      {
+        "id": "125",
+        "title": "Data Logging Framework: Schema Extensions for Future AI",
+        "description": "Add schema fields across layers to enable future AI features. Capture Screen: correctness field. Knowledge Bank: notes field. Cards: targetedConfusion field. Learning Tab: confidenceRating field. These fields prepare the data foundation for POST-MVP AI enhancements.",
+        "details": "DATA LOGGING FRAMEWORK:\n\nPurpose: Add schema fields NOW so data starts accumulating for POST-MVP AI features.\n\n1. CAPTURE SCREEN (source_items table):\n- ADD: correctness TEXT (nullable) - 'correct' | 'incorrect' | null\n- Purpose: Track whether board question was answered correctly at capture time\n- UI: Add Correct/Incorrect toggle to QuickCaptureModal when sourceType is 'qbank'\n\n2. KNOWLEDGE BANK (source_items table):\n- ADD: notes TEXT (nullable)\n- Purpose: Informal annotations ('I thought X because Y')\n- UI: Add notes textarea to SourceItemDetail view\n- IPC: Extend sourceItems:update to handle notes field\n\n3. CARDS (cards table):\n- ADD: targetedConfusion TEXT (nullable)\n- Purpose: Which confusion pair this card addresses (e.g., 'Methotrexate vs Methylnaltrexone')\n- Set during card generation when aiEvaluation.confusionTags exists\n- UI: Show badge on card in Card Browser\n\n4. LEARNING TAB (review_logs table):\n- ADD: confidenceRating TEXT (nullable) - 'forgot' | 'struggled' | 'knew_it'\n- Purpose: Explicit confidence signal beyond pass/fail\n- UI: Optional 3-button confidence rating after answer reveal (Forgot / Struggled / Knew It)\n- Default: null if user skips confidence rating\n\nMIGRATION:\n- All fields nullable with no default\n- Add columns via ALTER TABLE\n- Update DbSourceItem, DbCard interfaces\n- Update insert/update queries\n- No data migration needed (new fields only)\n\nDATA FLOW PREP:\n- These fields enable: Response time weighting, Aggregated confusion reports, Auto-generated comparison cards, AI practice questions, Semantic interference detection, 7-step learning pipeline",
+        "testStrategy": "Verify migration adds all 4 columns. Test correctness toggle in QuickCaptureModal for qbank items. Test notes textarea in SourceItemDetail. Test confidenceRating buttons in Learning Tab. Verify null handling when fields not set.",
+        "priority": "high",
+        "dependencies": ["118", "117"],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-08T22:00:00.000Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-08T18:35:25.607Z",
-      "taskCount": 23,
-      "completedCount": 19,
+      "lastModified": "2026-01-08T22:00:00.000Z",
+      "taskCount": 30,
+      "completedCount": 20,
       "tags": [
         "master"
       ]
