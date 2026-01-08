@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Database schema expansion for Quick Dump queue and medical features",
         "description": "Add quick_dumps table and extend cards/notes tables to support medical list processing, partial credit, response time tracking, and connection suggestions",
         "details": "",
@@ -76,7 +76,7 @@
         "updatedAt": "2026-01-05T00:05:06.017Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "AI service integration layer",
         "description": "Create local-first AI service with Ollama auto-detection, cloud fallbacks (OpenAI, DeepSeek, Anthropic), concept extraction, card format suggestions, and medical content processing",
         "details": "",
@@ -158,7 +158,7 @@
         "updatedAt": "2026-01-05T01:22:53.351Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "[ARCHIVED] AI-guided capture interface (v1)",
         "description": "ARCHIVED: v1 capture flow with AI concept extraction checkboxes. Superseded by v2 Two-Mode Capture (T118). Kept for historical reference.",
         "details": "Original flow: paste → AI extracts concepts → checkboxes → format suggestion → batch card creation. v2 uses simpler Save to Inbox flow.",
@@ -172,7 +172,7 @@
         "updatedAt": "2026-01-05T14:29:44.672Z"
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "Zero-decision review interface (eliminate grading buttons)",
         "description": "Replace 4-button grading (Again/Hard/Good/Easy) with Show Answer → Continue flow, letting FSRS auto-schedule based on response time",
         "details": "",
@@ -276,7 +276,7 @@
         "updatedAt": "2026-01-06T00:32:13.607Z"
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Global search with <200ms response time",
         "description": "Implement fast unified search across cards and notes with FTS5 full-text search, Cmd+F shortcut, instant results",
         "details": "",
@@ -385,7 +385,7 @@
         "updatedAt": "2026-01-06T05:12:32.737Z"
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "Auto-start Ollama from Electron on first AI request",
         "description": "Automatically start Ollama when the app needs AI services, eliminating the friction of manually starting Ollama before using the app",
         "details": "",
@@ -446,7 +446,7 @@
         "updatedAt": "2026-01-06T05:29:32.390Z"
       },
       {
-        "id": 31,
+        "id": "31",
         "title": "BUG FIX: Quick Dump saves to notes table instead of quick_dumps table",
         "description": "QuickDumpModal incorrectly saves content as a regular note instead of to the quick_dumps table, breaking the extraction queue workflow",
         "details": "",
@@ -460,7 +460,7 @@
         "updatedAt": "2026-01-06T02:11:06.148Z"
       },
       {
-        "id": 35,
+        "id": "35",
         "title": "[v2-T1] Data model v3: SourceItem, CanonicalTopic, NotebookTopicPage, SmartView schemas",
         "description": "Implement the v2 architecture data model with new tables for 3-layer system: Knowledge Bank (SourceItem), Notebook (NotebookTopicPage, NotebookBlock), and enhanced Cards with provenance. Add CanonicalTopic for topic normalization and SmartView for filtered access.",
         "details": "",
@@ -530,7 +530,7 @@
         ]
       },
       {
-        "id": 36,
+        "id": "36",
         "title": "[v2-T1.1] Topic normalization: alias table, matching rules, dedupe prevention",
         "description": "Implement topic alias matching system that normalizes user input to canonical topics. 'HOCM', 'HCM', 'hypertrophic cardiomyopathy' should all resolve to the same CanonicalTopic.",
         "details": "",
@@ -612,7 +612,7 @@
         "updatedAt": "2026-01-06T15:44:32.497Z"
       },
       {
-        "id": 38,
+        "id": "38",
         "title": "[v2-T2] Capture pipeline: Quick Dump → SourceItem (inbox), text + image support",
         "description": "Implement capture flow that creates SourceItems in Knowledge Bank with inbox status. Support text paste and image paste/drop.",
         "details": "TEXT CAPTURE: Complete ✓. IMAGE CAPTURE: NOT IMPLEMENTED (T38.2-T38.3 pending). Database supports images but UI lacks handlers.",
@@ -690,7 +690,7 @@
         "updatedAt": "2026-01-07T00:32:56.159Z"
       },
       {
-        "id": 40,
+        "id": "40",
         "title": "[v2-T3] Knowledge Bank UI: vertical list grouped by status, search, filters",
         "description": "Build the main Knowledge Bank view showing all SourceItems organized by status with filtering and search capabilities.",
         "details": "",
@@ -741,7 +741,7 @@
         "updatedAt": "2026-01-06T20:57:59.367Z"
       },
       {
-        "id": 41,
+        "id": "41",
         "title": "[v2-T4] Notebook UI: topic pages, add blocks from sources, enforce card-creation here only",
         "description": "Build the Notebook layer with topic pages containing blocks from Knowledge Bank. This is the ONLY place where cards can be created.",
         "details": "NOTEBOOK VIEW:\n\n1. TOPIC PAGE LIST:\n- Sidebar or list showing all NotebookTopicPages\n- Show: topic name, aliases, card count, source count\n- Search/filter by topic name\n- 'New Topic Page' button\n\n2. TOPIC PAGE VIEW:\n- Header: Topic name, aliases, stats\n- Blocks section: excerpts from SourceItems\n- Each block shows:\n  - Source reference (clickable deep link)\n  - Content excerpt\n  - Annotations (user notes)\n  - Actions: [Edit] [→ Source] [Generate Card]\n- Footer: [+ Add from Knowledge Bank] [Generate All Cards]\n\n3. ADD BLOCK FLOW:\n- Click '+ Add from Knowledge Bank'\n- Modal shows Knowledge Bank filtered to curated/processed\n- Select source item\n- Select excerpt (highlight text) or use full content\n- Save creates NotebookBlock linked to source\n- SourceItem status → 'curated'\n\n4. BLOCK MANAGEMENT:\n- Drag to reorder blocks (position field)\n- Edit block content (excerpt)\n- Add annotations\n- Delete block (doesn't delete source)\n\nCARD CREATION ENFORCED:\n- 'Generate Card' button ONLY appears on blocks\n- No card creation in Knowledge Bank\n- No card creation from scratch\n- All cards have notebookTopicPageId (enforced)\n\nCOMPONENTS:\n\n- src/components/notebook/NotebookView.tsx\n- src/components/notebook/TopicPageList.tsx\n- src/components/notebook/TopicPageView.tsx\n- src/components/notebook/NotebookBlock.tsx\n- src/components/notebook/AddBlockModal.tsx",
@@ -830,7 +830,7 @@
         "updatedAt": "2026-01-07T02:21:03.685Z"
       },
       {
-        "id": 42,
+        "id": "42",
         "title": "Card Generation from Notebook Blocks",
         "description": "Select text in NotebookBlock → AI suggests cards with format intelligence and card-worthiness feedback → user confirms → card created with provenance. Post-creation: blocks with cards show muted visual indicator.",
         "details": "CORE PHILOSOPHY:\nThe Notebook is the 'What Boards Test' registry—curated, clinically-relevant content. Card generation treats text selection as a conversation starter with AI, not a binding specification. User identifies what confuses them; AI becomes collaborative tutor evaluating whether confusion merits a flashcard.\n\nINTERACTION FLOW:\n1. HOVER & SELECT:\n- Hover over text in NotebookBlock shows subtle highlight\n- Click activates selection mode with context-aware bounding box (expands to semantic units: sentences, clinical facts, procedural steps)\n- Floating 'Generate Card' button anchors to selection\n- Click-to-activate prevents accidental triggers\n\n2. AI CONTEXT STRATEGY:\n- Full NotebookBlock content as context (prevents 'lost in the middle')\n- Highlighted portion marked with semantic emphasis\n- Optional 'Why do you want to learn this?' text field (teaching moment + format hint)\n- If user writes 'I keep confusing X with Y' → AI suggests discriminative format\n\n3. FORMAT INTELLIGENCE:\nAI auto-suggests one of five formats with visual explanation:\n- Clinical Vignette Q&A: diagnostic reasoning\n- Overlapping Cloze: lists that risk sibling contamination\n- Single-Fact Cloze: discrete knowledge\n- Image Occlusion: when images referenced\n- Procedural Sequential: step-based skills\nFormat shown as labeled dropdown, default is AI suggestion, instant override available.\n\n4. CARD-WORTHINESS SOFT-GATE (integrated, not separate F6):\n- Quality panel shows 3 traffic lights: Testable? One Concept? Discriminative?\n- Yellow/red indicators have expandable explanation panel\n- Options: [Edit First] [Create Anyway] (tracked) [Skip]\n- Teaches effective card design through use, not blocking\n\n5. PROCEDURAL CARDS (MVP):\n- AI detects procedural content (keywords: steps, procedure, technique, how to)\n- Generates two-part card: Front=supplies checklist (pre-revealed), Back=numbered steps\n- Uses standard card template; voice-activated equipment reveal deferred (see DEFERRED: Procedural Simulation Mode)\n\n6. CARD CREATION:\n- Card saved with: notebookTopicPageId, sourceBlockId, tags from topic, FSRS defaults\n- Toast: 'Card created' with [View] link\n- NotebookBlock shows muted visual indicator (subtle box around text) showing content has been turned into card(s)\n- Indicator is non-distracting (muted colors, optional hover to reveal)\n\n7. USER TEACHING MOMENTS:\n- When user creates basic list card, card-worthiness flags it\n- AI offers auto-generate improved versions (overlapping cloze, individual vignettes)\n\nPERFORMANCE TARGET:\n- Text selection to created card: <20 seconds including AI processing\n- Optimistic UI: AI thinking indicator immediately, streaming preview updates, editable fields before AI completes\n- Database writes async after Create click, local state updates first\n\nCOMPONENTS:\n- src/components/notebook/CardGenerationModal.tsx\n- src/components/notebook/CardSuggestionPreview.tsx\n- src/components/notebook/FormatSelector.tsx\n- src/components/notebook/CardWorthinessPanel.tsx\n- Update NotebookBlock.tsx: Add selection handling + card indicator styling\n\nAI FUNCTIONS in electron/ai-service.ts:\n- generateCardFromBlock(blockContent: string, topicContext: string, userIntent?: string): Promise<CardSuggestion[]>\n- evaluateCardWorthiness(cardContent: string): Promise<WorthinessResult>",
@@ -935,7 +935,7 @@
         "updatedAt": "2026-01-07T23:49:10.694Z"
       },
       {
-        "id": 44,
+        "id": "44",
         "title": "[v2-T8] Smart Views: system views (Inbox, Today, Queue, Weak Topics), filter engine",
         "description": "Implement Smart Views system with preset system views and a reusable filter engine for dynamic list filtering.",
         "details": "",
@@ -999,7 +999,7 @@
         "updatedAt": "2026-01-06T21:12:10.478Z"
       },
       {
-        "id": 45,
+        "id": "45",
         "title": "[v2-T6] FSRS integration: scheduling fields, review UI, response time tracking",
         "description": "Ensure FSRS integration works with new card provenance model. Track response times for future personalization.",
         "details": "FSRS FIELDS (already in cards table):\n- stability, difficulty, elapsedDays, scheduledDays\n- reps, lapses, state\n- dueDate, lastReview\n\nNEW TRACKING:\n- responseTimeMs in review_logs (already added in Task 1)\n- Track time from card shown to answer revealed\n- Track time from answer revealed to rating\n\nREVIEW UI UPDATES:\n\n1. PROVENANCE DISPLAY:\n- Show source: 'From: [Topic Name]'\n- Click to navigate to NotebookTopicPage\n- Show related cards count\n\n2. ZERO-DECISION FLOW:\n- Show Answer (Space)\n- Continue (Enter) = auto-grade based on response time\n- I Forgot (F) = grade as Again\n- Edit (E) = open card editor\n- Skip (S) = skip without grading\n\n3. LOW-EASE FLAGGING:\n- If card ease < 2.0 after review, flag for attention\n- Show in Weak Topics smart view\n- Suggest 'fix card' flow\n\nRESPONSE TIME LOGIC:\n- Fast correct (< 5s): increase ease slightly\n- Slow correct (> 15s): decrease ease slightly\n- Helps identify cards that need improvement\n\nCOMPONENTS:\n\n- Update src/components/review/ReviewInterface.tsx\n- Add response time tracking\n- Add provenance display\n- Connect to NotebookTopicPage navigation",
@@ -1085,7 +1085,7 @@
         "updatedAt": "2026-01-08T01:59:03.533Z"
       },
       {
-        "id": 91,
+        "id": "91",
         "title": "Debug and Fix Ollama AI Extraction Pipeline",
         "description": "Troubleshoot and resolve AI extraction issues with Ollama integration, focusing on JSON parsing, model compatibility, and response handling in the extractConcepts() function",
         "details": "",
@@ -1097,7 +1097,7 @@
         "updatedAt": "2026-01-06T04:58:26.652Z"
       },
       {
-        "id": 112,
+        "id": "112",
         "title": "Sidebar Consolidation: merge SmartViewSidebar into Sidebar",
         "description": "Delete SmartViewSidebar.tsx, consolidate navigation into single Sidebar component with DO NOW and LIBRARY sections",
         "details": "DO NOW: Review (primary), Inbox (secondary). LIBRARY: Notebook, Knowledge Bank. KB shows ALL items with inbox at top; Inbox is pre-filtered shortcut. Remove: Capture, Today, Queue, Topics, Stats.",
@@ -1172,7 +1172,7 @@
         "updatedAt": "2026-01-07T02:20:58.229Z"
       },
       {
-        "id": 113,
+        "id": "113",
         "title": "Image Capture Support: paste, drop, display in KB/Notebook",
         "description": "Add image paste/drop to QuickDumpModal, save images to userData/images/, display in Knowledge Bank and Notebook views.",
         "details": "SCOPE:\n1. QuickDumpModal: Add paste handler for clipboardData.files/items (image types), add drag-drop zone, show preview thumbnail before save\n2. IPC: Create images:save handler that writes Buffer to app.getPath('userData')/images/{uuid}.{ext}, returns mediaPath\n3. SourceItem: Save mediaPath field, display image in SourceItemRow and KnowledgeBankView\n4. NotebookBlock: Display block.mediaPath images in NotebookBlock component\n5. Card display: Show images on card front/back during review\n\nDatabase schema already supports imageData BLOB and mediaPath TEXT fields.",
@@ -1186,7 +1186,7 @@
         "subtasks": []
       },
       {
-        "id": 114,
+        "id": "114",
         "title": "Backup/Restore UI: auto-save toast, Settings restore button",
         "description": "Add UI indicators for existing backup-service.ts: toast notifications on auto-save, Settings page restore functionality.",
         "details": "EXISTING: electron/backup-service.ts has createBackup(), restoreBackup(), auto-backup with 7-day retention.\n\nNEW UI:\n1. Toast notification on successful auto-backup (every 30s or on significant changes)\n2. Settings page section: 'Data Backup' with:\n   - Last backup timestamp display\n   - [Backup Now] manual trigger button\n   - [Restore from Backup] opens file picker for .db files\n   - Warning dialog before restore (destructive operation)\n3. IPC: Expose backup:create, backup:restore, backup:getLastTimestamp\n\nGives user confidence data won't be lost during development iterations.",
@@ -1197,7 +1197,7 @@
         "subtasks": []
       },
       {
-        "id": 115,
+        "id": "115",
         "title": "Card Browser: view all cards with filters (topic, status, due date)",
         "description": "Dedicated view to browse, search, and filter all cards in the system. Enables card management beyond global search.",
         "details": "CARD BROWSER VIEW:\n1. Access: Add 'Cards' to LIBRARY section in Sidebar\n2. Layout: Vertical list of cards with preview (front truncated)\n3. Filters:\n   - Status chips: Due / New / Learning / Review / Suspended\n   - Topic dropdown (from CanonicalTopics)\n   - Tag filter\n   - Date range (created/due)\n4. Sort: Due date, Created date, Ease, Last reviewed\n5. Actions:\n   - Click card → expand preview (front + back)\n   - [Edit] → inline edit or modal\n   - [Suspend/Unsuspend]\n   - [Delete] with confirmation\n6. Bulk actions: Select multiple → suspend/delete\n\nReplaces standalone Queue view with richer functionality.",
@@ -1211,7 +1211,7 @@
         "subtasks": []
       },
       {
-        "id": 116,
+        "id": "116",
         "title": "Browser Capture Hook: local HTTP API for Tampermonkey integration",
         "description": "Expose local HTTP endpoint in Electron main process for browser scripts to send captured content directly to Knowledge Bank.",
         "details": "HTTP API SERVER:\n1. Start Express/http server on localhost:PORT (configurable, default 23847)\n2. Endpoint: POST /capture\n   - Body: { content: string, title?: string, sourceType: 'qbank'|'article'|'web', url?: string, imageBase64?: string }\n   - Returns: { success: boolean, sourceItemId?: string, error?: string }\n3. Security: localhost only, optional API key in header\n4. On receive: Create SourceItem in inbox, trigger refreshSmartViewCounts\n5. Settings UI: Enable/disable HTTP capture, show port, regenerate API key\n\nTAMPERMONKEY INTEGRATION:\n- User installs script that adds 'Send to DougHub' button on PeerPrep/MKSAP pages\n- Script extracts question HTML, sends to localhost endpoint\n- DougHub shows toast 'Captured from PeerPrep'\n\nNote: User has existing script to adapt.",
@@ -1224,7 +1224,7 @@
         "subtasks": []
       },
       {
-        "id": 117,
+        "id": "117",
         "title": "Basic Learning Mode: post-review mistakes summary with elaborated feedback",
         "description": "After review session, show 'Review Mistakes?' prompt displaying missed cards with AI-generated why-wrong explanations.",
         "details": "LEARNING MODE ENTRY:\n1. After review session ends (no more due cards or user exits):\n   - If mistakes > 0: Show modal 'Review X mistakes?'\n   - [Review Now] / [Skip]\n2. Mistakes Review UI:\n   - Vertical scroll through each mistake\n   - Show: Card front, your timing/grade, correct answer\n   - AI elaborated feedback: 'Why this is wrong: ...'\n   - 'Why correct answer is right: ...'\n   - Related concept hints\n3. AI Function: generateElaboratedFeedback(card, userResponse)\n   - Uses card content + topic context\n   - Returns { whyWrong: string, whyRight: string, relatedConcepts: string[] }\n4. End of mistakes: 'All reviewed!' with summary stats\n\nThis is the highest-yield learning pipeline feature. Other learning mode features (T94-T107) remain in DEFERRED.md for future implementation.",
@@ -1317,7 +1317,7 @@
         "updatedAt": "2026-01-08T03:13:19.881Z"
       },
       {
-        "id": 118,
+        "id": "118",
         "title": "Two-Mode Capture: FAB modal with auto-classification and Process Now button",
         "description": "Expand capture modal with content auto-classification, AI title generation, and disabled 'Process Now' button (enabled after T117 Learning Mode).",
         "details": "TWO-MODE CAPTURE PRINCIPLE:\n\n1. SINGLE CAPTURE MODAL (QuickDumpModal expansion):\n- Opened via FAB (+), global shortcut, drag-drop, or Tampermonkey prefill\n- Plaintext textarea with auto-detect: Text / URL / PDF / Image / QBank\n- AI auto-title (debounced, editable, fallback to truncation)\n\n2. TWO EXITS:\n- [Save to Inbox] (primary): Create SourceItem, close modal, show toast\n- [Process Now] (secondary, disabled initially): Create SourceItem, enter guided processing\n\n3. AUTO-CLASSIFICATION:\n- Detect content type from paste/drop\n- Show badge indicating detected type\n- Set sourceType field automatically\n\n4. PROCESS NOW BUTTON:\n- Initially disabled with tooltip 'Coming soon - complete Learning Mode first'\n- Enabled after T117 (Learning Mode) is complete\n- When enabled: saves to inbox then navigates to guided processing flow\n\nNOTE: This expands T38's basic capture with the two-mode principle. Inbox remains derived view (status='inbox').",
@@ -1326,20 +1326,94 @@
         "dependencies": [
           "38"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create content type auto-detection utility",
+            "description": "Build utility function to detect content type (Text/URL/PDF/Image/QBank) from pasted or dropped content",
+            "dependencies": [],
+            "details": "Create src/lib/content-detector.ts with detectContentType(content: string) function. Detect URL via regex (https?://), PDF via .pdf extension or 'application/pdf' MIME, Image via data:image/ or image MIME types, QBank via patterns like 'Question ID:' or 'Stem:', default to Text. Return type ContentType = 'text' | 'url' | 'pdf' | 'image' | 'qbank'. Handle edge cases: data URLs, file paths, clipboard binary data.",
+            "status": "done",
+            "testStrategy": "Unit test with sample URLs, PDF paths, image data URLs, QBank text, and plain text. Verify correct type detection for each case.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T03:37:04.267Z"
+          },
+          {
+            "id": 2,
+            "title": "Add AI auto-title generation with debouncing",
+            "description": "Create AI service function to generate titles from content with 500ms debounce, editable result, and truncation fallback",
+            "dependencies": [],
+            "details": "In electron/ai-service.ts, add generateTitle(content: string): Promise<string> that uses AI to generate a concise title (max 50 chars). Use simple prompt: 'Generate a brief title (max 50 chars) for this content: {content}'. Implement in-memory cache similar to generateCardFromBlock. In QuickCaptureModal, use React hook to debounce content changes (500ms), call window.api.ai.generateTitle, allow user to edit generated title. Fallback to content.slice(0, TITLE_MAX_LENGTH) + '...' if AI fails or content < 10 chars. Add ai:generateTitle IPC handler in ipc-handlers.ts, expose in preload.ts and electron.d.ts.\n<info added on 2026-01-08T03:23:09.385Z>\nI need to analyze the codebase to understand the current implementation before providing the simplified update.Based on my analysis, the current QuickCaptureModal already implements title truncation using `TITLE_MAX_LENGTH` constant (50 chars) at lines 167-169. The title is auto-generated from content but not editable. Here's the update text:\n\nMVP SIMPLIFICATION: Remove all AI title generation work from this subtask. Title truncation already exists in QuickCaptureModal.tsx:167-169 using TITLE_MAX_LENGTH constant. For MVP, only add an editable title field to QuickCaptureModal UI that is pre-populated with the truncated content (existing logic). User can edit before saving. AI-powered title generation is post-MVP polish and should be deferred to DEFERRED.md. No IPC handlers, no ai-service changes, no debouncing needed for MVP.\n</info added on 2026-01-08T03:23:09.385Z>",
+            "status": "done",
+            "testStrategy": "Paste long text, verify title generates after 500ms. Edit title manually, verify edits persist. Test with AI unavailable, verify truncation fallback works. Test with very short content.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T03:37:04.270Z"
+          },
+          {
+            "id": 3,
+            "title": "Update QuickCaptureModal UI with type badge and title editing",
+            "description": "Enhance modal to show detected content type badge, editable auto-generated title field, and update sourceType based on detection",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "In QuickCaptureModal.tsx: Add state for detectedType (ContentType), generatedTitle (string), and isEditingTitle (boolean). On content/imageData change, call detectContentType() and update badge. Add <Badge> component below textarea showing detected type with color coding (URL=blue, PDF=purple, Image=green, QBank=orange, Text=gray). Add title Input field above textarea, populated with AI-generated title (debounced 500ms after content change), editable by user. Update handleSave to use generatedTitle if provided, otherwise fallback to existing truncation logic. Map ContentType to SourceType: url→article, pdf→pdf, image→image, qbank→qbank, text→quickcapture.",
+            "status": "done",
+            "testStrategy": "Paste URL, verify blue URL badge appears. Verify title auto-generates. Edit title, paste more content, verify title doesn't reset while editing. Test all content types for correct badge color and sourceType mapping.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T03:37:04.273Z"
+          },
+          {
+            "id": 4,
+            "title": "Add two-button footer with disabled Process Now button",
+            "description": "Update modal footer to show [Save to Inbox] primary button and [Process Now] secondary button (disabled with tooltip)",
+            "dependencies": [],
+            "details": "In QuickCaptureModal.tsx DialogFooter: Keep existing 'Save for Later' button but rename to 'Save to Inbox' (primary, keeps existing handleSave logic). Add new <Button variant='outline' disabled> with text 'Process Now' and <Tooltip> showing 'Coming soon - complete Learning Mode first (T117)'. Use TooltipProvider from components/ui/tooltip. Position 'Save to Inbox' on right (primary action), 'Process Now' in middle. Keep Cancel on left. Add visual indicator that Process Now is coming (maybe ghost variant with subtle styling).",
+            "status": "done",
+            "testStrategy": "Open modal, verify two buttons visible. Hover Process Now, verify tooltip shows 'Coming soon' message. Click Save to Inbox, verify existing save flow works. Verify button layout: Cancel (left), Process Now disabled (middle), Save to Inbox (right).",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T03:37:04.275Z"
+          },
+          {
+            "id": 5,
+            "title": "Add drag-drop file support for PDFs and other file types",
+            "description": "Extend existing drag-drop handler to support PDF files and other document types beyond images",
+            "dependencies": [
+              1
+            ],
+            "details": "In QuickCaptureModal.tsx, update handleDrop() to handle file.type === 'application/pdf' or file extensions (.pdf, .docx, .txt). For PDFs: save file path to SourceItem.mediaPath, set sourceType='pdf', show file name in preview area with PDF icon. For non-image files, store file path and show file metadata (name, size, type). Update handleFileChange() and fileInputRef accept attribute to 'image/*,application/pdf,.txt,.docx'. Maintain existing image handling for backward compatibility. Update preview area to show file icon + name for non-image files.",
+            "status": "cancelled",
+            "testStrategy": "Drag PDF file, verify preview shows PDF icon and filename. Drop .txt file, verify correct detection. Drag image, verify existing image preview still works. Test file size limits for PDFs (should use same MAX_FILE_SIZE). Verify saved SourceItem has correct sourceType and mediaPath.",
+            "updatedAt": "2026-01-08T03:23:12.932Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 6,
+            "title": "Update SourceType and database schema if needed",
+            "description": "Verify SourceType enum includes all auto-detected types (url, qbank) and add if missing",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "In electron/database.ts, check SourceType union type (line 17) includes: 'qbank' | 'article' | 'pdf' | 'image' | 'audio' | 'quickcapture' | 'manual'. Add 'url' type if needed for URL captures (or map url→article in QuickCaptureModal). Verify DbSourceItem.sourceType field (line 97) accepts these types. No schema migration needed (sourceType is TEXT column, already flexible). Update type mapping in QuickCaptureModal to use 'article' for URLs since that's the semantic meaning. Document the mapping: URL→article, PDF→pdf, Image→image, QBank→qbank, Text→quickcapture.",
+            "status": "done",
+            "testStrategy": "Run TypeScript compilation, verify no type errors. Create SourceItem with each content type, verify database accepts all sourceType values. Query by sourceType, verify filtering works for all types including qbank and article.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T03:23:16.640Z"
+          }
+        ],
+        "updatedAt": "2026-01-08T03:37:08.318Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-08T03:13:19.882Z",
+      "lastModified": "2026-01-08T03:37:08.318Z",
       "taskCount": 23,
-      "completedCount": 18,
+      "completedCount": 19,
       "tags": [
         "master"
-      ],
-      "created": "2026-01-08T03:18:52.976Z",
-      "description": "Tasks for master context"
+      ]
     }
   }
 }

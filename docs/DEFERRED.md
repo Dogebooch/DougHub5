@@ -389,6 +389,18 @@
 
 ## Capture Enhancements (Advanced)
 
+### AI Auto-Title Generation
+**Description:** Add AI-powered title generation for Quick Capture content. Debounced 500ms after content change, generates concise title (max 50 chars) using AI prompt. Requires IPC handler ai:generateTitle, ai-service function, caching. Falls back to truncation if AI fails.
+**Priority:** Medium
+**Source:** T118.2 (simplified for MVP, 2026-01-08)
+**Notes:** MVP uses editable title field with truncation only. AI enhancement adds polish but not essential for core capture flow.
+
+### PDF/Document Drag-Drop Support
+**Description:** Extend QuickCaptureModal drag-drop to handle PDF files and other document types (docx, txt) beyond images. Save file path to SourceItem.mediaPath, set appropriate sourceType, show file icon + name in preview.
+**Priority:** Medium
+**Source:** T118.5 (cancelled from MVP scope, 2026-01-08)
+**Notes:** Image drag-drop already works. PDF requires file path storage + preview UI updates. Consider OCR extraction for PDFs in future.
+
 ### Camera Capture with AI Vision Analysis
 **Description:** Add camera/webcam capture to Quick Dump. AI vision model (Claude) analyzes image + surrounding text context to extract diagram/chart content, cross-reference similar images online, identify medical concepts. Enables multimodal learning pipeline.
 **Priority:** Low

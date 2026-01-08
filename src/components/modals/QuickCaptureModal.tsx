@@ -7,12 +7,22 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { X, Upload, ImageIcon, Keyboard } from "lucide-react";
-import type { SourceItem } from "@/types";
+import { X, Upload, ImageIcon, Keyboard, PlayCircle } from "lucide-react";
+import type { SourceItem, SourceType } from "@/types";
 import { useAppStore } from "@/stores/useAppStore";
 import { TITLE_MAX_LENGTH } from "@/constants";
+import { detectContentType, type ContentType } from "@/lib/content-detector";
+import { cn } from "@/lib/utils";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -23,6 +33,9 @@ interface QuickCaptureModalProps {
 
 export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
   const [content, setContent] = useState("");
+  const [title, setTitle] = useState("");
+  const [isTitleManual, setIsTitleManual] = useState(false);
+  const [detectedType, setDetectedType] = useState<ContentType>("text");
   const [contentType, setContentType] = useState<"text" | "image">("text");
   const [imageData, setImageData] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -126,6 +139,34 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    // 1. Instant detection for the badge
+    if (contentType === "text") {
+      setDetectedType(detectContentType(content));
+    } else {
+      setDetectedType("image");
+    }
+
+    // 2. Debounced auto-titling logic
+    const timer = setTimeout(() => {
+      if (isTitleManual) return;
+
+      if (contentType === "image") {
+        setTitle("Image Capture");
+      } else if (content.trim()) {
+        const firstLine = content
+          .split("\n")[0]
+          .trim()
+          .slice(0, TITLE_MAX_LENGTH);
+        setTitle(firstLine || "New Capture");
+      } else {
+        setTitle("");
+      }
+    }, 400); // 400ms debounce for title
+
+    return () => clearTimeout(timer);
+  }, [content, contentType, isTitleManual]);
+
   const handleSave = async () => {
     const trimmedContent = content.trim();
     if (contentType === "text" && !trimmedContent) {
@@ -161,18 +202,22 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
         }
 
         // Generate title from first TITLE_MAX_LENGTH characters or use placeholder for image
-        const title =
-          contentType === "image"
-            ? "Image Capture"
-            : trimmedContent.length > TITLE_MAX_LENGTH
-            ? trimmedContent.slice(0, TITLE_MAX_LENGTH) + "..."
-            : trimmedContent;
+        const titleToSave =
+          title.trim() ||
+          (contentType === "image" ? "Image Capture" : "Untitled Capture");
+
+        const sourceMap: Record<ContentType, SourceType> = {
+          text: "quickcapture",
+          image: "image",
+          url: "article",
+          qbank: "qbank",
+        };
 
         const sourceItem: SourceItem = {
           id: crypto.randomUUID(),
-          sourceType: contentType === "image" ? "image" : "quickcapture",
+          sourceType: sourceMap[detectedType],
           sourceName: "Quick Capture",
-          title,
+          title: titleToSave,
           rawContent: trimmedContent || "Image capture",
           mediaPath,
           canonicalTopicIds: [],
@@ -197,6 +242,8 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
         duration: 2000,
       });
       setContent("");
+      setTitle("");
+      setIsTitleManual(false);
       setImageData(null);
       setContentType("text");
       onClose();
@@ -210,6 +257,8 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
 
   const handleCancel = () => {
     setContent("");
+    setTitle("");
+    setIsTitleManual(false);
     setImageData(null);
     setContentType("text");
     onClose();
@@ -251,7 +300,40 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
           <DialogTitle>Quick Capture</DialogTitle>
         </DialogHeader>
 
-        <div className="py-4 min-h-[240px] flex flex-col">
+        <div className="py-4 min-h-[240px] flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Input
+              placeholder="Source Title..."
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setIsTitleManual(true);
+              }}
+              className="font-semibold"
+            />
+            {((contentType === "text" && content.trim()) ||
+              (contentType === "image" && imageData)) && (
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-[10px] uppercase tracking-wider font-bold",
+                    detectedType === "url" &&
+                      "bg-blue-500/10 text-blue-600 border-blue-200",
+                    detectedType === "qbank" &&
+                      "bg-orange-500/10 text-orange-600 border-orange-200",
+                    detectedType === "image" &&
+                      "bg-green-500/10 text-green-600 border-green-200",
+                    detectedType === "text" &&
+                      "bg-gray-500/10 text-gray-600 border-gray-200"
+                  )}
+                >
+                  {detectedType}
+                </Badge>
+              </div>
+            )}
+          </div>
+
           {contentType === "image" && imageData ? (
             <div className="relative group border rounded-md overflow-hidden bg-muted flex items-center justify-center flex-1 animate-in fade-in duration-300">
               <img
@@ -329,6 +411,28 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
           >
             Cancel
           </Button>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled
+                    className="gap-2"
+                  >
+                    <PlayCircle className="h-4 w-4" />
+                    Process Now
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Coming soon</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <Button
             type="button"
             onClick={handleSave}
@@ -338,7 +442,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
             }
             className="shadow-sm"
           >
-            Save for Later
+            Save to Inbox
           </Button>
         </DialogFooter>
       </DialogContent>
