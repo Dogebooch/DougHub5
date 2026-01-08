@@ -6,13 +6,15 @@ import {
   Loader2,
   Library
 } from 'lucide-react';
-import { 
-  NotebookTopicPage, 
-  NotebookBlock, 
-  CanonicalTopic 
-} from '@/types';
-import { NotebookBlockComponent } from './NotebookBlock';
+import {
+  NotebookTopicPage,
+  NotebookBlock,
+  CanonicalTopic,
+  CardWithFSRS,
+} from "@/types";
+import { NotebookBlockComponent } from "./NotebookBlock";
 import { AddBlockModal } from "./AddBlockModal";
+import { CardGenerationModal } from "./CardGenerationModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +23,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAppStore } from "@/stores/useAppStore";
+import { toast } from "@/hooks/use-toast";
 
 interface TopicPageViewProps {
   pageId: string;
@@ -31,12 +35,18 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
   pageId,
   onRefresh,
 }) => {
+  const { addCard } = useAppStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<NotebookTopicPage | null>(null);
   const [topic, setTopic] = useState<CanonicalTopic | null>(null);
   const [blocks, setBlocks] = useState<NotebookBlock[]>([]);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
+
+  // Generation Modal State
+  const [genModalOpen, setGenModalOpen] = useState(false);
+  const [selectedText, setSelectedText] = useState("");
+  const [activeBlock, setActiveBlock] = useState<NotebookBlock | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -75,6 +85,62 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
   useEffect(() => {
     fetchData();
   }, [pageId]);
+
+  const handleGenerateCardTrigger = (text: string, block: NotebookBlock) => {
+    setSelectedText(text);
+    setActiveBlock(block);
+    setGenModalOpen(true);
+  };
+
+  const handleCreateCard = async (data: any) => {
+    if (!activeBlock || !topic) return;
+
+    // Map AI format to database card type
+    let cardType: any = "qa";
+    if (data.format === "cloze") cardType = "cloze";
+    if (data.format === "overlapping-cloze") cardType = "list-cloze";
+    if (data.format === "vignette") cardType = "vignette";
+
+    const newCard: any = {
+      id: crypto.randomUUID(),
+      front: data.front,
+      back: data.back,
+      noteId: "", // Legacy field
+      cardType: cardType,
+      notebookTopicPageId: pageId,
+      sourceBlockId: activeBlock.id,
+      tags: [],
+      dueDate: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      parentListId: null,
+      listPosition: null,
+      // FSRS defaults
+      stability: 0,
+      difficulty: 0,
+      elapsedDays: 0,
+      scheduledDays: 0,
+      reps: 0,
+      lapses: 0,
+      state: 0,
+      lastReview: null,
+    };
+
+    const result = await addCard(newCard);
+    if (result.success) {
+      toast({
+        title: "Card Created",
+        description: "Successfully added to your collection.",
+      });
+      // Refresh block card counts
+      fetchData();
+    } else {
+      toast({
+        title: "Error",
+        description: result.error || "Failed to create card",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -168,10 +234,9 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
                 key={block.id}
                 block={block}
                 onRefresh={fetchData}
-                onGenerateCard={(text) => {
-                  console.log("Generating card from block selection:", text);
-                  // Modal implementation will go here in next task
-                }}
+                onGenerateCard={(text) =>
+                  handleGenerateCardTrigger(text, block)
+                }
               />
             ))}
           </div>
@@ -204,19 +269,32 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Coming in T42</p>
+              <p>Select text in blocks to generate cards</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </footer>
 
-      {/* ADD BLOCK MODAL */}
+      {/* MODALS */}
       <AddBlockModal
         open={addBlockOpen}
         onOpenChange={setAddBlockOpen}
         notebookTopicPageId={pageId}
         onSuccess={fetchData}
       />
+
+      {activeBlock && topic && (
+        <CardGenerationModal
+          open={genModalOpen}
+          onOpenChange={setGenModalOpen}
+          selectedText={selectedText}
+          blockId={activeBlock.id}
+          blockContent={activeBlock.content}
+          topicName={topic.canonicalName}
+          notebookTopicPageId={pageId}
+          onCreateCard={handleCreateCard}
+        />
+      )}
     </div>
   );
 };

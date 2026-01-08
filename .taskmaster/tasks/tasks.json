@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "Database schema expansion for Quick Dump queue and medical features",
         "description": "Add quick_dumps table and extend cards/notes tables to support medical list processing, partial credit, response time tracking, and connection suggestions",
         "details": "",
@@ -76,7 +76,7 @@
         "updatedAt": "2026-01-05T00:05:06.017Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "AI service integration layer",
         "description": "Create local-first AI service with Ollama auto-detection, cloud fallbacks (OpenAI, DeepSeek, Anthropic), concept extraction, card format suggestions, and medical content processing",
         "details": "",
@@ -158,7 +158,7 @@
         "updatedAt": "2026-01-05T01:22:53.351Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "[ARCHIVED] AI-guided capture interface (v1)",
         "description": "ARCHIVED: v1 capture flow with AI concept extraction checkboxes. Superseded by v2 Two-Mode Capture (T118). Kept for historical reference.",
         "details": "Original flow: paste → AI extracts concepts → checkboxes → format suggestion → batch card creation. v2 uses simpler Save to Inbox flow.",
@@ -172,7 +172,7 @@
         "updatedAt": "2026-01-05T14:29:44.672Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "Zero-decision review interface (eliminate grading buttons)",
         "description": "Replace 4-button grading (Again/Hard/Good/Easy) with Show Answer → Continue flow, letting FSRS auto-schedule based on response time",
         "details": "",
@@ -276,7 +276,7 @@
         "updatedAt": "2026-01-06T00:32:13.607Z"
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "Global search with <200ms response time",
         "description": "Implement fast unified search across cards and notes with FTS5 full-text search, Cmd+F shortcut, instant results",
         "details": "",
@@ -385,7 +385,7 @@
         "updatedAt": "2026-01-06T05:12:32.737Z"
       },
       {
-        "id": "17",
+        "id": 17,
         "title": "Auto-start Ollama from Electron on first AI request",
         "description": "Automatically start Ollama when the app needs AI services, eliminating the friction of manually starting Ollama before using the app",
         "details": "",
@@ -446,7 +446,7 @@
         "updatedAt": "2026-01-06T05:29:32.390Z"
       },
       {
-        "id": "31",
+        "id": 31,
         "title": "BUG FIX: Quick Dump saves to notes table instead of quick_dumps table",
         "description": "QuickDumpModal incorrectly saves content as a regular note instead of to the quick_dumps table, breaking the extraction queue workflow",
         "details": "",
@@ -460,7 +460,7 @@
         "updatedAt": "2026-01-06T02:11:06.148Z"
       },
       {
-        "id": "35",
+        "id": 35,
         "title": "[v2-T1] Data model v3: SourceItem, CanonicalTopic, NotebookTopicPage, SmartView schemas",
         "description": "Implement the v2 architecture data model with new tables for 3-layer system: Knowledge Bank (SourceItem), Notebook (NotebookTopicPage, NotebookBlock), and enhanced Cards with provenance. Add CanonicalTopic for topic normalization and SmartView for filtered access.",
         "details": "",
@@ -530,7 +530,7 @@
         ]
       },
       {
-        "id": "36",
+        "id": 36,
         "title": "[v2-T1.1] Topic normalization: alias table, matching rules, dedupe prevention",
         "description": "Implement topic alias matching system that normalizes user input to canonical topics. 'HOCM', 'HCM', 'hypertrophic cardiomyopathy' should all resolve to the same CanonicalTopic.",
         "details": "",
@@ -612,7 +612,7 @@
         "updatedAt": "2026-01-06T15:44:32.497Z"
       },
       {
-        "id": "38",
+        "id": 38,
         "title": "[v2-T2] Capture pipeline: Quick Dump → SourceItem (inbox), text + image support",
         "description": "Implement capture flow that creates SourceItems in Knowledge Bank with inbox status. Support text paste and image paste/drop.",
         "details": "TEXT CAPTURE: Complete ✓. IMAGE CAPTURE: NOT IMPLEMENTED (T38.2-T38.3 pending). Database supports images but UI lacks handlers.",
@@ -690,7 +690,7 @@
         "updatedAt": "2026-01-07T00:32:56.159Z"
       },
       {
-        "id": "40",
+        "id": 40,
         "title": "[v2-T3] Knowledge Bank UI: vertical list grouped by status, search, filters",
         "description": "Build the main Knowledge Bank view showing all SourceItems organized by status with filtering and search capabilities.",
         "details": "",
@@ -741,7 +741,7 @@
         "updatedAt": "2026-01-06T20:57:59.367Z"
       },
       {
-        "id": "41",
+        "id": 41,
         "title": "[v2-T4] Notebook UI: topic pages, add blocks from sources, enforce card-creation here only",
         "description": "Build the Notebook layer with topic pages containing blocks from Knowledge Bank. This is the ONLY place where cards can be created.",
         "details": "NOTEBOOK VIEW:\n\n1. TOPIC PAGE LIST:\n- Sidebar or list showing all NotebookTopicPages\n- Show: topic name, aliases, card count, source count\n- Search/filter by topic name\n- 'New Topic Page' button\n\n2. TOPIC PAGE VIEW:\n- Header: Topic name, aliases, stats\n- Blocks section: excerpts from SourceItems\n- Each block shows:\n  - Source reference (clickable deep link)\n  - Content excerpt\n  - Annotations (user notes)\n  - Actions: [Edit] [→ Source] [Generate Card]\n- Footer: [+ Add from Knowledge Bank] [Generate All Cards]\n\n3. ADD BLOCK FLOW:\n- Click '+ Add from Knowledge Bank'\n- Modal shows Knowledge Bank filtered to curated/processed\n- Select source item\n- Select excerpt (highlight text) or use full content\n- Save creates NotebookBlock linked to source\n- SourceItem status → 'curated'\n\n4. BLOCK MANAGEMENT:\n- Drag to reorder blocks (position field)\n- Edit block content (excerpt)\n- Add annotations\n- Delete block (doesn't delete source)\n\nCARD CREATION ENFORCED:\n- 'Generate Card' button ONLY appears on blocks\n- No card creation in Knowledge Bank\n- No card creation from scratch\n- All cards have notebookTopicPageId (enforced)\n\nCOMPONENTS:\n\n- src/components/notebook/NotebookView.tsx\n- src/components/notebook/TopicPageList.tsx\n- src/components/notebook/TopicPageView.tsx\n- src/components/notebook/NotebookBlock.tsx\n- src/components/notebook/AddBlockModal.tsx",
@@ -830,7 +830,7 @@
         "updatedAt": "2026-01-07T02:21:03.685Z"
       },
       {
-        "id": "42",
+        "id": 42,
         "title": "Card Generation from Notebook Blocks",
         "description": "Select text in NotebookBlock → AI suggests cards with format intelligence and card-worthiness feedback → user confirms → card created with provenance. Post-creation: blocks with cards show muted visual indicator.",
         "details": "CORE PHILOSOPHY:\nThe Notebook is the 'What Boards Test' registry—curated, clinically-relevant content. Card generation treats text selection as a conversation starter with AI, not a binding specification. User identifies what confuses them; AI becomes collaborative tutor evaluating whether confusion merits a flashcard.\n\nINTERACTION FLOW:\n1. HOVER & SELECT:\n- Hover over text in NotebookBlock shows subtle highlight\n- Click activates selection mode with context-aware bounding box (expands to semantic units: sentences, clinical facts, procedural steps)\n- Floating 'Generate Card' button anchors to selection\n- Click-to-activate prevents accidental triggers\n\n2. AI CONTEXT STRATEGY:\n- Full NotebookBlock content as context (prevents 'lost in the middle')\n- Highlighted portion marked with semantic emphasis\n- Optional 'Why do you want to learn this?' text field (teaching moment + format hint)\n- If user writes 'I keep confusing X with Y' → AI suggests discriminative format\n\n3. FORMAT INTELLIGENCE:\nAI auto-suggests one of five formats with visual explanation:\n- Clinical Vignette Q&A: diagnostic reasoning\n- Overlapping Cloze: lists that risk sibling contamination\n- Single-Fact Cloze: discrete knowledge\n- Image Occlusion: when images referenced\n- Procedural Sequential: step-based skills\nFormat shown as labeled dropdown, default is AI suggestion, instant override available.\n\n4. CARD-WORTHINESS SOFT-GATE (integrated, not separate F6):\n- Quality panel shows 3 traffic lights: Testable? One Concept? Discriminative?\n- Yellow/red indicators have expandable explanation panel\n- Options: [Edit First] [Create Anyway] (tracked) [Skip]\n- Teaches effective card design through use, not blocking\n\n5. PROCEDURAL CARDS (MVP):\n- AI detects procedural content (keywords: steps, procedure, technique, how to)\n- Generates two-part card: Front=supplies checklist (pre-revealed), Back=numbered steps\n- Uses standard card template; voice-activated equipment reveal deferred (see DEFERRED: Procedural Simulation Mode)\n\n6. CARD CREATION:\n- Card saved with: notebookTopicPageId, sourceBlockId, tags from topic, FSRS defaults\n- Toast: 'Card created' with [View] link\n- NotebookBlock shows muted visual indicator (subtle box around text) showing content has been turned into card(s)\n- Indicator is non-distracting (muted colors, optional hover to reveal)\n\n7. USER TEACHING MOMENTS:\n- When user creates basic list card, card-worthiness flags it\n- AI offers auto-generate improved versions (overlapping cloze, individual vignettes)\n\nPERFORMANCE TARGET:\n- Text selection to created card: <20 seconds including AI processing\n- Optimistic UI: AI thinking indicator immediately, streaming preview updates, editable fields before AI completes\n- Database writes async after Create click, local state updates first\n\nCOMPONENTS:\n- src/components/notebook/CardGenerationModal.tsx\n- src/components/notebook/CardSuggestionPreview.tsx\n- src/components/notebook/FormatSelector.tsx\n- src/components/notebook/CardWorthinessPanel.tsx\n- Update NotebookBlock.tsx: Add selection handling + card indicator styling\n\nAI FUNCTIONS in electron/ai-service.ts:\n- generateCardFromBlock(blockContent: string, topicContext: string, userIntent?: string): Promise<CardSuggestion[]>\n- evaluateCardWorthiness(cardContent: string): Promise<WorthinessResult>",
@@ -839,7 +839,7 @@
         "dependencies": [
           "41"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -873,9 +873,10 @@
               1
             ],
             "details": "Modal receives selectedText and blockId as props. Format dropdown defaults to AI suggestion but allows override. Preview shows editable front/back fields.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Open modal with test text, verify format selector works, edit preview fields, confirm buttons work.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-07T23:44:25.533Z"
           },
           {
             "id": 4,
@@ -912,9 +913,10 @@
               5
             ],
             "details": "FSRS defaults for new cards: state=0, reps=0, lapses=0. Card ID via crypto.randomUUID(). Performance target: <20s from selection to created card.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Select text, generate card, verify card in database with provenance fields. Verify toast appears.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-07T23:49:10.686Z"
           },
           {
             "id": 7,
@@ -924,15 +926,16 @@
               6
             ],
             "details": "Consider: subtle left border (2px muted color), or very light background overlay. Badge shows count. Hover reveals list of linked cards.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Create card from block, verify indicator appears. Verify cardCount badge updates without page refresh.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-07T23:49:10.694Z"
           }
         ],
-        "updatedAt": "2026-01-07T23:37:56.504Z"
+        "updatedAt": "2026-01-07T23:49:10.694Z"
       },
       {
-        "id": "44",
+        "id": 44,
         "title": "[v2-T8] Smart Views: system views (Inbox, Today, Queue, Weak Topics), filter engine",
         "description": "Implement Smart Views system with preset system views and a reusable filter engine for dynamic list filtering.",
         "details": "",
@@ -996,7 +999,7 @@
         "updatedAt": "2026-01-06T21:12:10.478Z"
       },
       {
-        "id": "45",
+        "id": 45,
         "title": "[v2-T6] FSRS integration: scheduling fields, review UI, response time tracking",
         "description": "Ensure FSRS integration works with new card provenance model. Track response times for future personalization.",
         "details": "FSRS FIELDS (already in cards table):\n- stability, difficulty, elapsedDays, scheduledDays\n- reps, lapses, state\n- dueDate, lastReview\n\nNEW TRACKING:\n- responseTimeMs in review_logs (already added in Task 1)\n- Track time from card shown to answer revealed\n- Track time from answer revealed to rating\n\nREVIEW UI UPDATES:\n\n1. PROVENANCE DISPLAY:\n- Show source: 'From: [Topic Name]'\n- Click to navigate to NotebookTopicPage\n- Show related cards count\n\n2. ZERO-DECISION FLOW:\n- Show Answer (Space)\n- Continue (Enter) = auto-grade based on response time\n- I Forgot (F) = grade as Again\n- Edit (E) = open card editor\n- Skip (S) = skip without grading\n\n3. LOW-EASE FLAGGING:\n- If card ease < 2.0 after review, flag for attention\n- Show in Weak Topics smart view\n- Suggest 'fix card' flow\n\nRESPONSE TIME LOGIC:\n- Fast correct (< 5s): increase ease slightly\n- Slow correct (> 15s): decrease ease slightly\n- Helps identify cards that need improvement\n\nCOMPONENTS:\n\n- Update src/components/review/ReviewInterface.tsx\n- Add response time tracking\n- Add provenance display\n- Connect to NotebookTopicPage navigation",
@@ -1007,10 +1010,69 @@
           "42"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add provenance display in ReviewInterface with NotebookTopicPage navigation",
+            "description": "Display 'From: [Topic Name]' with clickable link to navigate to the source NotebookTopicPage. Handle legacy v1 cards without notebookTopicPageId gracefully.",
+            "dependencies": [],
+            "details": "Update ReviewInterface.tsx to:\n1. Load CanonicalTopic name from card.notebookTopicPageId via IPC (create new handler in ipc-handlers.ts)\n2. Add database query to join NotebookTopicPage → CanonicalTopic → canonicalName\n3. Display topic name below card content in the source metadata section\n4. Make topic name clickable to navigate via setCurrentView('notebook', notebookTopicPageId)\n5. Show fallback for legacy v1 cards without notebookTopicPageId (show Note title as before)\n6. Add count of related cards from same topic page (optional enhancement)\n\nFiles to modify:\n- src/components/review/ReviewInterface.tsx (lines 419-429)\n- electron/database.ts (add getTopicNameByNotebookPageId query)\n- electron/ipc-handlers.ts (add IPC handler)\n- src/types/electron.d.ts (add IPC type definition)\n- electron/preload.ts (expose IPC method)",
+            "status": "pending",
+            "testStrategy": "Review a card with notebookTopicPageId, verify topic name displays. Click topic link, verify navigation to NotebookTopicPage. Review legacy v1 card, verify Note title fallback displays."
+          },
+          {
+            "id": 2,
+            "title": "Implement response-time signal for FSRS interval adjustment",
+            "description": "Add explicit response-time modifier to FSRS scheduling: fast answers (<5s) get +15% interval boost, slow answers (>15s) get -15% reduction. This is a multiplier applied ON TOP of the base FSRS calculation.",
+            "dependencies": [],
+            "details": "Update fsrs-service.ts scheduleReview function:\n1. After FSRS calculates base interval (scheduled.card.scheduled_days), apply response-time modifier\n2. Fast response (<5000ms): multiply interval by 1.15\n3. Slow response (>15000ms): multiply interval by 0.85\n4. Normal response (5-15s): no modifier (1.0)\n5. Update scheduled.card.scheduled_days before converting to DbCard\n6. Recalculate due date from modified interval\n7. This is SEPARATE from the auto-rating logic (which maps time→rating). This adds an additional multiplier.\n8. Ensure responseTimeMs is passed through from ReviewInterface → scheduleCardReview → scheduleReview\n\nFiles to modify:\n- electron/fsrs-service.ts (scheduleReview function, lines 82-159)\n- Add helper function calculateResponseTimeModifier(responseTimeMs: number | null): number\n\nNote: Do NOT modify the auto-rating logic in ReviewInterface.tsx (lines 111-116). That stays as-is. This is an additional signal in the scheduling layer.",
+            "status": "pending",
+            "testStrategy": "Review card with fast response (<5s), check review_logs.responseTimeMs and card.scheduledDays (should be 15% higher than base FSRS). Review with slow response (>15s), verify 15% reduction. Review with normal response, verify no modifier."
+          },
+          {
+            "id": 3,
+            "title": "Add database query for low-difficulty cards aggregated by topic",
+            "description": "Create SQL query to find cards with difficulty > 8.0 (FSRS scale), aggregate by NotebookTopicPage, return counts and topic names for Weak Topics view.",
+            "dependencies": [],
+            "details": "Add to electron/database.ts:\n1. Create new query function getLowDifficultyCardsByTopic()\n2. SQL: JOIN cards → notebookTopicPageId → NotebookTopicPage → CanonicalTopic\n3. Filter WHERE cards.difficulty > 8.0 AND cards.notebookTopicPageId IS NOT NULL\n4. GROUP BY canonicalTopicId\n5. Return: { topicId: string, topicName: string, cardCount: number, avgDifficulty: number }[]\n6. Order by avgDifficulty DESC, cardCount DESC\n7. Add to cardQueries object\n8. Create IPC handler in ipc-handlers.ts\n9. Add type definitions in electron.d.ts and index.ts\n10. Expose in preload.ts\n\nNew interface:\nexport interface WeakTopicSummary {\n  topicId: string;\n  topicName: string;\n  cardCount: number;\n  avgDifficulty: number;\n}\n\nFiles to modify:\n- electron/database.ts (add to cardQueries)\n- electron/ipc-handlers.ts (add handler)\n- src/types/electron.d.ts\n- src/types/index.ts\n- electron/preload.ts",
+            "status": "pending",
+            "testStrategy": "Create test cards with difficulty > 8.0 and < 8.0 linked to different topics. Call getLowDifficultyCardsByTopic(), verify only high-difficulty cards returned, grouped by topic with correct counts and avg."
+          },
+          {
+            "id": 4,
+            "title": "Add visual indicator for high-difficulty cards in ReviewInterface",
+            "description": "When reviewing a card with difficulty > 8.0, show red pulsing border and 'This card needs attention' message with Edit Card suggestion.",
+            "dependencies": [
+              3
+            ],
+            "details": "Update ReviewInterface.tsx:\n1. Check currentCard.difficulty > 8.0\n2. Add conditional className to card container (line 380): if high-difficulty, add 'ring-2 ring-destructive/50 animate-pulse-subtle'\n3. Add message below card content (before source metadata): 'This card needs attention' with AlertTriangle icon\n4. Add 'Edit Card' button/link (implement card editor navigation in future task, for now just show UI)\n5. Use existing pulse-subtle animation from Tailwind config\n6. Ensure difficulty value is available in Card type (already in CardWithFSRS)\n\nFiles to modify:\n- src/components/review/ReviewInterface.tsx (lines 380-430)\n\nNote: Card difficulty is already in the Card type from FSRS fields. Just need to read it from currentCard.",
+            "status": "pending",
+            "testStrategy": "Review card with difficulty > 8.0, verify red pulsing border and warning message display. Review card with difficulty < 8.0, verify no indicator. Verify pulse animation works smoothly."
+          },
+          {
+            "id": 5,
+            "title": "Create Weak Topics smart view component",
+            "description": "Build WeakTopicsView component showing topics with high-difficulty cards, sorted by avg difficulty descending. Show card count per topic and navigation to topic page.",
+            "dependencies": [
+              3
+            ],
+            "details": "Create new component src/components/smartviews/WeakTopicsView.tsx:\n1. Fetch weak topics using window.api.cards.getLowDifficultyCardsByTopic()\n2. Display as list with:\n   - Topic name (large, bold)\n   - Card count badge\n   - Avg difficulty score (color-coded: 8-9=yellow, 9-10=red)\n   - Progress bar showing difficulty severity\n3. Click topic → navigate to NotebookTopicPage (setCurrentView('notebook', topicId))\n4. Empty state: 'No weak topics! All cards are well-learned.'\n5. Add to AppView type as 'weak-topics'\n6. Update router/view switcher to include WeakTopicsView\n7. Style consistent with existing smart views (inbox, notebook)\n\nFiles to create:\n- src/components/smartviews/WeakTopicsView.tsx\n\nFiles to modify:\n- src/types/index.ts (add 'weak-topics' to AppView if not exists)\n- src/App.tsx or view router (add weak-topics case)\n- Add icon and navigation in sidebar (future task)",
+            "status": "pending",
+            "testStrategy": "Navigate to weak-topics view, verify topics with high-difficulty cards display. Click topic, verify navigation to topic page. Create cards with difficulty < 8.0, verify they don't appear. Test empty state when no weak topics."
+          },
+          {
+            "id": 6,
+            "title": "Add FSRS parameter optimization groundwork (schema and hooks)",
+            "description": "Prepare infrastructure for Phase 3 MLE parameter training: add review_count tracking, settings table for learned parameters, and placeholder trigger logic (don't implement actual MLE yet).",
+            "dependencies": [],
+            "details": "Database schema updates in electron/database.ts:\n1. Add settings table if not exists:\n   CREATE TABLE settings (\n     key TEXT PRIMARY KEY,\n     value TEXT NOT NULL,\n     updatedAt TEXT NOT NULL\n   )\n2. Add migration for settings table\n3. Add settingsQueries object with get/set methods\n4. Add 'fsrs_parameters' key to store JSON of learned FSRS params\n5. Add 'review_count' key to track total reviews completed\n6. Increment review_count in scheduleReview after each review log insert\n7. Add helper function shouldTriggerOptimization(): boolean (returns true if review_count >= 400)\n8. Add placeholder comment in scheduleReview: '// TODO Phase 3: If shouldTriggerOptimization(), trigger MLE training'\n9. Create IPC handlers for settings CRUD\n10. Add types and preload exposure\n\nDO NOT implement actual MLE training algorithm. This is just the schema/hooks prep.\n\nFiles to modify:\n- electron/database.ts (add settings table migration, queries)\n- electron/fsrs-service.ts (increment review_count, add optimization check)\n- electron/ipc-handlers.ts (settings handlers)\n- src/types/electron.d.ts\n- electron/preload.ts",
+            "status": "pending",
+            "testStrategy": "Verify settings table created. Review 5 cards, verify review_count increments to 5. Call shouldTriggerOptimization() with mock count >= 400, verify returns true. Verify fsrs_parameters can be stored and retrieved as JSON."
+          }
+        ]
       },
       {
-        "id": "91",
+        "id": 91,
         "title": "Debug and Fix Ollama AI Extraction Pipeline",
         "description": "Troubleshoot and resolve AI extraction issues with Ollama integration, focusing on JSON parsing, model compatibility, and response handling in the extractConcepts() function",
         "details": "",
@@ -1022,7 +1084,7 @@
         "updatedAt": "2026-01-06T04:58:26.652Z"
       },
       {
-        "id": "112",
+        "id": 112,
         "title": "Sidebar Consolidation: merge SmartViewSidebar into Sidebar",
         "description": "Delete SmartViewSidebar.tsx, consolidate navigation into single Sidebar component with DO NOW and LIBRARY sections",
         "details": "DO NOW: Review (primary), Inbox (secondary). LIBRARY: Notebook, Knowledge Bank. KB shows ALL items with inbox at top; Inbox is pre-filtered shortcut. Remove: Capture, Today, Queue, Topics, Stats.",
@@ -1097,7 +1159,7 @@
         "updatedAt": "2026-01-07T02:20:58.229Z"
       },
       {
-        "id": "113",
+        "id": 113,
         "title": "Image Capture Support: paste, drop, display in KB/Notebook",
         "description": "Add image paste/drop to QuickDumpModal, save images to userData/images/, display in Knowledge Bank and Notebook views.",
         "details": "SCOPE:\n1. QuickDumpModal: Add paste handler for clipboardData.files/items (image types), add drag-drop zone, show preview thumbnail before save\n2. IPC: Create images:save handler that writes Buffer to app.getPath('userData')/images/{uuid}.{ext}, returns mediaPath\n3. SourceItem: Save mediaPath field, display image in SourceItemRow and KnowledgeBankView\n4. NotebookBlock: Display block.mediaPath images in NotebookBlock component\n5. Card display: Show images on card front/back during review\n\nDatabase schema already supports imageData BLOB and mediaPath TEXT fields.",
@@ -1111,7 +1173,7 @@
         "subtasks": []
       },
       {
-        "id": "114",
+        "id": 114,
         "title": "Backup/Restore UI: auto-save toast, Settings restore button",
         "description": "Add UI indicators for existing backup-service.ts: toast notifications on auto-save, Settings page restore functionality.",
         "details": "EXISTING: electron/backup-service.ts has createBackup(), restoreBackup(), auto-backup with 7-day retention.\n\nNEW UI:\n1. Toast notification on successful auto-backup (every 30s or on significant changes)\n2. Settings page section: 'Data Backup' with:\n   - Last backup timestamp display\n   - [Backup Now] manual trigger button\n   - [Restore from Backup] opens file picker for .db files\n   - Warning dialog before restore (destructive operation)\n3. IPC: Expose backup:create, backup:restore, backup:getLastTimestamp\n\nGives user confidence data won't be lost during development iterations.",
@@ -1122,7 +1184,7 @@
         "subtasks": []
       },
       {
-        "id": "115",
+        "id": 115,
         "title": "Card Browser: view all cards with filters (topic, status, due date)",
         "description": "Dedicated view to browse, search, and filter all cards in the system. Enables card management beyond global search.",
         "details": "CARD BROWSER VIEW:\n1. Access: Add 'Cards' to LIBRARY section in Sidebar\n2. Layout: Vertical list of cards with preview (front truncated)\n3. Filters:\n   - Status chips: Due / New / Learning / Review / Suspended\n   - Topic dropdown (from CanonicalTopics)\n   - Tag filter\n   - Date range (created/due)\n4. Sort: Due date, Created date, Ease, Last reviewed\n5. Actions:\n   - Click card → expand preview (front + back)\n   - [Edit] → inline edit or modal\n   - [Suspend/Unsuspend]\n   - [Delete] with confirmation\n6. Bulk actions: Select multiple → suspend/delete\n\nReplaces standalone Queue view with richer functionality.",
@@ -1136,7 +1198,7 @@
         "subtasks": []
       },
       {
-        "id": "116",
+        "id": 116,
         "title": "Browser Capture Hook: local HTTP API for Tampermonkey integration",
         "description": "Expose local HTTP endpoint in Electron main process for browser scripts to send captured content directly to Knowledge Bank.",
         "details": "HTTP API SERVER:\n1. Start Express/http server on localhost:PORT (configurable, default 23847)\n2. Endpoint: POST /capture\n   - Body: { content: string, title?: string, sourceType: 'qbank'|'article'|'web', url?: string, imageBase64?: string }\n   - Returns: { success: boolean, sourceItemId?: string, error?: string }\n3. Security: localhost only, optional API key in header\n4. On receive: Create SourceItem in inbox, trigger refreshSmartViewCounts\n5. Settings UI: Enable/disable HTTP capture, show port, regenerate API key\n\nTAMPERMONKEY INTEGRATION:\n- User installs script that adds 'Send to DougHub' button on PeerPrep/MKSAP pages\n- Script extracts question HTML, sends to localhost endpoint\n- DougHub shows toast 'Captured from PeerPrep'\n\nNote: User has existing script to adapt.",
@@ -1149,7 +1211,7 @@
         "subtasks": []
       },
       {
-        "id": "117",
+        "id": 117,
         "title": "Basic Learning Mode: post-review mistakes summary with elaborated feedback",
         "description": "After review session, show 'Review Mistakes?' prompt displaying missed cards with AI-generated why-wrong explanations.",
         "details": "LEARNING MODE ENTRY:\n1. After review session ends (no more due cards or user exits):\n   - If mistakes > 0: Show modal 'Review X mistakes?'\n   - [Review Now] / [Skip]\n2. Mistakes Review UI:\n   - Vertical scroll through each mistake\n   - Show: Card front, your timing/grade, correct answer\n   - AI elaborated feedback: 'Why this is wrong: ...'\n   - 'Why correct answer is right: ...'\n   - Related concept hints\n3. AI Function: generateElaboratedFeedback(card, userResponse)\n   - Uses card content + topic context\n   - Returns { whyWrong: string, whyRight: string, relatedConcepts: string[] }\n4. End of mistakes: 'All reviewed!' with summary stats\n\nThis is the highest-yield learning pipeline feature. Other learning mode features (T94-T107) remain in DEFERRED.md for future implementation.",
@@ -1162,7 +1224,7 @@
         "subtasks": []
       },
       {
-        "id": "118",
+        "id": 118,
         "title": "Two-Mode Capture: FAB modal with auto-classification and Process Now button",
         "description": "Expand capture modal with content auto-classification, AI title generation, and disabled 'Process Now' button (enabled after T117 Learning Mode).",
         "details": "TWO-MODE CAPTURE PRINCIPLE:\n\n1. SINGLE CAPTURE MODAL (QuickDumpModal expansion):\n- Opened via FAB (+), global shortcut, drag-drop, or Tampermonkey prefill\n- Plaintext textarea with auto-detect: Text / URL / PDF / Image / QBank\n- AI auto-title (debounced, editable, fallback to truncation)\n\n2. TWO EXITS:\n- [Save to Inbox] (primary): Create SourceItem, close modal, show toast\n- [Process Now] (secondary, disabled initially): Create SourceItem, enter guided processing\n\n3. AUTO-CLASSIFICATION:\n- Detect content type from paste/drop\n- Show badge indicating detected type\n- Set sourceType field automatically\n\n4. PROCESS NOW BUTTON:\n- Initially disabled with tooltip 'Coming soon - complete Learning Mode first'\n- Enabled after T117 (Learning Mode) is complete\n- When enabled: saves to inbox then navigates to guided processing flow\n\nNOTE: This expands T38's basic capture with the two-mode principle. Inbox remains derived view (status='inbox').",
@@ -1177,12 +1239,14 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-07T23:37:56.505Z",
+      "lastModified": "2026-01-07T23:49:10.696Z",
       "taskCount": 23,
-      "completedCount": 15,
+      "completedCount": 16,
       "tags": [
         "master"
-      ]
+      ],
+      "created": "2026-01-08T00:14:32.341Z",
+      "description": "Tasks for master context"
     }
   }
 }

@@ -9,12 +9,7 @@ import { NotebookBlock } from '@/types';
 import { useAppStore } from "@/stores/useAppStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface NotebookBlockProps {
   block: NotebookBlock;
@@ -145,7 +140,12 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
   };
 
   return (
-    <div className="group relative rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-200">
+    <div
+      className={cn(
+        "group relative rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-200",
+        (block.cardCount ?? 0) > 0 && "border-l-2 border-l-primary/40"
+      )}
+    >
       {/* Header Row */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3 flex-wrap">
@@ -156,7 +156,17 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
 
           <Badge
             variant="secondary"
-            className="text-[10px] px-1.5 py-0 h-4 font-semibold bg-primary/10 text-primary border-none"
+            className={cn(
+              "text-[10px] px-1.5 py-0 h-4 font-semibold border-none transition-colors",
+              (block.cardCount ?? 0) > 0
+                ? "bg-primary/20 text-primary"
+                : "bg-primary/10 text-muted-foreground/70"
+            )}
+            title={
+              (block.cardCount ?? 0) > 0
+                ? `${block.cardCount} cards created from this block`
+                : "No cards created yet"
+            }
           >
             {block.cardCount || 0} {block.cardCount === 1 ? "card" : "cards"}
           </Badge>
@@ -207,28 +217,11 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
         </div>
       )}
 
-      {/* Footer / Actions */}
-      <div className="mt-4 pt-3 border-t flex justify-end">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="cursor-not-allowed">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled
-                  className="h-8 gap-2 text-xs font-semibold grayscale opacity-70"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  Generate Cards
-                </Button>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <p>Coming in T42</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+      {/* Footer hint */}
+      <div className="mt-4 pt-3 border-t">
+        <p className="text-[10px] text-muted-foreground/60 text-center">
+          Select text above to generate cards
+        </p>
       </div>
     </div>
   );

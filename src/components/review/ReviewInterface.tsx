@@ -84,6 +84,35 @@ export function ReviewInterface() {
     ? notes.find((note) => note.id === currentCard.noteId)
     : null;
 
+  const [topicInfo, setTopicInfo] = useState<{
+    name: string;
+    count: number;
+  } | null>(null);
+
+  // Fetch specialized topic metadata (v2)
+  useEffect(() => {
+    let active = true;
+    if (currentCard?.notebookTopicPageId) {
+      window.api.cards
+        .getTopicMetadata(currentCard.notebookTopicPageId)
+        .then((res) => {
+          if (active && res.data) {
+            setTopicInfo(res.data);
+          } else if (active) {
+            setTopicInfo(null);
+          }
+        })
+        .catch(() => {
+          if (active) setTopicInfo(null);
+        });
+    } else {
+      setTopicInfo(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [currentCard?.notebookTopicPageId]);
+
   // Timeout detection for interrupted sessions (60 seconds)
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -276,6 +305,11 @@ export function ReviewInterface() {
         else if (e.key === "Enter") handleContinue();
       } else if (e.key === "Escape") {
         navigateToCapture();
+      } else if (
+        e.key.toLowerCase() === "s" &&
+        currentCard?.notebookTopicPageId
+      ) {
+        setCurrentView("notebook", currentCard.notebookTopicPageId);
       }
     };
 
@@ -291,6 +325,8 @@ export function ReviewInterface() {
     showingFeedback,
     showManualGradeSelector,
     isPaused,
+    currentCard,
+    setCurrentView,
   ]);
 
   if (!isHydrated) {
@@ -417,10 +453,33 @@ export function ReviewInterface() {
         </div>
 
         <div className="text-center text-[10px] text-card-muted/70 pt-6 border-t border-black/5 font-medium uppercase tracking-widest">
-          <span className="opacity-50">Source:</span>{" "}
-          <span className="text-card-foreground/70">
-            {currentNote ? currentNote.title : "Unknown"}
-          </span>
+          <span className="opacity-50">From:</span>{" "}
+          {currentCard.notebookTopicPageId ? (
+            <button
+              onClick={() =>
+                currentCard.notebookTopicPageId &&
+                setCurrentView("notebook", currentCard.notebookTopicPageId)
+              }
+              className="text-card-foreground/70 hover:text-primary transition-colors cursor-pointer group relative underline decoration-dotted underline-offset-4"
+              title="View source → (S)"
+            >
+              {topicInfo ? (
+                <>
+                  {topicInfo.name ||
+                    currentCard.notebookTopicPageId.slice(0, 8)}{" "}
+                  <span className="opacity-50 font-normal normal-case ml-1">
+                    ({topicInfo.count} cards)
+                  </span>
+                </>
+              ) : (
+                "Source unavailable"
+              )}
+            </button>
+          ) : (
+            <span className="text-card-foreground/70">
+              {currentNote ? currentNote.title : "Unknown"}
+            </span>
+          )}
           {currentCard.state > 0 && (
             <span className="ml-3 opacity-40 text-[9px]">
               • S:{currentCard.stability.toFixed(1)} • R:{currentCard.reps}

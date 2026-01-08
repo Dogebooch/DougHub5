@@ -77,6 +77,9 @@ export interface ElectronAPI {
       updates: Partial<CardWithFSRS>
     ) => Promise<IpcResult<void>>;
     remove: (id: string) => Promise<IpcResult<void>>;
+    getTopicMetadata: (
+      pageId: string
+    ) => Promise<IpcResult<{ name: string; cardCount: number } | null>>;
   };
   notes: {
     getAll: () => Promise<IpcResult<Note[]>>;
@@ -217,6 +220,11 @@ export interface ElectronAPI {
       data: string,
       mimeType: string
     ) => Promise<IpcResult<{ path: string }>>;
+  };
+  settings: {
+    get: (key: string) => Promise<IpcResult<string | null>>;
+    set: (key: string, value: string) => Promise<IpcResult<void>>;
+    getParsed: <T>(key: string, defaultValue: T) => Promise<IpcResult<T>>;
   };
   reloadApp: () => Promise<void>;
 }

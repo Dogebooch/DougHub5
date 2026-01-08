@@ -1,10 +1,23 @@
 import { FSRS, Rating, Card as FSRSCard, State, createEmptyCard, generatorParameters, RecordLogItem } from 'ts-fsrs';
-import { cardQueries, reviewLogQueries, getDatabase, DbCard, DbReviewLog } from './database';
-import { randomUUID } from 'crypto';
+import {
+  cardQueries,
+  reviewLogQueries,
+  settingsQueries,
+  getDatabase,
+  DbCard,
+  DbReviewLog,
+} from "./database";
+import { randomUUID } from "crypto";
 
 // ============================================================================
 // FSRS Configuration
 // ============================================================================
+
+/**
+ * Difficulty thresholds for UI formatting and status tracking.
+ */
+export const DIFFICULTY_THRESHOLD_HIGH = 8.0;
+export const DIFFICULTY_THRESHOLD_URGENT = 9.0;
 
 /**
  * Initialize FSRS with medical-optimized parameters.
@@ -50,7 +63,9 @@ export function fromFSRSCard(fsrsCard: FSRSCard): Partial<DbCard> {
     reps: fsrsCard.reps,
     lapses: fsrsCard.lapses,
     state: fsrsCard.state,
-    lastReview: fsrsCard.last_review ? fsrsCard.last_review.toISOString() : null,
+    lastReview: fsrsCard.last_review
+      ? fsrsCard.last_review.toISOString()
+      : null,
   };
 }
 
@@ -73,7 +88,7 @@ export interface ScheduleReviewResult {
 /**
  * Process a review and schedule the next due date using FSRS algorithm.
  * Updates the database in a transaction.
- * 
+ *
  * @param cardId - ID of the card being reviewed
  * @param rating - User rating: 1=Again, 2=Hard, 3=Good, 4=Easy
  * @param reviewTime - When the review occurred (defaults to now)
@@ -140,10 +155,11 @@ export function scheduleReview(
     partialCreditScore: null, // Can be populated by caller if needed
   };
 
-  // Execute update + log insert in a transaction
+  // Execute update + log insert + increment review count in a transaction
   const transaction = db.transaction(() => {
     cardQueries.update(cardId, fsrsUpdates);
     reviewLogQueries.insert(reviewLog);
+    settingsQueries.increment("review_count");
   });
   transaction();
 
@@ -175,9 +191,8 @@ export function getIntervalPreviews(cardId: string): {
   }
 
   const now = new Date();
-  const fsrsCard = dbCard.state === 0
-    ? createEmptyCard(now)
-    : toFSRSCard(dbCard);
+  const fsrsCard =
+    dbCard.state === 0 ? createEmptyCard(now) : toFSRSCard(dbCard);
 
   const recordLog = fsrs.repeat(fsrsCard, now);
 
@@ -195,7 +210,7 @@ export function getIntervalPreviews(cardId: string): {
  */
 export function formatInterval(scheduledDays: number): string {
   if (scheduledDays < 1 / 1440) {
-    return '<1m';
+    return "<1m";
   } else if (scheduledDays < 1 / 24) {
     // Less than 1 hour - show minutes
     const minutes = Math.round(scheduledDays * 24 * 60);
@@ -221,6 +236,20 @@ export function formatInterval(scheduledDays: number): string {
     const years = Math.round(scheduledDays / 365);
     return `${years}y`;
   }
+}
+
+/**
+ * Check if the number of reviews has reached a threshold that justifies
+ * running the FSRS Maximum Likelihood Estimation (MLE) optimization.
+ *
+ * FSRS usually requires ~400 reviews for stable parameter estimation.
+ */
+export function shouldTriggerOptimization(): boolean {
+  const countStr = settingsQueries.get("review_count") || "0";
+  const count = parseInt(countStr, 10);
+
+  // Trigger at 400 reviews, then every 100 reviews thereafter
+  return count >= 400 && count % 100 === 0;
 }
 
 // Re-export Rating enum for use in IPC handlers

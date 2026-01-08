@@ -45,6 +45,8 @@ export interface DbCard {
   cardType: CardType;
   parentListId: string | null; // UUID for grouping medical list cards
   listPosition: number | null; // Order within list
+  notebookTopicPageId: string | null;
+  sourceBlockId: string | null;
 }
 
 export interface DbNote {
@@ -176,6 +178,8 @@ interface CardRow {
   cardType: string | null;
   parentListId: string | null;
   listPosition: number | null;
+  notebookTopicPageId: string | null;
+  sourceBlockId: string | null;
 }
 
 interface NoteRow {
@@ -752,7 +756,7 @@ function migrateToV4(dbPath: string): void {
  * Migrate database from v4 to v5.
  * Adds medical_acronyms table for robust terminology expansion.
  */
-function migrateToV5(dbPath: string): void {
+function migrateToV5(_dbPath: string): void {
   console.log(
     "[Migration] Starting migration to schema version 5 (Acronyms)..."
   );
@@ -778,6 +782,49 @@ function migrateToV5(dbPath: string): void {
     console.log("[Migration] Successfully migrated to schema version 5");
   } catch (error) {
     console.error("[Migration] Failed migration to v5:", error);
+    throw error;
+  }
+}
+
+/**
+ * Migrate database from v5 to v6.
+ * Adds settings table for global config and FSRS parameter tracking.
+ */
+function migrateToV6(_dbPath: string): void {
+  console.log(
+    "[Migration] Starting migration to schema version 6 (Settings)..."
+  );
+
+  const database = getDatabase();
+
+  try {
+    database.transaction(() => {
+      database.exec(`
+        CREATE TABLE IF NOT EXISTS settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          updatedAt TEXT NOT NULL
+        );
+      `);
+
+      // Seed default settings
+      const now = new Date().toISOString();
+      const stmt = database.prepare(`
+        INSERT OR IGNORE INTO settings (key, value, updatedAt) 
+        VALUES (?, ?, ?)
+      `);
+
+      stmt.run("review_count", "0", now);
+      stmt.run("fsrs_parameters", "{}", now);
+      stmt.run("last_optimization_date", "null", now);
+
+      console.log("[Migration] Created settings table and seeded defaults");
+      setSchemaVersion(6);
+    })();
+
+    console.log("[Migration] Successfully migrated to schema version 6");
+  } catch (error) {
+    console.error("[Migration] Failed migration to v6:", error);
     throw error;
   }
 }
@@ -881,6 +928,11 @@ export function initDatabase(dbPath: string): Database.Database {
     migrateToV5(dbPath);
   }
 
+  // Migration to v6 (Settings & FSRS Optimization)
+  if (getSchemaVersion() < 6) {
+    migrateToV6(dbPath);
+  }
+
   // Seed system smart views (v3)
   if (getSchemaVersion() >= 3) {
     seedSystemSmartViews();
@@ -939,12 +991,14 @@ export const cardQueries = {
         id, front, back, noteId, tags, dueDate, createdAt,
         stability, difficulty, elapsedDays, scheduledDays,
         reps, lapses, state, lastReview,
-        cardType, parentListId, listPosition
+        cardType, parentListId, listPosition,
+        notebookTopicPageId, sourceBlockId
       ) VALUES (
         @id, @front, @back, @noteId, @tags, @dueDate, @createdAt,
         @stability, @difficulty, @elapsedDays, @scheduledDays,
         @reps, @lapses, @state, @lastReview,
-        @cardType, @parentListId, @listPosition
+        @cardType, @parentListId, @listPosition,
+        @notebookTopicPageId, @sourceBlockId
       )
     `);
     stmt.run({
@@ -978,7 +1032,9 @@ export const cardQueries = {
         lastReview = @lastReview,
         cardType = @cardType,
         parentListId = @parentListId,
-        listPosition = @listPosition
+        listPosition = @listPosition,
+        notebookTopicPageId = @notebookTopicPageId,
+        sourceBlockId = @sourceBlockId
       WHERE id = @id
     `);
     stmt.run({
@@ -991,6 +1047,21 @@ export const cardQueries = {
     const stmt = getDatabase().prepare("DELETE FROM cards WHERE id = @id");
     stmt.run({ id });
   },
+
+  getTopicMetadata(pageId: string): { name: string; cardCount: number } | null {
+    const stmt = getDatabase().prepare(`
+      SELECT 
+        ct.canonicalName as name,
+        (SELECT COUNT(*) FROM cards WHERE notebookTopicPageId = ntp.id) as cardCount
+      FROM notebook_topic_pages ntp 
+      JOIN canonical_topics ct ON ntp.canonicalTopicId = ct.id 
+      WHERE ntp.id = ?
+    `);
+    const row = stmt.get(pageId) as
+      | { name: string; cardCount: number }
+      | undefined;
+    return row || null;
+  },
 };
 
 function parseCardRow(row: CardRow): DbCard {
@@ -1000,6 +1071,8 @@ function parseCardRow(row: CardRow): DbCard {
     cardType: (row.cardType as CardType) || "standard",
     parentListId: row.parentListId,
     listPosition: row.listPosition,
+    notebookTopicPageId: row.notebookTopicPageId,
+    sourceBlockId: row.sourceBlockId,
   };
 }
 
@@ -2231,6 +2304,74 @@ export interface DbStatus {
   queueCount: number;
   connectionCount: number;
 }
+
+// ============================================================================
+// Settings Queries
+// ============================================================================
+
+export const settingsQueries = {
+  get(key: string): string | null {
+    const stmt = getDatabase().prepare(
+      "SELECT value FROM settings WHERE key = ?"
+    );
+    const row = stmt.get(key) as { value: string } | undefined;
+    return row?.value ?? null;
+  },
+
+  /**
+   * Get setting and parse as JSON. Returns default if not found or invalid.
+   */
+  getParsed<T>(key: string, defaultValue: T): T {
+    const value = this.get(key);
+    if (!value) return defaultValue;
+    try {
+      return JSON.parse(value) as T;
+    } catch (e) {
+      console.error(`[Settings] Failed to parse JSON for key "${key}":`, e);
+      return defaultValue;
+    }
+  },
+
+  set(key: string, value: string): void {
+    const stmt = getDatabase().prepare(`
+      INSERT INTO settings (key, value, updatedAt) 
+      VALUES (?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updatedAt = excluded.updatedAt
+    `);
+    const now = new Date().toISOString();
+    stmt.run(key, value, now);
+  },
+
+  /**
+   * Safe increment for numeric settings stored as strings.
+   * Handles non-numeric values and overflows (resets to 0 if overflow).
+   */
+  increment(key: string): number {
+    const db = getDatabase();
+    const now = new Date().toISOString();
+
+    const stmt = db.prepare(`
+      UPDATE settings 
+      SET 
+        value = CASE 
+          WHEN CAST(value AS INTEGER) >= 9007199254740991 THEN '0'
+          ELSE CAST(CAST(value AS INTEGER) + 1 AS TEXT)
+        END,
+        updatedAt = ?
+      WHERE key = ?
+      RETURNING value
+    `);
+
+    const result = stmt.get(now, key) as { value: string } | undefined;
+    if (!result) {
+      // If it doesn't exist for some reason, seed it
+      this.set(key, "1");
+      return 1;
+    }
+
+    return parseInt(result.value, 10);
+  },
+};
 
 export function getDatabaseStatus(): DbStatus {
   const db = getDatabase();

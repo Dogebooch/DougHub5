@@ -13,6 +13,8 @@ const api = {
     update: (id: string, updates: unknown) =>
       ipcRenderer.invoke("cards:update", id, updates),
     remove: (id: string) => ipcRenderer.invoke("cards:remove", id),
+    getTopicMetadata: (pageId: string) =>
+      ipcRenderer.invoke("cards:getTopicMetadata", pageId),
   },
   notes: {
     getAll: () => ipcRenderer.invoke("notes:getAll"),
@@ -151,7 +153,10 @@ const api = {
     onOllamaStatus: (
       callback: (payload: { status: string; message: string }) => void
     ) => {
-      const subscription = (_event: any, payload: any) => callback(payload);
+      const subscription = (
+        _event: Electron.IpcRendererEvent,
+        payload: { status: string; message: string }
+      ) => callback(payload);
       ipcRenderer.on("ai:ollamaStatus", subscription);
       return () => ipcRenderer.removeListener("ai:ollamaStatus", subscription);
     },
@@ -159,6 +164,13 @@ const api = {
   files: {
     saveImage: (data: string, mimeType: string) =>
       ipcRenderer.invoke("files:saveImage", { data, mimeType }),
+  },
+  settings: {
+    get: (key: string) => ipcRenderer.invoke("settings:get", key),
+    set: (key: string, value: string) =>
+      ipcRenderer.invoke("settings:set", key, value),
+    getParsed: (key: string, defaultValue: unknown) =>
+      ipcRenderer.invoke("settings:getParsed", key, defaultValue),
   },
   reloadApp: () => ipcRenderer.invoke("app:reload"),
 };

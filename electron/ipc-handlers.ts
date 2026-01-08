@@ -14,6 +14,7 @@ import {
   notebookBlockQueries,
   smartViewQueries,
   searchQueries,
+  settingsQueries,
   getDatabaseStatus,
   getDbPath,
   DbCard,
@@ -125,6 +126,21 @@ export function registerIpcHandlers(): void {
         const today = new Date().toISOString().split("T")[0];
         const dueCards = cards.filter((c) => c.dueDate <= today);
         return success(dueCards);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "cards:getTopicMetadata",
+    async (
+      _,
+      pageId: string
+    ): Promise<IpcResult<{ name: string; cardCount: number } | null>> => {
+      try {
+        const metadata = cardQueries.getTopicMetadata(pageId);
+        return success(metadata);
       } catch (error) {
         return failure(error);
       }
@@ -1064,6 +1080,50 @@ export function registerIpcHandlers(): void {
       return failure(error);
     }
   });
+
+  // --------------------------------------------------------------------------
+  // Settings Handlers
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "settings:get",
+    async (_, key: string): Promise<IpcResult<string | null>> => {
+      try {
+        const value = settingsQueries.get(key);
+        return success(value);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "settings:set",
+    async (_, key: string, value: string): Promise<IpcResult<void>> => {
+      try {
+        settingsQueries.set(key, value);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "settings:getParsed",
+    async (
+      _,
+      key: string,
+      defaultValue: unknown
+    ): Promise<IpcResult<unknown>> => {
+      try {
+        const value = settingsQueries.getParsed(key, defaultValue);
+        return success(value);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
 
   // --------------------------------------------------------------------------
   // File Handlers
