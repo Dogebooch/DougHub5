@@ -82,6 +82,15 @@ export function AppLayout() {
         return <InboxView />;
       case "knowledgebank":
         return <KnowledgeBankView />;
+      case "cards":
+        return (
+          <div className="p-8 text-center space-y-4">
+            <h1 className="text-2xl font-semibold">Card Browser</h1>
+            <p className="text-muted-foreground">
+              Browse and manage all cards...
+            </p>
+          </div>
+        );
       case "settings":
         // TODO: Create a SettingsInterface component with sections for:
         // - FSRS Algorithm Parameters: Allow user to view and customize their

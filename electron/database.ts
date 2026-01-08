@@ -968,6 +968,47 @@ function migrateToV9(dbPath: string): void {
 }
 
 /**
+ * Migrate database from v9 to v10.
+ * Adds aiTitle column to cards table for forward compatibility.
+ */
+function migrateToV10(dbPath: string): void {
+  console.log(
+    "[Migration] Starting migration to schema version 10 (Card Browser Prep)..."
+  );
+
+  // Backup before migration
+  const backupPath = createBackup(dbPath);
+  console.log(`[Migration] Backup created: ${backupPath}`);
+
+  const database = getDatabase();
+
+  try {
+    database.transaction(() => {
+      // Add aiTitle to cards
+      if (!columnExists("cards", "aiTitle")) {
+        database.exec("ALTER TABLE cards ADD COLUMN aiTitle TEXT");
+        console.log("[Migration] Added cards.aiTitle column");
+      }
+
+      setSchemaVersion(10);
+    })();
+
+    console.log("[Migration] Successfully migrated to schema version 10");
+  } catch (error) {
+    console.error("[Migration] Failed, restoring backup:", error);
+    // Close database before restore
+    database.close();
+    db = null;
+    restoreBackup(backupPath, dbPath);
+    // Re-open database after restore
+    db = new Database(dbPath);
+    db.pragma("journal_mode = WAL");
+    db.pragma("foreign_keys = ON");
+    throw error;
+  }
+}
+
+/**
  * Initialize the SQLite database.
  * Call this from main.ts after app.whenReady().
  *
@@ -1089,6 +1130,11 @@ export function initDatabase(dbPath: string): Database.Database {
   // Migration to v9 (Typed Answer Prep)
   if (getSchemaVersion() < 9) {
     migrateToV9(dbPath);
+  }
+
+  // Migration to v10 (Card Browser Prep)
+  if (getSchemaVersion() < 10) {
+    migrateToV10(dbPath);
   }
 
   // Seed system smart views (v3)

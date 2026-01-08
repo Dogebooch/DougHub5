@@ -133,7 +133,8 @@ export type AppView =
   | "weak"
   | "topics"
   | "stats"
-  | "knowledgebank";
+  | "knowledgebank"
+  | "cards";
 
 export interface SmartViewFilter {
   status?: string[];
@@ -193,6 +194,14 @@ export interface CardFSRS {
 
 // Full card with FSRS fields (as stored in database)
 export interface CardWithFSRS extends Card, CardFSRS {}
+
+// Card Browser view item with computed fields
+export interface CardBrowserItem extends CardWithFSRS {
+  // Computed fields for browser display
+  topicName: string | null; // From canonical_topics.canonicalName via JOIN
+  siblingCount: number; // COUNT of cards with same sourceBlockId
+  isLeech: boolean; // Computed: struggling card needing rewrite
+}
 
 // IPC result wrapper for error handling
 export type IpcResult<T> =

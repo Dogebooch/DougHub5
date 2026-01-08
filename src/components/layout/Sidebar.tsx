@@ -5,6 +5,7 @@ import {
   Inbox,
   BookOpen,
   Settings,
+  Layers,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
@@ -82,13 +83,12 @@ export function Sidebar({ className }: SidebarProps) {
       icon: Brain,
       implemented: true,
     },
-    // TODO (T115): Add Cards view
-    // {
-    //   id: "cards",
-    //   label: "Cards",
-    //   icon: Layers,
-    //   implemented: false,
-    // },
+    {
+      id: "cards",
+      label: "Cards",
+      icon: Layers,
+      implemented: true,
+    },
   ];
 
   // TODO: Implement weak topics section
