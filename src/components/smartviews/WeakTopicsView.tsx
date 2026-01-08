@@ -38,7 +38,7 @@ export function WeakTopicsView() {
       const result = await window.api.cards.getWeakTopicSummaries();
       if (result.error) {
         setError(result.error);
-      } else {
+      } else if (result.data) {
         setTopics(result.data);
       }
     } catch (err: any) {

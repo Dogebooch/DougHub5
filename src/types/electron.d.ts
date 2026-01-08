@@ -19,6 +19,7 @@ import type {
   SmartView,
   SearchFilter,
   SearchResult,
+  WeakTopicSummary,
 } from "./index";
 import type {
   AIProviderStatus,

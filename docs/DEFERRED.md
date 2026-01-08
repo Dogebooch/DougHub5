@@ -52,6 +52,41 @@
 **Dependency:** T45 (FSRS Integration), F2 (embeddings)
 **Notes:** High-value for medical education - addresses common confusion pairs.
 
+### Response Time Signal (F13)
+**Description:** Cards answered fast (<5s) get +15% interval boost; slow answers (>15s) get -15% interval reduction. Applied as multiplier on top of base FSRS calculation.
+**Priority:** High
+**Source:** User request (2026-01-07)
+**Dependency:** T45 (FSRS Integration)
+**Notes:** Groundwork laid in T45.6. Requires implementing the actual interval modifier in fsrs-service.ts scheduleReview function.
+
+### FSRS Parameter Optimization (F14)
+**Description:** After 400+ reviews, trigger MLE (Maximum Likelihood Estimation) training to personalize FSRS parameters to user's memory patterns. Uses review_logs history to optimize w[] weights.
+**Priority:** High
+**Source:** User request (2026-01-07)
+**Dependency:** T45 (FSRS Integration)
+**Notes:** T45.6 added settings table, review_count tracking, and shouldTriggerOptimization() hook. Actual MLE algorithm implementation deferred.
+
+### Semantic Interference Spacing (F15)
+**Description:** Space similar cards apart in review queue using embeddings. Prevents reviewing "CHF symptoms" immediately after "pulmonary edema symptoms" which causes interference. Requires embedding infrastructure.
+**Priority:** High (Optional)
+**Source:** User request (2026-01-07)
+**Dependency:** F2 (embeddings infrastructure)
+**Notes:** Evidence-based feature - semantic similarity in short succession causes retrieval interference. Requires card embeddings and queue reordering logic.
+
+### Review Sessions Table (F16)
+**Description:** Persistent session tracking via `review_sessions` table. Schema: id, startedAt, endedAt, cardsReviewed, mistakeCount, accuracy, totalTimeMs. Enables session history, analytics trends, and cross-session mistake tracking.
+**Priority:** Medium
+**Source:** T117 scope reduction (2026-01-07)
+**Dependency:** T117 (Basic Learning Mode)
+**Notes:** MVP T117 uses in-memory tracking. This adds database persistence for session history and analytics. Supports Stats view and progress tracking over time.
+
+### Persistent Unreviewed Mistakes Queue (F17)
+**Description:** "Review Later" option in MistakesReviewModal saves mistakes to a queue for next session. Adds `unreviewed_mistakes` table or status flag. Sidebar badge shows pending mistake count. Mistakes view shows all unreviewed mistakes across sessions.
+**Priority:** Medium
+**Source:** T117 scope reduction (2026-01-07)
+**Dependency:** T117 (Basic Learning Mode), F16 (Review Sessions Table)
+**Notes:** MVP shows mistakes immediately post-session only. This adds persistent queue with "Insights > Mistakes" view access. Higher complexity: needs new table, sidebar badge, dedicated view component.
+
 ---
 
 ## Insights Sidebar Section (POST-MVP)

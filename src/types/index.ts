@@ -175,6 +175,7 @@ export interface DbStatus {
   inboxCount: number;
   queueCount: number;
   connectionCount: number;
+  weakTopicsCount: number;
 }
 
 // FSRS fields for spaced repetition (extends Card in database layer)

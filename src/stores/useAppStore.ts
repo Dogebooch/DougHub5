@@ -41,7 +41,8 @@ interface AppActions {
   getCardsDueToday: () => CardWithFSRS[];
   scheduleCardReview: (
     cardId: string,
-    rating: RatingValue
+    rating: RatingValue,
+    responseTimeMs?: number | null
   ) => Promise<{ success: boolean; data?: ScheduleResult; error?: string }>;
   setHydrated: () => void;
   seedSampleData: () => void;

@@ -2431,6 +2431,7 @@ export interface DbStatus {
   inboxCount: number;
   queueCount: number;
   connectionCount: number;
+  weakTopicsCount: number;
 }
 
 // ============================================================================

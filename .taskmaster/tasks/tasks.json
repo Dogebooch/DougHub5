@@ -1009,7 +1009,7 @@
           "41",
           "42"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1017,8 +1017,10 @@
             "description": "Display 'From: [Topic Name]' with clickable link to navigate to the source NotebookTopicPage. Handle legacy v1 cards without notebookTopicPageId gracefully.",
             "dependencies": [],
             "details": "Update ReviewInterface.tsx to:\n1. Load CanonicalTopic name from card.notebookTopicPageId via IPC (create new handler in ipc-handlers.ts)\n2. Add database query to join NotebookTopicPage → CanonicalTopic → canonicalName\n3. Display topic name below card content in the source metadata section\n4. Make topic name clickable to navigate via setCurrentView('notebook', notebookTopicPageId)\n5. Show fallback for legacy v1 cards without notebookTopicPageId (show Note title as before)\n6. Add count of related cards from same topic page (optional enhancement)\n\nFiles to modify:\n- src/components/review/ReviewInterface.tsx (lines 419-429)\n- electron/database.ts (add getTopicNameByNotebookPageId query)\n- electron/ipc-handlers.ts (add IPC handler)\n- src/types/electron.d.ts (add IPC type definition)\n- electron/preload.ts (expose IPC method)",
-            "status": "pending",
-            "testStrategy": "Review a card with notebookTopicPageId, verify topic name displays. Click topic link, verify navigation to NotebookTopicPage. Review legacy v1 card, verify Note title fallback displays."
+            "status": "done",
+            "testStrategy": "Review a card with notebookTopicPageId, verify topic name displays. Click topic link, verify navigation to NotebookTopicPage. Review legacy v1 card, verify Note title fallback displays.",
+            "updatedAt": "2026-01-08T01:59:03.520Z",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1026,8 +1028,10 @@
             "description": "Add explicit response-time modifier to FSRS scheduling: fast answers (<5s) get +15% interval boost, slow answers (>15s) get -15% reduction. This is a multiplier applied ON TOP of the base FSRS calculation.",
             "dependencies": [],
             "details": "Update fsrs-service.ts scheduleReview function:\n1. After FSRS calculates base interval (scheduled.card.scheduled_days), apply response-time modifier\n2. Fast response (<5000ms): multiply interval by 1.15\n3. Slow response (>15000ms): multiply interval by 0.85\n4. Normal response (5-15s): no modifier (1.0)\n5. Update scheduled.card.scheduled_days before converting to DbCard\n6. Recalculate due date from modified interval\n7. This is SEPARATE from the auto-rating logic (which maps time→rating). This adds an additional multiplier.\n8. Ensure responseTimeMs is passed through from ReviewInterface → scheduleCardReview → scheduleReview\n\nFiles to modify:\n- electron/fsrs-service.ts (scheduleReview function, lines 82-159)\n- Add helper function calculateResponseTimeModifier(responseTimeMs: number | null): number\n\nNote: Do NOT modify the auto-rating logic in ReviewInterface.tsx (lines 111-116). That stays as-is. This is an additional signal in the scheduling layer.",
-            "status": "pending",
-            "testStrategy": "Review card with fast response (<5s), check review_logs.responseTimeMs and card.scheduledDays (should be 15% higher than base FSRS). Review with slow response (>15s), verify 15% reduction. Review with normal response, verify no modifier."
+            "status": "done",
+            "testStrategy": "Review card with fast response (<5s), check review_logs.responseTimeMs and card.scheduledDays (should be 15% higher than base FSRS). Review with slow response (>15s), verify 15% reduction. Review with normal response, verify no modifier.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:59:03.523Z"
           },
           {
             "id": 3,
@@ -1035,8 +1039,10 @@
             "description": "Create SQL query to find cards with difficulty > 8.0 (FSRS scale), aggregate by NotebookTopicPage, return counts and topic names for Weak Topics view.",
             "dependencies": [],
             "details": "Add to electron/database.ts:\n1. Create new query function getLowDifficultyCardsByTopic()\n2. SQL: JOIN cards → notebookTopicPageId → NotebookTopicPage → CanonicalTopic\n3. Filter WHERE cards.difficulty > 8.0 AND cards.notebookTopicPageId IS NOT NULL\n4. GROUP BY canonicalTopicId\n5. Return: { topicId: string, topicName: string, cardCount: number, avgDifficulty: number }[]\n6. Order by avgDifficulty DESC, cardCount DESC\n7. Add to cardQueries object\n8. Create IPC handler in ipc-handlers.ts\n9. Add type definitions in electron.d.ts and index.ts\n10. Expose in preload.ts\n\nNew interface:\nexport interface WeakTopicSummary {\n  topicId: string;\n  topicName: string;\n  cardCount: number;\n  avgDifficulty: number;\n}\n\nFiles to modify:\n- electron/database.ts (add to cardQueries)\n- electron/ipc-handlers.ts (add handler)\n- src/types/electron.d.ts\n- src/types/index.ts\n- electron/preload.ts",
-            "status": "pending",
-            "testStrategy": "Create test cards with difficulty > 8.0 and < 8.0 linked to different topics. Call getLowDifficultyCardsByTopic(), verify only high-difficulty cards returned, grouped by topic with correct counts and avg."
+            "status": "done",
+            "testStrategy": "Create test cards with difficulty > 8.0 and < 8.0 linked to different topics. Call getLowDifficultyCardsByTopic(), verify only high-difficulty cards returned, grouped by topic with correct counts and avg.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:59:03.526Z"
           },
           {
             "id": 4,
@@ -1046,8 +1052,10 @@
               3
             ],
             "details": "Update ReviewInterface.tsx:\n1. Check currentCard.difficulty > 8.0\n2. Add conditional className to card container (line 380): if high-difficulty, add 'ring-2 ring-destructive/50 animate-pulse-subtle'\n3. Add message below card content (before source metadata): 'This card needs attention' with AlertTriangle icon\n4. Add 'Edit Card' button/link (implement card editor navigation in future task, for now just show UI)\n5. Use existing pulse-subtle animation from Tailwind config\n6. Ensure difficulty value is available in Card type (already in CardWithFSRS)\n\nFiles to modify:\n- src/components/review/ReviewInterface.tsx (lines 380-430)\n\nNote: Card difficulty is already in the Card type from FSRS fields. Just need to read it from currentCard.",
-            "status": "pending",
-            "testStrategy": "Review card with difficulty > 8.0, verify red pulsing border and warning message display. Review card with difficulty < 8.0, verify no indicator. Verify pulse animation works smoothly."
+            "status": "done",
+            "testStrategy": "Review card with difficulty > 8.0, verify red pulsing border and warning message display. Review card with difficulty < 8.0, verify no indicator. Verify pulse animation works smoothly.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:59:03.528Z"
           },
           {
             "id": 5,
@@ -1057,8 +1065,10 @@
               3
             ],
             "details": "Create new component src/components/smartviews/WeakTopicsView.tsx:\n1. Fetch weak topics using window.api.cards.getLowDifficultyCardsByTopic()\n2. Display as list with:\n   - Topic name (large, bold)\n   - Card count badge\n   - Avg difficulty score (color-coded: 8-9=yellow, 9-10=red)\n   - Progress bar showing difficulty severity\n3. Click topic → navigate to NotebookTopicPage (setCurrentView('notebook', topicId))\n4. Empty state: 'No weak topics! All cards are well-learned.'\n5. Add to AppView type as 'weak-topics'\n6. Update router/view switcher to include WeakTopicsView\n7. Style consistent with existing smart views (inbox, notebook)\n\nFiles to create:\n- src/components/smartviews/WeakTopicsView.tsx\n\nFiles to modify:\n- src/types/index.ts (add 'weak-topics' to AppView if not exists)\n- src/App.tsx or view router (add weak-topics case)\n- Add icon and navigation in sidebar (future task)",
-            "status": "pending",
-            "testStrategy": "Navigate to weak-topics view, verify topics with high-difficulty cards display. Click topic, verify navigation to topic page. Create cards with difficulty < 8.0, verify they don't appear. Test empty state when no weak topics."
+            "status": "done",
+            "testStrategy": "Navigate to weak-topics view, verify topics with high-difficulty cards display. Click topic, verify navigation to topic page. Create cards with difficulty < 8.0, verify they don't appear. Test empty state when no weak topics.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:59:03.531Z"
           },
           {
             "id": 6,
@@ -1066,10 +1076,13 @@
             "description": "Prepare infrastructure for Phase 3 MLE parameter training: add review_count tracking, settings table for learned parameters, and placeholder trigger logic (don't implement actual MLE yet).",
             "dependencies": [],
             "details": "Database schema updates in electron/database.ts:\n1. Add settings table if not exists:\n   CREATE TABLE settings (\n     key TEXT PRIMARY KEY,\n     value TEXT NOT NULL,\n     updatedAt TEXT NOT NULL\n   )\n2. Add migration for settings table\n3. Add settingsQueries object with get/set methods\n4. Add 'fsrs_parameters' key to store JSON of learned FSRS params\n5. Add 'review_count' key to track total reviews completed\n6. Increment review_count in scheduleReview after each review log insert\n7. Add helper function shouldTriggerOptimization(): boolean (returns true if review_count >= 400)\n8. Add placeholder comment in scheduleReview: '// TODO Phase 3: If shouldTriggerOptimization(), trigger MLE training'\n9. Create IPC handlers for settings CRUD\n10. Add types and preload exposure\n\nDO NOT implement actual MLE training algorithm. This is just the schema/hooks prep.\n\nFiles to modify:\n- electron/database.ts (add settings table migration, queries)\n- electron/fsrs-service.ts (increment review_count, add optimization check)\n- electron/ipc-handlers.ts (settings handlers)\n- src/types/electron.d.ts\n- electron/preload.ts",
-            "status": "pending",
-            "testStrategy": "Verify settings table created. Review 5 cards, verify review_count increments to 5. Call shouldTriggerOptimization() with mock count >= 400, verify returns true. Verify fsrs_parameters can be stored and retrieved as JSON."
+            "status": "done",
+            "testStrategy": "Verify settings table created. Review 5 cards, verify review_count increments to 5. Call shouldTriggerOptimization() with mock count >= 400, verify returns true. Verify fsrs_parameters can be stored and retrieved as JSON.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:59:03.533Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-01-08T01:59:03.533Z"
       },
       {
         "id": 91,
@@ -1221,7 +1234,74 @@
           "45"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Track mistakes in ReviewInterface state",
+            "description": "Add mistakeCardIds array and sessionStartTime to ReviewInterface component state. Track cards rated 'Again' during session without duplicates.",
+            "dependencies": [],
+            "details": "Add state variables to ReviewInterface.tsx: `mistakeCardIds: string[]` and `sessionStartTime: Date | null`. In the submitReview function (line 149), when rating === Rating.Again, add cardId to mistakeCardIds array using setMistakeCardIds(prev => prev.includes(currentCard.id) ? prev : [...prev, currentCard.id]). Initialize sessionStartTime when reviewQueue is initialized (line 70). Store both mistake card objects with their response times: { cardId: string, responseTimeMs: number | null, rating: number }[]",
+            "status": "pending",
+            "testStrategy": "Review a session with 2+ cards, rate one as Again. Verify mistakeCardIds contains that card ID. Verify sessionStartTime is set when session starts."
+          },
+          {
+            "id": 2,
+            "title": "Add session-end modal trigger",
+            "description": "When session completes, show MistakesPromptModal if mistakes exist, otherwise show completion toast.",
+            "dependencies": [
+              1
+            ],
+            "details": "In ReviewInterface.tsx sessionComplete block (line 368), replace redirect logic with conditional: if mistakeCardIds.length > 0, show MistakesPromptModal with count; else show toast 'Session complete! X/X correct' using useToast hook. Create MistakesPromptModal.tsx component with Dialog wrapper, showing 'You missed X card(s). Review mistakes?' message, [Review Now] button (triggers mistake review flow) and [Skip] button (navigates to capture). Modal accepts onReview and onSkip callbacks.",
+            "status": "pending",
+            "testStrategy": "Complete session with 0 mistakes - verify toast appears. Complete session with 2+ mistakes - verify modal appears with correct count and both buttons work."
+          },
+          {
+            "id": 3,
+            "title": "Create AI generateElaboratedFeedback function",
+            "description": "Add AI function to generate why-wrong and why-right feedback for missed cards.",
+            "dependencies": [],
+            "details": "In electron/ai-service.ts, add generateElaboratedFeedback(card: { front: string, back: string, cardType: string }, topicContext: string, responseTimeMs: number | null): Promise<ElaboratedFeedback>. Follow existing pattern: add PROMPTS.elaboratedFeedback system prompt (medical education AI explaining why answer is wrong, why correct answer is right, related concepts). Use aiCache.key() for caching with card content + topic. Return { whyWrong: string, whyRight: string, relatedConcepts: string[] }. Add IPC handler in ipc-handlers.ts: ipcMain.handle('ai:generateElaboratedFeedback'). Update preload.ts and electron.d.ts with new method.",
+            "status": "pending",
+            "testStrategy": "Call ai:generateElaboratedFeedback with sample card. Verify returns whyWrong, whyRight, and relatedConcepts array. Verify caching works on repeat calls."
+          },
+          {
+            "id": 4,
+            "title": "Create MistakesReviewModal component",
+            "description": "Build modal to scroll through mistakes with AI-generated feedback.",
+            "dependencies": [
+              3
+            ],
+            "details": "Create src/components/review/MistakesReviewModal.tsx. Use Dialog from shadcn/ui. Accept props: open, onOpenChange, mistakeCards: Array<{ card: CardWithFSRS, responseTimeMs: number | null }>. State: currentIndex (0), feedback loading state. For each card, display: card.front (use ClozeDisplay if cloze type like ReviewInterface line 439), card.back (use ClozeAnswer if cloze), response time formatted as 'Xm Ys'. Fetch AI feedback on-demand when currentIndex changes using window.api.ai.generateElaboratedFeedback(). Show loading spinner during fetch. Display feedback sections: 'Why this is wrong', 'Why correct answer is right', 'Related concepts'. Navigation: [Previous] [X/Y] [Next] buttons, [Done] on last card closes modal. Include session stats in header/footer.",
+            "status": "pending",
+            "testStrategy": "Open modal with 3 mistake cards. Verify front/back display correctly. Verify AI feedback loads for each card. Navigate through all cards, verify Next/Previous work. Click Done, verify modal closes."
+          },
+          {
+            "id": 5,
+            "title": "Add session stats to mistake review",
+            "description": "Calculate and display total session time, cards reviewed, mistakes count, and accuracy percentage.",
+            "dependencies": [
+              1,
+              4
+            ],
+            "details": "In ReviewInterface.tsx, track sessionStats: { totalTime: number, cardsReviewed: number, mistakeCount: number }. Calculate totalTime = Date.now() - sessionStartTime.getTime(). Format as 'Xm Ys' helper function. Calculate accuracy = Math.round(((cardsReviewed - mistakeCount) / cardsReviewed) * 100). Pass stats to MistakesReviewModal via props. Display in modal header or footer: 'Session: Xm Ys • X/Y correct (Z% accuracy)'. Use muted text styling similar to ReviewInterface line 503.",
+            "status": "pending",
+            "testStrategy": "Complete 5-card session with 2 mistakes in 3 minutes. Verify modal shows '3m 0s • 3/5 correct (60% accuracy)'."
+          },
+          {
+            "id": 6,
+            "title": "Types and integration",
+            "description": "Add TypeScript interfaces for ElaboratedFeedback and wire all components together.",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "details": "In src/types/ai.ts, add: export interface ElaboratedFeedback { whyWrong: string; whyRight: string; relatedConcepts: string[]; }. In src/types/electron.d.ts, add to ai interface: generateElaboratedFeedback: (card: { front: string, back: string, cardType: string }, topicContext: string, responseTimeMs: number | null) => Promise<IpcResult<ElaboratedFeedback>>. In ReviewInterface.tsx, import and wire MistakesPromptModal and MistakesReviewModal. Add state for showMistakesReview: boolean. In sessionComplete block, conditionally render MistakesPromptModal. When user clicks 'Review Now', set showMistakesReview=true. Render MistakesReviewModal with mistakeCards data. Test complete flow: review session → rate cards as Again → see prompt → click Review → see feedback → navigate mistakes → click Done.",
+            "status": "pending",
+            "testStrategy": "Complete review session with 3 mistakes. Click 'Review Now'. Verify modal opens with all 3 cards. Verify AI feedback displays. Navigate through all cards. Click Done. Verify returns to capture view."
+          }
+        ]
       },
       {
         "id": 118,
@@ -1239,13 +1319,13 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-07T23:49:10.696Z",
+      "lastModified": "2026-01-08T01:59:03.534Z",
       "taskCount": 23,
-      "completedCount": 16,
+      "completedCount": 17,
       "tags": [
         "master"
       ],
-      "created": "2026-01-08T00:14:32.341Z",
+      "created": "2026-01-08T02:21:14.411Z",
       "description": "Tasks for master context"
     }
   }

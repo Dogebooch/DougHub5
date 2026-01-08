@@ -101,10 +101,14 @@ type NotebookBlock = {
   position: number;
 };
 
+type CardType = "standard" | "qa" | "cloze" | "vignette" | "list-cloze";
+
 type CardWithFSRS = Card & {
-  cardType: string | null;
+  cardType: CardType;
   parentListId: string | null;
   listPosition: number | null;
+  notebookTopicPageId: string | null;
+  sourceBlockId: string | null;
   dueDate: string;
   stability: number;
   difficulty: number;
@@ -560,6 +564,8 @@ export function createMockCard(
     cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
     stability: 0,
     difficulty: 0,
     elapsedDays: 0,

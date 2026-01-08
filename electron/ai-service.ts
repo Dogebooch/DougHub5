@@ -643,6 +643,9 @@ Respond ONLY with a JSON object in this exact format (no markdown, no code block
     }
   ]
 }`,
+};
+
+/**
  * Wrap a promise with a timeout.
  *
  * @param promise Promise to wrap

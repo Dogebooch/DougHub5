@@ -88,7 +88,7 @@ export function ReviewInterface() {
 
   const [topicInfo, setTopicInfo] = useState<{
     name: string;
-    count: number;
+    cardCount: number;
   } | null>(null);
 
   // Fetch specialized topic metadata (v2)
@@ -516,7 +516,7 @@ export function ReviewInterface() {
                   {topicInfo.name ||
                     currentCard.notebookTopicPageId.slice(0, 8)}{" "}
                   <span className="opacity-50 font-normal normal-case ml-1">
-                    ({topicInfo.count} cards)
+                    ({topicInfo.cardCount} cards)
                   </span>
                 </>
               ) : (
