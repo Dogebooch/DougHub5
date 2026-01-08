@@ -9,7 +9,9 @@ import { InboxView } from "@/components/knowledgebank/InboxView";
 import { KnowledgeBankView } from "@/components/knowledgebank/KnowledgeBankView";
 import { NotebookView } from "@/components/notebook/NotebookView";
 import { WeakTopicsView } from "@/components/smartviews/WeakTopicsView";
+import { CardBrowserView } from "@/components/cards/CardBrowserView";
 import { useAppStore } from "@/stores/useAppStore";
+import { cn } from "@/lib/utils";
 
 export function AppLayout() {
   const currentView = useAppStore((state) => state.currentView);
@@ -83,14 +85,7 @@ export function AppLayout() {
       case "knowledgebank":
         return <KnowledgeBankView />;
       case "cards":
-        return (
-          <div className="p-8 text-center space-y-4">
-            <h1 className="text-2xl font-semibold">Card Browser</h1>
-            <p className="text-muted-foreground">
-              Browse and manage all cards...
-            </p>
-          </div>
-        );
+        return <CardBrowserView />;
       case "settings":
         // TODO: Create a SettingsInterface component with sections for:
         // - FSRS Algorithm Parameters: Allow user to view and customize their
@@ -122,10 +117,21 @@ export function AppLayout() {
 
       <Header openQuickCapture={openQuickCapture} />
 
-      <div className="flex flex-1 relative z-10">
+      <div className="flex flex-1 relative z-10 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-4xl px-6 py-8">{renderView()}</div>
+        <main
+          className={cn("flex-1", currentView !== "cards" && "overflow-y-auto")}
+        >
+          <div
+            className={cn(
+              "mx-auto",
+              currentView === "cards"
+                ? "h-full w-full max-w-none"
+                : "max-w-4xl px-6 py-8"
+            )}
+          >
+            {renderView()}
+          </div>
         </main>
       </div>
 

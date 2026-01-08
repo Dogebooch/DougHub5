@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import {
   Note,
   CardWithFSRS,
+  CardBrowserItem,
   IpcResult,
   RatingValue,
   ScheduleResult,
@@ -54,6 +55,19 @@ interface AppActions {
   initialize: () => Promise<void>;
   refreshCounts: () => Promise<void>;
   refreshSmartViewCounts: () => Promise<void>;
+  getBrowserList: (
+    filters?: {
+      status?: number[];
+      topicId?: string;
+      tags?: string[];
+      leechesOnly?: boolean;
+      search?: string;
+    },
+    sort?: {
+      field: "dueDate" | "createdAt" | "difficulty" | "lastReview";
+      direction: "asc" | "desc";
+    }
+  ) => Promise<CardBrowserItem[]>;
 
   // Inbox Batch Actions
   toggleInboxSelection: (id: string) => void;
