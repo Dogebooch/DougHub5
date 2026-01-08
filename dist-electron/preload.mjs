@@ -126,6 +126,14 @@ const api = {
     set: (key, value) => electron.ipcRenderer.invoke("settings:set", key, value),
     getParsed: (key, defaultValue) => electron.ipcRenderer.invoke("settings:getParsed", key, defaultValue)
   },
+  capture: {
+    process: (payload) => electron.ipcRenderer.invoke("capture:process", payload),
+    onReceived: (callback) => {
+      const handler = (_event, payload) => callback(payload);
+      electron.ipcRenderer.on("capture:received", handler);
+      return () => electron.ipcRenderer.removeListener("capture:received", handler);
+    }
+  },
   reloadApp: () => electron.ipcRenderer.invoke("app:reload")
 };
 electron.contextBridge.exposeInMainWorld("api", api);

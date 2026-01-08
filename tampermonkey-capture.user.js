@@ -43,7 +43,7 @@
 
     function extractImages(site) {
         const images = [];
-        
+
         if (site === 'ACEP PeerPrep') {
             // Question Gallery (Fancybox)
             document.querySelectorAll('#media-links a.fancybox, a[data-fancybox]').forEach(a => {
@@ -75,7 +75,7 @@
                 });
             });
         }
-        
+
         return images;
     }
 
@@ -96,7 +96,7 @@
 
     async function sendToDougHub(payload, attempt = 0) {
         setButtonState('sending');
-        
+
         try {
             return await new Promise((resolve, reject) => {
                 GM_xmlhttpRequest({
@@ -130,7 +130,7 @@
 
     function setButtonState(state, retryCount = 0) {
         if (!captureButton) return;
-        
+
         switch (state) {
             case 'idle':
                 captureButton.innerText = 'Send to DougHub';
@@ -181,7 +181,7 @@
             transition: all 0.2s;
             display: none;
         `;
-        
+
         btn.innerText = 'Send to DougHub';
         btn.onclick = async () => {
             try {
@@ -190,8 +190,8 @@
                 setButtonState('success');
             } catch (err) {
                 setButtonState('error');
-                const msg = err.message.includes('failed') 
-                    ? 'DougHub not running - please start the app' 
+                const msg = err.message.includes('failed')
+                    ? 'DougHub not running - please start the app'
                     : err.message;
                 GM_notification({
                     title: 'DougHub Error',
@@ -208,7 +208,7 @@
     function shouldShowButton() {
         const site = detectSite();
         const bodyContent = document.body.innerText;
-        
+
         if (site === 'ACEP PeerPrep') {
             return bodyContent.includes('Key Point');
         } else if (site === 'MKSAP 19') {
@@ -221,7 +221,7 @@
 
     function init() {
         if (!detectSite()) return;
-        
+
         createButton();
 
         const observer = new MutationObserver(() => {

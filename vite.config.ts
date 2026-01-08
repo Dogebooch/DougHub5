@@ -15,7 +15,7 @@ export default defineConfig({
         vite: {
           build: {
             rollupOptions: {
-              external: ["electron", "better-sqlite3"],
+              external: ["electron", "better-sqlite3", /^node:/],
             },
           },
         },
@@ -39,6 +39,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "node:sqlite": "better-sqlite3",
     },
   },
 });

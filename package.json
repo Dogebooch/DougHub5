@@ -95,7 +95,7 @@
     "@vitest/coverage-v8": "^1.2.0",
     "@vitest/ui": "^1.2.0",
     "autoprefixer": "^10.4.23",
-    "electron": "^30.0.1",
+    "electron": "^33.2.0",
     "electron-builder": "^24.13.3",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.0",
