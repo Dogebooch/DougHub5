@@ -249,6 +249,7 @@ export function ReviewInterface() {
       scheduleCardReview,
       setCurrentView,
       toast,
+      mistakeCardIds.length,
     ]
   );
 
@@ -714,6 +715,11 @@ export function ReviewInterface() {
       {showMistakesModal && (
         <MistakesReviewModal
           mistakes={mistakeCards}
+          sessionStats={{
+            totalTimeMs: Date.now() - (sessionStartTime || Date.now()),
+            cardsReviewed: reviewedCount,
+            mistakeCount: mistakeCardIds.length,
+          }}
           onClose={() => {
             setShowMistakesModal(false);
             setCurrentView("capture");

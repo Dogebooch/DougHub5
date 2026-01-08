@@ -1233,7 +1233,7 @@
         "dependencies": [
           "45"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1241,8 +1241,10 @@
             "description": "Add mistakeCardIds array and sessionStartTime to ReviewInterface component state. Track cards rated 'Again' during session without duplicates.",
             "dependencies": [],
             "details": "Add state variables to ReviewInterface.tsx: `mistakeCardIds: string[]` and `sessionStartTime: Date | null`. In the submitReview function (line 149), when rating === Rating.Again, add cardId to mistakeCardIds array using setMistakeCardIds(prev => prev.includes(currentCard.id) ? prev : [...prev, currentCard.id]). Initialize sessionStartTime when reviewQueue is initialized (line 70). Store both mistake card objects with their response times: { cardId: string, responseTimeMs: number | null, rating: number }[]\n<info added on 2026-01-08T02:35:23.440Z>\nLet me analyze the codebase to understand the database schema and provide an accurate update.Based on my analysis of the codebase, I can see that the `review_logs` table currently has three tracking columns: `responseTimeMs`, `partialCreditScore`, and `responseTimeModifier` (added in schema v7, line 863-869 in database.ts). The initial schema definition is at line 975-987.\n\nHere's the new text content to add to the subtask:\n\n---\n\nSchema prep for future features: Add nullable `userAnswer TEXT` column to review_logs table in database.ts migration (following the pattern at lines 366-376 for responseTimeMs/partialCreditScore additions). This is zero-cost preparation enabling F18 (Typed Answer Mode) and F19 (Adaptive Learning Assistant) deferred features per DEFERRED.md. The column should be added via ALTER TABLE but not populated by MVP review submission code.\n</info added on 2026-01-08T02:35:23.440Z>\n<info added on 2026-01-08T02:40:43.580Z>\nI need to analyze the database schema first to understand the current structure of the review_logs table and provide an accurate update about adding both columns.Based on my analysis of the codebase and the user request, here is the new text to append to the subtask:\n\nSchema prep section updated: Add TWO nullable columns to review_logs table via ALTER TABLE in database.ts migration section (following pattern at lines 863-869 for responseTimeModifier): `userAnswer TEXT` (F18: Typed Answer Mode - captures what user typed before reveal) AND `userExplanation TEXT` (F20: Exam Trap Detection - captures why user thinks they missed the question). Both are zero-cost preparation enabling future Adaptive Learning Assistant features per DEFERRED.md lines 90-136. Columns should be added to schema but not populated by MVP review submission code.\n</info added on 2026-01-08T02:40:43.580Z>",
-            "status": "pending",
-            "testStrategy": "Review a session with 2+ cards, rate one as Again. Verify mistakeCardIds contains that card ID. Verify sessionStartTime is set when session starts."
+            "status": "done",
+            "testStrategy": "Review a session with 2+ cards, rate one as Again. Verify mistakeCardIds contains that card ID. Verify sessionStartTime is set when session starts.",
+            "updatedAt": "2026-01-08T03:13:19.414Z",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1252,8 +1254,10 @@
               1
             ],
             "details": "In ReviewInterface.tsx sessionComplete block (line 368), replace redirect logic with conditional: if mistakeCardIds.length > 0, show MistakesPromptModal with count; else show toast 'Session complete! X/X correct' using useToast hook. Create MistakesPromptModal.tsx component with Dialog wrapper, showing 'You missed X card(s). Review mistakes?' message, [Review Now] button (triggers mistake review flow) and [Skip] button (navigates to capture). Modal accepts onReview and onSkip callbacks.",
-            "status": "pending",
-            "testStrategy": "Complete session with 0 mistakes - verify toast appears. Complete session with 2+ mistakes - verify modal appears with correct count and both buttons work."
+            "status": "done",
+            "testStrategy": "Complete session with 0 mistakes - verify toast appears. Complete session with 2+ mistakes - verify modal appears with correct count and both buttons work.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T03:13:19.510Z"
           },
           {
             "id": 3,
@@ -1261,8 +1265,10 @@
             "description": "Add AI function to generate why-wrong and why-right feedback for missed cards.",
             "dependencies": [],
             "details": "In electron/ai-service.ts, add generateElaboratedFeedback(card: { front: string, back: string, cardType: string }, topicContext: string, responseTimeMs: number | null): Promise<ElaboratedFeedback>. Follow existing pattern: add PROMPTS.elaboratedFeedback system prompt (medical education AI explaining why answer is wrong, why correct answer is right, related concepts). Use aiCache.key() for caching with card content + topic. Return { whyWrong: string, whyRight: string, relatedConcepts: string[] }. Add IPC handler in ipc-handlers.ts: ipcMain.handle('ai:generateElaboratedFeedback'). Update preload.ts and electron.d.ts with new method.",
-            "status": "pending",
-            "testStrategy": "Call ai:generateElaboratedFeedback with sample card. Verify returns whyWrong, whyRight, and relatedConcepts array. Verify caching works on repeat calls."
+            "status": "done",
+            "testStrategy": "Call ai:generateElaboratedFeedback with sample card. Verify returns whyWrong, whyRight, and relatedConcepts array. Verify caching works on repeat calls.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T03:13:19.601Z"
           },
           {
             "id": 4,
@@ -1272,8 +1278,10 @@
               3
             ],
             "details": "Create src/components/review/MistakesReviewModal.tsx. Use Dialog from shadcn/ui. Accept props: open, onOpenChange, mistakeCards: Array<{ card: CardWithFSRS, responseTimeMs: number | null }>. State: currentIndex (0), feedback loading state. For each card, display: card.front (use ClozeDisplay if cloze type like ReviewInterface line 439), card.back (use ClozeAnswer if cloze), response time formatted as 'Xm Ys'. Fetch AI feedback on-demand when currentIndex changes using window.api.ai.generateElaboratedFeedback(). Show loading spinner during fetch. Display feedback sections: 'Why this is wrong', 'Why correct answer is right', 'Related concepts'. Navigation: [Previous] [X/Y] [Next] buttons, [Done] on last card closes modal. Include session stats in header/footer.",
-            "status": "pending",
-            "testStrategy": "Open modal with 3 mistake cards. Verify front/back display correctly. Verify AI feedback loads for each card. Navigate through all cards, verify Next/Previous work. Click Done, verify modal closes."
+            "status": "done",
+            "testStrategy": "Open modal with 3 mistake cards. Verify front/back display correctly. Verify AI feedback loads for each card. Navigate through all cards, verify Next/Previous work. Click Done, verify modal closes.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T03:13:19.693Z"
           },
           {
             "id": 5,
@@ -1284,8 +1292,10 @@
               4
             ],
             "details": "In ReviewInterface.tsx, track sessionStats: { totalTime: number, cardsReviewed: number, mistakeCount: number }. Calculate totalTime = Date.now() - sessionStartTime.getTime(). Format as 'Xm Ys' helper function. Calculate accuracy = Math.round(((cardsReviewed - mistakeCount) / cardsReviewed) * 100). Pass stats to MistakesReviewModal via props. Display in modal header or footer: 'Session: Xm Ys • X/Y correct (Z% accuracy)'. Use muted text styling similar to ReviewInterface line 503.",
-            "status": "pending",
-            "testStrategy": "Complete 5-card session with 2 mistakes in 3 minutes. Verify modal shows '3m 0s • 3/5 correct (60% accuracy)'."
+            "status": "done",
+            "testStrategy": "Complete 5-card session with 2 mistakes in 3 minutes. Verify modal shows '3m 0s • 3/5 correct (60% accuracy)'.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T03:13:19.788Z"
           },
           {
             "id": 6,
@@ -1298,10 +1308,13 @@
               5
             ],
             "details": "In src/types/ai.ts, add: export interface ElaboratedFeedback { whyWrong: string; whyRight: string; relatedConcepts: string[]; }. In src/types/electron.d.ts, add to ai interface: generateElaboratedFeedback: (card: { front: string, back: string, cardType: string }, topicContext: string, responseTimeMs: number | null) => Promise<IpcResult<ElaboratedFeedback>>. In ReviewInterface.tsx, import and wire MistakesPromptModal and MistakesReviewModal. Add state for showMistakesReview: boolean. In sessionComplete block, conditionally render MistakesPromptModal. When user clicks 'Review Now', set showMistakesReview=true. Render MistakesReviewModal with mistakeCards data. Test complete flow: review session → rate cards as Again → see prompt → click Review → see feedback → navigate mistakes → click Done.",
-            "status": "pending",
-            "testStrategy": "Complete review session with 3 mistakes. Click 'Review Now'. Verify modal opens with all 3 cards. Verify AI feedback displays. Navigate through all cards. Click Done. Verify returns to capture view."
+            "status": "done",
+            "testStrategy": "Complete review session with 3 mistakes. Click 'Review Now'. Verify modal opens with all 3 cards. Verify AI feedback displays. Navigate through all cards. Click Done. Verify returns to capture view.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T03:13:19.881Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-01-08T03:13:19.881Z"
       },
       {
         "id": 118,
@@ -1319,13 +1332,13 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-08T01:59:03.534Z",
+      "lastModified": "2026-01-08T03:13:19.882Z",
       "taskCount": 23,
-      "completedCount": 17,
+      "completedCount": 18,
       "tags": [
         "master"
       ],
-      "created": "2026-01-08T02:21:14.411Z",
+      "created": "2026-01-08T03:18:52.976Z",
       "description": "Tasks for master context"
     }
   }

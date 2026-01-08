@@ -17,85 +17,109 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { ElaboratedFeedback } from "@/types/ai";
-import { ClozeDisplay } from "@/lib/cloze-renderer";
+import { ClozeDisplay, ClozeAnswer } from "@/lib/cloze-renderer";
 
 interface MistakesReviewModalProps {
   mistakes: { cardId: string; responseTimeMs: number | null }[];
+  sessionStats?: {
+    totalTimeMs: number;
+    cardsReviewed: number;
+    mistakeCount: number;
+  };
   onClose: () => void;
 }
 
+const formatTime = (ms: number) => {
+  const totalSec = Math.floor(ms / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+};
+
 /**
  * MistakesReviewModal
- * 
+ *
  * A post-session review interface for cards rated "Again".
- * Provides AI-generated elaborated feedback to help medical residents 
+ * Provides AI-generated elaborated feedback to help medical residents
  * understand why they struggled and reinforce the core clinical concepts.
  */
-export function MistakesReviewModal({ mistakes, onClose }: MistakesReviewModalProps) {
+export function MistakesReviewModal({
+  mistakes,
+  sessionStats,
+  onClose,
+}: MistakesReviewModalProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [feedbackCache, setFeedbackCache] = useState<Record<string, ElaboratedFeedback>>({});
+  const [feedbackCache, setFeedbackCache] = useState<
+    Record<string, ElaboratedFeedback>
+  >({});
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const cards = useAppStore((state) => state.cards);
-  
+
   const currentMistake = mistakes[currentIndex];
-  const currentCard = useMemo(() => 
-    cards.find((c) => c.id === currentMistake?.cardId),
+  const currentCard = useMemo(
+    () => cards.find((c) => c.id === currentMistake?.cardId),
     [cards, currentMistake]
   );
 
-  const fetchFeedback = useCallback(async (index: number) => {
-    const mistake = mistakes[index];
-    if (!mistake) return;
-    
-    const card = cards.find(c => c.id === mistake.cardId);
-    if (!card) return;
+  const fetchFeedback = useCallback(
+    async (index: number) => {
+      const mistake = mistakes[index];
+      if (!mistake) return;
 
-    // Return if already cached or loading
-    if (feedbackCache[card.id] || loadingIds.has(card.id)) return;
+      const card = cards.find((c) => c.id === mistake.cardId);
+      if (!card) return;
 
-    setLoadingIds(prev => new Set(prev).add(card.id));
-    setErrors(prev => {
-      const next = { ...prev };
-      delete next[card.id];
-      return next;
-    });
+      // Return if already cached or loading
+      if (feedbackCache[card.id] || loadingIds.has(card.id)) return;
 
-    try {
-      let topicContext = "General Medical Knowledge";
-      if (card.notebookTopicPageId) {
-        const topicResult = await window.api.cards.getTopicMetadata(card.notebookTopicPageId);
-        if (topicResult.data) {
-          topicContext = topicResult.data.name;
-        }
-      }
-
-      const result = await window.api.ai.generateElaboratedFeedback(
-        { front: card.front, back: card.back, cardType: card.cardType },
-        topicContext,
-        mistake.responseTimeMs
-      );
-
-      if (result.error) {
-        throw new Error(result.error);
-      }
-
-      if (result.data) {
-        setFeedbackCache(prev => ({ ...prev, [card.id]: result.data! }));
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to generate AI feedback";
-      console.error("Failed to generate elaborated feedback:", err);
-      setErrors(prev => ({ ...prev, [card.id]: errorMessage }));
-    } finally {
-      setLoadingIds(prev => {
-        const next = new Set(prev);
-        next.delete(card.id);
+      setLoadingIds((prev) => new Set(prev).add(card.id));
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[card.id];
         return next;
       });
-    }
-  }, [mistakes, cards, feedbackCache, loadingIds]);
+
+      try {
+        let topicContext = "General Medical Knowledge";
+        if (card.notebookTopicPageId) {
+          const topicResult = await window.api.cards.getTopicMetadata(
+            card.notebookTopicPageId
+          );
+          if (topicResult.data) {
+            topicContext = topicResult.data.name;
+          }
+        }
+
+        const result = await window.api.ai.generateElaboratedFeedback(
+          { front: card.front, back: card.back, cardType: card.cardType },
+          topicContext,
+          mistake.responseTimeMs
+        );
+
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        if (result.data) {
+          setFeedbackCache((prev) => ({ ...prev, [card.id]: result.data! }));
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to generate AI feedback";
+        console.error("Failed to generate elaborated feedback:", err);
+        setErrors((prev) => ({ ...prev, [card.id]: errorMessage }));
+      } finally {
+        setLoadingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(card.id);
+          return next;
+        });
+      }
+    },
+    [mistakes, cards, feedbackCache, loadingIds]
+  );
 
   // Fetch feedback for current card whenever index changes
   useEffect(() => {
@@ -113,13 +137,13 @@ export function MistakesReviewModal({ mistakes, onClose }: MistakesReviewModalPr
 
   const handleNext = useCallback(() => {
     if (currentIndex < mistakes.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex((prev) => prev + 1);
     }
   }, [currentIndex, mistakes.length]);
 
   const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
+      setCurrentIndex((prev) => prev - 1);
     }
   }, [currentIndex]);
 
@@ -144,10 +168,27 @@ export function MistakesReviewModal({ mistakes, onClose }: MistakesReviewModalPr
       <DialogContent className="max-w-4xl h-[90vh] md:h-[80vh] flex flex-col p-0 overflow-hidden sm:rounded-xl">
         <DialogHeader className="p-6 pb-2 border-b shrink-0">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold">Mistake Review</DialogTitle>
-            <span className="text-sm text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded">
-              {currentIndex + 1} of {mistakes.length}
-            </span>
+            <DialogTitle className="text-xl font-bold">
+              Mistake Review
+            </DialogTitle>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded">
+                {currentIndex + 1} of {mistakes.length}
+              </span>
+              {sessionStats && (
+                <span className="text-xs text-muted-foreground">
+                  Session: {formatTime(sessionStats.totalTimeMs)} •{" "}
+                  {sessionStats.cardsReviewed - sessionStats.mistakeCount}/
+                  {sessionStats.cardsReviewed} correct (
+                  {Math.round(
+                    ((sessionStats.cardsReviewed - sessionStats.mistakeCount) /
+                      (sessionStats.cardsReviewed || 1)) *
+                      100
+                  )}
+                  % accuracy)
+                </span>
+              )}
+            </div>
           </div>
         </DialogHeader>
 
@@ -156,21 +197,30 @@ export function MistakesReviewModal({ mistakes, onClose }: MistakesReviewModalPr
             {/* Card Content Section */}
             <div className="space-y-4">
               <div className="p-6 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Front</div>
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Front
+                </div>
                 <div className="text-foreground">
-                  <ClozeDisplay 
-                    front={currentCard?.front || ""} 
-                    revealed={true} 
-                    cardId={currentCard?.id} 
-                    cardType={currentCard?.cardType} 
+                  <ClozeDisplay
+                    front={currentCard?.front || ""}
+                    revealed={true}
+                    cardId={currentCard?.id}
+                    cardType={currentCard?.cardType}
                   />
                 </div>
               </div>
-              
+
               <div className="p-6 rounded-xl border bg-muted/20">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Back</div>
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  Back
+                </div>
                 <div className="text-2xl font-medium text-foreground/90">
-                    {currentCard?.back}
+                  {currentCard?.cardType === "cloze" ||
+                  currentCard?.cardType === "list-cloze" ? (
+                    <ClozeAnswer back={currentCard?.back || ""} />
+                  ) : (
+                    currentCard?.back
+                  )}
                 </div>
               </div>
             </div>
@@ -179,13 +229,15 @@ export function MistakesReviewModal({ mistakes, onClose }: MistakesReviewModalPr
             <div className="space-y-6 pt-6 border-t">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                  AI Context 
-                  {isLoading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+                  AI Context
+                  {isLoading && (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  )}
                 </h3>
                 {error && !isLoading && (
-                   <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => fetchFeedback(currentIndex)}
                     className="h-8 text-destructive hover:bg-destructive/10"
                   >
@@ -209,7 +261,9 @@ export function MistakesReviewModal({ mistakes, onClose }: MistakesReviewModalPr
                 <div className="p-6 rounded-lg bg-destructive/5 border border-destructive/20 text-destructive/80 flex items-start gap-4">
                   <AlertCircle className="h-6 w-6 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-destructive mb-1">Feedback unavailable</p>
+                    <p className="font-semibold text-destructive mb-1">
+                      Feedback unavailable
+                    </p>
                     <p className="text-sm leading-relaxed">{error}</p>
                   </div>
                 </div>
@@ -240,9 +294,9 @@ export function MistakesReviewModal({ mistakes, onClose }: MistakesReviewModalPr
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {currentFeedback.relatedConcepts.map((concept, i) => (
-                          <Badge 
-                            key={i} 
-                            variant="secondary" 
+                          <Badge
+                            key={i}
+                            variant="secondary"
                             className="px-3 py-1 bg-secondary/30 text-secondary-foreground hover:bg-secondary/50 border-none transition-colors"
                           >
                             {concept}
@@ -284,8 +338,8 @@ export function MistakesReviewModal({ mistakes, onClose }: MistakesReviewModalPr
             </Button>
           </div>
 
-          <Button 
-            onClick={onClose} 
+          <Button
+            onClick={onClose}
             className="min-w-[120px] h-11 px-8 font-bold text-base shadow-lg hover:shadow-xl transition-all"
           >
             {currentIndex === mistakes.length - 1 ? (
@@ -293,7 +347,9 @@ export function MistakesReviewModal({ mistakes, onClose }: MistakesReviewModalPr
                 <Check className="h-5 w-5 mr-2" />
                 Finish Review
               </>
-            ) : "Done"}
+            ) : (
+              "Done"
+            )}
           </Button>
         </div>
       </DialogContent>
