@@ -791,4 +791,86 @@
 
 ---
 
-*Last updated: 2026-01-06 (TaskMaster cleanup - moved completed/obsolete items to Archive)*
+## Card Browser Enhancements (POST-MVP)
+
+> **Note:** These features were part of the comprehensive Card Browser design (v2.1) but deferred from T115 MVP scope.
+
+### AI-Generated Card Titles (F21)
+**Description:** Generate ~30 char AI titles on card creation to make list scanning easier. Example: "Permissive HTN within 72 hours..." → "HTN management: stroke type". Async generation, non-blocking, with truncation fallback.
+**Priority:** Medium
+**Source:** Card Browser Design v2.1 (T115, 2026-01-08)
+**Dependency:** F2 (embeddings infrastructure for quality title generation)
+**Notes:** MVP uses simple front text truncation (40 chars). AI titles improve scanability at 60k+ card scale.
+
+### Card Browser Duplicate Detection Box (F22)
+**Description:** Collapsible panel in Card Browser showing detected duplicate pairs with one-click resolution: [Keep Left], [Keep Right], [Not Duplicates]. Paginated ("5 of 247"). Detection via title similarity, embedding distance, same topic.
+**Priority:** Medium
+**Source:** Card Browser Design v2.1 (T115, 2026-01-08)
+**Dependency:** F2 (embeddings infrastructure), requires DuplicateCandidate table
+**Schema:** `duplicate_candidates` table with card1Id, card2Id, similarityScore (0-1), status (pending/dismissed/merged), detectedAt, resolvedAt.
+**Notes:** Requires background scan + on-creation detection. AI learns from "Not Duplicates" dismissals.
+
+### Jump-to-Card Dialog (Ctrl+G) (F23)
+**Description:** Modal dialog to jump to specific card by ID or title search. For power users managing 60k+ cards.
+**Priority:** Low
+**Source:** Card Browser Design v2.1 (T115, 2026-01-08)
+**Notes:** Basic search covers most cases. Add when users report difficulty finding specific cards.
+
+### Typo Suggestion in Empty State (F24)
+**Description:** When search returns 0 results, suggest typo corrections using fuzzy matching against existing card fronts. Example: "No cards match 'cardilogy'. Did you mean: Cardiology?"
+**Priority:** Low
+**Source:** Card Browser Design v2.1 (T115, 2026-01-08)
+**Notes:** Nice UX polish. Requires fuzzy matching library or Levenshtein distance calculation.
+
+### New Card from Card Browser (F25)
+**Description:** "New Card" button in Card Browser header for creating standalone cards without going through Notebook. Opens CardEditModal with empty fields + topic selector. Creates card with no sourceBlockId (orphan card). Escape hatch for advanced users who want quick card creation.
+**Priority:** Low
+**Source:** CLAUDE.md reference (2026-01-08)
+**Notes:** MVP focuses on Notebook → Card flow. Card Browser is for maintenance, not creation. This is a convenience feature for power users. Consider whether orphan cards violate the 3-layer architecture principle.
+
+### Session Time Limit with Gentle Exit Ramps (F26)
+**Description:** Optional study session timers with soft reminders. "You've been studying 25 min, want to wrap up?" Pomodoro-style breaks without being jarring.
+**Priority:** Low
+**Source:** QoL review (2026-01-08)
+**Notes:** ADHD users hyperfocus. Gentle reminders prevent burnout. T117 already tracks session time — this adds the reminder UI. Consider: configurable intervals, snooze option, end-of-session summary.
+
+### Resume Where I Left Off (F27)
+**Description:** When app closes mid-review, restore exact state on reopen: current card index, queue position, expanded panels.
+**Priority:** Medium
+**Source:** QoL review (2026-01-08)
+**Notes:** Residents get interrupted by pages. Complex state serialization required. Consider: localStorage for view state, sessionStorage for ephemeral state, or dedicated state persistence table.
+
+### Capture from Clipboard on App Focus (F28)
+**Description:** Auto-detect clipboard content when app gains focus. Show non-intrusive prompt: "Capture this? [Yes] [No]". Eliminates paste step entirely.
+**Priority:** Low
+**Source:** QoL review (2026-01-08)
+**Notes:** Privacy risk — clipboard may contain sensitive data. Consider: opt-in setting, content preview before capture, ignore if clipboard unchanged.
+
+### Smart Queue Ordering by Cognitive Load (F29)
+**Description:** Order review queue to prevent decision fatigue: 2-3 easy reviews (warm-up), interleave hard with easy, end with high-confidence (positive exit).
+**Priority:** Medium
+**Source:** QoL review (2026-01-08)
+**Dependency:** T45 (FSRS Integration)
+**Notes:** Evidence-based but adds complexity to FSRS queue. "First card is brutal, I quit" phenomenon is real. Consider: difficulty smoothing algorithm, user preference for ordering.
+
+### Search Result Highlight Matches (F30)
+**Description:** Highlight matching text in Card Browser search results. Show which part of front/back matched the query.
+**Priority:** Low
+**Source:** QoL review (2026-01-08)
+**Notes:** UX polish for Card Browser. Helps scan results faster. Consider: regex-based highlight, bold or background color, context snippets.
+
+### "Study X Cards" Bounded Session Mode (F31)
+**Description:** Option to review a fixed number of cards (e.g., "Study 20 cards") instead of entire queue. Progress bar shows X/20.
+**Priority:** Low
+**Source:** QoL review (2026-01-08)
+**Notes:** Bounded sessions reduce anxiety. FSRS already prioritizes queue. Consider: configurable count, "add 10 more" option, session summary at end.
+
+### Loading States in Store Actions (F32)
+**Description:** Add isLoading flags to useAppStore for async actions. Show spinners/skeletons during API calls. Confirm success with brief "Saved ✓" toast.
+**Priority:** Medium
+**Source:** QoL review (2026-01-08)
+**Notes:** Users don't know if actions succeeded. Pattern: isLoading state per action, skeleton components, success/error toasts. High anxiety reduction for exhausted users.
+
+---
+
+*Last updated: 2026-01-08 (Added QoL features from comprehensive review)*

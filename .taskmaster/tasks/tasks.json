@@ -1208,7 +1208,146 @@
           "45"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Schema + Types: Add aiTitle column and CardBrowserItem interface",
+            "description": "Add aiTitle column to cards table, update AppView type to include 'cards', create CardBrowserItem interface with computed fields (siblingCount, isLeech, topicName), and add 'Cards' entry to Sidebar LIBRARY section.",
+            "dependencies": [],
+            "details": "1. Add migration for aiTitle TEXT NULL column to cards table in database.ts. 2. Update AppView type in src/types/index.ts to include 'cards' as valid view. 3. Create CardBrowserItem interface in src/types/index.ts with fields: id, front (truncated 40 chars), back, tags, status, dueDate, createdAt, topicName, siblingCount, isLeech, sourceBlockId, notebookTopicPageId, difficulty, lapses, stability, reps. 4. Update Sidebar.tsx to add Cards to secondaryNavItems in LIBRARY section with icon from lucide-react (LayoutGrid or Library). 5. Leech detection formula: lapses >= 5 OR (lapses >= 3 AND difficulty > 0.7) OR (reps >= 5 AND stability < 7).\n<info added on 2026-01-08T04:37:08.775Z>\nI need to analyze the codebase to provide context-aware guidance about the aiTitle column implementation. Let me start by examining the current database schema and related files.Now let me check the tasks.json file to see if aiTitle is mentioned:Let me also check if there are any examples of embedding or AI title generation in the codebase:Based on my analysis of the codebase, I can now provide the subtask update text:\n\nMVP implementation uses simple truncation only. AI-generated titles require embedding infrastructure which is POST-MVP according to DEFERRED.md F2 (AI Duplicate Detection). The aiTitle column is added to schema with minimal ALTER TABLE statement for future use but will remain NULL in MVP. Migration pattern follows existing v1-v9 migrations in database.ts lines 342-968. Add to next available migration version (v10) using columnExists() guard and backup/restore pattern for safety.\n</info added on 2026-01-08T04:37:08.775Z>",
+            "status": "pending",
+            "testStrategy": "Verify migration runs without errors. Check AppView type includes 'cards'. Confirm CardBrowserItem interface exports correctly. Test Sidebar renders Cards option in LIBRARY section."
+          },
+          {
+            "id": 2,
+            "title": "Core List Component: CardBrowserView.tsx with virtual scrolling",
+            "description": "Create CardBrowserView.tsx component with search bar, filter tabs (Due/Leeches/All), and card row display showing truncated front text, topic pills, and status badge. Install react-window for virtual scrolling performance.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Create src/components/cards/CardBrowserView.tsx. 2. Install react-window via npm (npm install react-window @types/react-window). 3. Implement search input with debounce (300ms). 4. Add filter tabs using shadcn/ui Tabs component: 'Due' (cards with dueDate <= today), 'Leeches' (computed isLeech flag), 'All'. 5. CardRow component: display truncated front (40 chars with ellipsis), topic pill (from topicName), status badge (New/Learning/Review/Relearning based on state field). 6. Use react-window FixedSizeList for rendering ~50px row height. 7. Wire to useAppStore currentView='cards'. 8. Empty state: show message when no cards match filters.\n<info added on 2026-01-08T04:38:06.734Z>\nI'll analyze the codebase to provide specific implementation details for the CardBrowserView component.Performance targets: <500ms initial load with virtual scrolling (react-window), <150ms search response, <50ms filter toggle. Use FixedSizeList with itemSize=50 for normal mode. Status badge mapping: state 0=New, 1=Learning, 2=Review, 3=Relearning. Existing patterns: See InboxView.tsx for search/filter patterns (debounced search at line 69-78 with 150ms delay, useMemo for filtered lists at line 89-104, Select component for filters at line 251-270, batch selection toolbar at line 377-382), BatchActions.tsx for selection toolbar (fixed bottom-center positioning at line 43, rounded-full pill design). Note: react-window is NOT currently installed in package.json - must be added per step 2.\n</info added on 2026-01-08T04:38:06.734Z>\n<info added on 2026-01-08T04:45:35.530Z>\nI'll analyze the codebase to provide specific implementation details for the missing filter/sort features.Based on my analysis of the codebase, here is the new information for the subtask update:\n\n9. Add sort dropdown in header toolbar (after search input, before filter tabs) using shadcn/ui Select component with four options: 'Due date' (sort by dueDate ASC nulls last), 'Created' (createdAt DESC), 'Difficulty' (difficulty DESC from FSRS), 'Last reviewed' (lastReview DESC nulls last). 10. Add Topic filter dropdown next to sort using TopicAutocomplete.tsx component (located at src/components/ui/TopicAutocomplete.tsx) - use Command component with CommandInput for type-ahead search, calls window.api.canonicalTopics.suggestMatches(query) with 300ms debounce, renders matching topics from CanonicalTopic[] response. Convert to multi-select mode by wrapping multiple topic selections. 11. Add Tag filter dropdown using similar Command + Popover pattern with type-ahead search (fetch tags via window.api.tags.getAll or similar). 12. Consider adding 'Suspended' as 4th tab alongside Due/Leeches/All, OR render as status chip within the existing status badge component (state field does not include suspended - check if separate isSuspended or suspended boolean exists in CardBrowserItem schema from T115.1). 13. Filter stacking logic: Primary tabs filter first (Due/Leeches/All/Suspended), then apply secondary filters (Topic, Tag, Sort) to already-filtered results using Array.filter chaining in useMemo. 14. Header toolbar layout: Use flex gap-3 container with search input (flex-1), sort dropdown (w-[160px]), topic filter (w-[200px]), tag filter (w-[180px]) positioned before filter tabs row.\n</info added on 2026-01-08T04:45:35.530Z>",
+            "status": "pending",
+            "testStrategy": "Navigate to Cards view via Sidebar. Verify search filters cards by front/back text. Test filter tabs switch between Due/Leeches/All. Confirm virtual scrolling works with 100+ cards without lag."
+          },
+          {
+            "id": 3,
+            "title": "IPC + Database: cards:getBrowserList with filters and sorting",
+            "description": "Implement database query cards:getBrowserList that returns CardBrowserItem[] with filters (status, topic, tag), sorting (dueDate, createdAt), and pagination. Include computed isLeech flag and siblingCount in query.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Add getBrowserList method to database.ts that queries cards table with LEFT JOIN to notebookTopicPages for topicName. 2. Compute isLeech in query: CASE WHEN lapses >= 5 OR (lapses >= 3 AND difficulty > 0.7) OR (reps >= 5 AND stability < 7) THEN 1 ELSE 0 END as isLeech. 3. Compute siblingCount: subquery COUNT(*) from cards WHERE sourceBlockId = c.sourceBlockId AND sourceBlockId IS NOT NULL. 4. Support filters: status (state field), topicId (notebookTopicPageId), tags (JSON_CONTAINS or similar). 5. Support sorting: ORDER BY dueDate ASC, createdAt DESC, difficulty DESC. 6. Add IPC handler in ipc-handlers.ts: cards:getBrowserList. 7. Add method to preload.ts and electron.d.ts: cards.getBrowserList(filters, sort). 8. Add method to useAppStore.ts: getBrowserList wrapper.\n<info added on 2026-01-08T04:39:20.815Z>\nI need to analyze the codebase to provide accurate updates based on the user's request about using the existing CardWithFSRS interface and proper JOIN structure.Now let me check the existing query patterns for JOIN structures to understand how to properly construct the getBrowserList query:Now let me check how the database stores cards and what columns exist:Now let me check if there are existing examples of how cards are queried with topic information:Based on my analysis of the codebase, I can now generate the appropriate update for the subtask. The key findings are:\n\n1. `CardWithFSRS` interface exists in `src/types/index.ts` and extends both `Card` and `CardFSRS` interfaces\n2. The database schema shows the join path: `cards` → `notebookTopicPageId` → `notebook_topic_pages` → `canonicalTopicId` → `canonical_topics` → `canonicalName`\n3. Existing weak topics query (line 1243-1244 in database.ts) demonstrates the proper JOIN pattern\n4. The `sourceBlockId` column exists in the cards table for sibling detection\n\nReturn method signature should be CardWithFSRS[] not CardBrowserItem[]. Update JOIN chain to cards LEFT JOIN notebook_topic_pages ntp ON c.notebookTopicPageId = ntp.id LEFT JOIN canonical_topics ct ON ntp.canonicalTopicId = ct.id to get ct.canonicalName as topicName. Use existing JOIN pattern from getWeakTopics query at database.ts:1243-1244 as reference.\n</info added on 2026-01-08T04:39:20.815Z>",
+            "status": "pending",
+            "testStrategy": "Call cards:getBrowserList from renderer with various filters. Verify correct cards returned. Test sorting by dueDate and createdAt. Confirm isLeech and siblingCount computed correctly. Check performance <500ms for 1000+ cards."
+          },
+          {
+            "id": 4,
+            "title": "Card Row Expand/Collapse: Show full front/back and source chain",
+            "description": "Add click-to-expand functionality to card rows showing full front/back content, tags, and source chain preview (NotebookTopicPage → SourceItem). Use collapsible animation from tailwind.config.ts.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "1. Update CardRow component in CardBrowserView.tsx to track expanded state (useState). 2. On row click, toggle expanded state. 3. Expanded view shows: full front text, full back text, tags as pills, source chain: 'Topic: [topicName] → Source: [sourceBlockId preview]'. 4. Use tailwind collapsible animation from config (data-state='open'|'closed'). 5. Limit height to ~300px with overflow-y-auto for very long content. 6. Add subtle border-left accent (primary color) when expanded. 7. Keyboard: Arrow right to expand, arrow left to collapse focused row.\n<info added on 2026-01-08T04:52:33.570Z>\nI'll analyze the codebase to understand the current implementation and provide specific guidance for adding clickable topic navigation.Based on the codebase analysis, I can see that:\n\n1. The pattern `setCurrentView(\"notebook\", notebookTopicPageId)` is used throughout (ReviewInterface.tsx:345, SearchBar.tsx:139, etc.)\n2. Cards have a `notebookTopicPageId` field (types/index.ts:26)\n3. NotebookTopicPage has a `canonicalTopicId` that links to CanonicalTopic (types/index.ts:95-97)\n4. The Card Browser will need to fetch NotebookTopicPage data to get the topic name for display\n\nHere's the new text to append to the subtask:\n\n8. Make topic name in source chain clickable: Wrap topic name text in a button or anchor element with onClick handler that calls setCurrentView('notebook', card.notebookTopicPageId). 9. Fetch NotebookTopicPage data via window.api.notebookPages.getById(notebookTopicPageId) to get canonicalTopicId, then fetch CanonicalTopic via window.api.canonicalTopics.getById(canonicalTopicId) to display canonicalName. Cache fetched topic names in component state to avoid redundant API calls. 10. Style clickable topic as link: text-primary underline-offset-4 hover:underline cursor-pointer. 11. Add aria-label='Jump to notebook topic page' for accessibility. This enables provenance verification without mental context switching—critical for anxious users who need to confirm card source during review maintenance.\n</info added on 2026-01-08T04:52:33.570Z>",
+            "status": "pending",
+            "testStrategy": "Click card row and verify it expands smoothly. Confirm full front/back text displayed. Check tags and source chain visible. Test keyboard arrow keys to expand/collapse. Verify animation runs without jank."
+          },
+          {
+            "id": 5,
+            "title": "Hover Quick Actions: Edit, Suspend, Delete with confirmation",
+            "description": "Show edit/suspend/delete action icons on row hover. Edit opens inline editor or modal. Suspend is immediate toggle. Delete requires confirmation dialog.",
+            "dependencies": [
+              4
+            ],
+            "details": "1. Add hover state to CardRow showing action buttons on right side. 2. Edit button (Pencil icon): opens CardEditModal or inline editor to modify front/back/tags. 3. Suspend button (Pause icon): toggles card state to/from suspended (add 'suspended' boolean to cards schema or use state=4). 4. Delete button (Trash icon): opens AlertDialog confirmation before calling cards.remove(id). 5. Update IPC handlers: cards:suspend(id, suspended), cards:update(id, updates). 6. Actions should update local state immediately (optimistic UI) and refresh list on success. 7. Show loading spinner on action buttons during async operations.\n<info added on 2026-01-08T04:47:10.972Z>\nI'll analyze the codebase to provide specific implementation guidance for creating the CardEditModal component.Based on my analysis of the codebase, here's the implementation guidance for CardEditModal:\n\nCreate src/components/cards/CardEditModal.tsx following CardGenerationModal.tsx architecture (src/components/notebook/CardGenerationModal.tsx:1-387). Use Dialog/DialogContent/DialogHeader/DialogTitle/DialogFooter from @/components/ui/dialog, Textarea from @/components/ui/textarea, Button from @/components/ui/button, Label from @/components/ui/label. For tags field, use inline Badge components (src/components/ui/badge.tsx) with X icons for removal + text input for adding new tags - no dedicated multi-select component exists in codebase. Props interface: open, onOpenChange, cardId, initialFront, initialBack, initialTags. State: front (string), back (string), tags (string[]), isLoading (boolean), error (string | null). Form validation: require front.trim().length > 0, show error if empty on submit. On save, call window.api.cards.update(cardId, { front, back, tags }) per pattern in useAppStore.ts:254. Handle IpcResult<T> response: if result.error, show error; else call onOpenChange(false) and refresh parent list. Loading state: disable save button and show spinner during async call. Keyboard shortcut: detect Ctrl+Enter for quick save (pattern from CardGenerationModal:169). Style consistently with CardGenerationModal: max-w-xl DialogContent, text-sm inputs, primary save button, ghost cancel. Position action buttons in DialogFooter: cancel left, save right (px-6).\n</info added on 2026-01-08T04:47:10.972Z>\n<info added on 2026-01-08T04:51:11.216Z>\nI'll analyze the codebase to understand the toast implementation and optimistic UI patterns before providing the implementation guidance.Based on my codebase analysis, here's the implementation guidance for the undo capability:\n\nImplement undo with action prop on toast: Import ToastAction from @/components/ui/toast (src/components/ui/toast.tsx:58-71). After suspend or delete, store previous card state in local variable (previousState = { id, suspended: false } or { id, deleted: false }). Call toast({ title: 'Card suspended' or 'Card deleted', duration: 5000, action: <ToastAction altText=\"Undo\" onClick={handleUndo}>Undo</ToastAction> }). Store previous state in CardRow component state using useRef to persist across renders without triggering re-render. handleUndo function: dismiss toast, call window.api.cards.update(id, previousState) or window.api.cards.restore(id), optimistically revert UI immediately (set local state back), refresh list on success. Set toast duration to 5000ms (5 seconds) instead of default TOAST_REMOVE_DELAY from use-toast.ts:9. Pattern follows toaster.tsx:16-25 where action element renders between description and close button. For delete action, may need new IPC handler cards:restore if soft-delete implemented (check schema for deleted_at column), otherwise use cards:create to recreate. Critical: Clear timeout on component unmount using useEffect cleanup to prevent memory leaks. Optimistic UI: update CardRow state immediately on suspend/delete, revert on undo, then sync with DB response. This matches toast pattern in AddToNotebookDialog.tsx:102-107 but adds action element for undo functionality.\n</info added on 2026-01-08T04:51:11.216Z>",
+            "status": "pending",
+            "testStrategy": "Hover over card row and verify action buttons appear. Click Edit and modify card, confirm changes save. Click Suspend and verify card status updates. Click Delete, confirm dialog appears, verify card removed from list."
+          },
+          {
+            "id": 6,
+            "title": "Preview Pane: Bottom panel with ~150 chars of back content",
+            "description": "Add bottom preview pane showing truncated back content for focused card. Updates on arrow key navigation (↑/↓). Keyboard nav: ↑/↓ rows, → expand, ← collapse.",
+            "dependencies": [
+              4
+            ],
+            "details": "1. Add preview pane component at bottom of CardBrowserView (fixed position or flexbox). 2. Track focusedCardIndex in state. 3. Display back content truncated to ~150 chars with ellipsis. 4. Update focusedCardIndex on arrow up/down keys (add global keydown listener). 5. Arrow right expands focused row, arrow left collapses. 6. Scroll focused row into view when navigating with keyboard. 7. Pane shows card metadata: due date, difficulty, lapses, last review date. 8. Subtle border-top separator, ~120px height, dark background. 9. Escape key to blur focus and hide pane.",
+            "status": "pending",
+            "testStrategy": "Focus a card and verify preview pane shows back content. Press arrow down and confirm focus moves to next card. Press arrow right to expand, arrow left to collapse. Press Escape to hide pane. Check preview updates <16ms on navigation."
+          },
+          {
+            "id": 7,
+            "title": "Sibling Cards (Deck Visual): Show deck lines and fan out siblings",
+            "description": "Query cards with same sourceBlockId. Show subtle deck indicator (2-3 muted offset rectangles below card). Click to fan out siblings in nested list.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "1. CardRow checks if siblingCount > 1, renders deck visual below card: 2-3 div elements with absolute positioning, offset 2px down and 4px right, muted border, decreasing opacity. 2. Click deck visual to expand siblings list below parent row. 3. Query siblings: cards.getBySiblings(sourceBlockId) returns cards WHERE sourceBlockId = X. 4. Render sibling cards as nested indented rows (ml-8) with connecting lines (border-l). 5. Show sibling index/count: '2 of 5 cards from this block'. 6. Clicking sibling row navigates to that card (focus + expand). 7. Collapse siblings by clicking deck visual again or clicking elsewhere.",
+            "status": "pending",
+            "testStrategy": "Find card with siblings (siblingCount > 1). Verify deck visual renders below card. Click deck and confirm siblings expand in nested list. Click sibling and verify it focuses. Click deck again to collapse."
+          },
+          {
+            "id": 8,
+            "title": "Compact Mode Toggle: Single-line condensed layout (3x density)",
+            "description": "Add compact mode toggle via dropdown or keyboard shortcut (Ctrl+Shift+C). Single-line view with condensed spacing, ~30px row height. 3x density increase.",
+            "dependencies": [
+              2,
+              4
+            ],
+            "details": "1. Add compactMode boolean to CardBrowserView state. 2. Add toggle button in header toolbar (LayoutGrid vs LayoutList icon). 3. In compact mode: reduce row height to ~30px, single-line front text (truncate 60 chars), hide topic pills, show status as small dot, remove padding. 4. Update FixedSizeList itemSize dynamically based on compactMode. 5. Keyboard shortcut: Ctrl+Shift+C to toggle (add global listener). 6. Persist compactMode preference in localStorage. 7. Expanded state should still work in compact mode (expands to larger size).",
+            "status": "pending",
+            "testStrategy": "Click compact mode toggle and verify row height reduces to ~30px. Count visible rows before/after toggle, confirm ~3x more rows visible. Press Ctrl+Shift+C to toggle. Reload app and verify preference persists."
+          },
+          {
+            "id": 9,
+            "title": "Right Drawer (Source Context): Sheet with NotebookBlock preview and cards list",
+            "description": "Click source link in expanded card row to open right Sheet showing NotebookBlock content preview and list of all cards generated from that block. No page navigation.",
+            "dependencies": [
+              4
+            ],
+            "details": "1. Use shadcn/ui Sheet component (install if needed: npx shadcn@latest add sheet). 2. Add 'View Source' link in expanded card row (only if sourceBlockId exists). 3. Sheet slides in from right, ~600px width. 4. Top section: NotebookBlock content preview (full text, read-only). 5. Bottom section: List of cards from this block (query cards WHERE sourceBlockId = X). 6. Each card shows front (truncated), tags, status badge. 7. Click card in drawer to focus it in main browser (close drawer, scroll to card, expand). 8. Sheet header shows topic name and block creation date. 9. Close button (X) in top-right corner.",
+            "status": "pending",
+            "testStrategy": "Expand card with sourceBlockId, click 'View Source' link. Verify Sheet opens from right. Confirm NotebookBlock content displays. Check list of sibling cards renders. Click card in drawer and verify main browser focuses that card."
+          },
+          {
+            "id": 10,
+            "title": "Bulk Selection Mode: Checkbox selection with batch suspend/delete",
+            "description": "Add checkbox on row hover for multi-select. Selection bar transforms header with batch actions (suspend/delete). Ctrl+A select all, Shift+arrows extend selection.",
+            "dependencies": [
+              2,
+              5
+            ],
+            "details": "1. Add selectedCardIds Set to CardBrowserView state. 2. Show checkbox on left side of row on hover (or always visible in compact mode). 3. Click checkbox to toggle selection. 4. When selectedCardIds.size > 0, show BatchActions component (adapt from src/components/knowledgebank/BatchActions.tsx). 5. BatchActions bar shows: count, Clear button, Suspend All button, Delete All button (with confirmation). 6. Ctrl+A selects all visible cards (filtered results). 7. Shift+↑/↓ extends selection from focused card. 8. Batch operations: map over selectedCardIds, call suspend/delete for each, show progress. 9. Clear selection after batch action completes.",
+            "status": "pending",
+            "testStrategy": "Hover card row and verify checkbox appears. Click checkbox to select. Select multiple cards and verify BatchActions bar appears. Click Suspend All and confirm all selected cards suspended. Press Ctrl+A and verify all cards selected. Press Shift+↓ and verify selection extends."
+          },
+          {
+            "id": 11,
+            "title": "Keyboard Shortcuts: Comprehensive navigation and action hotkeys",
+            "description": "Implement keyboard shortcuts: / focus search, E edit, S suspend, Del delete, L jump to leeches, N/P next/prev leech, 1/2/3 filter tabs, Ctrl+G jump to card.",
+            "dependencies": [
+              2,
+              4,
+              5,
+              6
+            ],
+            "details": "1. Add global keydown listener in CardBrowserView. 2. / (forward slash): focus search input. 3. E: edit focused card (same as clicking Edit button). 4. S: suspend/unsuspend focused card. 5. Delete/Backspace: delete focused card (with confirmation). 6. L: switch to Leeches filter tab. 7. N: jump to next leech card in list (wraparound). 8. P: jump to previous leech. 9. 1/2/3: switch to Due/Leeches/All filter tabs. 10. Ctrl+G: open 'Jump to Card' dialog with search. 11. Add visible keyboard shortcuts legend in footer or help tooltip (?).",
+            "status": "pending",
+            "testStrategy": "Press / and verify search input focused. Press E on focused card and confirm edit modal opens. Press S and verify card suspends. Press L and confirm Leeches tab active. Press N/P to navigate leeches. Press 1/2/3 to switch tabs. Press Ctrl+G and verify jump dialog opens."
+          },
+          {
+            "id": 12,
+            "title": "Empty States + Leech UX: No results state and leech warning indicators",
+            "description": "Add empty state for no results with typo suggestions. Add 'No leeches' celebration state. Show leech warning icon and 'needs rewriting' hint in expanded card view for leech cards.",
+            "dependencies": [
+              2,
+              4
+            ],
+            "details": "1. Empty state component: display when filtered cards.length === 0. 2. Message: 'No cards found' with suggestion to adjust filters. 3. If search query has 0 results, suggest typo corrections (fuzzy match against existing card fronts - optional, can defer). 4. 'No leeches' state: when Leeches tab active and 0 leeches, show celebration message with trophy icon: 'Great job! No leeches to review.' 5. Leech card indicator: in expanded view, show amber/red alert icon next to difficulty score. 6. Hint text: 'This card needs rewriting. Consider splitting into multiple cards or clarifying the question.' 7. Style leech rows with subtle amber border-left accent.",
+            "status": "pending",
+            "testStrategy": "Search for nonsense query and verify empty state displays. Switch to Leeches tab with no leeches and verify celebration state. Expand a leech card (lapses >= 5) and verify warning icon and hint text visible. Confirm leech cards have amber border accent."
+          }
+        ]
       },
       {
         "id": 116,

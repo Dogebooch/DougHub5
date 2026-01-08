@@ -95,11 +95,18 @@ collected from day one.
 ### Phase 4: Layer 3 - Card Generation
 | # | Feature | Task | Status |
 |---|---------|------|--------|
-| 8 | Card generation from notebook | AI suggests cards from Notebook blocks | T42 |
-| 9 | Card-worthiness gate | Deferred to POST-MVP (F6) | - |
-| 10 | FSRS integration | Response time tracking, provenance display | T45 |
+| 8 | Card generation from notebook | AI suggests cards from Notebook blocks | T42 ✅ |
+| 9 | Card-worthiness feedback | Integrated into T42 (traffic-light panel) | T42 ✅ |
+| 10 | FSRS integration | Response time tracking, provenance display | T45 ✅ |
 
-> **Note:** Card-worthiness gate (F6) and low-ease detection deferred to post-MVP. Core FSRS review works without them.
+> **Note:** Card-worthiness feedback integrated into T42 as traffic-light panel. Full AI rubric evaluation (F6) deferred to post-MVP.
+
+### Phase 4.5: Card Management & Learning
+| # | Feature | Task | Status |
+|---|---------|------|--------|
+| 11 | Learning Mode | Session tracking, mistakes review, AI feedback | T117 ✅ |
+| 12 | Two-Mode Capture | Content detection, title, badge, Save to Inbox | T118 ✅ |
+| 13 | Card Browser | Browse/filter cards, edit, suspend, leech detection | T115 |
 
 ### Phase 5: Cross-Cutting Polish (POST-MVP)
 | # | Feature | Status |
