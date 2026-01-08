@@ -1274,6 +1274,33 @@ export const cardQueries = {
     stmt.run({ id });
   },
 
+  getBySiblings(sourceBlockId: string): DbCard[] {
+    const stmt = getDatabase().prepare(`
+      SELECT 
+        c.*,
+        ct.canonicalName as topicName,
+        (SELECT COUNT(*) FROM cards c2 
+         WHERE c2.sourceBlockId = c.sourceBlockId 
+         AND c.sourceBlockId IS NOT NULL) as siblingCount,
+        CASE WHEN c.lapses >= 5 
+          OR (c.lapses >= 3 AND c.difficulty > 0.7) 
+          OR (c.reps >= 5 AND c.stability < 7)
+          THEN 1 ELSE 0 END as isLeech
+      FROM cards c
+      LEFT JOIN notebook_topic_pages ntp ON c.notebookTopicPageId = ntp.id
+      LEFT JOIN canonical_topics ct ON ntp.canonicalTopicId = ct.id
+      WHERE c.sourceBlockId = ?
+      ORDER BY c.createdAt ASC
+    `);
+    const rows = stmt.all(sourceBlockId) as CardBrowserRow[];
+    return rows.map((row) => ({
+      ...parseCardRow(row as unknown as CardRow),
+      topicName: row.topicName,
+      siblingCount: row.siblingCount || 0,
+      isLeech: row.isLeech === 1,
+    })) as DbCard[];
+  },
+
   getTopicMetadata(pageId: string): { name: string; cardCount: number } | null {
     const stmt = getDatabase().prepare(`
       SELECT 
@@ -1328,12 +1355,12 @@ export const cardQueries = {
 
     // Status filter (state field)
     if (filters?.status && filters.status.length > 0) {
-      whereClauses.push(`c.state IN (${filters.status.join(',')})`);
+      whereClauses.push(`c.state IN (${filters.status.join(",")})`);
     }
 
     // Topic filter
     if (filters?.topicId) {
-      whereClauses.push('c.notebookTopicPageId = @topicId');
+      whereClauses.push("c.notebookTopicPageId = @topicId");
       params.topicId = filters.topicId;
     }
 
@@ -1343,7 +1370,7 @@ export const cardQueries = {
         params[`tag${i}`] = `%"${filters.tags![i]}"%`;
         return `c.tags LIKE @tag${i}`;
       });
-      whereClauses.push(`(${tagConditions.join(' OR ')})`);
+      whereClauses.push(`(${tagConditions.join(" OR ")})`);
     }
 
     // Leeches only filter
@@ -1357,24 +1384,25 @@ export const cardQueries = {
 
     // Search filter
     if (filters?.search) {
-      whereClauses.push('(c.front LIKE @search OR c.back LIKE @search)');
+      whereClauses.push("(c.front LIKE @search OR c.back LIKE @search)");
       params.search = `%${filters.search}%`;
     }
 
-    const whereClause = whereClauses.length > 0
-      ? `WHERE ${whereClauses.join(' AND ')}`
-      : '';
+    const whereClause =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
     // Sort clause
-    const sortField = sort?.field || 'dueDate';
-    const sortDir = sort?.direction || 'asc';
+    const sortField = sort?.field || "dueDate";
+    const sortDir = sort?.direction || "asc";
     const sortMap: Record<string, string> = {
-      dueDate: 'c.dueDate',
-      createdAt: 'c.createdAt',
-      difficulty: 'c.difficulty',
-      lastReview: 'c.lastReview',
+      dueDate: "c.dueDate",
+      createdAt: "c.createdAt",
+      difficulty: "c.difficulty",
+      lastReview: "c.lastReview",
     };
-    const orderClause = `ORDER BY ${sortMap[sortField]} ${sortDir.toUpperCase()} NULLS LAST`;
+    const orderClause = `ORDER BY ${
+      sortMap[sortField]
+    } ${sortDir.toUpperCase()} NULLS LAST`;
 
     const stmt = db.prepare(`
       SELECT 
@@ -1397,7 +1425,7 @@ export const cardQueries = {
     const rows = stmt.all(params) as CardBrowserRow[];
 
     // Parse and return with computed fields
-    return rows.map(row => ({
+    return rows.map((row) => ({
       ...parseCardRow(row as unknown as CardRow),
       topicName: row.topicName,
       siblingCount: row.siblingCount || 0,
@@ -1963,6 +1991,17 @@ export const notebookBlockQueries = {
     `);
     const rows = stmt.all(pageId) as NotebookBlockRow[];
     return rows.map(parseNotebookBlockRow);
+  },
+
+  getById(id: string): DbNotebookBlock | null {
+    const stmt = getDatabase().prepare(`
+      SELECT b.*, 
+        (SELECT COUNT(*) FROM cards c WHERE c.sourceBlockId = b.id) as cardCount 
+      FROM notebook_blocks b 
+      WHERE b.id = ?
+    `);
+    const row = stmt.get(id) as NotebookBlockRow | undefined;
+    return row ? parseNotebookBlockRow(row) : null;
   },
 
   getBySourceId(sourceId: string): DbNotebookBlock | null {

@@ -181,6 +181,18 @@ export function registerIpcHandlers(): void {
   );
 
   ipcMain.handle(
+    "cards:getBySiblings",
+    async (_event, sourceBlockId: string): Promise<IpcResult<DbCard[]>> => {
+      try {
+        const siblings = cardQueries.getBySiblings(sourceBlockId);
+        return success(siblings);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
     "cards:create",
     async (_, card: DbCard): Promise<IpcResult<DbCard>> => {
       try {
@@ -758,6 +770,18 @@ export function registerIpcHandlers(): void {
       try {
         const blocks = notebookBlockQueries.getByPage(pageId);
         return success(blocks);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "notebookBlocks:getById",
+    async (_, id: string): Promise<IpcResult<DbNotebookBlock | null>> => {
+      try {
+        const block = notebookBlockQueries.getById(id);
+        return success(block);
       } catch (error) {
         return failure(error);
       }

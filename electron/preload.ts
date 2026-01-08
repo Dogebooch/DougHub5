@@ -19,6 +19,8 @@ const api = {
       ipcRenderer.invoke("cards:getWeakTopicSummaries"),
     getBrowserList: (filters?: unknown, sort?: unknown) =>
       ipcRenderer.invoke("cards:getBrowserList", filters, sort),
+    getBySiblings: (sourceBlockId: string) =>
+      ipcRenderer.invoke("cards:getBySiblings", sourceBlockId),
   },
   notes: {
     getAll: () => ipcRenderer.invoke("notes:getAll"),
@@ -92,6 +94,7 @@ const api = {
   notebookBlocks: {
     getByPage: (pageId: string) =>
       ipcRenderer.invoke("notebookBlocks:getByPage", pageId),
+    getById: (id: string) => ipcRenderer.invoke("notebookBlocks:getById", id),
     getBySourceId: (sourceId: string) =>
       ipcRenderer.invoke("notebookBlocks:getBySourceId", sourceId),
     create: (block: unknown) =>

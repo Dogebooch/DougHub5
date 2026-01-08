@@ -93,9 +93,15 @@ export interface ElectronAPI {
         search?: string;
       },
       sort?: {
-        field: 'dueDate' | 'createdAt' | 'difficulty' | 'lastReview';
-        direction: 'asc' | 'desc';
+        field: "dueDate" | "createdAt" | "difficulty" | "lastReview";
+        direction: "asc" | "desc";
       }
+    ) => Promise<IpcResult<CardBrowserItem[]>>;
+    getBySiblings: (
+      sourceBlockId: string
+    ) => Promise<IpcResult<CardBrowserItem[]>>;
+    getBySiblings: (
+      sourceBlockId: string
     ) => Promise<IpcResult<CardBrowserItem[]>>;
   };
   notes: {
@@ -167,6 +173,7 @@ export interface ElectronAPI {
   };
   notebookBlocks: {
     getByPage: (pageId: string) => Promise<IpcResult<NotebookBlock[]>>;
+    getById: (id: string) => Promise<IpcResult<NotebookBlock | null>>;
     getBySourceId: (
       sourceId: string
     ) => Promise<IpcResult<NotebookBlock | null>>;

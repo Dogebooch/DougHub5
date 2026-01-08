@@ -1281,9 +1281,10 @@
               4
             ],
             "details": "1. Add preview pane component at bottom of CardBrowserView (fixed position or flexbox). 2. Track focusedCardIndex in state. 3. Display back content truncated to ~150 chars with ellipsis. 4. Update focusedCardIndex on arrow up/down keys (add global keydown listener). 5. Arrow right expands focused row, arrow left collapses. 6. Scroll focused row into view when navigating with keyboard. 7. Pane shows card metadata: due date, difficulty, lapses, last review date. 8. Subtle border-top separator, ~120px height, dark background. 9. Escape key to blur focus and hide pane.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Focus a card and verify preview pane shows back content. Press arrow down and confirm focus moves to next card. Press arrow right to expand, arrow left to collapse. Press Escape to hide pane. Check preview updates <16ms on navigation.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T17:51:31.906Z"
           },
           {
             "id": 7,
@@ -1307,9 +1308,10 @@
               4
             ],
             "details": "1. Add compactMode boolean to CardBrowserView state. 2. Add toggle button in header toolbar (LayoutGrid vs LayoutList icon). 3. In compact mode: reduce row height to ~30px, single-line front text (truncate 60 chars), hide topic pills, show status as small dot, remove padding. 4. Update FixedSizeList itemSize dynamically based on compactMode. 5. Keyboard shortcut: Ctrl+Shift+C to toggle (add global listener). 6. Persist compactMode preference in localStorage. 7. Expanded state should still work in compact mode (expands to larger size).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Click compact mode toggle and verify row height reduces to ~30px. Count visible rows before/after toggle, confirm ~3x more rows visible. Press Ctrl+Shift+C to toggle. Reload app and verify preference persists.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T17:51:32.004Z"
           },
           {
             "id": 9,
@@ -1360,12 +1362,13 @@
               4
             ],
             "details": "1. Empty state component: display when filtered cards.length === 0. 2. Message: 'No cards found' with suggestion to adjust filters. 3. If search query has 0 results, suggest typo corrections (fuzzy match against existing card fronts - optional, can defer). 4. 'No leeches' state: when Leeches tab active and 0 leeches, show celebration message with trophy icon: 'Great job! No leeches to review.' 5. Leech card indicator: in expanded view, show amber/red alert icon next to difficulty score. 6. Hint text: 'This card needs rewriting. Consider splitting into multiple cards or clarifying the question.' 7. Style leech rows with subtle amber border-left accent.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Search for nonsense query and verify empty state displays. Switch to Leeches tab with no leeches and verify celebration state. Expand a leech card (lapses >= 5) and verify warning icon and hint text visible. Confirm leech cards have amber border accent.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T17:51:32.093Z"
           }
         ],
-        "updatedAt": "2026-01-08T17:29:52.209Z"
+        "updatedAt": "2026-01-08T17:51:32.093Z"
       },
       {
         "id": "116",
@@ -1565,7 +1568,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-08T17:29:52.210Z",
+      "lastModified": "2026-01-08T17:51:32.093Z",
       "taskCount": 23,
       "completedCount": 19,
       "tags": [
