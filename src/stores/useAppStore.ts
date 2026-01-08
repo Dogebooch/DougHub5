@@ -17,6 +17,10 @@ interface AppState {
   isLoading: boolean;
   currentView: AppView;
   selectedItemId: string | null;
+  viewOptions?: {
+    filter?: string;
+    topicId?: string;
+  };
   inboxCount: number;
   queueCount: number;
   smartViewCounts: Record<string, number>;
@@ -41,7 +45,11 @@ interface AppActions {
   ) => Promise<{ success: boolean; data?: ScheduleResult; error?: string }>;
   setHydrated: () => void;
   seedSampleData: () => void;
-  setCurrentView: (view: AppView, itemId?: string | null) => void;
+  setCurrentView: (
+    view: AppView,
+    itemId?: string | null,
+    options?: AppState["viewOptions"]
+  ) => void;
   initialize: () => Promise<void>;
   refreshCounts: () => Promise<void>;
   refreshSmartViewCounts: () => Promise<void>;
@@ -74,11 +82,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   smartViewCounts: {
     inbox: 0,
     notebook: 0,
+    weak: 0,
   },
   selectedInboxItems: new Set<string>(),
 
-  setCurrentView: (view: AppView, itemId: string | null = null) =>
-    set({ currentView: view, selectedItemId: itemId }),
+  setCurrentView: (view, itemId = null, options = undefined) =>
+    set({ currentView: view, selectedItemId: itemId, viewOptions: options }),
 
   refreshSmartViewCounts: async () => {
     if (typeof window !== "undefined" && window.api) {
@@ -89,9 +98,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
       if (!itemsResult.error && itemsResult.data) {
         const items = itemsResult.data;
+        const statusResult = await window.api.db.status();
         const counts = {
           inbox: items.filter((i) => i.status === "inbox").length,
           notebook: pagesResult.data?.length || 0,
+          weak: statusResult.data?.weakTopicsCount || 0,
         };
         set({ smartViewCounts: counts });
       }

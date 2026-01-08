@@ -15,6 +15,7 @@ const api = {
     remove: (id: string) => ipcRenderer.invoke("cards:remove", id),
     getTopicMetadata: (pageId: string) =>
       ipcRenderer.invoke("cards:getTopicMetadata", pageId),
+    getWeakTopics: () => ipcRenderer.invoke("cards:getWeakTopics"),
   },
   notes: {
     getAll: () => ipcRenderer.invoke("notes:getAll"),

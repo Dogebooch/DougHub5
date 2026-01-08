@@ -70,6 +70,7 @@ export interface DbReviewLog {
   // Response tracking fields (v2)
   responseTimeMs: number | null; // Milliseconds to answer
   partialCreditScore: number | null; // 0.0-1.0 for list partial recall
+  responseTimeModifier: number | null; // 0.85-1.15x modifier (v7)
 }
 
 export interface DbQuickCapture {
@@ -203,6 +204,7 @@ interface ReviewLogRow {
   // Response tracking fields (v2)
   responseTimeMs: number | null;
   partialCreditScore: number | null;
+  responseTimeModifier: number | null;
 }
 
 interface QuickCaptureRow {
@@ -830,6 +832,51 @@ function migrateToV6(_dbPath: string): void {
 }
 
 /**
+ * Migrate database from v6 to v7.
+ * Adds responseTimeModifier to review_logs for FSRS interval adjustment signal.
+ */
+function migrateToV7(dbPath: string): void {
+  console.log(
+    "[Migration] Starting migration to schema version 7 (Response Modifier)..."
+  );
+
+  // Backup before migration
+  const backupPath = createBackup(dbPath);
+  console.log(`[Migration] Backup created: ${backupPath}`);
+
+  const database = getDatabase();
+
+  try {
+    database.transaction(() => {
+      // Add responseTimeModifier to review_logs
+      if (!columnExists("review_logs", "responseTimeModifier")) {
+        database.exec(
+          "ALTER TABLE review_logs ADD COLUMN responseTimeModifier REAL"
+        );
+        console.log(
+          "[Migration] Added review_logs.responseTimeModifier column"
+        );
+      }
+
+      setSchemaVersion(7);
+    })();
+
+    console.log("[Migration] Successfully migrated to schema version 7");
+  } catch (error) {
+    console.error("[Migration] Failed, restoring backup:", error);
+    // Close database before restore
+    database.close();
+    db = null;
+    restoreBackup(backupPath, dbPath);
+    // Re-open database after restore
+    db = new Database(dbPath);
+    db.pragma("journal_mode = WAL");
+    db.pragma("foreign_keys = ON");
+    throw error;
+  }
+}
+
+/**
  * Initialize the SQLite database.
  * Call this from main.ts after app.whenReady().
  *
@@ -895,7 +942,10 @@ export function initDatabase(dbPath: string): Database.Database {
         scheduledDays REAL NOT NULL,
         elapsedDays REAL NOT NULL,
         review TEXT NOT NULL,
-        createdAt TEXT NOT NULL
+        createdAt TEXT NOT NULL,
+        responseTimeMs INTEGER,
+        partialCreditScore REAL,
+        responseTimeModifier REAL
       );
 
       CREATE INDEX IF NOT EXISTS idx_cards_noteId ON cards(noteId);
@@ -931,6 +981,11 @@ export function initDatabase(dbPath: string): Database.Database {
   // Migration to v6 (Settings & FSRS Optimization)
   if (getSchemaVersion() < 6) {
     migrateToV6(dbPath);
+  }
+
+  // Migration to v7 (Response Modifier)
+  if (getSchemaVersion() < 7) {
+    migrateToV7(dbPath);
   }
 
   // Seed system smart views (v3)
@@ -1062,6 +1117,30 @@ export const cardQueries = {
       | undefined;
     return row || null;
   },
+
+  getWeakTopics(): any[] {
+    // A card is "weak" if difficulty > 7.0 (FSRS scale)
+    // We group by topic and calculate stats
+    const stmt = getDatabase().prepare(`
+      SELECT 
+        ct.id as topicId,
+        ntp.id as notebookPageId,
+        ct.canonicalName as topicName,
+        COUNT(c.id) as cardCount,
+        AVG(c.difficulty) as avgDifficulty,
+        MAX(c.difficulty) as worstDifficulty,
+        (SELECT id FROM cards WHERE notebookTopicPageId = ntp.id ORDER BY difficulty DESC LIMIT 1) as worstCardId,
+        MAX(c.lastReview) as lastReviewDate
+      FROM cards c
+      JOIN notebook_topic_pages ntp ON c.notebookTopicPageId = ntp.id
+      JOIN canonical_topics ct ON ntp.canonicalTopicId = ct.id
+      WHERE c.difficulty > 7.0
+      GROUP BY ct.id, ntp.id
+      ORDER BY avgDifficulty DESC
+    `);
+    const rows = stmt.all();
+    return rows;
+  },
 };
 
 function parseCardRow(row: CardRow): DbCard {
@@ -1153,10 +1232,10 @@ export const reviewLogQueries = {
     const stmt = getDatabase().prepare(`
       INSERT INTO review_logs (
         id, cardId, rating, state, scheduledDays, elapsedDays, review, createdAt,
-        responseTimeMs, partialCreditScore
+        responseTimeMs, partialCreditScore, responseTimeModifier
       ) VALUES (
         @id, @cardId, @rating, @state, @scheduledDays, @elapsedDays, @review, @createdAt,
-        @responseTimeMs, @partialCreditScore
+        @responseTimeMs, @partialCreditScore, @responseTimeModifier
       )
     `);
     stmt.run(log);
@@ -1168,6 +1247,7 @@ function parseReviewLogRow(row: ReviewLogRow): DbReviewLog {
     ...row,
     responseTimeMs: row.responseTimeMs,
     partialCreditScore: row.partialCreditScore,
+    responseTimeModifier: row.responseTimeModifier,
   };
 }
 
@@ -2423,6 +2503,14 @@ export function getDatabaseStatus(): DbStatus {
     }
   ).count;
 
+  const weakTopicsCount = (
+    db
+      .prepare(
+        "SELECT COUNT(DISTINCT notebookTopicPageId) as count FROM cards WHERE difficulty > 7.0"
+      )
+      .get() as { count: number }
+  ).count;
+
   return {
     version,
     cardCount,
@@ -2431,5 +2519,6 @@ export function getDatabaseStatus(): DbStatus {
     inboxCount,
     queueCount,
     connectionCount,
+    weakTopicsCount,
   };
 }

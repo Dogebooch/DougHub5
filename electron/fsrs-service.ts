@@ -31,6 +31,18 @@ const fsrs = new FSRS(params);
 // ============================================================================
 
 /**
+ * Calculate multi-factor modifier based on response time.
+ * Fast (<5s) increases interval by 15%.
+ * Slow (>15s) decreases interval by 15%.
+ */
+function calculateResponseTimeModifier(responseTimeMs: number | null): number {
+  if (responseTimeMs === null || responseTimeMs <= 0) return 1.0;
+  if (responseTimeMs < 5000) return 1.15;
+  if (responseTimeMs > 15000) return 0.85;
+  return 1.0;
+}
+
+/**
  * Convert our DbCard to ts-fsrs Card format.
  * Handles snake_case ↔ camelCase and Date conversion.
  */
@@ -137,6 +149,26 @@ export function scheduleReview(
       throw new Error(`Invalid rating: ${rating}`);
   }
 
+  // Apply response-time modifier (v7)
+  const modifier = calculateResponseTimeModifier(responseTimeMs);
+  if (modifier !== 1.0) {
+    const originalDays = scheduled.card.scheduled_days;
+    const modifiedDays = Math.max(0.001, originalDays * modifier);
+
+    scheduled.card.scheduled_days = modifiedDays;
+    // Recalculate due date from review time + new interval
+    scheduled.card.due = new Date(
+      reviewTime.getTime() + modifiedDays * 24 * 60 * 60 * 1000
+    );
+
+    // Sync log entry so the stored scheduled_days matches the actual modified interval
+    scheduled.log.scheduled_days = modifiedDays;
+
+    console.log(
+      `[FSRS] Applied ${modifier}x modifier for ${responseTimeMs}ms response. Interval: ${originalDays.toFixed(2)} -> ${modifiedDays.toFixed(2)} days`
+    );
+  }
+
   // Convert back to our format
   const fsrsUpdates = fromFSRSCard(scheduled.card);
   const updatedCard: DbCard = { ...dbCard, ...fsrsUpdates };
@@ -153,6 +185,7 @@ export function scheduleReview(
     createdAt: new Date().toISOString(),
     responseTimeMs,
     partialCreditScore: null, // Can be populated by caller if needed
+    responseTimeModifier: modifier,
   };
 
   // Execute update + log insert + increment review count in a transaction

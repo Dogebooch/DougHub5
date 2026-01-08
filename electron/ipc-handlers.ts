@@ -147,6 +147,15 @@ export function registerIpcHandlers(): void {
     }
   );
 
+  ipcMain.handle("cards:getWeakTopics", async (): Promise<IpcResult<any[]>> => {
+    try {
+      const weakTopics = cardQueries.getWeakTopics();
+      return success(weakTopics);
+    } catch (error) {
+      return failure(error);
+    }
+  });
+
   ipcMain.handle(
     "cards:create",
     async (_, card: DbCard): Promise<IpcResult<DbCard>> => {

@@ -48,6 +48,7 @@ export interface ReviewLog {
   // Response tracking fields (v2)
   responseTimeMs?: number | null; // Milliseconds to answer
   partialCreditScore?: number | null; // 0.0-1.0 for list partial recall
+  responseTimeModifier?: number | null; // 0.85-1.15x modifier
 }
 
 // Quick capture for emergency capture
@@ -106,6 +107,17 @@ export interface NotebookBlock {
   mediaPath?: string;
   position: number;
   cardCount: number; // v2: Number of cards generated from this block
+}
+
+export interface WeakTopicSummary {
+  topicId: string; // canonicalTopicId
+  topicName: string; // canonicalName
+  cardCount: number; // count of struggling cards
+  avgDifficulty: number; // average difficulty of struggling cards
+  notebookPageId: string; // for navigation
+  worstDifficulty: number;
+  worstCardId: string;
+  lastReviewDate: string | null;
 }
 
 // v2 Architecture - Smart Views

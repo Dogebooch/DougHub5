@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   RotateCcw,
@@ -74,6 +75,7 @@ export function ReviewInterface() {
   // Get current card from queue
   const currentCardId = reviewQueue[currentQueueIndex];
   const currentCard = cards.find((c) => c.id === currentCardId);
+
   const totalInQueue = reviewQueue.length;
   const progressPercent =
     totalInQueue > 0
@@ -391,6 +393,9 @@ export function ReviewInterface() {
     );
   }
 
+  const isHighDifficulty = currentCard.difficulty > 8.0;
+  const isUrgentDifficulty = currentCard.difficulty > 9.0;
+
   return (
     <div className="max-w-2xl mx-auto py-6 px-4 space-y-6 animate-in fade-in duration-500">
       {/* Progress bar */}
@@ -413,7 +418,19 @@ export function ReviewInterface() {
       </div>
 
       {/* Card display */}
-      <div className="bg-card border border-border/60 rounded-2xl p-8 space-y-6 shadow-lg relative overflow-hidden min-h-[320px] flex flex-col justify-center transition-all duration-300 hover:shadow-xl text-card-foreground">
+      <div
+        className={cn(
+          "bg-card border border-border/60 rounded-2xl p-8 space-y-6 shadow-lg relative overflow-hidden min-h-[320px] flex flex-col justify-center transition-all duration-300 hover:shadow-xl text-card-foreground",
+          isUrgentDifficulty
+            ? "ring-2 ring-destructive/50"
+            : isHighDifficulty
+            ? "ring-2 ring-amber-500/40"
+            : "",
+          isHighDifficulty &&
+            answerVisible &&
+            "motion-safe:animate-pulse-subtle"
+        )}
+      >
         {/* Subtle accent line */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
@@ -452,6 +469,37 @@ export function ReviewInterface() {
           )}
         </div>
 
+        {/* High Difficulty Warning */}
+        {isHighDifficulty && (
+          <div className="flex flex-col items-center gap-2 py-4 animate-in fade-in zoom-in-95 duration-500">
+            <div
+              className={cn(
+                "flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider",
+                isUrgentDifficulty
+                  ? "bg-destructive/10 text-destructive border border-destructive/20"
+                  : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+              )}
+            >
+              <AlertTriangle className="h-3 w-3" />
+              {isUrgentDifficulty
+                ? "This card needs attention"
+                : "This card is challenging"}
+            </div>
+            {currentCard.notebookTopicPageId && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-[10px] text-muted-foreground hover:text-primary"
+                onClick={() =>
+                  setCurrentView("notebook", currentCard.notebookTopicPageId)
+                }
+              >
+                View in Notebook
+              </Button>
+            )}
+          </div>
+        )}
+
         <div className="text-center text-[10px] text-card-muted/70 pt-6 border-t border-black/5 font-medium uppercase tracking-widest">
           <span className="opacity-50">From:</span>{" "}
           {currentCard.notebookTopicPageId ? (
@@ -482,7 +530,8 @@ export function ReviewInterface() {
           )}
           {currentCard.state > 0 && (
             <span className="ml-3 opacity-40 text-[9px]">
-              • S:{currentCard.stability.toFixed(1)} • R:{currentCard.reps}
+              • S:{currentCard.stability.toFixed(1)} • D:
+              {currentCard.difficulty.toFixed(1)} • R:{currentCard.reps}
             </span>
           )}
         </div>
