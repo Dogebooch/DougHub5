@@ -186,6 +186,8 @@ export function scheduleReview(
     responseTimeMs,
     partialCreditScore: null, // Can be populated by caller if needed
     responseTimeModifier: modifier,
+    userAnswer: null, // Prep for F18 Typed Answer Mode
+    userExplanation: null, // Prep for F20 Exam Trap Detection
   };
 
   // Execute update + log insert + increment review count in a transaction

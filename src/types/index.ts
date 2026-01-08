@@ -49,6 +49,8 @@ export interface ReviewLog {
   responseTimeMs?: number | null; // Milliseconds to answer
   partialCreditScore?: number | null; // 0.0-1.0 for list partial recall
   responseTimeModifier?: number | null; // 0.85-1.15x modifier
+  userAnswer?: string | null;
+  userExplanation?: string | null;
 }
 
 // Quick capture for emergency capture

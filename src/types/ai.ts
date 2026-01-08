@@ -155,3 +155,13 @@ export interface CardSuggestion {
   /** Why this format was chosen */
   formatReason: string;
 }
+
+/** Result of AI-elaborated feedback for a struggling student */
+export interface ElaboratedFeedback {
+  /** Why the user might have been confused or common clinical pitfalls */
+  whyWrong: string;
+  /** High-yield explanation of why the correct answer is right */
+  whyRight: string;
+  /** Related clinical concepts to distinguish from this one */
+  relatedConcepts: string[];
+}

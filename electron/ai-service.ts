@@ -22,6 +22,7 @@ import type {
   VignetteConversion,
   SemanticMatch,
   CardSuggestion,
+  ElaboratedFeedback,
 } from "../src/types/ai";
 import type { DbNote } from "./database";
 import OpenAI from "openai";
@@ -643,6 +644,25 @@ Respond ONLY with a JSON object in this exact format (no markdown, no code block
     }
   ]
 }`,
+
+  elaboratedFeedback: `You are a medical education AI tutor specializing in boards-style study.
+A student just struggled with a flashcard. Your task is to provide concise, high-yield feedback to help them understand the concept.
+
+Analyze the flashcard content, the broader topic context, and the fact that the user struggled (possibly indicated by response time).
+
+Explain:
+1. WHY the user might have been confused (whyWrong) - point out common clinical pitfalls or similar-sounding concepts.
+2. The core logic or "Clinical Pearl" (whyRight) - explain why the correct answer is correct in a way that sticks.
+3. Related concepts or "Differential Pitfalls" (relatedConcepts) - list 2-3 related concepts they should be wary of confusing with this one.
+
+Focus on clinical reasoning and board-relevant facts. Keep it concise (ADHD-friendly).
+
+Respond ONLY with a JSON object in this exact format (no markdown, no code blocks):
+{
+  "whyWrong": "Explanation of potential confusion or pitfall",
+  "whyRight": "High-yield explanation of the correct concept",
+  "relatedConcepts": ["Concept A", "Concept B"]
+}`,
 };
 
 /**
@@ -1183,7 +1203,9 @@ ${blockContent}
 TOPIC CONTEXT:
 ${topicContext}
 
-${userIntent ? `USER INTENT: ${userIntent}\n` : ""}Please generate high-quality card suggestions from the highlighted content.`;
+${
+  userIntent ? `USER INTENT: ${userIntent}\n` : ""
+}Please generate high-quality card suggestions from the highlighted content.`;
 
     const response = await withRetry(async () => {
       return await callAI(PROMPTS.cardGeneration, userMessage);
@@ -1232,6 +1254,68 @@ ${userIntent ? `USER INTENT: ${userIntent}\n` : ""}Please generate high-quality 
     return normalizedSuggestions;
   } catch (error) {
     console.error("[AI Service] Card generation failed:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generate elaborated feedback for a card the user struggled with.
+ *
+ * @param card Card content (front, back, type)
+ * @param topicContext Broader context (topic title, etc.)
+ * @param responseTimeMs Optional time user spent before answering
+ * @returns Elaborated feedback with pits/pearls
+ */
+export async function generateElaboratedFeedback(
+  card: { front: string; back: string; cardType: string },
+  topicContext: string,
+  responseTimeMs: number | null
+): Promise<ElaboratedFeedback> {
+  const cacheKey = aiCache.key(
+    "elaboratedFeedback",
+    card.front,
+    card.back,
+    topicContext
+  );
+  const cached = aiCache.get<ElaboratedFeedback>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const userMessage = `FLASHCARD:
+Front: ${card.front}
+Back: ${card.back}
+Type: ${card.cardType}
+
+TOPIC CONTEXT:
+${topicContext}
+
+${
+  responseTimeMs
+    ? `USER RESPONSE TIME: ${responseTimeMs}ms (Student struggled with this card)`
+    : "Student struggled with this card/requested feedback."
+}
+
+Please provide elaborated feedback.`;
+
+    const response = await withRetry(async () => {
+      return await callAI(PROMPTS.elaboratedFeedback, userMessage);
+    });
+
+    const result = parseAIResponse<ElaboratedFeedback>(response);
+
+    // Basic normalization
+    const feedback: ElaboratedFeedback = {
+      whyWrong: result?.whyWrong || "No specific pitfall identified.",
+      whyRight: result?.whyRight || "No clinical pearl available.",
+      relatedConcepts: Array.isArray(result?.relatedConcepts)
+        ? result.relatedConcepts
+        : [],
+    };
+
+    aiCache.set(cacheKey, feedback);
+    return feedback;
+  } catch (error) {
+    console.error("[AI Service] Elaborated feedback failed:", error);
     throw error;
   }
 }
@@ -1350,4 +1434,5 @@ export {
   type SemanticMatch,
   type CardSuggestion,
   type WorthinessResult,
+  type ElaboratedFeedback,
 } from "../src/types/ai";

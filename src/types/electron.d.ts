@@ -29,6 +29,7 @@ import type {
   VignetteConversion,
   SemanticMatch,
   CardSuggestion,
+  ElaboratedFeedback,
 } from "./ai";
 
 // Re-export database types for convenience
@@ -203,6 +204,11 @@ export interface ElectronAPI {
       topicContext: string,
       userIntent?: string
     ) => Promise<IpcResult<CardSuggestion[]>>;
+    generateElaboratedFeedback: (
+      card: { front: string; back: string; cardType: string },
+      topicContext: string,
+      responseTimeMs: number | null
+    ) => Promise<IpcResult<ElaboratedFeedback>>;
     suggestTags: (content: string) => Promise<IpcResult<string[]>>;
     findRelatedNotes: (
       content: string,

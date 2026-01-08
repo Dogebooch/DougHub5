@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Rating } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { ClozeDisplay, ClozeAnswer } from "@/lib/cloze-renderer";
+import { MistakesReviewModal } from "./MistakesReviewModal";
 
 const CONTINUE_LOCKOUT_MS = 400; // Prevent accidental double-taps
 
@@ -30,6 +31,14 @@ export function ReviewInterface() {
   const [sessionComplete, setSessionComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
+
+  // Mistake tracking (T117.1)
+  const [showMistakesModal, setShowMistakesModal] = useState(false);
+  const [mistakeCardIds, setMistakeCardIds] = useState<string[]>([]);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [mistakeCards, setMistakeCards] = useState<
+    { cardId: string; responseTimeMs: number | null }[]
+  >([]);
 
   // Task 5.6: Feedback state
   const [showingFeedback, setShowingFeedback] = useState(false);
@@ -69,6 +78,7 @@ export function ReviewInterface() {
   useEffect(() => {
     if (reviewQueue.length === 0 && initialDueCards.length > 0) {
       setReviewQueue(initialDueCards.map((c) => c.id));
+      setSessionStartTime(Date.now());
     }
   }, [initialDueCards, reviewQueue.length]);
 
@@ -176,6 +186,18 @@ export function ReviewInterface() {
 
           // Handle learning cards: if rated Again, re-add to end of queue
           if (rating === Rating.Again && result.data) {
+            // Track mistake (T117.1)
+            setMistakeCardIds((prev) =>
+              prev.includes(currentCard.id) ? prev : [...prev, currentCard.id]
+            );
+            setMistakeCards((prev) => [
+              ...prev,
+              {
+                cardId: currentCard.id,
+                responseTimeMs: responseTimeMs || null,
+              },
+            ]);
+
             // Card rated Again - add back to queue for re-review this session
             setReviewQueue((prev) => [...prev, currentCard.id]);
           }
@@ -190,10 +212,18 @@ export function ReviewInterface() {
               setCurrentQueueIndex((prev) => prev + 1);
               setAnswerVisible(false);
             } else {
-              setSessionComplete(true);
-              redirectTimeoutRef.current = setTimeout(() => {
-                if (isMounted.current) setCurrentView("capture");
-              }, 2000);
+              if (mistakeCardIds.length > 0) {
+                setShowMistakesModal(true);
+              } else {
+                toast({
+                  title: "Session Complete",
+                  description: "Zero mistakes!",
+                });
+                setSessionComplete(true);
+                redirectTimeoutRef.current = setTimeout(() => {
+                  if (isMounted.current) setCurrentView("capture");
+                }, 2000);
+              }
             }
           }
         }
@@ -365,7 +395,7 @@ export function ReviewInterface() {
     );
   }
 
-  if (sessionComplete) {
+  if (sessionComplete && !showMistakesModal) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-2">
@@ -680,6 +710,16 @@ export function ReviewInterface() {
           Back to Capture
         </button>
       </div>
+
+      {showMistakesModal && (
+        <MistakesReviewModal
+          mistakes={mistakeCards}
+          onClose={() => {
+            setShowMistakesModal(false);
+            setCurrentView("capture");
+          }}
+        />
+      )}
     </div>
   );
 }

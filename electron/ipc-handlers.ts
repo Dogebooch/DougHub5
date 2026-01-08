@@ -56,6 +56,7 @@ import {
   convertToVignette,
   suggestTags,
   generateCardFromBlock,
+  generateElaboratedFeedback,
   findRelatedNotes,
   aiCache,
   type AIProviderStatus,
@@ -64,6 +65,7 @@ import {
   type MedicalListDetection,
   type VignetteConversion,
   type CardSuggestion,
+  type ElaboratedFeedback,
 } from "./ai-service";
 import {
   resolveTopicAlias,
@@ -1034,6 +1036,27 @@ export function registerIpcHandlers(): void {
           userIntent
         );
         return success(cards);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "ai:generateElaboratedFeedback",
+    async (
+      _,
+      card: { front: string; back: string; cardType: string },
+      topicContext: string,
+      responseTimeMs: number | null
+    ): Promise<IpcResult<ElaboratedFeedback>> => {
+      try {
+        const result = await generateElaboratedFeedback(
+          card,
+          topicContext,
+          responseTimeMs
+        );
+        return success(result);
       } catch (error) {
         return failure(error);
       }

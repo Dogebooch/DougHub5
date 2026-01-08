@@ -49,8 +49,8 @@
 **Description:** Detect patterns where user confuses similar concepts (e.g., similar drug names, overlapping symptoms). Requires embeddings + error pattern analysis from review logs.
 **Priority:** High
 **Source:** Canonical MVP Post-MVP list (2026-01-07)
-**Dependency:** T45 (FSRS Integration), F2 (embeddings)
-**Notes:** High-value for medical education - addresses common confusion pairs.
+**Dependency:** T45 (FSRS Integration), F2 (embeddings), F18 (userAnswer logging)
+**Notes:** High-value for medical education - addresses common confusion pairs. Enhanced by F18 typed answer data for richer pattern detection. Feeds into F19 (Adaptive Learning Assistant) for AI coaching interventions like "You confuse Methotrexate and Methylnaltrexone - want a contrast card?"
 
 ### Response Time Signal (F13)
 **Description:** Cards answered fast (<5s) get +15% interval boost; slow answers (>15s) get -15% interval reduction. Applied as multiplier on top of base FSRS calculation.
@@ -86,6 +86,54 @@
 **Source:** T117 scope reduction (2026-01-07)
 **Dependency:** T117 (Basic Learning Mode), F16 (Review Sessions Table)
 **Notes:** MVP shows mistakes immediately post-session only. This adds persistent queue with "Insights > Mistakes" view access. Higher complexity: needs new table, sidebar badge, dedicated view component.
+
+### Typed Answer Mode (F18)
+**Description:** Optional "Study Mode" where user types their answer before reveal. Settings toggle or per-session button activates text input below card. Logs `userAnswer` to review_logs for confusion analysis. Keybindings: Enter submits/reveals (Space types normally), then Enter=Continue, F=Forgot.
+**Priority:** Medium
+**Source:** User request (2026-01-07)
+**Dependency:** T117 (Basic Learning Mode)
+**Schema Prep:** Add `userAnswer TEXT` column to review_logs table (nullable, zero-cost prep for future).
+**Notes:** Enables active recall (typing > recognition) and provides rich data for F12 (Confusion Clusters) and F19 (Adaptive Learning Assistant). Consider speech-to-text integration (T50) as alternative input mode.
+
+### Adaptive Learning Assistant (F19)
+**Description:** AI tutor that proactively detects learning patterns and offers targeted interventions. Three intervention types:
+1. **Confusion Pairs:** "You confuse Methotrexate and Methylnaltrexone - want a contrast card or mnemonic?"
+2. **Topic Weakness:** "You struggle with ethics - want some practice board questions?"
+3. **Knowledge Gap Remediation:** "You have poor understanding of Type 4 RTA. I found resources in your Knowledge Bank - review them, then run a targeted flashcard session?"
+**Priority:** High
+**Source:** User vision (2026-01-07)
+**Dependency:** F2 (embeddings), F12 (confusion detection), F16 (session history), F18 (answer logging), F20 (exam traps)
+**Components:**
+- Confusion pair detection algorithm (embeddings + answer pattern matching)
+- Topic weakness aggregation (builds on T45.3 getLowDifficultyCardsByTopic)
+- KB resource surfacing (semantic search across source_items)
+- Practice question generation (AI generates board-style questions from weak topics)
+- Contrast card creation (AI generates cards distinguishing confused concepts)
+- Mnemonic suggestion (AI proposes memory aids for confusion pairs)
+- Exam trap coaching (F20 pattern → targeted question parsing practice)
+**Notes:** This is the "AI Jarvis" vision - an intelligent tutor, not just passive analytics. Requires significant ML/AI infrastructure but is the long-term differentiator for DougHub.
+
+### Exam Trap Detection (F20)
+**Description:** Track WHY users miss questions, not just WHAT they missed. After a mistake, prompt "Why do you think you missed this?" User explanation is AI-classified into error types: Knowledge Gap vs Exam Trap. Exam traps categorized: Qualifier Misread, Negation Blindness, Age/Population Skip, Absolute Terms, Best-vs-Correct, Timeline Confusion.
+**Priority:** High
+**Source:** User vision (2026-01-07)
+**Dependency:** T117 (Basic Learning Mode), F18 (answer logging)
+**Schema Prep:** Add `userExplanation TEXT` column to review_logs (nullable, alongside userAnswer).
+**Example Flow:**
+- Q: "What is the most common EKG finding in PE?" A: Normal
+- User picked: Tachycardia
+- User explanation: "I thought it was asking for most common abnormality"
+- AI classification: Exam Trap → Qualifier Misread
+- Pattern aggregation: "You've misread qualifiers 5 times this month"
+- F19 intervention: "Want to practice parsing tricky question stems?"
+**Exam Trap Categories:**
+1. Qualifier Misread - "most common" vs "most common abnormality"
+2. Negation Blindness - "Which is NOT associated with..."
+3. Age/Population Skip - Missing "in children" or "in pregnant women"
+4. Absolute Terms - "always", "never", "only" (usually wrong)
+5. Best vs Correct - Multiple correct answers, one is "best"
+6. Timeline Confusion - "initial management" vs "definitive treatment"
+**Notes:** Distinguishes test-taking errors from knowledge gaps. Unique differentiator - no competitor does this well. High value for board prep where question parsing is half the battle.
 
 ---
 

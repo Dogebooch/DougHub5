@@ -138,6 +138,17 @@ const api = {
         topicContext,
         userIntent
       ),
+    generateElaboratedFeedback: (
+      card: { front: string; back: string; cardType: string },
+      topicContext: string,
+      responseTimeMs: number | null
+    ) =>
+      ipcRenderer.invoke(
+        "ai:generateElaboratedFeedback",
+        card,
+        topicContext,
+        responseTimeMs
+      ),
     suggestTags: (content: string) =>
       ipcRenderer.invoke("ai:suggestTags", content),
     findRelatedNotes: (

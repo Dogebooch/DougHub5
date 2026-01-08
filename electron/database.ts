@@ -71,6 +71,8 @@ export interface DbReviewLog {
   responseTimeMs: number | null; // Milliseconds to answer
   partialCreditScore: number | null; // 0.0-1.0 for list partial recall
   responseTimeModifier: number | null; // 0.85-1.15x modifier (v7)
+  userAnswer: string | null; // Prep for F18 Typed Answer Mode (v9)
+  userExplanation: string | null; // Prep for F20 Exam Trap Detection (v9)
 }
 
 export interface DbQuickCapture {
@@ -216,6 +218,8 @@ interface ReviewLogRow {
   responseTimeMs: number | null;
   partialCreditScore: number | null;
   responseTimeModifier: number | null;
+  userAnswer: string | null;
+  userExplanation: string | null;
 }
 
 interface QuickCaptureRow {
@@ -915,6 +919,55 @@ function migrateToV8(dbPath: string): void {
 }
 
 /**
+ * Migrate database from v8 to v9.
+ * Adds userAnswer and userExplanation to review_logs for future features.
+ */
+function migrateToV9(dbPath: string): void {
+  console.log(
+    "[Migration] Starting migration to schema version 9 (Typed Answer Prep)..."
+  );
+
+  // Backup before migration
+  const backupPath = createBackup(dbPath);
+  console.log(`[Migration] Backup created: ${backupPath}`);
+
+  const database = getDatabase();
+
+  try {
+    database.transaction(() => {
+      // Add userAnswer to review_logs
+      if (!columnExists("review_logs", "userAnswer")) {
+        database.exec("ALTER TABLE review_logs ADD COLUMN userAnswer TEXT");
+        console.log("[Migration] Added review_logs.userAnswer column");
+      }
+
+      // Add userExplanation to review_logs
+      if (!columnExists("review_logs", "userExplanation")) {
+        database.exec(
+          "ALTER TABLE review_logs ADD COLUMN userExplanation TEXT"
+        );
+        console.log("[Migration] Added review_logs.userExplanation column");
+      }
+
+      setSchemaVersion(9);
+    })();
+
+    console.log("[Migration] Successfully migrated to schema version 9");
+  } catch (error) {
+    console.error("[Migration] Failed, restoring backup:", error);
+    // Close database before restore
+    database.close();
+    db = null;
+    restoreBackup(backupPath, dbPath);
+    // Re-open database after restore
+    db = new Database(dbPath);
+    db.pragma("journal_mode = WAL");
+    db.pragma("foreign_keys = ON");
+    throw error;
+  }
+}
+
+/**
  * Initialize the SQLite database.
  * Call this from main.ts after app.whenReady().
  *
@@ -983,7 +1036,9 @@ export function initDatabase(dbPath: string): Database.Database {
         createdAt TEXT NOT NULL,
         responseTimeMs INTEGER,
         partialCreditScore REAL,
-        responseTimeModifier REAL
+        responseTimeModifier REAL,
+        userAnswer TEXT,
+        userExplanation TEXT
       );
 
       CREATE INDEX IF NOT EXISTS idx_cards_noteId ON cards(noteId);
@@ -1029,6 +1084,11 @@ export function initDatabase(dbPath: string): Database.Database {
   // Migration to v8 (Difficulty Index)
   if (getSchemaVersion() < 8) {
     migrateToV8(dbPath);
+  }
+
+  // Migration to v9 (Typed Answer Prep)
+  if (getSchemaVersion() < 9) {
+    migrateToV9(dbPath);
   }
 
   // Seed system smart views (v3)
@@ -1280,10 +1340,12 @@ export const reviewLogQueries = {
     const stmt = getDatabase().prepare(`
       INSERT INTO review_logs (
         id, cardId, rating, state, scheduledDays, elapsedDays, review, createdAt,
-        responseTimeMs, partialCreditScore, responseTimeModifier
+        responseTimeMs, partialCreditScore, responseTimeModifier,
+        userAnswer, userExplanation
       ) VALUES (
         @id, @cardId, @rating, @state, @scheduledDays, @elapsedDays, @review, @createdAt,
-        @responseTimeMs, @partialCreditScore, @responseTimeModifier
+        @responseTimeMs, @partialCreditScore, @responseTimeModifier,
+        @userAnswer, @userExplanation
       )
     `);
     stmt.run(log);
@@ -1296,6 +1358,8 @@ function parseReviewLogRow(row: ReviewLogRow): DbReviewLog {
     responseTimeMs: row.responseTimeMs,
     partialCreditScore: row.partialCreditScore,
     responseTimeModifier: row.responseTimeModifier,
+    userAnswer: row.userAnswer,
+    userExplanation: row.userExplanation,
   };
 }
 
