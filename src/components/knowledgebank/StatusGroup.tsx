@@ -80,7 +80,9 @@ export const StatusGroup = ({
         </div>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="flex flex-col bg-card">{children}</div>
+        <div className="flex flex-col bg-card divide-y divide-border/30">
+          {children}
+        </div>
       </CollapsibleContent>
     </Collapsible>
   );

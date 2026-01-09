@@ -44,7 +44,12 @@ const api = {
     getById: (id) => electron.ipcRenderer.invoke("sourceItems:getById", id),
     create: (item) => electron.ipcRenderer.invoke("sourceItems:create", item),
     update: (id, updates) => electron.ipcRenderer.invoke("sourceItems:update", id, updates),
-    delete: (id) => electron.ipcRenderer.invoke("sourceItems:delete", id)
+    delete: (id) => electron.ipcRenderer.invoke("sourceItems:delete", id),
+    onNew: (callback) => {
+      const handler = (_event, item) => callback(item);
+      electron.ipcRenderer.on("sourceItems:new", handler);
+      return () => electron.ipcRenderer.removeListener("sourceItems:new", handler);
+    }
   },
   canonicalTopics: {
     getAll: () => electron.ipcRenderer.invoke("canonicalTopics:getAll"),

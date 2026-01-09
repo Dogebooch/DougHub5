@@ -12,17 +12,44 @@ import { WeakTopicsView } from "@/components/smartviews/WeakTopicsView";
 import { CardBrowserView } from "@/components/cards/CardBrowserView";
 import { useAppStore } from "@/stores/useAppStore";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 export function AppLayout() {
   const currentView = useAppStore((state) => state.currentView);
   const setCurrentView = useAppStore((state) => state.setCurrentView);
   const refreshCounts = useAppStore((state) => state.refreshCounts);
+  const onNewSourceItem = useAppStore((state) => state.onNewSourceItem);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     refreshCounts();
   }, [refreshCounts]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.api?.sourceItems?.onNew) {
+      const unsubscribe = window.api.sourceItems.onNew((item: any) => {
+        onNewSourceItem(item);
+
+        toast({
+          title: "Browser Capture Received",
+          description: `Captured: ${item.title || "Untitled Item"}`,
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentView("inbox")}
+            >
+              View In Inbox
+            </Button>
+          ),
+        });
+      });
+      return unsubscribe;
+    }
+  }, [onNewSourceItem, toast, setCurrentView]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

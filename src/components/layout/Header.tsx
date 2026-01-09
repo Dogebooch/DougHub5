@@ -33,23 +33,12 @@ export function Header({ openQuickCapture: _openQuickCapture }: HeaderProps) {
           <SearchBar />
         </div>
 
-        {/* Right: Browser badge + reload */}
+        {/* Right: Browser badge */}
         <div className="flex items-center gap-2">
           {isBrowserMode && (
             <Badge variant="outline" className="text-[11px] h-6">
               Browser Mode
             </Badge>
-          )}
-          {!isBrowserMode && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => window.api.reloadApp()}
-              title="Reload app"
-              className="h-8 w-8 opacity-30 hover:opacity-100 transition-opacity"
-            >
-              <RotateCw className="h-3.5 w-3.5" />
-            </Button>
           )}
         </div>
       </div>

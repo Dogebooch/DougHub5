@@ -67,6 +67,12 @@ const api = {
     update: (id: string, updates: unknown) =>
       ipcRenderer.invoke("sourceItems:update", id, updates),
     delete: (id: string) => ipcRenderer.invoke("sourceItems:delete", id),
+    onNew: (callback: (item: any) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, item: any) =>
+        callback(item);
+      ipcRenderer.on("sourceItems:new", handler);
+      return () => ipcRenderer.removeListener("sourceItems:new", handler);
+    },
   },
   canonicalTopics: {
     getAll: () => ipcRenderer.invoke("canonicalTopics:getAll"),

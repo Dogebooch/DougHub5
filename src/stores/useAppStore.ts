@@ -55,6 +55,7 @@ interface AppActions {
   initialize: () => Promise<void>;
   refreshCounts: () => Promise<void>;
   refreshSmartViewCounts: () => Promise<void>;
+  onNewSourceItem: (item: any) => void;
   getBrowserList: (
     filters?: {
       status?: number[];
@@ -135,6 +136,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       }
       await get().refreshSmartViewCounts();
     }
+  },
+
+  onNewSourceItem: (item) => {
+    // Refresh counts and smart view counts in background
+    get().refreshCounts();
   },
 
   setHydrated: () => set({ isHydrated: true }),

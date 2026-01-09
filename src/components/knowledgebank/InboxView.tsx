@@ -71,20 +71,38 @@ export function InboxView() {
     fetchInbox();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.api?.sourceItems?.onNew) {
+      const unsubscribe = window.api.sourceItems.onNew((item: any) => {
+        if (item.status === "inbox") {
+          setItems((prev) => {
+            // Check for duplicates in local state
+            if (prev.find((i) => i.id === item.id)) return prev;
+            return [item, ...prev];
+          });
+        }
+      });
+      return unsubscribe;
+    }
+  }, []);
+
   const clearFilters = () => {
     setSearchQuery("");
     setFilterSourceType("all");
   };
 
-  const sourceTypeCounts = useMemo(() => ({
-    qbank: items.filter(i => i.sourceType === 'qbank').length,
-    article: items.filter(i => i.sourceType === 'article').length,
-    pdf: items.filter(i => i.sourceType === 'pdf').length,
-    image: items.filter(i => i.sourceType === 'image').length,
-    audio: items.filter(i => i.sourceType === 'audio').length,
-    quickcapture: items.filter(i => i.sourceType === 'quickcapture').length,
-    manual: items.filter(i => i.sourceType === 'manual').length,
-  }), [items]);
+  const sourceTypeCounts = useMemo(
+    () => ({
+      qbank: items.filter((i) => i.sourceType === "qbank").length,
+      article: items.filter((i) => i.sourceType === "article").length,
+      pdf: items.filter((i) => i.sourceType === "pdf").length,
+      image: items.filter((i) => i.sourceType === "image").length,
+      audio: items.filter((i) => i.sourceType === "audio").length,
+      quickcapture: items.filter((i) => i.sourceType === "quickcapture").length,
+      manual: items.filter((i) => i.sourceType === "manual").length,
+    }),
+    [items]
+  );
 
   const filteredAndSortedItems = useMemo(() => {
     return items
@@ -337,10 +355,10 @@ export function InboxView() {
       </header>
 
       {/* Main Content Area */}
-      <ScrollArea className="flex-1">
-        <div className="p-4 pt-2 pb-24">
+      <ScrollArea className="flex-1 min-w-0">
+        <div className="p-4 pt-2 pb-24 min-w-0 w-full">
           {groupedItems.length > 0 ? (
-            <div className="rounded-lg border shadow-sm overflow-hidden bg-card">
+            <div className="rounded-lg border shadow-sm overflow-hidden bg-card min-w-0 w-full">
               {groupedItems.map((group, index) => (
                 <section
                   key={group.title}

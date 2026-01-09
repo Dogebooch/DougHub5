@@ -55,8 +55,8 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
   return (
     <div
       className={cn(
-        "group flex items-center gap-4 py-2 px-4 border-b border-border/30 transition-colors hover:bg-black/5 text-card-foreground",
-        isSelected && "bg-primary/10 border-primary/30",
+        "group flex items-center gap-4 py-2 px-4 transition-colors hover:bg-black/5 text-card-foreground",
+        isSelected && "bg-primary/10",
         isHighlighted &&
           "bg-warning/10 border-l-4 border-l-warning animate-pulse-subtle"
       )}
@@ -70,24 +70,24 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
           aria-label={`Select ${sourceItem.title}`}
           className="border-card-muted/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
-        <div className="p-2 rounded-lg bg-black/5 flex items-center justify-center">
+        <div className="p-2 rounded-lg bg-black/5 flex items-center justify-center shrink-0">
           {getIcon()}
         </div>
       </div>
 
       <div className="flex-grow min-w-0 flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <h3 className="font-medium text-sm truncate leading-none text-card-foreground">
+        <div className="flex items-center gap-2 min-w-0">
+          <h3 className="font-medium text-sm truncate leading-none text-card-foreground flex-1">
             {sourceItem.title}
           </h3>
-          <span className="text-[11px] text-card-muted whitespace-nowrap">
+          <span className="text-[11px] text-card-muted whitespace-nowrap shrink-0 group-hover:hidden transition-opacity">
             {formatDistanceToNow(new Date(sourceItem.createdAt), {
               addSuffix: true,
             })}
           </span>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 group-hover:hidden transition-opacity">
           {displayedTags.map((tag) => (
             <Badge
               key={tag}
@@ -108,7 +108,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity whitespace-nowrap">
+      <div className="items-center gap-2 hidden group-hover:flex focus-within:flex whitespace-nowrap shrink-0">
         <Button
           size="sm"
           variant="outline"
@@ -124,7 +124,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
             className="h-8 text-xs font-medium"
             onClick={() => onViewInNotebook(sourceItem)}
           >
-            View in Notebook
+            <span className="hidden sm:inline">View in </span>Notebook
           </Button>
         )}
         <Button
@@ -132,7 +132,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
           className="h-8 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
           onClick={() => onAddToNotebook(sourceItem)}
         >
-          Add to Notebook
+          Add<span className="hidden sm:inline"> to Notebook</span>
         </Button>
         <Button
           size="icon"

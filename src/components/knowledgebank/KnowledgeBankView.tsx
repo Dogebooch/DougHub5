@@ -231,7 +231,7 @@ export const KnowledgeBankView = () => {
         </div>
       </div>
 
-      <div className="space-y-1 rounded-md border shadow-sm overflow-hidden bg-card">
+      <div className="space-y-1 rounded-md border shadow-sm overflow-hidden bg-card min-w-0 w-full">
         {/* Inbox Group */}
         <StatusGroup
           title="Inbox"

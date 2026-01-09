@@ -148,6 +148,7 @@ export interface ElectronAPI {
       updates: Partial<SourceItem>
     ) => Promise<IpcResult<void>>;
     delete: (id: string) => Promise<IpcResult<void>>;
+    onNew: (callback: (item: SourceItem) => void) => () => void;
   };
   canonicalTopics: {
     getAll: () => Promise<IpcResult<CanonicalTopic[]>>;
