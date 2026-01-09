@@ -72,6 +72,8 @@ interface AppActions {
 
   // Inbox Batch Actions
   toggleInboxSelection: (id: string) => void;
+  addToInboxSelection: (ids: string[]) => void;
+  removeFromInboxSelection: (ids: string[]) => void;
   selectAllInbox: (ids: string[]) => void;
   clearInboxSelection: () => void;
   batchAddToNotebook: (
@@ -493,6 +495,22 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       } else {
         next.add(id);
       }
+      return { selectedInboxItems: next };
+    });
+  },
+
+  addToInboxSelection: (ids: string[]) => {
+    set((state) => {
+      const next = new Set(state.selectedInboxItems);
+      ids.forEach((id) => next.add(id));
+      return { selectedInboxItems: next };
+    });
+  },
+
+  removeFromInboxSelection: (ids: string[]) => {
+    set((state) => {
+      const next = new Set(state.selectedInboxItems);
+      ids.forEach((id) => next.delete(id));
       return { selectedInboxItems: next };
     });
   },

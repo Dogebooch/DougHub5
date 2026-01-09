@@ -4,20 +4,21 @@ import {
   isYesterday, 
   parseISO 
 } from 'date-fns';
-import { Search, SortDesc, Inbox } from 'lucide-react';
+import { Search, SortDesc, SortAsc, Inbox, Filter } from "lucide-react";
 
-import { Input } from '@/components/ui/input';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SourceItemRow } from "./SourceItemRow";
 import { BatchActions } from "./BatchActions";
@@ -46,7 +47,10 @@ export function InboxView() {
   const toggleInboxSelection = useAppStore(
     (state) => state.toggleInboxSelection
   );
-  const selectAllInbox = useAppStore((state) => state.selectAllInbox);
+  const addToInboxSelection = useAppStore((state) => state.addToInboxSelection);
+  const removeFromInboxSelection = useAppStore(
+    (state) => state.removeFromInboxSelection
+  );
   const clearInboxSelection = useAppStore((state) => state.clearInboxSelection);
   const batchDeleteInbox = useAppStore((state) => state.batchDeleteInbox);
   const { toast } = useToast();
@@ -134,9 +138,9 @@ export function InboxView() {
 
   const handleSelectAllToggle = () => {
     if (isAllVisibleSelected) {
-      clearInboxSelection();
+      removeFromInboxSelection(visibleIds);
     } else {
-      selectAllInbox(visibleIds);
+      addToInboxSelection(visibleIds);
     }
   };
 
@@ -231,49 +235,49 @@ export function InboxView() {
   return (
     <div className="flex flex-col h-full bg-surface-base overflow-hidden">
       {/* Header with sticky behavior */}
-      <header className="flex-none p-4 border-b border-border/30 space-y-4 bg-surface-base z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Inbox className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Inbox Triage</h1>
-          </div>
-          <span className="text-sm font-medium px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-            {items.length} total
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px] space-y-2">
-            <Label
-              htmlFor="search"
-              className="text-xs uppercase tracking-wider text-muted-foreground"
+      <header className="flex-none px-4 py-3 border-b border-border/30 bg-surface-base z-10 sticky top-0">
+        <div className="flex flex-wrap items-center gap-3 justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Inbox className="h-5 w-5 text-primary" />
+              <h1 className="text-lg font-semibold tracking-tight">Inbox</h1>
+            </div>
+            <Badge
+              variant="secondary"
+              className="rounded-full px-2 py-0 h-5 text-[10px] font-bold"
             >
-              Search Title
-            </Label>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              {items.length}
+            </Badge>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 flex-grow sm:flex-grow-0">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 id="search"
-                placeholder="Find a source..."
-                className="pl-9 bg-muted/50 border-none"
+                placeholder="Search sources..."
+                className="pl-9 h-9 bg-muted/30 border-none focus-visible:ring-1 text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-              Source Type
-            </Label>
             <Select
               value={filterSourceType}
               onValueChange={(v) =>
                 setFilterSourceType(v as SourceType | "all")
               }
             >
-              <SelectTrigger className="w-[140px] bg-muted/50 border-none h-10">
-                <SelectValue placeholder="All types" />
+              <SelectTrigger className="w-auto min-w-[120px] h-9 bg-muted/30 border-none px-3 gap-2 text-sm">
+                <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                <SelectValue>
+                  {filterSourceType === "all"
+                    ? "All Types"
+                    : `${
+                        filterSourceType.charAt(0).toUpperCase() +
+                        filterSourceType.slice(1)
+                      } (${sourceTypeCounts[filterSourceType]})`}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types ({items.length})</SelectItem>
@@ -300,56 +304,50 @@ export function InboxView() {
                 </SelectItem>
               </SelectContent>
             </Select>
-          </div>
 
-          <div className="space-y-2 min-w-[200px]">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <SortDesc className="h-3 w-3" /> Sort Order
-            </Label>
-            <RadioGroup
-              value={sortBy}
-              onValueChange={(v) => setSortBy(v as SortOrder)}
-              className="flex items-center gap-4 bg-muted/50 h-10 px-3 rounded-md border-none"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="newest" id="newest" />
-                <Label
-                  htmlFor="newest"
-                  className="text-sm cursor-pointer whitespace-nowrap"
-                >
-                  Newest
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="oldest" id="oldest" />
-                <Label
-                  htmlFor="oldest"
-                  className="text-sm cursor-pointer whitespace-nowrap"
-                >
-                  Oldest
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          <div className="flex items-center gap-2 h-10 self-end ml-auto px-1">
-            <Checkbox
-              id="select-all"
-              checked={
-                isAllVisibleSelected
-                  ? true
-                  : isAnyVisibleSelected
-                  ? "indeterminate"
-                  : false
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 px-2 gap-2 text-muted-foreground hover:text-foreground"
+              onClick={() =>
+                setSortBy(sortBy === "newest" ? "oldest" : "newest")
               }
-              onCheckedChange={handleSelectAllToggle}
-            />
-            <Label
-              htmlFor="select-all"
-              className="text-sm font-medium cursor-pointer whitespace-nowrap"
             >
-              Select Visible
-            </Label>
+              {sortBy === "newest" ? (
+                <SortDesc className="h-4 w-4" />
+              ) : (
+                <SortAsc className="h-4 w-4" />
+              )}
+              <span className="text-xs font-semibold uppercase tracking-wider">
+                {sortBy}
+              </span>
+            </Button>
+
+            <Separator
+              orientation="vertical"
+              className="h-4 mx-1 hidden sm:block"
+            />
+
+            <div className="flex items-center gap-2 pl-1">
+              <Checkbox
+                id="select-all"
+                checked={
+                  isAllVisibleSelected
+                    ? true
+                    : isAnyVisibleSelected
+                    ? "indeterminate"
+                    : false
+                }
+                onCheckedChange={handleSelectAllToggle}
+                className="h-4 w-4"
+              />
+              <Label
+                htmlFor="select-all"
+                className="text-xs font-medium text-muted-foreground cursor-pointer whitespace-nowrap"
+              >
+                Select {visibleIds.length}
+              </Label>
+            </div>
           </div>
         </div>
       </header>
