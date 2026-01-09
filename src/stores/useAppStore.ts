@@ -129,8 +129,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       const statusResult = await window.api.db.status();
       if (!statusResult.error) {
         set({
-          inboxCount: statusResult.data.inboxCount,
-          queueCount: statusResult.data.queueCount,
+          inboxCount: statusResult.data!.inboxCount,
+          queueCount: statusResult.data!.queueCount,
         });
       }
       await get().refreshSmartViewCounts();
@@ -455,7 +455,20 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
       return {
         success: true,
-        data: { card: updatedCard, log: null },
+        data: {
+          card: updatedCard,
+          reviewLog: {
+            id: "browser-mock-log",
+            cardId: updatedCard.id,
+            rating: rating,
+            state: updatedCard.state,
+            scheduledDays: daysToAdd,
+            elapsedDays: 0,
+            review: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+          },
+          intervals: { again: 1, hard: 2, good: 3, easy: 4 },
+        },
       };
     } catch (error) {
       console.error("[Store] Error scheduling review:", error);

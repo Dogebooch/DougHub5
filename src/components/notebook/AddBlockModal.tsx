@@ -130,14 +130,15 @@ export function AddBlockModal({
         : 0;
 
       // 2. Create new block
-      const newBlock: Omit<NotebookBlock, 'cardCount'> = {
+      const newBlock: NotebookBlock = {
         id: crypto.randomUUID(),
         notebookTopicPageId,
         sourceItemId: source.id,
         content: source.rawContent,
-        annotations: null,
-        mediaPath: source.mediaPath || null,
+        annotations: undefined,
+        mediaPath: source.mediaPath || undefined,
         position: maxPosition + 1,
+        cardCount: 0,
       };
 
       const createResult = await window.api.notebookBlocks.create(newBlock);

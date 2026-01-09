@@ -55,6 +55,10 @@ Thumbs.db
 .tmp/
 .tmp/
 
+# Release artifacts
+release/
+dist-electron/
+
 # Temporary files
 .tmp/
 

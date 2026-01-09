@@ -75,6 +75,39 @@
 **Dependency:** F2 (embeddings infrastructure)
 **Notes:** Evidence-based feature - semantic similarity in short succession causes retrieval interference. Requires card embeddings and queue reordering logic.
 
+### Board-Informed Card Generation (F43)
+**Description:** Card generation prompt includes user's practice Q history to create high-yield, personalized cards. When generating cards, the AI receives:
+- User's accuracy on this topic (from review_logs aggregation)
+- Commonly tested concepts (from `testedConcepts[]` on qbank SourceItems)
+- User's weak spots / common mistakes on this topic
+- Related practice Qs they've done
+
+**Priority:** High
+**Source:** Clinical Workflows Planning Session (2026-01-09)
+**Dependency:** T125 (Data Logging with `testedConcepts`), T119.2 (getBoardRelevanceForTopic IPC)
+**Implementation:**
+1. Modify `generateCardFromBlock()` in ai-service.ts to accept `boardRelevance` parameter
+2. Call `getBoardRelevanceForTopic(topicTags)` before card generation
+3. Inject into prompt: "User accuracy: 65% on this topic. Commonly tested: [Kanavel signs, consult threshold]. User struggles with: [empiric abx timing]"
+4. AI prioritizes cards that target weak concepts and high-yield tested areas
+**Current Gap:** Card generation receives only block content + topic name. No user performance context.
+**Notes:** Transforms generic card generation into personalized, board-focused learning. Cards target YOUR gaps, not generic content. Related to F36 (Gap-Aware Cards) but uses practice Q data instead of AI insight evaluation.
+
+### Batch Relevance Review Smart View (F44)
+**Description:** Smart View that surfaces all NotebookBlocks and Cards with `relevanceScore = 'low'` for batch review. Prevents notebook/card bloat by letting user periodically clean up low-yield content.
+**Priority:** Medium
+**Source:** Board Relevance Advisory Planning (2026-01-09)
+**Dependency:** T120 (relevanceScore on NotebookBlock), T125 (relevanceScore on Card)
+**Location:** Smart Views dropdown or sidebar entry
+**Filter:** `WHERE relevanceScore = 'low'`
+**UI:**
+- List view showing low-relevance blocks and cards grouped by topic
+- Each item shows: title/content preview, relevanceReason, created date
+- Batch actions: [Keep] (changes score to 'medium'), [Archive], [Delete]
+- Summary header: "X items marked low relevance"
+**Use Case:** Monthly cleanup — user reviews content that wasn't board-tested, decides whether to keep, archive, or remove.
+**Notes:** Advisory at creation time prevents most bloat; this is the safety net for items that slip through.
+
 ### Review Sessions Table (F16)
 **Description:** Persistent session tracking via `review_sessions` table. Schema: id, startedAt, endedAt, cardsReviewed, mistakeCount, accuracy, totalTimeMs. Enables session history, analytics trends, and cross-session mistake tracking.
 **Priority:** Medium
@@ -216,6 +249,24 @@
 **Description:** Search rawContent field in addition to title. Requires new IPC handler `sourceItems:search(query)` with SQLite FTS5.
 **Priority:** Medium
 **Notes:** Title search covers most cases. Add when users have 500+ items and can't find content.
+
+### Knowledge Bank RAG Chat (Grounded Discussion)
+**Description:** Chat interface grounded on Knowledge Bank content for hallucination-free topic discussion.
+**Priority:** Medium
+**Source:** Clinical Workflows Planning Session (2026-01-09)
+**Architecture:**
+```
+User question → FTS search Knowledge Bank → Retrieve relevant chunks →
+Inject into LLM context → Generate grounded response with source citations
+```
+**Components:**
+1. ChatMessage table: id, topicId?, role (user|assistant), content, sourcesUsed[], createdAt
+2. Grounded prompt builder: Constructs prompt with source content injection
+3. Chat panel/modal UI: Accessible from KB or Notebook view
+**MVP Implementation:** Simple FTS keyword search (existing source_items_fts), no embeddings
+**Post-MVP Enhancement:** Embedding-based semantic search (requires F2 infrastructure)
+**Example:** "Walk me through Kanavel's signs" → Answers from user's saved Tintinalli excerpt
+**Notes:** Enables "discuss with your notes" without AI hallucination. Sources shown with each response.
 
 ### Knowledge Bank Keyboard Navigation
 **Source:** Task 40 scoping (2026-01-06)

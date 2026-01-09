@@ -23,9 +23,9 @@ export interface Card {
   parentListId: string | null; // UUID for grouping medical list cards
   listPosition: number | null; // Order within list
   // v2 Architecture - Notebook linking
-  notebookTopicPageId?: string;
-  sourceBlockId?: string;
-  aiTitle?: string | null;
+  notebookTopicPageId: string | null;
+  sourceBlockId: string | null;
+  aiTitle: string | null;
 }
 
 export interface Note {

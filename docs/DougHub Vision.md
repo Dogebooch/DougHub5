@@ -1,165 +1,81 @@
-# DougHub Vision - Final Executive Decisions
+# DougHub Vision
 
 ## Vision Statement
-FOR medical residents with ADHD WHO lose 10+ minutes per study session to 
-organizational decisions, DougHub is an active encoding tool THAT makes concept 
-extraction the learning moment. UNLIKE Anki, Notion, or RemNote, our product 
-guides extraction with AI suggestions while preserving user agency over what 
-matters.
+FOR medical residents with ADHD WHO lose 10+ minutes per study session to organizational decisions, DougHub is an active encoding tool THAT makes concept extraction the learning moment. UNLIKE Anki, Notion, or RemNote, our product guides extraction with AI confirmation while preserving user agency over what matters.
 
 ## Problem
-The bottleneck isn't content quality or tool features—it's the 10+ minutes lost 
-per session answering:
+The bottleneck isn't content quality or tools—it's decisions:
 - "Where does this go?"
 - "How do I connect this to what I already know?"
 - "What format should this card be?"
+- "Is this worth a flashcard?"
 
-These decisions prevent studying from starting.
+These prevent studying from starting.
 
 ## Core Insight
-Extraction IS the learning. Active recall during capture embeds knowledge better
-than passive saving. AI reduces friction by suggesting concepts and formats—user
-confirms, edits, or adds. Exhaustion escape hatch (Quick Capture) ensures capture
-still happens when energy is zero.
+**Extraction IS the learning.** Active recall during capture embeds knowledge better than passive saving. User assigns tags and makes decisions; AI confirms, checks duplicates, and maintains organization. Quick Capture ensures capture still happens when energy is zero.
 
-## v2 Architecture: 3-Layer System
-**Primary Anxiety Addressed:** Extracting information from multiple sources → compiling into one readable place → extracting high-yield content for boards/bedside → converting to effective flashcards.
+## Target User
+IM/EM residents with ADHD studying for boards. Post-shift exhaustion, zero tolerance for admin work, need to capture before forgetting.
+
+## Long-term Vision
+20-30% reduction in daily flashcard workload while improving retention through AI-personalized scheduling—enabled by evidence-based design and data collected from day one.
+
+---
+
+## Architecture: 3-Layer System
 
 ```
 LAYER 1: KNOWLEDGE BANK (Inbox/Library)
-├── SourceItems: Raw captures from any source (qbank, article, pdf, image, audio, quickcapture)
-├── Status flow: inbox → processed → curated
-├── AI auto-tags, user confirms/edits via single Save
-├── Searchable, filterable via Smart Views
+├── Raw captures from any source
+├── Status: inbox → processed → curated
+├── AI auto-tags, user confirms
 └── CANNOT create cards here (enforced)
          ↓
-    User selects, adds to topic
-         ↓
 LAYER 2: PERSONAL NOTEBOOK (Curated Topics)
-├── NotebookTopicPages: User-created canonical topics
-├── Contains excerpts/blocks from SourceItems (deep-linked)
-├── Topic aliasing: HOCM = "Hypertrophic Cardiomyopathy"
+├── User-created canonical topic pages
+├── Contains excerpts deep-linked to sources
 ├── THIS is where flashcards are created
 └── Card-worthiness gate before creation
          ↓
-    AI generates, user confirms
-         ↓
 LAYER 3: FLASHCARDS (Study Deck)
-├── Cards linked to NotebookTopicPage (provenance)
+├── Cards linked to Notebook (provenance)
 ├── FSRS scheduling, zero-decision review
-├── Low-ease detection → "fix card" flow
-└── Board-miss tracking → topic suggestions
+└── Low-ease detection → fix card flow
 ```
 
-### Key Principles
-- **Minimize card burden:** Card-worthiness gate evaluates every card before creation
-- **Notebook-only card creation:** Enforced constraint—prevents low-yield card anxiety
-- **Topic standardization:** CanonicalTopic with alias normalization (never raw strings)
-- **Deep links everywhere:** Card → Notebook → Source always traceable
+**Key Constraints:**
+- Notebook-only card creation (enforced)
+- Deep links everywhere: Card → Notebook → Source
+- CanonicalTopic with alias normalization (never raw strings)
 
-## Target User
-IM/EM residents with ADHD studying for boards. Post-shift exhaustion, zero 
-tolerance for admin work, need to capture before forgetting.
+---
 
-## Long-term Vision
-Achieve 20-30% reduction in daily flashcard workload while improving retention 
-through AI-personalized scheduling—enabled by evidence-based design and data 
-collected from day one.
-
-## MVP Scope - v2 Architecture (Revised Build Order)
-
-> **Build Philosophy:** Layer-by-layer, dependency-driven. Complete each layer before moving to the next.
-
-### Phase 1: Foundation ✅ COMPLETE
-- Database schema v3 (SourceItem, CanonicalTopic, NotebookTopicPage, Card with provenance)
-- AI service integration layer
-- Zero-decision review interface (FSRS scheduling)
-- UI theme system (Midnight Teal)
-- Sidebar with Smart View navigation stubs
-
-### Phase 2: Layer 1 - Knowledge Bank (BUILD NEXT)
-| # | Feature | Task | Status |
-|---|---------|------|--------|
-| 1 | Capture pipeline | Quick Capture → SourceItem (inbox), text support | T38 |
-| 2 | Inbox UI | Persistent indicator, count badge, batch triage | T39 |
-| 3 | Knowledge Bank UI | Vertical list grouped by status, filters | T40 |
-| 4 | Smart Views engine | System views filter logic | T44 |
-
-### Phase 3: Layer 2 - Personal Notebook
-| # | Feature | Task | Status |
-|---|---------|------|--------|
-| 5 | Topic normalization | CanonicalTopic with alias table, matching rules | T36 |
-| 6 | Notebook UI | Topic pages, add blocks from sources | T41 |
-| 7 | Deep-linked excerpts | Notebook blocks link back to SourceItems | (in T41) |
-
-### Phase 4: Layer 3 - Card Generation
-| # | Feature | Task | Status |
-|---|---------|------|--------|
-| 8 | Card generation from notebook | AI suggests cards from Notebook blocks | T42 ✅ |
-| 9 | Card-worthiness feedback | Integrated into T42 (traffic-light panel) | T42 ✅ |
-| 10 | FSRS integration | Response time tracking, provenance display | T45 ✅ |
-
-> **Note:** Card-worthiness feedback integrated into T42 as traffic-light panel. Full AI rubric evaluation (F6) deferred to post-MVP.
-
-### Phase 4.5: Card Management & Learning
-| # | Feature | Task | Status |
-|---|---------|------|--------|
-| 11 | Learning Mode | Session tracking, mistakes review, AI feedback | T117 ✅ |
-| 12 | Two-Mode Capture | Content detection, title, badge, Save to Inbox | T118 ✅ |
-| 13 | Card Browser | Browse/filter cards, edit, suspend, leech detection | T115 |
-
-### Phase 5: Cross-Cutting Polish (POST-MVP)
-| # | Feature | Status |
-|---|---------|--------|
-| 11 | Global search (<200ms via command palette) | Deferred |
-| 12 | Medical list processing (clinical vignettes) | Deferred |
-| 13 | Ollama auto-start | ✅ Complete (T17 done) |
-
-> **Note:** Phase 5 features are post-MVP polish. Core v2 architecture (Phases 2-4) takes priority.
-
-### Data Migration Note
-The `quick_dumps` table is superseded by `source_items` with `sourceType='quickcapture'`.
-Quick Capture modal should save to `source_items` table directly. Migration already handles
-existing data in `migrateToV3()`.
-
-## Technical Stack Requirements - Executive Mandated
+## Technical Stack (Mandated)
 - **Frontend:** Electron + React + TypeScript + TailwindCSS
-- **Database:** SQLite with better-sqlite3 (local-first architecture)
-- **Scheduling:** ts-fsrs library implementation (mandatory for competitive advantage)
-- **AI Integration:** Local processing where possible, API for advanced features
-- **Performance:** <200ms search response, <20 second capture workflow
-- **Data Collection:** Silent tracking of all review interactions for future personalization
+- **Database:** SQLite with better-sqlite3 (local-first)
+- **Scheduling:** ts-fsrs (mandatory)
+- **Performance:** <200ms search, <20 sec capture
 
-## Out of Scope (MVP) - Hard Boundaries
-- Picture editor / mnemonic editing workflow
-- Browse/navigation views (search-first philosophy)
+---
+
+## Out of Scope (MVP)
+- Picture editor / mnemonic workflow
 - Graph view visualization
-- AI librarian (duplicate detection, merging, quality checks)
-- **Personalized scheduling UI** (happens silently in background)
-- **Performance analytics dashboard** (data collected, not displayed)
-- Mobile app (desktop-first for exhausted users)
-- Cloud sync (local-first for reliability)
-- Import from Anki (clean start approach)
-- Progress dashboard / gamification
-- Multiple scheduler options (FSRS only)
-- **Browser extension / web clipper** (deferred to post-MVP, Task 82)
-- **Superhuman-style split view** (deferred, Task 79)
-- **Breadcrumb navigation** (deferred, Task 80)
-- **Badge pulse animations** (deferred, Task 81)
+- AI librarian (duplicate detection, merging)
+- Analytics dashboard (data collected, not displayed)
+- Mobile, cloud sync, Anki import
+- Browser extension / web clipper
 
-## Anti-Patterns - Evidence-Based Prohibitions
-- **No folder hierarchies** - Tags only, search-first navigation
-- **No grading buttons** - FSRS handles all scheduling decisions automatically
-- **No basic list cards** - All medical lists get clinical context conversion or overlapping cloze
-- **No pattern-matching cards** - AI validation prevents "recognizing the card format" vs knowing the concept
-- **No complex onboarding** - Works immediately, learns user preferences through usage
-- **No feature decisions during capture** - AI suggests, user confirms with minimal choices
-- **No manual scheduling decisions** - Complete automation of review timing
+---
 
-## Medical Education Research Applied
-1. **Minimum Information Principle:** AI enforces one discrete fact per card
-2. **Clinical Context over Lists:** Transform "5 causes of X" into "Patient presents with Y..."
-3. **FSRS Algorithm:** 99.6% superiority over SM-2, 20-30% workload reduction validated
-4. **Medical List Handling:** Overlapping cloze or clinical scenarios prevent sibling contamination
+## Anti-Patterns
+- **No folder hierarchies** — Tags only, search-first
+- **No grading buttons** — FSRS auto-schedules
+- **No basic list cards** — Clinical context conversion required
+- **No feature decisions during capture** — AI confirms, user decides
+- **No manual scheduling** — Complete automation
 
-*Detailed metrics in `docs/DougHub Success Metrics.md`. Implementation tasks in Taskmaster.*
+---
+
+*Implementation tracking in TaskMaster. Detailed metrics in Success Metrics doc.*

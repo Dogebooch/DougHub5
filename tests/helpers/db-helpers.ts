@@ -13,24 +13,27 @@ import { expect } from 'vitest'
 
 // Type imports - these will be defined in actual application types
 type Card = {
-  id: string
-  front: string
-  back: string
-  noteId: string
-  tags: string[]
-  createdAt: string
-  updatedAt: string
-}
+  id: string;
+  front: string;
+  back: string;
+  noteId: string;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  notebookTopicPageId: string | null;
+  sourceBlockId: string | null;
+  aiTitle: string | null;
+};
 
 type Note = {
-  id: string
-  title: string
-  content: string
-  tags: string[]
-  cardIds: string[]
-  createdAt: string
-  updatedAt: string
-}
+  id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  cardIds: string[];
+  createdAt: string;
+  updatedAt: string;
+};
 
 type QuickCapture = {
   id: string;
@@ -566,6 +569,7 @@ export function createMockCard(
     listPosition: null,
     notebookTopicPageId: null,
     sourceBlockId: null,
+    aiTitle: null,
     stability: 0,
     difficulty: 0,
     elapsedDays: 0,

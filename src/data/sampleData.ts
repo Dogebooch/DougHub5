@@ -161,7 +161,7 @@ ACS encompasses a spectrum of conditions caused by acute myocardial ischemia, in
 export const sampleCards: Card[] = [
   {
     id: card1Id,
-    front: 'What are the ECG criteria for STEMI diagnosis?',
+    front: "What are the ECG criteria for STEMI diagnosis?",
     back: `**ST Elevation Criteria:**
 - ≥1mm (0.1mV) ST elevation in 2 contiguous leads
 - OR ≥2mm ST elevation in precordial leads (V1-V6)
@@ -174,16 +174,19 @@ export const sampleCards: Card[] = [
 
 **Pearl:** Posterior MI shows ST depression in V1-V3 with tall R waves (mirror image)`,
     noteId: note1Id,
-    tags: ['cardiology', 'diagnostics', 'emergency', 'ECG'],
+    tags: ["cardiology", "diagnostics", "emergency", "ECG"],
     dueDate: getTodayISO(),
     createdAt: getTodayISO(),
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
+    aiTitle: null,
   },
   {
     id: card2Id,
-    front: 'What is the timing and significance of troponin elevation in ACS?',
+    front: "What is the timing and significance of troponin elevation in ACS?",
     back: `**Troponin Timeline:**
 - Initial rise: 3-4 hours post-myocardial injury
 - Peak levels: 24-48 hours
@@ -196,16 +199,19 @@ export const sampleCards: Card[] = [
 
 **High-sensitivity troponin:** Can detect earlier (1-2 hours) but less specific`,
     noteId: note1Id,
-    tags: ['cardiology', 'diagnostics', 'lab-values'],
+    tags: ["cardiology", "diagnostics", "lab-values"],
     dueDate: getTodayISO(),
     createdAt: getTodayISO(),
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
+    aiTitle: null,
   },
   {
     id: card3Id,
-    front: 'What BNP threshold suggests heart failure diagnosis?',
+    front: "What BNP threshold suggests heart failure diagnosis?",
     back: `**BNP Cutoffs:**
 - BNP >100 pg/mL → Suggests heart failure (sensitivity ~95%)
 - BNP <100 pg/mL → HF unlikely (high NPV ~90%)
@@ -220,16 +226,20 @@ export const sampleCards: Card[] = [
 
 **Clinical Use:** Best for ruling OUT HF when low; less specific when elevated`,
     noteId: note2Id,
-    tags: ['cardiology', 'diagnostics', 'lab-values'],
+    tags: ["cardiology", "diagnostics", "lab-values"],
     dueDate: getTodayISO(),
     createdAt: getTodayISO(),
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
+    aiTitle: null,
   },
   {
     id: card4Id,
-    front: 'What defines normal left ventricular ejection fraction and HF classification?',
+    front:
+      "What defines normal left ventricular ejection fraction and HF classification?",
     back: `**EF Classification:**
 - Normal (HFpEF): ≥50%
 - Mildly reduced: 41-49%
@@ -242,17 +252,20 @@ export const sampleCards: Card[] = [
 
 **Pearl:** Mid-range EF (41-49%) may respond to HFrEF therapies`,
     noteId: note2Id,
-    tags: ['cardiology', 'diagnostics', 'imaging'],
+    tags: ["cardiology", "diagnostics", "imaging"],
     dueDate: getTodayISO(),
     createdAt: getTodayISO(),
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
+    aiTitle: null,
   },
   // Stroke cards (same sourceBlockId to test sibling feature)
   {
     id: card5Id,
-    front: 'What is the time window for IV tPA in acute ischemic stroke?',
+    front: "What is the time window for IV tPA in acute ischemic stroke?",
     back: `**tPA Time Window:**
 - Standard: Within 4.5 hours of symptom onset
 - Extended: Up to 4.5 hours with specific criteria
@@ -265,16 +278,19 @@ export const sampleCards: Card[] = [
 
 **Pearl:** "Time is brain" - 1.9 million neurons lost per minute in stroke`,
     noteId: note3Id,
-    tags: ['neurology', 'emergency', 'stroke'],
+    tags: ["neurology", "emergency", "stroke"],
     dueDate: getTodayISO(), // Due today
     createdAt: getTodayISO(),
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
+    aiTitle: null,
   },
   {
     id: card6Id,
-    front: 'What are the components of the NIHSS stroke scale?',
+    front: "What are the components of the NIHSS stroke scale?",
     back: `**NIHSS Components (11 items):**
 1. Level of consciousness (LOC)
 2. LOC questions
@@ -296,16 +312,19 @@ export const sampleCards: Card[] = [
 - 5-15: Moderate stroke
 - >15: Severe stroke`,
     noteId: note3Id,
-    tags: ['neurology', 'emergency', 'stroke'],
+    tags: ["neurology", "emergency", "stroke"],
     dueDate: getDateOffset(-2), // Overdue by 2 days
     createdAt: getDateOffset(-10),
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
+    aiTitle: null,
   },
   {
     id: card7Id,
-    front: 'What is the BP target in acute stroke management?',
+    front: "What is the BP target in acute stroke management?",
     back: `**BP Management in Stroke:**
 
 **WITHOUT tPA:**
@@ -319,17 +338,20 @@ export const sampleCards: Card[] = [
 
 **Pearl:** Aggressive BP lowering can worsen infarct by reducing perfusion to penumbra`,
     noteId: note3Id,
-    tags: ['neurology', 'emergency', 'stroke', 'hypertension'],
+    tags: ["neurology", "emergency", "stroke", "hypertension"],
     dueDate: getDateOffset(3), // Due in 3 days
     createdAt: getDateOffset(-5),
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
+    aiTitle: null,
   },
   // Pulmonary cards
   {
     id: card8Id,
-    front: 'What is the standard treatment for COPD exacerbation?',
+    front: "What is the standard treatment for COPD exacerbation?",
     back: `**COPD Exacerbation Treatment:**
 
 **Bronchodilators:**
@@ -348,16 +370,19 @@ export const sampleCards: Card[] = [
 - BiPAP if pH <7.35 or RR >25
 - Intubation if deteriorating`,
     noteId: note4Id,
-    tags: ['pulmonology', 'emergency', 'COPD'],
+    tags: ["pulmonology", "emergency", "COPD"],
     dueDate: getTodayISO(),
     createdAt: getDateOffset(-3),
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
+    aiTitle: null,
   },
   {
     id: card9Id,
-    front: 'When should antibiotics be given for COPD exacerbation?',
+    front: "When should antibiotics be given for COPD exacerbation?",
     back: `**Antibiotic Indications in COPD Exacerbation:**
 
 **Give antibiotics if:**
@@ -376,16 +401,19 @@ export const sampleCards: Card[] = [
 
 **Pearl:** Procalcitonin can help guide antibiotic use`,
     noteId: note4Id,
-    tags: ['pulmonology', 'COPD', 'antibiotics'],
+    tags: ["pulmonology", "COPD", "antibiotics"],
     dueDate: getDateOffset(-1), // Overdue by 1 day
     createdAt: getDateOffset(-7),
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
+    aiTitle: null,
   },
   {
     id: card10Id,
-    front: 'What peak flow indicates severe asthma exacerbation?',
+    front: "What peak flow indicates severe asthma exacerbation?",
     back: `**Asthma Severity by Peak Flow:**
 
 **Mild:** >70% predicted
@@ -405,16 +433,19 @@ export const sampleCards: Card[] = [
 - Bradycardia
 - Cyanosis`,
     noteId: note4Id,
-    tags: ['pulmonology', 'emergency', 'asthma'],
+    tags: ["pulmonology", "emergency", "asthma"],
     dueDate: getDateOffset(1), // Due tomorrow
     createdAt: getDateOffset(-2),
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
+    aiTitle: null,
   },
   {
     id: card11Id,
-    front: 'What are the Wells criteria for pulmonary embolism?',
+    front: "What are the Wells criteria for pulmonary embolism?",
     back: `**Wells Criteria for PE:**
 
 | Criterion | Points |
@@ -434,16 +465,19 @@ export const sampleCards: Card[] = [
 
 **Pearl:** If Wells ≤4 AND PERC negative, no further workup needed`,
     noteId: note4Id,
-    tags: ['pulmonology', 'emergency', 'PE', 'DVT'],
+    tags: ["pulmonology", "emergency", "PE", "DVT"],
     dueDate: getTodayISO(),
     createdAt: getDateOffset(-1),
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
+    aiTitle: null,
   },
   {
     id: card12Id,
-    front: 'What is the role of D-dimer in PE diagnosis?',
+    front: "What is the role of D-dimer in PE diagnosis?",
     back: `**D-dimer in PE Workup:**
 
 **When to Use:**
@@ -465,11 +499,14 @@ export const sampleCards: Card[] = [
 
 **Pearl:** D-dimer is a rule-OUT test, not a rule-IN test`,
     noteId: note4Id,
-    tags: ['pulmonology', 'emergency', 'PE', 'lab-values'],
+    tags: ["pulmonology", "emergency", "PE", "lab-values"],
     dueDate: getDateOffset(5), // Due in 5 days
     createdAt: getDateOffset(-4),
-    cardType: 'qa',
+    cardType: "qa",
     parentListId: null,
     listPosition: null,
+    notebookTopicPageId: null,
+    sourceBlockId: null,
+    aiTitle: null,
   },
-]
+];

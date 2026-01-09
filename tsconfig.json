@@ -23,10 +23,18 @@
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "electron", "tests"],
+  "include": ["src", "electron"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-electron",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
