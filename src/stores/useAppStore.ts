@@ -148,10 +148,18 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     try {
       // Check if window.api exists (Electron environment)
       if (typeof window !== "undefined" && window.api) {
-        // Seed sample data if database is empty
-        const seedResult = await seedSampleData();
-        if (!seedResult.success) {
-          console.error("[Store] Seed failed:", seedResult.error);
+        // Get database status first (single efficient query)
+        const statusResult = await window.api.db.status();
+        const cardCount = statusResult.data?.cardCount ?? 0;
+        const inboxCount = statusResult.data?.inboxCount ?? 0;
+        const queueCount = statusResult.data?.queueCount ?? 0;
+
+        // Only seed sample data in development mode if database is empty
+        if (import.meta.env.DEV && cardCount === 0) {
+          const seedResult = await seedSampleData(cardCount);
+          if (!seedResult.success) {
+            console.error("[Store] Seed failed:", seedResult.error);
+          }
         }
 
         // Load cards from database
@@ -166,11 +174,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         if (notesResult.error) {
           console.error("[Store] Failed to load notes:", notesResult.error);
         }
-
-        // Refresh counts
-        const statusResult = await window.api.db.status();
-        const inboxCount = statusResult.data?.inboxCount ?? 0;
-        const queueCount = statusResult.data?.queueCount ?? 0;
 
         set({
           cards: cardsResult.data ?? [],
