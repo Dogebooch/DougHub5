@@ -102,10 +102,10 @@ export function AppLayout() {
           </div>
         );
       default:
-        // Fallback: redirect to review if unknown view
-        console.warn(`Unknown view: ${currentView}, redirecting to review`);
-        setTimeout(() => setCurrentView("review"), 0);
-        return <ReviewInterface />;
+        // Fallback: redirect to inbox if unknown view
+        console.warn(`Unknown view: ${currentView}, redirecting to inbox`);
+        setTimeout(() => setCurrentView("inbox"), 0);
+        return <InboxView />;
     }
   };
 

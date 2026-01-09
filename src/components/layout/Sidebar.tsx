@@ -54,17 +54,17 @@ export function Sidebar({ className }: SidebarProps) {
 
   const mainNavItems: NavItem[] = [
     {
-      id: "review",
-      label: "Learn",
-      icon: Play,
-      badge: dueCount,
-      implemented: true,
-    },
-    {
       id: "inbox",
       label: "Inbox",
       icon: Inbox,
       badge: smartViewCounts.inbox || 0,
+      implemented: true,
+    },
+    {
+      id: "review",
+      label: "Learn",
+      icon: Play,
+      badge: dueCount,
       implemented: true,
     },
   ];

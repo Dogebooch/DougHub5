@@ -90,7 +90,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   isHydrated: false,
   isSeeded: false,
   isLoading: true,
-  currentView: "review",
+  currentView: "inbox",
   selectedItemId: null,
   inboxCount: 0,
   queueCount: 0,
@@ -316,13 +316,13 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       search?: string;
     },
     sort?: {
-      field: 'dueDate' | 'createdAt' | 'difficulty' | 'lastReview';
-      direction: 'asc' | 'desc';
+      field: "dueDate" | "createdAt" | "difficulty" | "lastReview";
+      direction: "asc" | "desc";
     }
   ) => {
     const result = await window.api.cards.getBrowserList(filters, sort);
     if (result.error) {
-      console.error('[Store] Failed to get browser list:', result.error);
+      console.error("[Store] Failed to get browser list:", result.error);
       return [];
     }
     return result.data || [];

@@ -1,7 +1,16 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Home, Eye, Zap, Settings } from "lucide-react";
+import {
+  Home,
+  Play,
+  Zap,
+  Settings,
+  Inbox,
+  BookOpen,
+  Brain,
+  Layers,
+} from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 
 interface Command {
@@ -32,17 +41,27 @@ export function CommandPalette({
     {
       id: "quick-capture",
       label: "Quick Capture",
-      icon: <Home className="h-4 w-4" />,
+      icon: <Zap className="h-4 w-4" />,
       action: () => {
         onOpenQuickCapture();
         onClose();
       },
-      keywords: ["capture", "add", "new", "create"],
+      keywords: ["capture", "add", "new", "create", "dump", "save", "quick"],
+    },
+    {
+      id: "inbox",
+      label: "Go to Inbox",
+      icon: <Inbox className="h-4 w-4" />,
+      action: () => {
+        setCurrentView("inbox");
+        onClose();
+      },
+      keywords: ["inbox", "triage", "home", "start"],
     },
     {
       id: "review",
       label: "Go to Learn",
-      icon: <Eye className="h-4 w-4" />,
+      icon: <Play className="h-4 w-4" />,
       action: () => {
         setCurrentView("review");
         onClose();
@@ -50,14 +69,34 @@ export function CommandPalette({
       keywords: ["learn", "cards", "study", "review"],
     },
     {
-      id: "quick-capture",
-      label: "Quick Capture",
-      icon: <Zap className="h-4 w-4" />,
+      id: "notebook",
+      label: "Go to Notebook",
+      icon: <BookOpen className="h-4 w-4" />,
       action: () => {
+        setCurrentView("notebook");
         onClose();
-        setTimeout(() => onOpenQuickCapture(), 100);
       },
-      keywords: ["quick", "capture", "dump", "save"],
+      keywords: ["notebook", "notes", "topics", "curate"],
+    },
+    {
+      id: "knowledgebank",
+      label: "Go to Knowledge Bank",
+      icon: <Brain className="h-4 w-4" />,
+      action: () => {
+        setCurrentView("knowledgebank");
+        onClose();
+      },
+      keywords: ["bank", "knowledge", "sources", "raw"],
+    },
+    {
+      id: "cards",
+      label: "Go to Cards",
+      icon: <Layers className="h-4 w-4" />,
+      action: () => {
+        setCurrentView("cards");
+        onClose();
+      },
+      keywords: ["cards", "browser", "flashcards", "edit"],
     },
     {
       id: "settings",
