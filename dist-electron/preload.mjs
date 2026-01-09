@@ -155,3 +155,6 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
     return electron.ipcRenderer.invoke(channel, ...omit);
   }
 });
+console.log(
+  "[Preload] Script loaded successfully - window.api and window.ipcRenderer are ready"
+);

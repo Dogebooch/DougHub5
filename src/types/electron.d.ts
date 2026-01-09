@@ -268,6 +268,12 @@ export interface ElectronAPI {
 declare global {
   interface Window {
     api: ElectronAPI;
+    ipcRenderer: {
+      on(channel: string, func: (...args: unknown[]) => void): void;
+      once(channel: string, func: (...args: unknown[]) => void): void;
+      send(...args: unknown[]): void;
+      invoke(...args: unknown[]): Promise<unknown>;
+    };
   }
 }
 

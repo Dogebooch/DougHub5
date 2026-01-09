@@ -58,6 +58,8 @@ function createWindow() {
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
+    // Open DevTools in development for debugging
+    win.webContents.openDevTools();
   } else {
     // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
@@ -95,8 +97,13 @@ app.whenReady().then(() => {
 
   // Initialize SQLite database before creating window
   const dbPath = path.join(app.getPath("userData"), "doughub.db");
-  initDatabase(dbPath);
-  console.log("[Database] Initialized at:", dbPath);
+  try {
+    initDatabase(dbPath);
+    console.log("[Database] Initialized successfully at:", dbPath);
+  } catch (error) {
+    console.error("[Database] CRITICAL: Failed to initialize database:", error);
+    // Continue anyway - IPC handlers will fail gracefully with error responses
+  }
 
   // Register IPC handlers for renderer communication
   registerIpcHandlers();
