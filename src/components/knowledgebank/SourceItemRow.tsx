@@ -80,14 +80,14 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
           <h3 className="font-medium text-sm truncate leading-none text-card-foreground flex-1">
             {sourceItem.title}
           </h3>
-          <span className="text-[11px] text-card-muted whitespace-nowrap shrink-0 group-hover:hidden transition-opacity">
+          <span className="text-[11px] text-card-muted whitespace-nowrap shrink-0 group-hover:hidden">
             {formatDistanceToNow(new Date(sourceItem.createdAt), {
               addSuffix: true,
             })}
           </span>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 group-hover:hidden transition-opacity">
+        <div className="flex flex-wrap gap-1.5 group-hover:hidden">
           {displayedTags.map((tag) => (
             <Badge
               key={tag}
