@@ -55,7 +55,7 @@ export function Sidebar({ className }: SidebarProps) {
   const mainNavItems: NavItem[] = [
     {
       id: "review",
-      label: "Review",
+      label: "Learn",
       icon: Play,
       badge: dueCount,
       implemented: true,

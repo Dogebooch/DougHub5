@@ -622,7 +622,7 @@ function CardPreviewPane({ card }: { card: CardBrowserItem | null }) {
 
         <div
           className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
-          title="Review Lapses"
+          title="Learning Lapses"
         >
           <AlertTriangle
             className={cn(
@@ -636,7 +636,7 @@ function CardPreviewPane({ card }: { card: CardBrowserItem | null }) {
 
         <div
           className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
-          title="Last Reviewed"
+          title="Last Learned"
         >
           <Clock className="w-3.5 h-3.5 text-info" />
           <span className="font-medium text-foreground">
@@ -644,7 +644,7 @@ function CardPreviewPane({ card }: { card: CardBrowserItem | null }) {
               ? new Date(card.lastReview).toLocaleDateString()
               : "Never"}
           </span>
-          <span>Last Review</span>
+          <span>Last Learned</span>
         </div>
       </div>
     </div>
@@ -978,8 +978,8 @@ export function CardBrowserView() {
           toast({
             title: isSuspended ? "Card unsuspended" : "Card suspended",
             description: isSuspended
-              ? "The card will appear in your reviews again."
-              : "The card has been removed from reviews.",
+              ? "The card will appear in your learning sessions again."
+              : "The card has been removed from learning sessions.",
           });
           // Refresh the list
           fetchCards();
@@ -1331,7 +1331,7 @@ export function CardBrowserView() {
                 <SelectItem value="difficulty-asc">
                   Difficulty (Easiest First)
                 </SelectItem>
-                <SelectItem value="lastReview-desc">Last Reviewed</SelectItem>
+                <SelectItem value="lastReview-desc">Last Learned</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1382,7 +1382,7 @@ export function CardBrowserView() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">
-                    Great job! No leeches to review.
+                    Great job! No leeches to learn.
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                     Your retention is high and you've addressed your most

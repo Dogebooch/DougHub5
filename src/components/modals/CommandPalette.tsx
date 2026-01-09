@@ -41,13 +41,13 @@ export function CommandPalette({
     },
     {
       id: "review",
-      label: "Go to Review",
+      label: "Go to Learn",
       icon: <Eye className="h-4 w-4" />,
       action: () => {
         setCurrentView("review");
         onClose();
       },
-      keywords: ["review", "cards", "study"],
+      keywords: ["learn", "cards", "study", "review"],
     },
     {
       id: "quick-capture",

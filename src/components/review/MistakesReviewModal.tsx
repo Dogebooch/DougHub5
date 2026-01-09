@@ -169,7 +169,7 @@ export function MistakesReviewModal({
         <DialogHeader className="p-6 pb-2 border-b shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-bold">
-              Mistake Review
+              Mistake Learning
             </DialogTitle>
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded">
@@ -345,7 +345,7 @@ export function MistakesReviewModal({
             {currentIndex === mistakes.length - 1 ? (
               <>
                 <Check className="h-5 w-5 mr-2" />
-                Finish Review
+                Finish Learning
               </>
             ) : (
               "Done"

@@ -113,7 +113,7 @@ export function WeakTopicsView() {
           <h2 className="text-2xl font-bold">No Weak Topics!</h2>
           <p className="text-muted-foreground max-w-xs mx-auto">
             Great job! You''ve mastered your current curriculum. Keep up the
-            consistent reviews to stay sharp.
+            consistent learning to stay sharp.
           </p>
         </div>
         <Button onClick={() => setCurrentView("review")} className="mt-4">
@@ -161,7 +161,7 @@ export function WeakTopicsView() {
             size="sm"
             className="bg-warning hover:bg-warning/90 text-white"
           >
-            <Play className="h-4 w-4 mr-2" /> Review All Weak Cards
+            <Play className="h-4 w-4 mr-2" /> Learn All Weak Cards
           </Button>
         </div>
       </div>

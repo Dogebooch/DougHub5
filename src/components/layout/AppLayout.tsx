@@ -59,7 +59,7 @@ export function AppLayout() {
       case "today":
         return (
           <div className="p-8 text-center space-y-4">
-            <h1 className="text-2xl font-semibold">Today's Review</h1>
+            <h1 className="text-2xl font-semibold">Today's Learning</h1>
             <p className="text-muted-foreground">Coming soon...</p>
           </div>
         );

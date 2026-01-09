@@ -173,8 +173,8 @@ export function ReviewInterface() {
 
         if (!result.success) {
           toast({
-            title: "Review Failed",
-            description: result.error || "Failed to save review",
+            title: "Learn Failed",
+            description: result.error || "Failed to save progress",
             variant: "destructive",
           });
           if (isMounted.current) setIsSubmitting(false);
@@ -229,9 +229,9 @@ export function ReviewInterface() {
         }
         return true;
       } catch (error) {
-        console.error("[Review] Error submitting review:", error);
+        console.error("[Learn] Error submitting review:", error);
         toast({
-          title: "Review Failed",
+          title: "Learn Failed",
           description: "An unexpected error occurred",
           variant: "destructive",
         });
@@ -382,7 +382,7 @@ export function ReviewInterface() {
             All caught up!
           </h1>
           <p className="text-muted-foreground">
-            No cards are due for review right now.
+            No cards are due for learning right now.
           </p>
         </div>
         <button
@@ -404,7 +404,7 @@ export function ReviewInterface() {
             Session complete!
           </h1>
           <p className="text-muted-foreground">
-            Reviewed {reviewedCount} card{reviewedCount !== 1 ? "s" : ""}.
+            Learned {reviewedCount} card{reviewedCount !== 1 ? "s" : ""}.
             Redirecting to Inbox...
           </p>
         </div>
@@ -625,7 +625,7 @@ export function ReviewInterface() {
                 disabled={isSubmitting}
                 className="min-w-[220px] h-12 text-base font-semibold bg-white/10 hover:bg-white/30 text-foreground border border-white/10 rounded-xl elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all duration-200"
               >
-                n Continue
+                Continue
                 <span className="ml-3 text-[11px] text-muted-foreground font-mono">
                   Space
                 </span>
