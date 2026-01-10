@@ -18,6 +18,11 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { BoardQuestionContent } from "@/types";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/useAppStore";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 interface BoardQuestionViewProps {
   content: BoardQuestionContent;
@@ -31,11 +36,52 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
   const [isAttemptsOpen, setIsAttemptsOpen] = useState(false);
   const [isExplanationOpen, setIsExplanationOpen] = useState(true);
   const [isKeyPointsOpen, setIsKeyPointsOpen] = useState(true);
+  const [isPeerPearlsOpen, setIsPeerPearlsOpen] = useState(true);
+  const [isReferencesOpen, setIsReferencesOpen] = useState(false);
+  const [isVignetteExpanded, setIsVignetteExpanded] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<{
     url: string;
     caption?: string;
   } | null>(null);
   const userDataPath = useAppStore((state) => state.userDataPath);
+
+  // Deduplicate: If vignetteHtml ends with questionStemHtml, we should
+  // probably not render the question part inside the vignette block
+  // because it's rendered below in its own highlighted section.
+  const displayVignetteHtml = React.useMemo(() => {
+    if (!content.vignetteHtml || !content.questionStemHtml)
+      return content.vignetteHtml;
+
+    const v = content.vignetteHtml.trim();
+    const q = content.questionStemHtml.trim();
+
+    // Try basic string deduplication
+    if (v.endsWith(q)) {
+      // Basic stripping of the trailing question if it's a direct match
+      const stripped = v.slice(0, v.lastIndexOf(q)).trim();
+      // If we stripped too much or left it empty, revert
+      return stripped.length > 5 ? stripped : v;
+    }
+
+    // Try text-only comparison for more robustness against minor HTML/spacing differences
+    const vText = v.replace(/<[^>]*>/g, "").trim();
+    const qText = q.replace(/<[^>]*>/g, "").trim();
+
+    if (vText.endsWith(qText) && qText.length > 0) {
+      // Find the last occurrence of the first few words of the question
+      // This is a bit risky but often question stems are in their own <p>
+      const qStart = qText.slice(0, 20);
+      const lastIndex = v.lastIndexOf(qStart);
+      if (lastIndex !== -1) {
+        const stripped = v.slice(0, lastIndex).trim();
+        return stripped.length > 5 ? stripped : v;
+      }
+    }
+
+    return content.vignetteHtml;
+  }, [content.vignetteHtml, content.questionStemHtml]);
+
+  const isLongVignette = (content.vignetteHtml?.length || 0) > 600;
 
   const formatDate = (dateStr: string) => {
     try {
@@ -57,7 +103,14 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     return `file://${fullPath}`;
   };
 
-  const renderImages = (location: "vignette" | "explanation" | "keypoint") => {
+  const renderImages = (
+    location:
+      | "vignette"
+      | "explanation"
+      | "keypoint"
+      | "references"
+      | "peerpearls"
+  ) => {
     const sectionImages = content.images.filter(
       (img) => img.location === location
     );
@@ -149,19 +202,21 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {content.wasCorrect ? (
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-            ) : (
-              <XCircle className="w-5 h-5 text-red-500" />
-            )}
-            <a
-              href={content.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a
+                  href={content.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-[26rem] truncate">
+                {content.sourceUrl}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -199,24 +254,49 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
       <CardContent className="p-0">
         <div className="divide-y divide-border">
           {/* Vignette Section */}
-          <div className="p-6">
-            <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase block mb-3">
-              Vignette
-            </span>
+          <div className="p-6 relative group/vignette">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase">
+                Patient Scenario
+              </span>
+              {isLongVignette && (
+                <button
+                  onClick={() => setIsVignetteExpanded(!isVignetteExpanded)}
+                  className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline"
+                >
+                  {isVignetteExpanded ? "Collapse" : "Show Full Scenario"}
+                </button>
+              )}
+            </div>
+
             <div
-              className="prose prose-sm max-w-none leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: content.vignetteHtml }}
+              className={cn(
+                "prose prose-sm max-w-none leading-relaxed transition-all duration-300",
+                isLongVignette &&
+                  !isVignetteExpanded &&
+                  "line-clamp-3 opacity-60"
+              )}
+              dangerouslySetInnerHTML={{ __html: displayVignetteHtml }}
             />
-            {renderImages("vignette")}
+
+            {isLongVignette && !isVignetteExpanded && (
+              <div
+                className="absolute bottom-6 left-6 right-6 h-12 bg-gradient-to-t from-background via-background/80 to-transparent cursor-pointer"
+                onClick={() => setIsVignetteExpanded(true)}
+              />
+            )}
+
+            {(isVignetteExpanded || !isLongVignette) &&
+              renderImages("vignette")}
           </div>
 
           {/* Question Stem Section */}
-          <div className="p-6 bg-muted/10">
-            <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase block mb-3">
-              Question
+          <div className="p-6 bg-primary/5 border-y border-primary/10">
+            <span className="text-[10px] font-bold text-primary/70 tracking-widest uppercase block mb-3">
+              Clinical Question
             </span>
             <div
-              className="prose prose-sm max-w-none font-semibold text-md"
+              className="prose prose-sm max-w-none font-semibold text-lg text-foreground"
               dangerouslySetInnerHTML={{ __html: content.questionStemHtml }}
             />
           </div>
@@ -362,6 +442,76 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       />
                     </div>
                     {renderImages("keypoint")}
+                  </div>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          )}
+
+          {/* Peer Pearls Section */}
+          {content.peerPearlsHtml && (
+            <Collapsible
+              open={isPeerPearlsOpen}
+              onOpenChange={setIsPeerPearlsOpen}
+              className="p-0"
+            >
+              <div className="border-t border-border">
+                <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left">
+                  <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase text-indigo-600 dark:text-indigo-400">
+                    Peer Pearls
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "w-4 h-4 text-muted-foreground transition-transform",
+                      isPeerPearlsOpen && "rotate-180"
+                    )}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="px-6 pb-6 pt-0">
+                    <div className="bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-200/50 dark:border-indigo-900/50 rounded-lg p-4">
+                      <div
+                        className="prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{
+                          __html: content.peerPearlsHtml,
+                        }}
+                      />
+                    </div>
+                    {renderImages("peerpearls")}
+                  </div>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          )}
+
+          {/* References Section */}
+          {content.referencesHtml && (
+            <Collapsible
+              open={isReferencesOpen}
+              onOpenChange={setIsReferencesOpen}
+              className="p-0"
+            >
+              <div className="border-t border-border">
+                <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left">
+                  <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase">
+                    References
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "w-4 h-4 text-muted-foreground transition-transform",
+                      isReferencesOpen && "rotate-180"
+                    )}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="px-6 pb-6 pt-0">
+                    <div
+                      className="prose prose-xs max-w-none text-muted-foreground opacity-80"
+                      dangerouslySetInnerHTML={{
+                        __html: content.referencesHtml,
+                      }}
+                    />
+                    {renderImages("references")}
                   </div>
                 </CollapsibleContent>
               </div>
