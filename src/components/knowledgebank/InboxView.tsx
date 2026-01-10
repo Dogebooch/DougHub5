@@ -76,22 +76,12 @@ export function InboxView() {
   useEffect(() => {
     if (typeof window !== "undefined" && window.api?.sourceItems?.onNew) {
       const unsubscribe = window.api.sourceItems.onNew((item: any) => {
-        console.log("[InboxView] Received onNew event:", item);
         if (item.status === "inbox") {
           setItems((prev) => {
-            console.log(
-              "[InboxView] Updating inbox list with item:",
-              item.title
-            );
             // Remove existing version if present, then add new one to top
             const filtered = prev.filter((i) => i.id !== item.id);
             return [item, ...filtered];
           });
-        } else {
-          console.log(
-            "[InboxView] Item status is NOT inbox, ignoring:",
-            item.status
-          );
         }
       });
       return unsubscribe;
@@ -241,9 +231,9 @@ export function InboxView() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-surface-base overflow-hidden">
+    <div className="flex flex-col h-full bg-background overflow-hidden">
       {/* Header with sticky behavior */}
-      <header className="flex-none p-4 border-b border-border/30 space-y-4 bg-surface-base z-10">
+      <header className="flex-none p-4 border-b border-border/30 space-y-4 bg-background z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Inbox className="h-6 w-6 text-primary" />

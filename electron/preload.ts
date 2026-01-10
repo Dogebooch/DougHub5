@@ -206,6 +206,9 @@ const api = {
       return () => ipcRenderer.removeListener("capture:received", handler);
     },
   },
+  app: {
+    getUserDataPath: () => ipcRenderer.invoke("app:getUserDataPath"),
+  },
   reloadApp: () => ipcRenderer.invoke("app:reload"),
 };
 

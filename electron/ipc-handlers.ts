@@ -165,9 +165,6 @@ export async function processCapture(
       createdAt: new Date().toISOString(),
       status: "inbox",
     });
-    console.log(
-      "[IPC Handlers] Updated existing item, set status=inbox, bumped createdAt"
-    );
     resultId = existing.id;
     isUpdate = true;
   } else {
@@ -1383,6 +1380,17 @@ export function registerIpcHandlers(): void {
   ipcMain.handle("app:reload", () => {
     BrowserWindow.getFocusedWindow()?.webContents.reloadIgnoringCache();
   });
+
+  ipcMain.handle(
+    "app:getUserDataPath",
+    async (): Promise<IpcResult<string>> => {
+      try {
+        return success(app.getPath("userData"));
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
 
   console.log("[IPC] All handlers registered");
 }

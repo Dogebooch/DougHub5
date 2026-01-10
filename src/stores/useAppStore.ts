@@ -26,6 +26,7 @@ interface AppState {
   queueCount: number;
   smartViewCounts: Record<string, number>;
   selectedInboxItems: Set<string>;
+  userDataPath: string | null;
 }
 
 interface AppActions {
@@ -103,7 +104,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     weak: 0,
   },
   selectedInboxItems: new Set<string>(),
-
+  userDataPath: null,
   setCurrentView: (view, itemId = null, options = undefined) =>
     set({ currentView: view, selectedItemId: itemId, viewOptions: options }),
 
@@ -183,9 +184,17 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           console.error("[Store] Failed to load notes:", notesResult.error);
         }
 
+        // Use new app API to get userData path for images
+        let userDataPath: string | null = null;
+        const userDataResult = await window.api.app.getUserDataPath();
+        if (userDataResult.data) {
+          userDataPath = userDataResult.data;
+        }
+
         set({
           cards: cardsResult.data ?? [],
           notes: notesResult.data ?? [],
+          userDataPath,
           inboxCount,
           queueCount,
           isSeeded: true,

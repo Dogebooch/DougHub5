@@ -112,7 +112,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
         <Button
           size="sm"
           variant="outline"
-          className="h-8 text-xs font-medium border-card-muted/30 text-card-muted/90 bg-transparent hover:bg-card-muted/10 hover:text-card-foreground shadow-none"
+          className="h-8 text-xs font-medium border-border/30 text-card-muted bg-transparent hover:bg-card-muted/10 hover:text-card-foreground shadow-none"
           onClick={() => onOpen(sourceItem)}
         >
           Open

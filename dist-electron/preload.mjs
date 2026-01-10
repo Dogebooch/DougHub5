@@ -139,6 +139,9 @@ const api = {
       return () => electron.ipcRenderer.removeListener("capture:received", handler);
     }
   },
+  app: {
+    getUserDataPath: () => electron.ipcRenderer.invoke("app:getUserDataPath")
+  },
   reloadApp: () => electron.ipcRenderer.invoke("app:reload")
 };
 electron.contextBridge.exposeInMainWorld("api", api);

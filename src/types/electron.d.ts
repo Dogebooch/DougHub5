@@ -257,6 +257,9 @@ export interface ElectronAPI {
     ) => Promise<IpcResult<{ id: string; isUpdate: boolean }>>;
     onReceived: (callback: (payload: any) => void) => () => void;
   };
+  app: {
+    getUserDataPath: () => Promise<IpcResult<string>>;
+  };
   settings: {
     get: (key: string) => Promise<IpcResult<string | null>>;
     set: (key: string, value: string) => Promise<IpcResult<void>>;
