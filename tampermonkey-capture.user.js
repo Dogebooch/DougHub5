@@ -117,12 +117,12 @@
                 });
             });
         } catch (error) {
-            if (attempt < CONFIG.RETRY_DELAYS.length) {
-                setButtonState('retrying', attempt + 1);
-                await sleep(CONFIG.RETRY_DELAYS[attempt]);
-                return sendToDougHub(payload, attempt + 1);
-            }
-            throw error;
+          if (attempt < CONFIG.RETRY_DELAYS.length) {
+            setButtonState("retrying", attempt + 1);
+            await sleep(CONFIG.RETRY_DELAYS[attempt]);
+            return sendToDougHub(payload, attempt + 1);
+          }
+          throw error;
         }
     }
 

@@ -162,7 +162,12 @@ export async function processCapture(
     sourceItemQueries.update(existing.id, {
       rawContent: JSON.stringify(existingContent),
       updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      status: "inbox",
     });
+    console.log(
+      "[IPC Handlers] Updated existing item, set status=inbox, bumped createdAt"
+    );
     resultId = existing.id;
     isUpdate = true;
   } else {

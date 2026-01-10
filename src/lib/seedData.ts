@@ -125,16 +125,23 @@ export async function seedSampleData(
 
     // Insert notes first (cards reference noteId)
     for (const note of sampleNotes) {
-      const noteResult: IpcResult<Note> = await window.api.notes.create(note);
-      if (noteResult.error) {
-        console.error(
-          `[Seed] Failed to insert note ${note.id}:`,
-          noteResult.error
-        );
-        return {
-          success: false,
-          error: `Failed to insert note: ${noteResult.error}`,
-        };
+      try {
+        // Check if note exists first to avoid unique constraint errors
+        const existingNote = await window.api.notes.getById(note.id);
+        if (existingNote.data) {
+          // Note exists, skip or update? Skipping for now as this is seeding
+          continue;
+        }
+
+        const noteResult: IpcResult<Note> = await window.api.notes.create(note);
+        if (noteResult.error) {
+          console.warn(
+            `[Seed] Failed to insert note ${note.id}: ${noteResult.error}`
+          );
+          // Continue despite error
+        }
+      } catch (err) {
+        console.warn(`[Seed] Unexpected error seeding note ${note.id}:`, err);
       }
     }
     console.log(`[Seed] Inserted ${sampleNotes.length} notes`);

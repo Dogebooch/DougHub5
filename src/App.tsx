@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Toaster, toast } from "sonner";
+import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
 import { useAppStore } from "@/stores/useAppStore";
 import { AppLayout } from "@/components/layout/AppLayout";
 
@@ -46,6 +47,7 @@ export default function App() {
     <>
       <AppLayout />
       <Toaster position="bottom-center" richColors />
+      <ShadcnToaster />
     </>
   );
 }
