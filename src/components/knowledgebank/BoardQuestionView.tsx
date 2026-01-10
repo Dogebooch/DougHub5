@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  CheckCircle2, 
-  XCircle, 
+import {
+  CheckCircle2,
+  XCircle,
   ChevronDown,
   Clock,
-  ExternalLink
+  ExternalLink,
+  ZoomIn,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { BoardQuestionContent } from "@/types";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/useAppStore";
@@ -29,6 +31,10 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
   const [isAttemptsOpen, setIsAttemptsOpen] = useState(false);
   const [isExplanationOpen, setIsExplanationOpen] = useState(true);
   const [isKeyPointsOpen, setIsKeyPointsOpen] = useState(true);
+  const [zoomedImage, setZoomedImage] = useState<{
+    url: string;
+    caption?: string;
+  } | null>(null);
   const userDataPath = useAppStore((state) => state.userDataPath);
 
   const formatDate = (dateStr: string) => {
@@ -58,21 +64,34 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     if (sectionImages.length === 0) return null;
 
     return (
-      <div className="mt-4 space-y-4">
-        {sectionImages.map((img, idx) => (
-          <div key={idx} className="flex flex-col items-center">
-            <img
-              src={getImagePath(img.localPath)}
-              alt={img.caption || `Image ${idx + 1}`}
-              className="max-w-full h-auto rounded-md shadow-sm border border-border"
-            />
-            {img.caption && (
-              <p className="text-xs text-muted-foreground mt-2 italic text-center">
-                {img.caption}
-              </p>
-            )}
-          </div>
-        ))}
+      <div className="mt-4 flex flex-wrap gap-4 items-start">
+        {sectionImages.map((img, idx) => {
+          const imagePath = getImagePath(img.localPath);
+          return (
+            <div key={idx} className="flex flex-col items-center max-w-[30%]">
+              <div
+                className="relative group cursor-zoom-in"
+                onClick={() =>
+                  setZoomedImage({ url: imagePath, caption: img.caption })
+                }
+              >
+                <img
+                  src={imagePath}
+                  alt={img.caption || `Image ${idx + 1}`}
+                  className="w-full h-auto rounded-md shadow-sm border border-border transition-transform hover:scale-[1.02]"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center rounded-md">
+                  <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6" />
+                </div>
+              </div>
+              {img.caption && (
+                <p className="text-[10px] text-muted-foreground mt-2 italic text-center leading-tight">
+                  {img.caption}
+                </p>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -350,6 +369,29 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
           )}
         </div>
       </CardContent>
+
+      {/* Image Zoom Modal */}
+      <Dialog
+        open={!!zoomedImage}
+        onOpenChange={(open) => !open && setZoomedImage(null)}
+      >
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-1 border-none bg-transparent shadow-none flex flex-col items-center justify-center">
+          {zoomedImage && (
+            <div className="relative group">
+              <img
+                src={zoomedImage.url}
+                alt={zoomedImage.caption || "Zoomed image"}
+                className="max-w-full max-h-[85vh] object-contain rounded-md shadow-2xl bg-card"
+              />
+              {zoomedImage.caption && (
+                <div className="mt-4 p-3 bg-black/60 backdrop-blur-md rounded-lg text-white text-sm text-center max-w-2xl mx-auto">
+                  {zoomedImage.caption}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
