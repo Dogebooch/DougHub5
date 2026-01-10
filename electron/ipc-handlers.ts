@@ -99,6 +99,39 @@ function failure(error: unknown): IpcResult<never> {
 }
 
 /**
+ * Normalizes a URL for duplicate detection.
+ * Removes common tracking parameters, lowercase path, removes trailing slash.
+ */
+function normalizeUrl(urlStr: string): string {
+  try {
+    const url = new URL(urlStr);
+    const trackingParams = [
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "utm_term",
+      "utm_content",
+      "fbclid",
+      "gclid",
+    ];
+    trackingParams.forEach((param) => url.searchParams.delete(param));
+
+    let normalized = url.origin + url.pathname.toLowerCase();
+    // Remove trailing slash if not just the root
+    if (normalized.endsWith("/") && normalized.length > url.origin.length + 1) {
+      normalized = normalized.slice(0, -1);
+    }
+    return normalized;
+  } catch {
+    let normalized = urlStr.toLowerCase().trim();
+    if (normalized.endsWith("/") && normalized.length > 1) {
+      normalized = normalized.slice(0, -1);
+    }
+    return normalized;
+  }
+}
+
+/**
  * Shared capture processing logic used by both IPC and main process auto-capture
  */
 export async function processCapture(
@@ -128,23 +161,26 @@ export async function processCapture(
   }
 
   // 3. Check for duplicate by URL
-  // TODO: Add targeted query sourceItemQueries.getByUrl(url) for better performance
-  const existingItems = sourceItemQueries.getAll();
-  const existing = existingItems.find((item) => {
-    if (item.sourceType !== "qbank" || !item.rawContent) return false;
-    try {
-      const parsed = JSON.parse(item.rawContent) as BoardQuestionContent;
-      return parsed.sourceUrl === payload.url;
-    } catch {
-      return false;
-    }
-  });
+  // Use optimized getByUrl first for exact matches, then fallback to normalized search
+  const normalizedUrl = normalizeUrl(payload.url);
+  
+  // Try exact match first (O(1))
+  let existing = sourceItemQueries.getByUrl(payload.url);
+  
+  // If no exact match, search all for normalized match
+  if (!existing) {
+    const existingItems = sourceItemQueries.getAll();
+    existing = existingItems.find((item) => {
+      if (item.sourceType !== "qbank" || !item.sourceUrl) return false;
+      return normalizeUrl(item.sourceUrl) === normalizedUrl;
+    }) || null;
+  }
 
   let resultId: string;
   let isUpdate = false;
 
   if (existing) {
-    // Update existing: add to attempts array
+    // Update existing: add to attempts array and refresh content
     const existingContent = JSON.parse(
       existing.rawContent!
     ) as BoardQuestionContent;
@@ -159,11 +195,16 @@ export async function processCapture(
       wasCorrect: content.wasCorrect,
     });
 
+    // Update with latest content but keep attempt history
+    const mergedContent = {
+      ...content,
+      attempts: existingContent.attempts,
+    };
+
     sourceItemQueries.update(existing.id, {
-      rawContent: JSON.stringify(existingContent),
+      rawContent: JSON.stringify(mergedContent),
       updatedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      status: "inbox",
+      // status: existing.status // Keep existing status (could be 'processed' or 'curated')
     });
     resultId = existing.id;
     isUpdate = true;
@@ -175,14 +216,14 @@ export async function processCapture(
       id,
       title: `Board Question - ${content.category || content.source}`,
       sourceType: "qbank",
-      sourceName: payload.siteName, // Required field
-      sourceUrl: payload.url,
+      sourceName: payload.siteName,
+      sourceUrl: payload.url, // Store original URL
       rawContent: JSON.stringify(content),
       status: "inbox",
       createdAt: now,
       updatedAt: now,
-      canonicalTopicIds: [], // Required field
-      tags: [payload.siteName], // Required field
+      canonicalTopicIds: [],
+      tags: [payload.siteName],
     };
     sourceItemQueries.insert(sourceItem);
     resultId = id;

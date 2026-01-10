@@ -191,10 +191,10 @@ export function InboxView() {
   const handleDelete = async (item: SourceItem) => {
     try {
       const result = await window.api.sourceItems.delete(item.id);
-      if (result.data) {
+      if (!result.error) {
         fetchInbox();
         refreshCounts();
-      } else if (result.error) {
+      } else {
         console.error("Delete failed:", result.error);
       }
     } catch (err) {

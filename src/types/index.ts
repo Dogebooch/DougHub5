@@ -283,7 +283,12 @@ export interface BoardImage {
   url: string;
   localPath: string;
   caption?: string;
-  location: 'vignette' | 'explanation' | 'keypoint';
+  location:
+    | "vignette"
+    | "explanation"
+    | "keypoint"
+    | "references"
+    | "peerpearls";
 }
 
 export interface BoardAttempt {

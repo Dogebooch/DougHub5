@@ -118,8 +118,26 @@ export async function downloadImage(url: string): Promise<string> {
  * @returns Array with localPath and location for each successfully downloaded image
  */
 export async function downloadBoardQuestionImages(
-  imageUrls: Array<{ url: string; location: 'vignette' | 'explanation' | 'keypoint' }>
-): Promise<Array<{ localPath: string; location: 'vignette' | 'explanation' | 'keypoint' }>> {
+  imageUrls: Array<{
+    url: string;
+    location:
+      | "vignette"
+      | "explanation"
+      | "keypoint"
+      | "references"
+      | "peerpearls";
+  }>
+): Promise<
+  Array<{
+    localPath: string;
+    location:
+      | "vignette"
+      | "explanation"
+      | "keypoint"
+      | "references"
+      | "peerpearls";
+  }>
+> {
   if (!imageUrls || imageUrls.length === 0) {
     return [];
   }
@@ -127,20 +145,31 @@ export async function downloadBoardQuestionImages(
   const results = await Promise.allSettled(
     imageUrls.map(async (item) => {
       const localPath = await downloadImage(item.url);
-      return { 
-        localPath, 
-        location: item.location 
+      return {
+        localPath,
+        location: item.location,
       };
     })
   );
 
-  const successfulDownloads: Array<{ localPath: string; location: 'vignette' | 'explanation' | 'keypoint' }> = [];
+  const successfulDownloads: Array<{
+    localPath: string;
+    location:
+      | "vignette"
+      | "explanation"
+      | "keypoint"
+      | "references"
+      | "peerpearls";
+  }> = [];
 
   results.forEach((result, index) => {
-    if (result.status === 'fulfilled') {
+    if (result.status === "fulfilled") {
       successfulDownloads.push(result.value);
     } else {
-      console.warn(`[Image Service] Failed to download image from ${imageUrls[index].url}:`, result.reason);
+      console.warn(
+        `[Image Service] Failed to download image from ${imageUrls[index].url}:`,
+        result.reason
+      );
     }
   });
 

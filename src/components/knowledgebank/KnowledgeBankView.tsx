@@ -113,7 +113,7 @@ export const KnowledgeBankView = () => {
 
   const handleDelete = async (id: string) => {
     const result = await window.api.sourceItems.delete(id);
-    if (result.data) {
+    if (!result.error) {
       fetchItems();
     }
   };

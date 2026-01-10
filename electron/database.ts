@@ -1724,6 +1724,14 @@ export const sourceItemQueries = {
     return row ? parseSourceItemRow(row) : null;
   },
 
+  getByUrl(url: string): DbSourceItem | null {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM source_items WHERE sourceUrl = ?"
+    );
+    const row = stmt.get(url) as SourceItemRow | undefined;
+    return row ? parseSourceItemRow(row) : null;
+  },
+
   insert(item: DbSourceItem): void {
     const stmt = getDatabase().prepare(`
       INSERT INTO source_items (
