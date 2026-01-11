@@ -153,6 +153,9 @@ export async function seedSampleData(
         ...card,
         ...DEFAULT_FSRS,
         ...overrides,
+        // Ensure v2 compliance for seeding (cards must have notebook link)
+        notebookTopicPageId: card.notebookTopicPageId || "seed-topic-page",
+        sourceBlockId: card.sourceBlockId || "seed-block",
       };
       const cardResult: IpcResult<CardWithFSRS> = await window.api.cards.create(
         cardWithFSRS

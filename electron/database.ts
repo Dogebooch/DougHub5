@@ -1462,6 +1462,23 @@ export const cardQueries = {
     stmt.run({ id });
   },
 
+  getDueToday(): DbCard[] {
+    const now = new Date().toISOString();
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM cards WHERE dueDate <= ?"
+    );
+    const rows = stmt.all(now) as CardRow[];
+    return rows.map(parseCardRow);
+  },
+
+  getCardsByBlockId(blockId: string): DbCard[] {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM cards WHERE sourceBlockId = ?"
+    );
+    const rows = stmt.all(blockId) as CardRow[];
+    return rows.map(parseCardRow);
+  },
+
   getBySiblings(sourceBlockId: string): DbCard[] {
     const stmt = getDatabase().prepare(`
       SELECT 
@@ -2232,27 +2249,39 @@ export const notebookTopicPageQueries = {
     const db = getDatabase();
     db.transaction(() => {
       // 1. Delete review logs for all cards belonging to this page
-      db.prepare(`
+      db.prepare(
+        `
         DELETE FROM review_logs 
         WHERE cardId IN (SELECT id FROM cards WHERE notebookTopicPageId = ?)
-      `).run(id);
+      `
+      ).run(id);
 
       // 2. Delete all cards belonging to this page
       db.prepare("DELETE FROM cards WHERE notebookTopicPageId = ?").run(id);
 
       // 3. Find source items used in this page's blocks before deleting blocks
-      const sourceItems = db.prepare(`
+      const sourceItems = db
+        .prepare(
+          `
         SELECT DISTINCT sourceItemId FROM notebook_blocks WHERE notebookTopicPageId = ?
-      `).all(id) as { sourceItemId: string }[];
+      `
+        )
+        .all(id) as { sourceItemId: string }[];
 
       // 4. Delete blocks belonging to this page
-      db.prepare("DELETE FROM notebook_blocks WHERE notebookTopicPageId = ?").run(id);
+      db.prepare(
+        "DELETE FROM notebook_blocks WHERE notebookTopicPageId = ?"
+      ).run(id);
 
       // 5. Update SourceItem status for orphaned curated items
-      const checkStmt = db.prepare("SELECT COUNT(*) as count FROM notebook_blocks WHERE sourceItemId = ?");
-      const updateStmt = db.prepare("UPDATE source_items SET status = 'processed', updatedAt = ? WHERE id = ? AND status = 'curated'");
+      const checkStmt = db.prepare(
+        "SELECT COUNT(*) as count FROM notebook_blocks WHERE sourceItemId = ?"
+      );
+      const updateStmt = db.prepare(
+        "UPDATE source_items SET status = 'processed', updatedAt = ? WHERE id = ? AND status = 'curated'"
+      );
       const now = new Date().toISOString();
-      
+
       for (const item of sourceItems) {
         if (item.sourceItemId) {
           const result = checkStmt.get(item.sourceItemId) as { count: number };
@@ -3543,9 +3572,11 @@ export interface DbStatus {
   version: number;
   cardCount: number;
   noteCount: number;
+  sourceItemCount: number; // Added for v2
   quickCaptureCount: number; // Legacy/Compat
   inboxCount: number;
   queueCount: number;
+  notebookCount: number; // Added for sidebar
   connectionCount: number;
   weakTopicsCount: number;
 }
@@ -3627,6 +3658,11 @@ export function getDatabaseStatus(): DbStatus {
   const noteCount = (
     db.prepare("SELECT COUNT(*) as count FROM notes").get() as { count: number }
   ).count;
+  const sourceItemCount = (
+    db.prepare("SELECT COUNT(*) as count FROM source_items").get() as {
+      count: number;
+    }
+  ).count;
 
   // Backward compatibility: count quick_dumps if table exists, else 0
   let quickCaptureCount = 0;
@@ -3662,6 +3698,12 @@ export function getDatabaseStatus(): DbStatus {
     }
   ).count;
 
+  const notebookCount = (
+    db.prepare("SELECT COUNT(*) as count FROM notebook_topic_pages").get() as {
+      count: number;
+    }
+  ).count;
+
   const connectionCount = (
     db.prepare("SELECT COUNT(*) as count FROM connections").get() as {
       count: number;
@@ -3680,9 +3722,11 @@ export function getDatabaseStatus(): DbStatus {
     version,
     cardCount,
     noteCount,
+    sourceItemCount,
     quickCaptureCount,
     inboxCount,
     queueCount,
+    notebookCount,
     connectionCount,
     weakTopicsCount,
   };

@@ -174,9 +174,11 @@ export interface DbStatus {
   version: number;
   cardCount: number;
   noteCount: number;
+  sourceItemCount: number;
   quickCaptureCount: number;
   inboxCount: number;
   queueCount: number;
+  notebookCount: number;
   connectionCount: number;
   weakTopicsCount: number;
 }

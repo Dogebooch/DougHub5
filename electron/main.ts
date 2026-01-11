@@ -141,6 +141,11 @@ function createWindow() {
   win.on("move", saveBounds);
   win.on("resize", saveBounds);
 
+  win.on("closed", () => {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    win = null;
+  });
+
   Menu.setApplicationMenu(null);
 
   win.once("ready-to-show", () => {
@@ -153,12 +158,51 @@ function createWindow() {
   });
 
   if (VITE_DEV_SERVER_URL) {
-    win.loadURL(VITE_DEV_SERVER_URL);
-    // Open DevTools in development for debugging, but don't steal focus
-    win.webContents.openDevTools({ mode: "detach", activate: false });
+    // Validate dev server URL before loading
+    try {
+      new URL(VITE_DEV_SERVER_URL); // Throws if malformed
+      console.log(
+        "[Dev Mode] Loading from Vite dev server:",
+        VITE_DEV_SERVER_URL
+      );
+      win.loadURL(VITE_DEV_SERVER_URL).catch((error) => {
+        console.error("[Dev Mode] Failed to load from Vite dev server:", error);
+        // Show error dialog to developer
+        const { dialog } = require("electron");
+        dialog.showErrorBox(
+          "Dev Server Error",
+          `Failed to load from Vite dev server at ${VITE_DEV_SERVER_URL}.\n\nError: ${error.message}\n\nMake sure 'npm run dev' is running.`
+        );
+      });
+      // Open DevTools in development for debugging (disable with DOUGHUB_NO_DEVTOOLS=1)
+      if (!process.env.DOUGHUB_NO_DEVTOOLS) {
+        win.webContents.openDevTools({ mode: "detach", activate: false });
+      }
+    } catch (urlError) {
+      console.error(
+        "[Dev Mode] Invalid VITE_DEV_SERVER_URL:",
+        VITE_DEV_SERVER_URL,
+        urlError
+      );
+      // Fall back to loading dist files
+      console.log("[Production Mode] Loading from built files (fallback)");
+      win.loadFile(path.join(RENDERER_DIST, "index.html")).catch((error) => {
+        console.error("[Production Mode] Failed to load built files:", error);
+      });
+    }
   } else {
-    // win.loadFile('dist/index.html')
-    win.loadFile(path.join(RENDERER_DIST, "index.html"));
+    console.log(
+      "[Production Mode] Loading from built files:",
+      path.join(RENDERER_DIST, "index.html")
+    );
+    win.loadFile(path.join(RENDERER_DIST, "index.html")).catch((error) => {
+      console.error("[Production Mode] Failed to load built files:", error);
+      const { dialog } = require("electron");
+      dialog.showErrorBox(
+        "Startup Error",
+        `Failed to load application files.\n\nError: ${error.message}\n\nTry rebuilding with 'npm run build'.`
+      );
+    });
   }
 }
 

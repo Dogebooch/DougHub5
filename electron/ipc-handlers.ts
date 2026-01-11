@@ -85,6 +85,11 @@ import {
 } from "./topic-service";
 
 // ============================================================================
+// In-flight capture lock to prevent race conditions during async processing
+// ============================================================================
+const inFlightCaptures = new Set<string>();
+
+// ============================================================================
 // IPC Result Wrapper
 // ============================================================================
 
@@ -138,45 +143,56 @@ function normalizeUrl(urlStr: string): string {
 export async function processCapture(
   payload: CapturePayload
 ): Promise<{ id: string; isUpdate: boolean }> {
-  // 1. Parse the HTML
-  const content = parseBoardQuestion(
-    payload.pageHTML,
-    payload.siteName,
-    payload.url,
-    payload.timestamp
-  );
-
-  // 2. Download images and update localPaths
-  if (content.images.length > 0) {
-    const downloadedImages = await downloadBoardQuestionImages(
-      content.images.map((img) => ({ url: img.url, location: img.location }))
-    );
-
-    // Update localPaths in content
-    content.images = content.images.map((img) => {
-      const downloaded = downloadedImages.find(
-        (d) => d.location === img.location && d.localPath
-      );
-      return { ...img, localPath: downloaded?.localPath || img.localPath };
-    });
-  }
-
-  // 3. Check for duplicate by URL
-  // Use optimized getByUrl first for exact matches, then fallback to normalized search
   const normalizedUrl = normalizeUrl(payload.url);
 
-  // Try exact match first (O(1))
-  let existing = sourceItemQueries.getByUrl(payload.url);
-
-  // If no exact match, search all for normalized match
-  if (!existing) {
-    const existingItems = sourceItemQueries.getAll();
-    existing =
-      existingItems.find((item) => {
-        if (item.sourceType !== "qbank" || !item.sourceUrl) return false;
-        return normalizeUrl(item.sourceUrl) === normalizedUrl;
-      }) || null;
+  // If this URL is already being processed, wait up to 5 seconds
+  if (inFlightCaptures.has(normalizedUrl)) {
+    for (let i = 0; i < 10; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (!inFlightCaptures.has(normalizedUrl)) break;
+    }
   }
+
+  inFlightCaptures.add(normalizedUrl);
+
+  try {
+    // 1. Parse the HTML
+    const content = parseBoardQuestion(
+      payload.pageHTML,
+      payload.siteName,
+      payload.url,
+      payload.timestamp
+    );
+
+    // 2. Download images and update localPaths
+    if (content.images.length > 0) {
+      const downloadedImages = await downloadBoardQuestionImages(
+        content.images.map((img) => ({ url: img.url, location: img.location }))
+      );
+
+      // Update localPaths in content
+      content.images = content.images.map((img) => {
+        const downloaded = downloadedImages.find(
+          (d) => d.location === img.location && d.localPath
+        );
+        return { ...img, localPath: downloaded?.localPath || img.localPath };
+      });
+    }
+
+    // 3. Check for duplicate by URL
+    // Use optimized getByUrl first for exact matches, then fallback to normalized search
+    // Try exact match first (O(1))
+    let existing = sourceItemQueries.getByUrl(payload.url);
+
+    // If no exact match, search all for normalized match
+    if (!existing) {
+      const existingItems = sourceItemQueries.getAll();
+      existing =
+        existingItems.find((item) => {
+          if (item.sourceType !== "qbank" || !item.sourceUrl) return false;
+          return normalizeUrl(item.sourceUrl) === normalizedUrl;
+        }) || null;
+    }
 
   let resultId: string;
   let isUpdate = false;
@@ -240,16 +256,19 @@ export async function processCapture(
   }
 
   // 5. Show system notification
-  const notification = new Notification({
-    title: isUpdate ? "Question Updated" : "Question Captured",
-    body: `${content.category || "Board Question"} - ${
-      content.wasCorrect ? "Correct!" : "Incorrect"
-    }`,
-    silent: false,
-  });
-  notification.show();
+    const notification = new Notification({
+      title: isUpdate ? "Question Updated" : "Question Captured",
+      body: `${content.category || "Board Question"} - ${
+        content.wasCorrect ? "Correct!" : "Incorrect"
+      }`,
+      silent: false,
+    });
+    notification.show();
 
-  return { id: resultId, isUpdate };
+    return { id: resultId, isUpdate };
+  } finally {
+    inFlightCaptures.delete(normalizedUrl);
+  }
 }
 
 // ============================================================================
@@ -274,8 +293,7 @@ export function registerIpcHandlers(): void {
     "cards:getById",
     async (_, id: string): Promise<IpcResult<DbCard | null>> => {
       try {
-        const cards = cardQueries.getAll();
-        const card = cards.find((c) => c.id === id) ?? null;
+        const card = cardQueries.getById(id);
         return success(card);
       } catch (error) {
         return failure(error);
@@ -287,9 +305,7 @@ export function registerIpcHandlers(): void {
     "cards:getDueToday",
     async (): Promise<IpcResult<DbCard[]>> => {
       try {
-        const cards = cardQueries.getAll();
-        const today = new Date().toISOString().split("T")[0];
-        const dueCards = cards.filter((c) => c.dueDate <= today);
+        const dueCards = cardQueries.getDueToday();
         return success(dueCards);
       } catch (error) {
         return failure(error);
@@ -356,6 +372,12 @@ export function registerIpcHandlers(): void {
     "cards:create",
     async (_, card: DbCard): Promise<IpcResult<DbCard>> => {
       try {
+        // v2 constraint: Cards must be linked to a notebook topic page and block
+        if (!card.notebookTopicPageId || !card.sourceBlockId) {
+          return failure(
+            "DougHub v2 rule: Cards can only be created from Notebook Topic Page blocks. Both notebookTopicPageId and sourceBlockId must be present."
+          );
+        }
         cardQueries.insert(card);
         return success(card);
       } catch (error) {
@@ -409,8 +431,7 @@ export function registerIpcHandlers(): void {
     "notes:getById",
     async (_, id: string): Promise<IpcResult<DbNote | null>> => {
       try {
-        const notes = noteQueries.getAll();
-        const note = notes.find((n) => n.id === id) ?? null;
+        const note = noteQueries.getById(id);
         return success(note);
       } catch (error) {
         return failure(error);
@@ -1512,8 +1533,17 @@ export function registerIpcHandlers(): void {
     }
   );
 
-  ipcMain.handle("app:reload", () => {
-    BrowserWindow.getFocusedWindow()?.webContents.reloadIgnoringCache();
+  ipcMain.handle("app:reload", async (): Promise<IpcResult<void>> => {
+    try {
+      const focusedWindow = BrowserWindow.getFocusedWindow();
+      if (!focusedWindow) {
+        return failure("No focused window to reload");
+      }
+      focusedWindow.webContents.reloadIgnoringCache();
+      return success(undefined);
+    } catch (error) {
+      return failure(error);
+    }
   });
 
   ipcMain.handle(

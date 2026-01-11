@@ -135,74 +135,102 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   refreshSmartViewCounts: async () => {
     if (typeof window !== "undefined" && window.api) {
-      const [itemsResult, pagesResult] = await Promise.all([
-        window.api.sourceItems.getAll(),
-        window.api.notebookPages.getAll(),
-      ]);
+      const statusResult = await window.api.db.status();
+      if (statusResult.error) {
+        console.error("[Store] Failed to refresh smart view counts:", statusResult.error);
+        return;
+      }
 
-      if (!itemsResult.error && itemsResult.data) {
-        const items = itemsResult.data;
-        const statusResult = await window.api.db.status();
-        const counts = {
-          inbox: items.filter((i) => i.status === "inbox").length,
-          notebook: pagesResult.data?.length || 0,
-          weak: statusResult.data?.weakTopicsCount || 0,
-        };
-        set({ smartViewCounts: counts });
+      if (statusResult.data) {
+        set({
+          smartViewCounts: {
+            inbox: statusResult.data.inboxCount,
+            notebook: statusResult.data.notebookCount,
+            weak: statusResult.data.weakTopicsCount,
+          },
+        });
       }
     }
   },
 
   loadSettings: async () => {
     if (typeof window !== "undefined" && window.api) {
-      const result = await window.api.settings.getAll();
-      if (result.data) {
-        const dbSettings = result.data;
-        const currentSettings = { ...get().settings };
+      try {
+        const result = await window.api.settings.getAll();
+        if (result.error) {
+          console.error("[Store] Failed to load settings:", result.error);
+          return;
+        }
 
-        dbSettings.forEach((s) => {
-          const key = s.key as keyof AppSettings;
-          if (key in currentSettings) {
-            // Basic type conversion
-            if (typeof currentSettings[key] === "number") {
-              currentSettings[key] = parseFloat(s.value) as any;
-            } else {
-              currentSettings[key] = s.value as any;
+        if (result.data) {
+          const dbSettings = result.data;
+          const currentSettings = { ...get().settings };
+
+          dbSettings.forEach((s) => {
+            const key = s.key as keyof AppSettings;
+            if (key in currentSettings) {
+              // Basic type conversion
+              if (typeof currentSettings[key] === "number") {
+                currentSettings[key] = parseFloat(s.value) as any;
+              } else {
+                currentSettings[key] = s.value as any;
+              }
             }
-          }
-        });
+          });
 
-        set({ settings: currentSettings });
+          set({ settings: currentSettings });
+        }
+      } catch (error) {
+        console.error("[Store] Exception loading settings:", error);
       }
     }
   },
 
   updateSetting: async (key, value) => {
     if (typeof window !== "undefined" && window.api) {
-      // Save to DB
-      const stringValue = typeof value === "string" ? value : String(value);
-      await window.api.settings.set(key, stringValue);
+      try {
+        // Save to DB
+        const stringValue = typeof value === "string" ? value : String(value);
+        const result = await window.api.settings.set(key, stringValue);
 
-      // Update local state
-      set((state) => ({
-        settings: {
-          ...state.settings,
-          [key]: value,
-        },
-      }));
+        if (result && (result as any).error) {
+          console.error(`[Store] Failed to update setting ${key}:`, (result as any).error);
+          return;
+        }
+
+        // Update local state
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            [key]: value,
+          },
+        }));
+      } catch (error) {
+        console.error(`[Store] Exception updating setting ${key}:`, error);
+      }
     }
   },
 
   refreshCounts: async () => {
     if (typeof window !== "undefined" && window.api) {
       const statusResult = await window.api.db.status();
-      if (!statusResult.error) {
+      if (statusResult.error) {
+        console.error("[Store] Failed to refresh counts:", statusResult.error);
+        return;
+      }
+
+      if (statusResult.data) {
+        const data = statusResult.data;
         set({
-          inboxCount: statusResult.data!.inboxCount,
-          queueCount: statusResult.data!.queueCount,
+          inboxCount: data.inboxCount,
+          queueCount: data.queueCount,
+          smartViewCounts: {
+            inbox: data.inboxCount,
+            notebook: data.notebookCount,
+            weak: data.weakTopicsCount,
+          },
         });
       }
-      await get().refreshSmartViewCounts();
     }
   },
 
@@ -227,9 +255,17 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
         // Get database status first (single efficient query)
         const statusResult = await window.api.db.status();
-        const cardCount = statusResult.data?.cardCount ?? 0;
-        const inboxCount = statusResult.data?.inboxCount ?? 0;
-        const queueCount = statusResult.data?.queueCount ?? 0;
+        if (statusResult.error) {
+          console.error("[Store] Database status failed:", statusResult.error);
+        }
+
+        const {
+          cardCount = 0,
+          inboxCount = 0,
+          queueCount = 0,
+          notebookCount = 0,
+          weakTopicsCount = 0,
+        } = statusResult.data || {};
 
         // Only seed sample data in development mode if database is empty
         if (import.meta.env.DEV && cardCount === 0) {
@@ -265,6 +301,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           userDataPath,
           inboxCount,
           queueCount,
+          smartViewCounts: {
+            inbox: inboxCount,
+            notebook: notebookCount,
+            weak: weakTopicsCount,
+          },
           isSeeded: true,
           isHydrated: true,
           isLoading: false,
