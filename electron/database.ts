@@ -1295,6 +1295,23 @@ export const cardQueries = {
     return rows;
   },
 
+  /**
+   * Find cards where front and back are identical (data quality issue).
+   * These cards likely have duplicate vignette content.
+   */
+  findDuplicateFrontBack(): DbCard[] {
+    const stmt = getDatabase().prepare(`
+      SELECT * FROM cards 
+      WHERE TRIM(front) = TRIM(back) 
+      AND front IS NOT NULL 
+      AND back IS NOT NULL 
+      AND TRIM(front) != ''
+      ORDER BY createdAt DESC
+    `);
+    const rows = stmt.all() as CardRow[];
+    return rows.map(parseCardRow);
+  },
+
   getBrowserList(
     filters?: CardBrowserFilters,
     sort?: CardBrowserSort

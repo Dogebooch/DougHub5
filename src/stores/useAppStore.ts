@@ -170,10 +170,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             const key = s.key as keyof AppSettings;
             if (key in currentSettings) {
               // Basic type conversion
-              if (typeof currentSettings[key] === "number") {
-                currentSettings[key] = parseFloat(s.value) as any;
+              if (typeof (currentSettings as any)[key] === "number") {
+                (currentSettings as any)[key] = parseFloat(s.value);
               } else {
-                currentSettings[key] = s.value as any;
+                (currentSettings as any)[key] = s.value;
               }
             }
           });

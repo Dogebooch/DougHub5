@@ -60,13 +60,10 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
       if (!html) return "";
       let processed = html;
       content.images.forEach((img) => {
-        if (img.originalUrl && img.localPath) {
+        if (img.url && img.localPath) {
           const localUrl = getImagePath(img.localPath);
           // Simple string replace or regex is fine for these static URLs
-          const escapedUrl = img.originalUrl.replace(
-            /[.*+?^${}()|[\]\\]/g,
-            "\\$&"
-          );
+          const escapedUrl = img.url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
           const regex = new RegExp(escapedUrl, "g");
           processed = processed.replace(regex, localUrl);
         }
@@ -134,6 +131,56 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
   );
 
   const isLongVignette = (content.vignetteHtml?.length || 0) > 600;
+
+  // Deduplicate answers by both letter and content, keeping the one with most info
+  const displayedAnswers = React.useMemo(() => {
+    if (!content.answers) return [];
+
+    // 1. Deduplicate by content text first
+    const uniqueByContent = new Map<string, (typeof content.answers)[0]>();
+    for (const answer of content.answers) {
+      const text = (answer.html || "")
+        .replace(/<[^>]*>/g, "")
+        .trim()
+        .toLowerCase();
+      if (!text) continue;
+
+      const existing = uniqueByContent.get(text);
+      const getScore = (a: (typeof content.answers)[0]) => {
+        let score = 0;
+        if (a.isUserChoice) score += 100;
+        if (a.isCorrect) score += 50;
+        if (a.peerPercent !== undefined) score += 20;
+        if (/^[A-F]$/i.test(a.letter)) score += 10;
+        return score;
+      };
+
+      if (!existing || getScore(answer) > getScore(existing)) {
+        uniqueByContent.set(text, answer);
+      }
+    }
+
+    // 2. Deduplicate by letter (in case different letters were assigned to the same content)
+    const uniqueByLetter = new Map<string, (typeof content.answers)[0]>();
+    for (const answer of uniqueByContent.values()) {
+      const existing = uniqueByLetter.get(answer.letter);
+      const getScore = (a: (typeof content.answers)[0]) => {
+        let score = 0;
+        if (a.isUserChoice) score += 100;
+        if (a.isCorrect) score += 50;
+        if (a.peerPercent !== undefined) score += 20;
+        return score;
+      };
+
+      if (!existing || getScore(answer) > getScore(existing)) {
+        uniqueByLetter.set(answer.letter, answer);
+      }
+    }
+
+    return Array.from(uniqueByLetter.values()).sort((a, b) =>
+      a.letter.localeCompare(b.letter)
+    );
+  }, [content.answers]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -362,7 +409,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {content.answers.map((answer, idx) => {
+                {displayedAnswers.map((answer, idx) => {
                   const isWrongUserChoice =
                     answer.isUserChoice && !answer.isCorrect;
                   const isCorrectAnswer = answer.isCorrect;

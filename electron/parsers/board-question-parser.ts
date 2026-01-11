@@ -103,6 +103,59 @@ function getSectionHtml(
 }
 
 /**
+ * Deduplicates answers by both letter and content, keeping the one with most information.
+ */
+function deduplicateAnswers(answers: AnswerOption[]): AnswerOption[] {
+  // 1. First, deduplicate by normalized content text to catch same answers with different letters
+  const uniqueByContent = new Map<string, AnswerOption>();
+
+  for (const answer of answers) {
+    const text = answer.html.replace(/<[^>]*>/g, "").trim().toLowerCase();
+    if (!text) continue;
+
+    const existing = uniqueByContent.get(text);
+
+    // Scoring info richness
+    const getScore = (a: AnswerOption) => {
+      let score = 0;
+      if (a.isUserChoice) score += 100;
+      if (a.isCorrect) score += 50;
+      if (a.peerPercent !== undefined) score += 20;
+      // Prefer letters A-F over high fallback letters G-Z
+      if (/^[A-F]$/i.test(a.letter)) score += 10;
+      if (a.html && a.html.length > 10) score += 1;
+      return score;
+    };
+
+    if (!existing || getScore(answer) > getScore(existing)) {
+      uniqueByContent.set(text, answer);
+    }
+  }
+
+  // 2. Then, deduplicate by letter to catch same letters with different content (rare but possible)
+  const uniqueByLetter = new Map<string, AnswerOption>();
+  for (const answer of uniqueByContent.values()) {
+    const existing = uniqueByLetter.get(answer.letter);
+    const getScore = (a: AnswerOption) => {
+      let score = 0;
+      if (a.isUserChoice) score += 100;
+      if (a.isCorrect) score += 50;
+      if (a.peerPercent !== undefined) score += 20;
+      if (a.html && a.html.length > 10) score += 1;
+      return score;
+    };
+
+    if (!existing || getScore(answer) > getScore(existing)) {
+      uniqueByLetter.set(answer.letter, answer);
+    }
+  }
+
+  return Array.from(uniqueByLetter.values()).sort((a, b) =>
+    a.letter.localeCompare(b.letter)
+  );
+}
+
+/**
  * Stub for parsing ACEP PeerPrep questions.
  * Implementation planned for T124.6.
  */
@@ -169,7 +222,8 @@ function parsePeerPrep(
     answers.push({ letter, html, isCorrect, isUserChoice, peerPercent });
   });
 
-  const wasCorrect = answers.some((a) => a.isUserChoice && a.isCorrect);
+  const finalAnswers = deduplicateAnswers(answers);
+  const wasCorrect = finalAnswers.some((a) => a.isUserChoice && a.isCorrect);
   const explanationHtml =
     getSectionHtml($, "Explanation", [
       ".feedbackTab",
@@ -246,7 +300,7 @@ function parsePeerPrep(
     sourceUrl: url,
     vignetteHtml: cleanedVignetteHtml,
     questionStemHtml,
-    answers,
+    answers: finalAnswers,
     wasCorrect,
     explanationHtml,
     keyPointsHtml,
@@ -315,7 +369,8 @@ function parseMKSAP(
     });
   });
 
-  const wasCorrect = answers.some((a) => a.isUserChoice && a.isCorrect);
+  const finalAnswers = deduplicateAnswers(answers);
+  const wasCorrect = finalAnswers.some((a) => a.isUserChoice && a.isCorrect);
 
   // 3. Explanation & Key Points
   const explanationHtml = $(".critique, .explanation").first().html() || "";
@@ -359,7 +414,7 @@ function parseMKSAP(
     sourceUrl: url,
     vignetteHtml: cleanedVignetteHtml,
     questionStemHtml,
-    answers,
+    answers: finalAnswers,
     wasCorrect,
     explanationHtml,
     keyPointsHtml,

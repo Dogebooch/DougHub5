@@ -21,6 +21,8 @@ const api = {
       ipcRenderer.invoke("cards:getBrowserList", filters, sort),
     getBySiblings: (sourceBlockId: string) =>
       ipcRenderer.invoke("cards:getBySiblings", sourceBlockId),
+    findDuplicateFrontBack: () =>
+      ipcRenderer.invoke("cards:findDuplicateFrontBack"),
   },
   notes: {
     getAll: () => ipcRenderer.invoke("notes:getAll"),

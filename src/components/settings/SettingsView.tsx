@@ -38,7 +38,9 @@ import {
   BookOpen,
   Trash2,
   Download,
+  AlertTriangle,
 } from "lucide-react";
+import { Card as CardType } from "@/types";
 
 export function SettingsView() {
   const { toast } = useToast();
@@ -48,6 +50,8 @@ export function SettingsView() {
   const [dbPath, setDbPath] = useState<string | null>(null);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [duplicateCards, setDuplicateCards] = useState<CardType[]>([]);
+  const [isLoadingDuplicates, setIsLoadingDuplicates] = useState(false);
 
   useEffect(() => {
     async function loadDbPath() {
@@ -172,6 +176,46 @@ export function SettingsView() {
     }
   }, [toast]);
 
+  const handleScanDuplicates = useCallback(async () => {
+    setIsLoadingDuplicates(true);
+    try {
+      const result = await window.api.cards.findDuplicateFrontBack();
+      if (result.error) {
+        toast({
+          title: "Scan Failed",
+          description: result.error,
+          variant: "destructive",
+        });
+        setDuplicateCards([]);
+      } else {
+        setDuplicateCards(result.data || []);
+        if (result.data && result.data.length > 0) {
+          toast({
+            title: "Duplicates Found",
+            description: `Found ${result.data.length} card${
+              result.data.length === 1 ? "" : "s"
+            } with duplicate front/back content`,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "No Duplicates",
+            description: "All cards look good!",
+          });
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Scan Failed",
+        description: String(error),
+        variant: "destructive",
+      });
+      setDuplicateCards([]);
+    } finally {
+      setIsLoadingDuplicates(false);
+    }
+  }, [toast]);
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -198,6 +242,10 @@ export function SettingsView() {
           <TabsTrigger value="data" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
             Data & Backup
+          </TabsTrigger>
+          <TabsTrigger value="quality" className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Data Quality
           </TabsTrigger>
         </TabsList>
 
@@ -511,6 +559,93 @@ export function SettingsView() {
                     </AlertDialogContent>
                   </AlertDialog>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* DATA QUALITY TAB */}
+        <TabsContent value="quality" className="space-y-6 outline-none">
+          <Card className="border-border bg-surface-elevated/30">
+            <CardHeader>
+              <CardTitle>Card Quality Issues</CardTitle>
+              <CardDescription className="text-foreground/80">
+                Scan for and fix data quality problems.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Duplicate Front/Back Cards</p>
+                    <p className="text-sm text-foreground/80 leading-snug max-w-[400px]">
+                      Find cards where the question (front) and answer (back)
+                      are identical—usually caused by vignette generation
+                      issues.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleScanDuplicates}
+                    variant="outline"
+                    size="sm"
+                    disabled={isLoadingDuplicates}
+                    className="gap-2"
+                  >
+                    <AlertTriangle className="h-4 w-4" />
+                    {isLoadingDuplicates ? "Scanning..." : "Scan Now"}
+                  </Button>
+                </div>
+
+                {duplicateCards.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="font-semibold text-destructive">
+                            {duplicateCards.length} Duplicate{" "}
+                            {duplicateCards.length === 1 ? "Card" : "Cards"}{" "}
+                            Found
+                          </p>
+                          <p className="text-sm text-destructive/80">
+                            These cards have identical front and back content.
+                            Review and fix them manually in the Card Browser.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                      {duplicateCards.map((card) => (
+                        <div
+                          key={card.id}
+                          className="p-3 rounded-md bg-muted/50 border border-border text-sm space-y-2"
+                        >
+                          <div className="font-mono text-xs text-muted-foreground">
+                            ID: {card.id.slice(0, 8)}...
+                          </div>
+                          <div className="text-foreground/90 line-clamp-2">
+                            {card.front}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>Created:</span>
+                            <span>
+                              {new Date(card.createdAt).toLocaleDateString()}
+                            </span>
+                            {card.cardType && (
+                              <>
+                                <span>•</span>
+                                <span className="capitalize">
+                                  {card.cardType}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

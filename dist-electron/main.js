@@ -1,9 +1,8 @@
 import "electron";
 import "node:url";
 import "node:path";
-import { B, M, R, V } from "./main-CNUCJGyu.js";
+import { M, R, V } from "./main-CPPkRXTN.js";
 export {
-  B as BoardQuestionView,
   M as MAIN_DIST,
   R as RENDERER_DIST,
   V as VITE_DEV_SERVER_URL

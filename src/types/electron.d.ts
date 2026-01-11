@@ -103,6 +103,7 @@ export interface ElectronAPI {
     getBySiblings: (
       sourceBlockId: string
     ) => Promise<IpcResult<CardBrowserItem[]>>;
+    findDuplicateFrontBack: () => Promise<IpcResult<Card[]>>;
   };
   notes: {
     getAll: () => Promise<IpcResult<Note[]>>;

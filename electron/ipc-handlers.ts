@@ -404,6 +404,28 @@ export function registerIpcHandlers(): void {
             "DougHub v2 rule: Cards can only be created from Notebook Topic Page blocks. Both notebookTopicPageId and sourceBlockId must be present."
           );
         }
+
+        // Validation: Prevent duplicate front/back content
+        const frontTrimmed = card.front?.trim();
+        const backTrimmed = card.back?.trim();
+
+        if (frontTrimmed && backTrimmed && frontTrimmed === backTrimmed) {
+          return failure(
+            "Card validation failed: front and back cannot be identical. For clinical vignettes, put the scenario in 'front' and the diagnosis/answer in 'back'."
+          );
+        }
+
+        // Validation: Warn about empty backs for qa cards
+        if (
+          (card.cardType === "qa" || card.cardType === "vignette") &&
+          !backTrimmed
+        ) {
+          console.warn(`[IPC] Creating ${card.cardType} card with empty back`, {
+            cardId: card.id,
+            front: frontTrimmed?.slice(0, 100),
+          });
+        }
+
         cardQueries.insert(card);
         return success(card);
       } catch (error) {
@@ -434,6 +456,18 @@ export function registerIpcHandlers(): void {
       try {
         cardQueries.delete(id);
         return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "cards:findDuplicateFrontBack",
+    async (): Promise<IpcResult<DbCard[]>> => {
+      try {
+        const duplicates = cardQueries.findDuplicateFrontBack();
+        return success(duplicates);
       } catch (error) {
         return failure(error);
       }

@@ -712,6 +712,13 @@ Guidelines:
 - Use green/yellow/red for worthiness ratings.
 - Provide brief, specific explanations for worthiness ratings.
 
+CRITICAL for Clinical Vignettes/Patient Scenarios:
+- FRONT: Patient demographics, clinical presentation, exam findings, labs (the scenario)
+- BACK: Diagnosis, condition name, or specific answer being tested
+- Use format: 'qa' (NOT cloze for vignettes)
+- Example: front: "37yo woman with bilateral eye redness, photophobia, and pain. Found to have bilateral uveitis." back: "Anterior uveitis (requires urgent ophthalmology referral)"
+- NEVER duplicate the scenario in both front and back
+
 Respond ONLY with a JSON object in this exact format (no markdown, no code blocks):
 {
   "suggestions": [
@@ -1321,23 +1328,46 @@ ${
     }
 
     // Basic normalization and validation
-    const normalizedSuggestions = suggestions.map((s) => ({
-      format: s.format || "qa",
-      front: s.front || "",
-      back: s.back || "",
-      confidence: typeof s.confidence === "number" ? s.confidence : 0.8,
-      worthiness: s.worthiness || {
-        testable: "yellow",
-        oneConcept: "yellow",
-        discriminative: "yellow",
-        explanations: {
-          testable: "Auto-generated",
-          oneConcept: "Auto-generated",
-          discriminative: "Auto-generated",
+    const normalizedSuggestions = suggestions
+      .map((s) => ({
+        format: s.format || "qa",
+        front: s.front || "",
+        back: s.back || "",
+        confidence: typeof s.confidence === "number" ? s.confidence : 0.8,
+        worthiness: s.worthiness || {
+          testable: "yellow",
+          oneConcept: "yellow",
+          discriminative: "yellow",
+          explanations: {
+            testable: "Auto-generated",
+            oneConcept: "Auto-generated",
+            discriminative: "Auto-generated",
+          },
         },
-      },
-      formatReason: s.formatReason || "AI suggestion",
-    }));
+        formatReason: s.formatReason || "AI suggestion",
+      }))
+      .filter((s) => {
+        // Validate content quality: detect duplicate front/back
+        if (s.front && s.back && s.front.trim() === s.back.trim()) {
+          console.warn(`[AI Service] Filtered duplicate card: front === back`, {
+            front: s.front.slice(0, 100),
+            cacheKey,
+          });
+          return false;
+        }
+        // Warn about empty backs for qa/vignette cards
+        if (
+          (s.format === "qa" || s.format === "procedural") &&
+          !s.back?.trim()
+        ) {
+          console.warn(
+            `[AI Service] Card with empty back for format ${s.format}`,
+            { front: s.front.slice(0, 100), cacheKey }
+          );
+          return false;
+        }
+        return true;
+      });
 
     // Store in cache
     aiCache.set(cacheKey, normalizedSuggestions);

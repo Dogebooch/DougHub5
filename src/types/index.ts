@@ -312,7 +312,7 @@ export interface BoardAttempt {
 }
 
 export interface BoardQuestionContent {
-  source: 'peerprep' | 'mksap';
+  source: "peerprep" | "mksap";
   questionId?: string;
   category?: string;
   capturedAt: string;
@@ -323,6 +323,8 @@ export interface BoardQuestionContent {
   wasCorrect: boolean;
   explanationHtml: string;
   keyPointsHtml?: string;
+  referencesHtml?: string;
+  peerPearlsHtml?: string;
   images: BoardImage[];
   attempts: BoardAttempt[];
 }

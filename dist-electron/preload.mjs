@@ -11,7 +11,8 @@ const api = {
     getTopicMetadata: (pageId) => electron.ipcRenderer.invoke("cards:getTopicMetadata", pageId),
     getWeakTopicSummaries: () => electron.ipcRenderer.invoke("cards:getWeakTopicSummaries"),
     getBrowserList: (filters, sort) => electron.ipcRenderer.invoke("cards:getBrowserList", filters, sort),
-    getBySiblings: (sourceBlockId) => electron.ipcRenderer.invoke("cards:getBySiblings", sourceBlockId)
+    getBySiblings: (sourceBlockId) => electron.ipcRenderer.invoke("cards:getBySiblings", sourceBlockId),
+    findDuplicateFrontBack: () => electron.ipcRenderer.invoke("cards:findDuplicateFrontBack")
   },
   notes: {
     getAll: () => electron.ipcRenderer.invoke("notes:getAll"),
