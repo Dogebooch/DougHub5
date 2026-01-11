@@ -241,7 +241,9 @@ export const TopicPageList = ({
                           : "text-foreground"
                       )}
                     >
-                      <span className="truncate mr-2">{getTopicName(page)}</span>
+                      <span className="truncate mr-2">
+                        {getTopicName(page)}
+                      </span>
                       <Badge
                         variant="secondary"
                         className={cn(
@@ -257,7 +259,7 @@ export const TopicPageList = ({
                   </ContextMenuTrigger>
                   <ContextMenuContent className="w-48">
                     <ContextMenuItem
-                      className="text-destructive focus:text-destructive cursor-pointer"
+                      className="text-destructive focus:bg-destructive focus:text-destructive-foreground cursor-pointer transition-colors"
                       onSelect={() => setPageToDelete(page)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
@@ -364,13 +366,14 @@ export const TopicPageList = ({
               This will permanently delete the page "
               {pageToDelete ? getTopicName(pageToDelete) : ""}", all its blocks,
               and all {pageToDelete?.cardIds.length || 0} associated flashcards.
-              Source items will be returned to your inbox if they are not used elsewhere.
+              Source items will be returned to your inbox if they are not used
+              elsewhere.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:brightness-90 transition-all"
               onClick={(e) => {
                 e.preventDefault();
                 handleDeletePage();
