@@ -61,9 +61,20 @@ export function ReviewInterface() {
       isMounted.current = false;
       if (redirectTimeoutRef.current) {
         clearTimeout(redirectTimeoutRef.current);
+        redirectTimeoutRef.current = null;
       }
     };
   }, []);
+
+  // Clear redirect timeout on queue changes
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+        redirectTimeoutRef.current = null;
+      }
+    };
+  }, [currentQueueIndex, sessionComplete]);
 
   // Initialize session queue with due cards
   const initialDueCards = useMemo(() => {
@@ -348,6 +359,17 @@ export function ReviewInterface() {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [
+    answerVisible,
+    isSubmitting,
+    showingFeedback,
+    handleShowAnswer,
+    handleContinue,
+    handleManualGrade,
+    navigateToInbox,
+    currentCard,
+    setCurrentView,
+  ]);
   }, [
     answerVisible,
     handleShowAnswer,

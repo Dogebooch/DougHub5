@@ -896,11 +896,12 @@ function parseAIResponse<T>(text: string): T {
 
   try {
     return JSON.parse(cleaned) as T;
-  } catch (e) {
-    const error = e as Error;
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     console.error("[AI Service] JSON parse failed. Raw text:", text);
     console.error("[AI Service] Cleaned text:", cleaned);
-    throw new Error(`Failed to parse AI response: ${error.message}`);
+    console.error("[AI Service] Parse error:", errorMsg);
+    throw new Error(`Failed to parse AI response: ${errorMsg}`);
   }
 }
 

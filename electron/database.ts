@@ -335,10 +335,21 @@ function decompressBuffer(buffer: Buffer): string {
   try {
     return zlib.gunzipSync(buffer).toString("utf-8");
   } catch (error) {
-    console.error("[Database] Decompression failed:", error);
+    console.error(
+      "[Database] Decompression failed, falling back to plain text:",
+      error
+    );
     // If it's not a valid gzip buffer, it might be legacy plain text
     // although SQLite returns Buffer for BLOB, we should be safe.
-    return buffer.toString("utf-8");
+    try {
+      return buffer.toString("utf-8");
+    } catch (fallbackError) {
+      console.error(
+        "[Database] Failed to decode buffer as UTF-8:",
+        fallbackError
+      );
+      throw new Error("Unable to decompress or decode buffer");
+    }
   }
 }
 
@@ -1908,12 +1919,13 @@ export const settingsQueries = {
     return row ? row.value : null;
   },
 
-  getParsed(key: string, defaultValue: any): any {
+  getParsed<T>(key: string, defaultValue: T): T {
     const value = this.get(key);
     if (value === null) return defaultValue;
     try {
-      return JSON.parse(value);
-    } catch (e) {
+      return JSON.parse(value) as T;
+    } catch (error) {
+      console.error(`[Settings] Failed to parse setting '${key}':`, error);
       return defaultValue;
     }
   },
@@ -2584,7 +2596,11 @@ function seedMedicalAcronymsFromLocalFile(): void {
 
   console.log("[Database] Seeding medical acronyms...");
 
-  let loadedAcronyms: any[] = [];
+  let loadedAcronyms: {
+    acronym: string;
+    expansion: string;
+    category?: string;
+  }[] = [];
 
   // Try to load from local JSON file
   try {
@@ -3421,7 +3437,12 @@ export const searchQueries = {
         ORDER BY rank
         LIMIT ?
       `);
-      const cardRows = cardsStmt.all(ftsQuery, limit) as any[];
+      const cardRows = cardsStmt.all(ftsQuery, limit) as Array<{
+        id: string;
+        front: string;
+        back: string;
+        tags: string;
+      }>;
       cardRows.forEach((row) => {
         const snippet =
           [row.s1, row.s2, row.s3].find((s) => s && s.includes("<mark>")) ||
@@ -3455,7 +3476,12 @@ export const searchQueries = {
         ORDER BY rank
         LIMIT ?
       `);
-      const noteRows = notesStmt.all(ftsQuery, limit) as any[];
+      const noteRows = notesStmt.all(ftsQuery, limit) as Array<{
+        id: string;
+        title: string;
+        content: string;
+        tags: string;
+      }>;
       noteRows.forEach((row) => {
         const snippet =
           [row.s2, row.s1, row.s3].find((s) => s && s.includes("<mark>")) ||
@@ -3489,7 +3515,13 @@ export const searchQueries = {
         ORDER BY rank
         LIMIT ?
       `);
-      const sourceRows = sourceStmt.all(ftsQuery, limit) as any[];
+      const sourceRows = sourceStmt.all(ftsQuery, limit) as Array<{
+        id: string;
+        title: string;
+        rawContent: string;
+        sourceName: string;
+        tags: string;
+      }>;
       sourceRows.forEach((row) => {
         const snippet =
           [row.s2, row.s1, row.s3].find((s) => s && s.includes("<mark>")) ||
@@ -3674,8 +3706,9 @@ export function getDatabaseStatus(): DbStatus {
         }
       ).count;
     }
-  } catch (e) {
-    // Ignore error if table doesn't exist
+  } catch (error) {
+    console.error("[Database] Failed to count quick_dumps:", error);
+    // Ignore error if table doesn't exist or query fails
   }
 
   const inboxCount = (

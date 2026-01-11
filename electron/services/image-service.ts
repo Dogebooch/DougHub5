@@ -22,15 +22,20 @@ async function withRetry<T>(
   fn: () => Promise<T>,
   delays = [1000, 2000, 4000]
 ): Promise<T> {
-  let lastError: any;
+  let lastError: Error | unknown;
   for (let i = 0; i <= delays.length; i++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error;
       if (i < delays.length) {
-        console.warn(`[Image Service] Attempt ${i + 1} failed, retrying in ${delays[i]}ms... URL: ${fn.toString().includes('url') ? 'check logs' : 'unknown'}`);
-        await new Promise(resolve => setTimeout(resolve, delays[i]));
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.warn(
+          `[Image Service] Attempt ${i + 1}/${
+            delays.length + 1
+          } failed: ${errorMsg}. Retrying in ${delays[i]}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delays[i]));
       }
     }
   }
@@ -42,8 +47,8 @@ async function withRetry<T>(
  * @returns Relative path like 'images/abc123.png'
  */
 export async function downloadImage(url: string): Promise<string> {
-  const userDataPath = app.getPath('userData');
-  const imagesDir = path.join(userDataPath, 'images');
+  const userDataPath = app.getPath("userData");
+  const imagesDir = path.join(userDataPath, "images");
 
   // Ensure directory exists
   if (!fs.existsSync(imagesDir)) {
@@ -55,31 +60,35 @@ export async function downloadImage(url: string): Promise<string> {
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
     try {
-      let origin = '';
+      let origin = "";
       try {
         origin = new URL(url).origin;
-      } catch (e) {
+      } catch (error) {
+        console.warn("[Image Service] Invalid URL for origin extraction:", url);
         // Fallback or ignore if URL is invalid (unlikely to get here)
       }
 
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Referer': origin || url
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Referer: origin || url,
         },
-        signal: controller.signal
+        signal: controller.signal,
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText} (${url})`);
+        throw new Error(
+          `Failed to fetch image: ${response.status} ${response.statusText} (${url})`
+        );
       }
 
-      const contentType = response.headers.get('content-type');
-      let extension = '';
-      
+      const contentType = response.headers.get("content-type");
+      let extension = "";
+
       if (contentType) {
-        const mime = contentType.split(';')[0].toLowerCase().trim();
-        extension = MIME_MAP[mime] || '';
+        const mime = contentType.split(";")[0].toLowerCase().trim();
+        extension = MIME_MAP[mime] || "";
       }
 
       // Fallback to URL extension if Content-Type didn't help
@@ -87,16 +96,19 @@ export async function downloadImage(url: string): Promise<string> {
         try {
           const urlObj = new URL(url);
           const ext = path.extname(urlObj.pathname).toLowerCase();
-          if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) {
+          if (
+            [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"].includes(ext)
+          ) {
             extension = ext;
           }
-        } catch (e) {
+        } catch (error) {
+          console.warn("[Image Service] Could not parse URL extension:", url);
           // Ignore URL parsing errors
         }
       }
 
       // Final fallback
-      if (!extension) extension = '.png';
+      if (!extension) extension = ".png";
 
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
@@ -106,7 +118,7 @@ export async function downloadImage(url: string): Promise<string> {
       fs.writeFileSync(filePath, buffer);
 
       // Return relative path with forward slashes
-      return path.join('images', filename).replace(/\\/g, '/');
+      return path.join("images", filename).replace(/\\/g, "/");
     } finally {
       clearTimeout(timeoutId);
     }

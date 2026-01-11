@@ -87,7 +87,10 @@ import {
 // ============================================================================
 // In-flight capture lock to prevent race conditions during async processing
 // ============================================================================
-const inFlightCaptures = new Set<string>();
+const inFlightCaptures = new Map<
+  string,
+  Promise<{ id: string; isUpdate: boolean }>
+>();
 
 // ============================================================================
 // IPC Result Wrapper
@@ -145,130 +148,153 @@ export async function processCapture(
 ): Promise<{ id: string; isUpdate: boolean }> {
   const normalizedUrl = normalizeUrl(payload.url);
 
-  // If this URL is already being processed, wait up to 5 seconds
-  if (inFlightCaptures.has(normalizedUrl)) {
-    for (let i = 0; i < 10; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      if (!inFlightCaptures.has(normalizedUrl)) break;
-    }
+  // If this URL is already being processed, wait for it to complete
+  const existingCapture = inFlightCaptures.get(normalizedUrl);
+  if (existingCapture) {
+    console.log(
+      "[Capture] Duplicate capture in progress, waiting for completion:",
+      normalizedUrl
+    );
+    return existingCapture;
   }
 
-  inFlightCaptures.add(normalizedUrl);
-
-  try {
-    // 1. Parse the HTML
-    const content = parseBoardQuestion(
-      payload.pageHTML,
-      payload.siteName,
-      payload.url,
-      payload.timestamp
-    );
-
-    // 2. Download images and update localPaths
-    if (content.images.length > 0) {
-      const downloadedImages = await downloadBoardQuestionImages(
-        content.images.map((img) => ({ url: img.url, location: img.location }))
+  // Create the capture promise and store it
+  const capturePromise = (async (): Promise<{
+    id: string;
+    isUpdate: boolean;
+  }> => {
+    try {
+      // 1. Parse the HTML
+      const content = parseBoardQuestion(
+        payload.pageHTML,
+        payload.siteName,
+        payload.url,
+        payload.timestamp
       );
 
-      // Update localPaths in content
-      content.images = content.images.map((img) => {
-        const downloaded = downloadedImages.find(
-          (d) => d.location === img.location && d.localPath
+      // 2. Download images and update localPaths
+      if (content.images.length > 0) {
+        const downloadedImages = await downloadBoardQuestionImages(
+          content.images.map((img) => ({
+            url: img.url,
+            location: img.location,
+          }))
         );
-        return { ...img, localPath: downloaded?.localPath || img.localPath };
+
+        // Update localPaths in content
+        content.images = content.images.map((img) => {
+          const downloaded = downloadedImages.find(
+            (d) => d.location === img.location && d.localPath
+          );
+          return { ...img, localPath: downloaded?.localPath || img.localPath };
+        });
+      }
+
+      // 3. Check for duplicate by URL
+      // Use optimized getByUrl first for exact matches, then fallback to normalized search
+      // Try exact match first (O(1))
+      let existing = sourceItemQueries.getByUrl(payload.url);
+
+      // If no exact match, search all for normalized match
+      if (!existing) {
+        const existingItems = sourceItemQueries.getAll();
+        existing =
+          existingItems.find((item) => {
+            if (item.sourceType !== "qbank" || !item.sourceUrl) return false;
+            return normalizeUrl(item.sourceUrl) === normalizedUrl;
+          }) || null;
+      }
+
+      let resultId: string;
+      let isUpdate = false;
+
+      if (existing) {
+        // Update existing: add to attempts array and refresh content
+        let existingContent: BoardQuestionContent;
+        try {
+          existingContent = JSON.parse(
+            existing.rawContent!
+          ) as BoardQuestionContent;
+        } catch (error) {
+          console.error(
+            "[Capture] Failed to parse existing rawContent, treating as new:",
+            error
+          );
+          // If we can't parse existing content, treat it as a new capture
+          existingContent = { ...content, attempts: [] };
+        }
+
+        const userChoice = content.answers.find((a) => a.isUserChoice);
+
+        if (!existingContent.attempts) existingContent.attempts = [];
+
+        existingContent.attempts.push({
+          attemptNumber: existingContent.attempts.length + 1,
+          date: content.capturedAt,
+          chosenAnswer: userChoice?.letter || "?",
+          wasCorrect: content.wasCorrect,
+        });
+
+        // Update with latest content but keep attempt history
+        const mergedContent = {
+          ...content,
+          attempts: existingContent.attempts,
+        };
+
+        sourceItemQueries.update(existing.id, {
+          rawContent: JSON.stringify(mergedContent),
+          updatedAt: new Date().toISOString(),
+          // status: existing.status // Keep existing status (could be 'processed' or 'curated')
+        });
+        resultId = existing.id;
+        isUpdate = true;
+      } else {
+        // Create new SourceItem
+        const id = crypto.randomUUID();
+        const now = new Date().toISOString();
+        const sourceItem: DbSourceItem = {
+          id,
+          title: `Board Question - ${content.category || content.source}`,
+          sourceType: "qbank",
+          sourceName: payload.siteName,
+          sourceUrl: payload.url, // Store original URL
+          rawContent: JSON.stringify(content),
+          status: "inbox",
+          createdAt: now,
+          updatedAt: now,
+          canonicalTopicIds: [],
+          tags: [payload.siteName],
+        };
+        sourceItemQueries.insert(sourceItem);
+        resultId = id;
+      }
+
+      // 4. Persist the raw HTML for provenance/debugging
+      try {
+        sourceItemQueries.saveRawPage(resultId, payload.pageHTML);
+      } catch (error) {
+        console.error("[Capture] Failed to save raw HTML:", error);
+        // Don't fail the whole capture just because raw HTML persistence failed
+      }
+
+      // 5. Show system notification
+      const notification = new Notification({
+        title: isUpdate ? "Question Updated" : "Question Captured",
+        body: `${content.category || "Board Question"} - ${
+          content.wasCorrect ? "Correct!" : "Incorrect"
+        }`,
+        silent: false,
       });
+      notification.show();
+
+      return { id: resultId, isUpdate };
+    } finally {
+      inFlightCaptures.delete(normalizedUrl);
     }
+  })();
 
-    // 3. Check for duplicate by URL
-    // Use optimized getByUrl first for exact matches, then fallback to normalized search
-    // Try exact match first (O(1))
-    let existing = sourceItemQueries.getByUrl(payload.url);
-
-    // If no exact match, search all for normalized match
-    if (!existing) {
-      const existingItems = sourceItemQueries.getAll();
-      existing =
-        existingItems.find((item) => {
-          if (item.sourceType !== "qbank" || !item.sourceUrl) return false;
-          return normalizeUrl(item.sourceUrl) === normalizedUrl;
-        }) || null;
-    }
-
-  let resultId: string;
-  let isUpdate = false;
-
-  if (existing) {
-    // Update existing: add to attempts array and refresh content
-    const existingContent = JSON.parse(
-      existing.rawContent!
-    ) as BoardQuestionContent;
-    const userChoice = content.answers.find((a) => a.isUserChoice);
-
-    if (!existingContent.attempts) existingContent.attempts = [];
-
-    existingContent.attempts.push({
-      attemptNumber: existingContent.attempts.length + 1,
-      date: content.capturedAt,
-      chosenAnswer: userChoice?.letter || "?",
-      wasCorrect: content.wasCorrect,
-    });
-
-    // Update with latest content but keep attempt history
-    const mergedContent = {
-      ...content,
-      attempts: existingContent.attempts,
-    };
-
-    sourceItemQueries.update(existing.id, {
-      rawContent: JSON.stringify(mergedContent),
-      updatedAt: new Date().toISOString(),
-      // status: existing.status // Keep existing status (could be 'processed' or 'curated')
-    });
-    resultId = existing.id;
-    isUpdate = true;
-  } else {
-    // Create new SourceItem
-    const id = crypto.randomUUID();
-    const now = new Date().toISOString();
-    const sourceItem: DbSourceItem = {
-      id,
-      title: `Board Question - ${content.category || content.source}`,
-      sourceType: "qbank",
-      sourceName: payload.siteName,
-      sourceUrl: payload.url, // Store original URL
-      rawContent: JSON.stringify(content),
-      status: "inbox",
-      createdAt: now,
-      updatedAt: now,
-      canonicalTopicIds: [],
-      tags: [payload.siteName],
-    };
-    sourceItemQueries.insert(sourceItem);
-    resultId = id;
-  }
-
-  // 4. Persist the raw HTML for provenance/debugging
-  try {
-    sourceItemQueries.saveRawPage(resultId, payload.pageHTML);
-  } catch (error) {
-    console.error("[Capture] Failed to save raw HTML:", error);
-    // Don't fail the whole capture just because raw HTML persistence failed
-  }
-
-  // 5. Show system notification
-    const notification = new Notification({
-      title: isUpdate ? "Question Updated" : "Question Captured",
-      body: `${content.category || "Board Question"} - ${
-        content.wasCorrect ? "Correct!" : "Incorrect"
-      }`,
-      silent: false,
-    });
-    notification.show();
-
-    return { id: resultId, isUpdate };
-  } finally {
-    inFlightCaptures.delete(normalizedUrl);
-  }
+  inFlightCaptures.set(normalizedUrl, capturePromise);
+  return capturePromise;
 }
 
 // ============================================================================
@@ -1224,7 +1250,6 @@ export function registerIpcHandlers(): void {
         const cacheKey = aiCache.key("extractConcepts", content);
         const cached = aiCache.get<ConceptExtractionResult>(cacheKey);
         if (cached) {
-          console.log("[IPC] ai:extractConcepts cache hit");
           return success(cached);
         }
 
@@ -1249,7 +1274,6 @@ export function registerIpcHandlers(): void {
         const cacheKey = aiCache.key("validateCard", front, back, cardType);
         const cached = aiCache.get<ValidationResult>(cacheKey);
         if (cached) {
-          console.log("[IPC] ai:validateCard cache hit");
           return success(cached);
         }
 
@@ -1269,7 +1293,6 @@ export function registerIpcHandlers(): void {
         const cacheKey = aiCache.key("detectMedicalList", content);
         const cached = aiCache.get<MedicalListDetection>(cacheKey);
         if (cached) {
-          console.log("[IPC] ai:detectMedicalList cache hit");
           return success(cached);
         }
 
