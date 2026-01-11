@@ -1,7 +1,12 @@
 import { app, BrowserWindow, Menu, screen } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { initDatabase, closeDatabase, sourceItemQueries } from "./database";
+import {
+  initDatabase,
+  closeDatabase,
+  sourceItemQueries,
+  settingsQueries,
+} from "./database";
 import { registerIpcHandlers, processCapture } from "./ipc-handlers";
 import { ensureBackupsDir, cleanupOldBackups } from "./backup-service";
 import {
@@ -36,37 +41,95 @@ let win: BrowserWindow | null;
 
 function createWindow() {
   const displays = screen.getAllDisplays();
-  // Prefer the second screen if it exists
-  const targetDisplay = displays.length > 1 ? displays[1] : displays[0];
-  const {
-    width: displayWidth,
-    height: displayHeight,
-    x: displayX,
-    y: displayY,
-  } = targetDisplay.bounds;
 
-  const width = 1280;
-  const height = 832;
+  // Try to load saved bounds from database
+  const savedBounds = settingsQueries.getParsed("window:bounds", null) as {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null;
+
+  // Default dimensions (increased as requested)
+  const defaultWidth = 1600;
+  const defaultHeight = 1000;
+
+  let x: number | undefined;
+  let y: number | undefined;
+  let width = defaultWidth;
+  let height = defaultHeight;
+
+  if (savedBounds) {
+    // Validate that the saved bounds are still within the current display layout
+    const isVisible = displays.some((display) => {
+      const b = display.bounds;
+      // Must overlap significantly
+      return (
+        savedBounds.x < b.x + b.width &&
+        savedBounds.x + savedBounds.width > b.x &&
+        savedBounds.y < b.y + b.height &&
+        savedBounds.y + savedBounds.height > b.y
+      );
+    });
+
+    if (isVisible) {
+      x = savedBounds.x;
+      y = savedBounds.y;
+      width = savedBounds.width;
+      height = savedBounds.height;
+    }
+  }
+
+  // Fallback to primary/secondary centering logic if no valid saved bounds
+  if (x === undefined || y === undefined) {
+    // Prefer a non-primary screen if multiple exist
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const targetDisplay =
+      displays.find((d) => d.id !== primaryDisplay.id) || primaryDisplay;
+
+    const {
+      width: displayWidth,
+      height: displayHeight,
+      x: displayX,
+      y: displayY,
+    } = targetDisplay.bounds;
+
+    x = displayX + (displayWidth - width) / 2;
+    y = displayY + (displayHeight - height) / 2;
+  }
 
   win = new BrowserWindow({
-    x: displayX + (displayWidth - width) / 2,
-    y: displayY + (displayHeight - height) / 2,
+    x,
+    y,
     width,
     height,
     minWidth: 1024,
     minHeight: 700,
-    show: false, // Don't show immediately to prevent focus stealing
+    show: false,
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
-      webSecurity: false, // Allow loading local resources (images)
+      webSecurity: false,
     },
   });
 
-  // Disable default menu to prevent Ctrl+Shift+S from being captured by "Save As"
+  // Persist window state changes with debounce
+  let saveTimeout: NodeJS.Timeout | null = null;
+  const saveBounds = () => {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      if (win) {
+        const bounds = win.getBounds();
+        settingsQueries.set("window:bounds", JSON.stringify(bounds));
+      }
+    }, 1000); // 1s debounce to avoid heavy DB writes
+  };
+
+  win.on("move", saveBounds);
+  win.on("resize", saveBounds);
+
   Menu.setApplicationMenu(null);
 
-  // Show window when ready but without stealing focus
   win.once("ready-to-show", () => {
     win?.showInactive();
   });

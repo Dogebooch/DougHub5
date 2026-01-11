@@ -49,11 +49,13 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
   // probably not render the question part inside the vignette block
   // because it's rendered below in its own highlighted section.
   const displayVignetteHtml = React.useMemo(() => {
-    if (!content.vignetteHtml || !content.questionStemHtml)
-      return content.vignetteHtml;
+    const vRaw = content.vignetteHtml || "";
+    const qRaw = content.questionStemHtml || "";
 
-    const v = content.vignetteHtml.trim();
-    const q = content.questionStemHtml.trim();
+    if (!vRaw || !qRaw) return vRaw;
+
+    const v = vRaw.trim();
+    const q = qRaw.trim();
 
     // Try basic string deduplication
     if (v.endsWith(q)) {

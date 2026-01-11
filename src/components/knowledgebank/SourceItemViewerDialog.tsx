@@ -25,32 +25,51 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
   if (!item) return null;
 
   const renderContent = () => {
+    // Specialized viewer for structured QBank questions
     if (item.sourceType === "qbank" && item.rawContent) {
       try {
         const content = JSON.parse(item.rawContent) as BoardQuestionContent;
-        return <BoardQuestionView content={content} />;
+        // Validate that this is actually structured QBank content
+        if (
+          content &&
+          typeof content === "object" &&
+          content.source &&
+          Array.isArray(content.answers)
+        ) {
+          return <BoardQuestionView content={content} />;
+        }
       } catch (e) {
-        return (
-          <div className="p-4 text-destructive">
-            Failed to parse question content: {(e as Error).message}
-          </div>
+        console.warn(
+          "SourceItemViewerDialog: Failed to parse qbank content, falling back to raw view.",
+          e
         );
       }
     }
 
-    // Fallback for other types
+    // Default viewer for all other types or fallback
     return (
       <div className="p-4 space-y-4">
-        <div className="bg-muted p-4 rounded-md">
-           <pre className="whitespace-pre-wrap font-mono text-xs overflow-auto max-h-[400px]">
-             {item.rawContent || "No content available."}
-           </pre>
-        </div>
+        {item.sourceType === "image" && item.mediaPath ? (
+          <div className="rounded-lg overflow-hidden border bg-muted/30">
+            <img
+              src={`file://${item.mediaPath}`}
+              alt={item.title}
+              className="max-w-full h-auto mx-auto block"
+            />
+          </div>
+        ) : (
+          <div className="bg-muted p-4 rounded-md">
+            <pre className="whitespace-pre-wrap font-mono text-xs overflow-auto max-h-[600px]">
+              {item.rawContent || "No content available."}
+            </pre>
+          </div>
+        )}
+
         {item.sourceUrl && (
           <div>
-            <a 
-              href={item.sourceUrl} 
-              target="_blank" 
+            <a
+              href={item.sourceUrl}
+              target="_blank"
               rel="noreferrer"
               className="text-primary hover:underline"
             >

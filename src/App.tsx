@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Toaster, toast } from "sonner";
 import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAppStore } from "@/stores/useAppStore";
 import { AppLayout } from "@/components/layout/AppLayout";
 
@@ -44,10 +45,10 @@ export default function App() {
   }
 
   return (
-    <>
+    <TooltipProvider>
       <AppLayout />
       <Toaster position="bottom-center" richColors />
       <ShadcnToaster />
-    </>
+    </TooltipProvider>
   );
 }

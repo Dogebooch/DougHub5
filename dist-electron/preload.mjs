@@ -125,7 +125,8 @@ const api = {
       const subscription = (_event, payload) => callback(payload);
       electron.ipcRenderer.on("ai:ollamaStatus", subscription);
       return () => electron.ipcRenderer.removeListener("ai:ollamaStatus", subscription);
-    }
+    },
+    getOllamaModels: () => electron.ipcRenderer.invoke("ai:getOllamaModels")
   },
   files: {
     saveImage: (data, mimeType) => electron.ipcRenderer.invoke("files:saveImage", { data, mimeType })
@@ -147,7 +148,10 @@ const api = {
   app: {
     getUserDataPath: () => electron.ipcRenderer.invoke("app:getUserDataPath")
   },
-  reloadApp: () => electron.ipcRenderer.invoke("app:reload")
+  reloadApp: () => electron.ipcRenderer.invoke("app:reload"),
+  db: {
+    getPath: () => electron.ipcRenderer.invoke("db:getPath")
+  }
 };
 electron.contextBridge.exposeInMainWorld("api", api);
 electron.contextBridge.exposeInMainWorld("ipcRenderer", {

@@ -209,8 +209,8 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
         const sourceMap: Record<ContentType, SourceType> = {
           text: "quickcapture",
           image: "image",
-          url: "article",
-          qbank: "qbank",
+          url: "quickcapture", // v2: Quick capture always goes to inbox/quickcapture
+          qbank: "quickcapture", // v2: Quick capture always goes to inbox/quickcapture
         };
 
         const sourceItem: SourceItem = {
