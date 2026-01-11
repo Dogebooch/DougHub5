@@ -205,6 +205,16 @@ export interface CardBrowserItem extends CardWithFSRS {
 }
 
 // IPC result wrapper for error handling
+export interface AppSettings {
+  aiProvider: "openai" | "anthropic" | "ollama";
+  openaiApiKey: string;
+  anthropicApiKey: string;
+  ollamaModel: string;
+  openaiModel: string;
+  anthropicModel: string;
+  fsrsRequestRetention: number; // 0.80 - 0.95
+}
+
 export type IpcResult<T> =
   | { data: T; error: null }
   | { data: null; error: string };

@@ -24,7 +24,7 @@ import type {
   CardSuggestion,
   ElaboratedFeedback,
 } from "../src/types/ai";
-import type { DbNote } from "./database";
+import { type DbNote, settingsQueries } from "./database";
 import OpenAI from "openai";
 import * as http from "node:http";
 import { spawn } from "node:child_process";
@@ -277,6 +277,60 @@ export async function ensureOllamaRunning(): Promise<boolean> {
   return false;
 }
 
+/**
+ * Get list of available Ollama models from the local system.
+ * Ensures Ollama is running first.
+ *
+ * @returns Array of model names or empty array if Ollama is not available
+ */
+export async function getAvailableOllamaModels(): Promise<string[]> {
+  try {
+    // Ensure Ollama is running
+    const isRunning = await ensureOllamaRunning();
+    if (!isRunning) {
+      console.log("[AI Service] Ollama not available for model detection");
+      return [];
+    }
+
+    // Fetch models from Ollama API
+    return new Promise<string[]>((resolve) => {
+      const req = http.get("http://localhost:11434/api/tags", (res) => {
+        let data = "";
+
+        res.on("data", (chunk) => {
+          data += chunk;
+        });
+
+        res.on("end", () => {
+          try {
+            const parsed: { models?: Array<{ name: string }> } = JSON.parse(data);
+            const models = parsed.models || [];
+            const modelNames = models.map((m) => m.name);
+            console.log(`[AI Service] Found ${modelNames.length} Ollama models:`, modelNames);
+            resolve(modelNames);
+          } catch (error) {
+            console.error("[AI Service] Failed to parse Ollama models response:", error);
+            resolve([]);
+          }
+        });
+      });
+
+      req.on("error", (error) => {
+        console.error("[AI Service] Failed to fetch Ollama models:", error);
+        resolve([]);
+      });
+
+      req.setTimeout(5000, () => {
+        req.destroy();
+        resolve([]);
+      });
+    });
+  } catch (error) {
+    console.error("[AI Service] Error in getAvailableOllamaModels:", error);
+    return [];
+  }
+}
+
 // ============================================================================
 // Provider Detection
 // ============================================================================
@@ -287,10 +341,15 @@ export async function ensureOllamaRunning(): Promise<boolean> {
  * 1. Try Ollama on localhost:11434 (preferred - free, private)
  * 2. Fall back to AI_PROVIDER env var
  * 3. Default to 'ollama' if nothing configured (assume local-first)
- *
  * @returns Detected provider type
  */
 export async function detectProvider(): Promise<AIProviderType> {
+  // Check user settings first
+  const settingsProvider = settingsQueries.get("aiProvider") as AIProviderType | null;
+  if (settingsProvider) {
+    return settingsProvider;
+  }
+
   // Try Ollama auto-detection using http module for better Node.js compatibility
   try {
     const { default: http } = await import("node:http");
@@ -354,12 +413,35 @@ export async function getProviderConfig(
   const selectedProvider = provider ?? (await detectProvider());
   const preset = PROVIDER_PRESETS[selectedProvider];
 
-  // Merge preset with environment overrides
+  // Helper to check settings vs env
+  const getSetting = (key: string) => settingsQueries.get(key);
+
+  const apiKey =
+    (selectedProvider === "openai"
+      ? getSetting("openaiApiKey")
+      : selectedProvider === "anthropic"
+      ? getSetting("anthropicApiKey")
+      : null) ??
+    process.env["AI_API_KEY"] ??
+    preset.apiKey;
+
+  const model =
+    (selectedProvider === "openai"
+      ? getSetting("openaiModel")
+      : selectedProvider === "anthropic"
+      ? getSetting("anthropicModel")
+      : selectedProvider === "ollama"
+      ? getSetting("ollamaModel")
+      : null) ??
+    process.env["AI_MODEL"] ??
+    preset.model;
+
+  // Merge preset with environment overrides and user settings
   const config: AIProviderConfig = {
     ...preset,
     baseURL: process.env["AI_BASE_URL"] ?? preset.baseURL,
-    apiKey: process.env["AI_API_KEY"] ?? preset.apiKey,
-    model: process.env["AI_MODEL"] ?? preset.model,
+    apiKey: apiKey,
+    model: model,
   };
 
   return config;
@@ -416,9 +498,17 @@ export async function initializeClient(
 }
 
 /**
+ * Reset the AI client singleton.
+ * Forces re-initialization on the next use with current settings.
+ */
+export function resetAIClient(): void {
+  aiClient = null;
+  currentConfig = null;
+  console.log("[AI Service] Client reset (settings changed or manual reset)");
+}
+
+/**
  * Get the AI client singleton, initializing if needed.
- *
- * @returns OpenAI client instance
  */
 export async function getClient(): Promise<OpenAI> {
   if (!aiClient) {

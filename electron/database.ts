@@ -1159,6 +1159,36 @@ function migrateToV12(dbPath: string): void {
   }
 }
 
+function migrateToV13(dbPath: string): void {
+  console.log(
+    "[Migration] Starting migration to schema version 13 (User Settings)..."
+  );
+
+  const backupPath = createBackup(dbPath);
+  const database = getDatabase();
+
+  try {
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    `);
+
+    setSchemaVersion(13);
+    console.log("[Migration] Successfully migrated to schema version 13");
+  } catch (error) {
+    console.error("[Migration] V13 Migration failed, restoring backup:", error);
+    database.close();
+    db = null;
+    restoreBackup(backupPath, dbPath);
+    db = new Database(dbPath);
+    db.pragma("journal_mode = WAL");
+    db.pragma("foreign_keys = ON");
+    throw error;
+  }
+}
+
 /**
  * Initialize the SQLite database.
  * Call this from main.ts after app.whenReady().
@@ -1233,6 +1263,11 @@ export function initDatabase(dbPath: string): Database.Database {
         userExplanation TEXT
       );
 
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+
       CREATE INDEX IF NOT EXISTS idx_cards_noteId ON cards(noteId);
       CREATE INDEX IF NOT EXISTS idx_cards_dueDate ON cards(dueDate);
       CREATE INDEX IF NOT EXISTS idx_cards_state ON cards(state);
@@ -1296,6 +1331,11 @@ export function initDatabase(dbPath: string): Database.Database {
   // Migration to v12 (HTML Compression)
   if (getSchemaVersion() < 12) {
     migrateToV12(dbPath);
+  }
+
+  // Migration to v13 (User Settings table)
+  if (getSchemaVersion() < 13) {
+    migrateToV13(dbPath);
   }
 
   // Seed system smart views (v3)
@@ -1823,6 +1863,42 @@ export const connectionQueries = {
       "DELETE FROM connections WHERE id = @id"
     );
     stmt.run({ id });
+  },
+};
+
+// ============================================================================
+// Settings Queries
+// ============================================================================
+
+export const settingsQueries = {
+  get(key: string): string | null {
+    const stmt = getDatabase().prepare(
+      "SELECT value FROM settings WHERE key = ?"
+    );
+    const row = stmt.get(key) as { value: string } | undefined;
+    return row ? row.value : null;
+  },
+
+  getParsed(key: string, defaultValue: any): any {
+    const value = this.get(key);
+    if (value === null) return defaultValue;
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      return defaultValue;
+    }
+  },
+
+  set(key: string, value: string): void {
+    const stmt = getDatabase().prepare(
+      "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)"
+    );
+    stmt.run(key, value);
+  },
+
+  getAll(): { key: string; value: string }[] {
+    const stmt = getDatabase().prepare("SELECT * FROM settings");
+    return stmt.all() as { key: string; value: string }[];
   },
 };
 

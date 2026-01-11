@@ -131,6 +131,7 @@ const api = {
   },
   db: {
     status: () => ipcRenderer.invoke("db:status"),
+    getPath: () => ipcRenderer.invoke("db:getPath"),
   },
   ai: {
     getProviderStatus: () => ipcRenderer.invoke("ai:getProviderStatus"),
@@ -188,6 +189,7 @@ const api = {
       ipcRenderer.on("ai:ollamaStatus", subscription);
       return () => ipcRenderer.removeListener("ai:ollamaStatus", subscription);
     },
+    getOllamaModels: () => ipcRenderer.invoke("ai:getOllamaModels"),
   },
   files: {
     saveImage: (data: string, mimeType: string) =>
@@ -199,6 +201,7 @@ const api = {
       ipcRenderer.invoke("settings:set", key, value),
     getParsed: (key: string, defaultValue: unknown) =>
       ipcRenderer.invoke("settings:getParsed", key, defaultValue),
+    getAll: () => ipcRenderer.invoke("settings:getAll"),
   },
   capture: {
     process: (payload: unknown) =>
@@ -214,6 +217,9 @@ const api = {
     getUserDataPath: () => ipcRenderer.invoke("app:getUserDataPath"),
   },
   reloadApp: () => ipcRenderer.invoke("app:reload"),
+  db: {
+    getPath: () => ipcRenderer.invoke("db:getPath"),
+  },
 };
 
 // Expose typed API to renderer

@@ -92,7 +92,8 @@ const api = {
     cleanup: (retentionDays) => electron.ipcRenderer.invoke("backup:cleanup", retentionDays)
   },
   db: {
-    status: () => electron.ipcRenderer.invoke("db:status")
+    status: () => electron.ipcRenderer.invoke("db:status"),
+    getPath: () => electron.ipcRenderer.invoke("db:getPath")
   },
   ai: {
     getProviderStatus: () => electron.ipcRenderer.invoke("ai:getProviderStatus"),
@@ -132,7 +133,8 @@ const api = {
   settings: {
     get: (key) => electron.ipcRenderer.invoke("settings:get", key),
     set: (key, value) => electron.ipcRenderer.invoke("settings:set", key, value),
-    getParsed: (key, defaultValue) => electron.ipcRenderer.invoke("settings:getParsed", key, defaultValue)
+    getParsed: (key, defaultValue) => electron.ipcRenderer.invoke("settings:getParsed", key, defaultValue),
+    getAll: () => electron.ipcRenderer.invoke("settings:getAll")
   },
   capture: {
     process: (payload) => electron.ipcRenderer.invoke("capture:process", payload),

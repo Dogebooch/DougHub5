@@ -20,11 +20,14 @@ export const DIFFICULTY_THRESHOLD_HIGH = 8.0;
 export const DIFFICULTY_THRESHOLD_URGENT = 9.0;
 
 /**
- * Initialize FSRS with medical-optimized parameters.
- * 89% retention target balances recall with workload for medical students.
+ * Get FSRS instance with current user settings.
  */
-const params = generatorParameters({ request_retention: 0.89 });
-const fsrs = new FSRS(params);
+function getFsrsInstance(): FSRS {
+  const retentionStr = settingsQueries.get("fsrsRequestRetention");
+  const retention = retentionStr ? parseFloat(retentionStr) : 0.89;
+  const params = generatorParameters({ request_retention: retention });
+  return new FSRS(params);
+}
 
 // ============================================================================
 // Type Mapping Functions
@@ -127,6 +130,7 @@ export function scheduleReview(
     dbCard.state === 0 ? createEmptyCard(reviewTime) : toFSRSCard(dbCard);
 
   // Get scheduling for all ratings (for interval preview)
+  const fsrs = getFsrsInstance();
   const recordLog = fsrs.repeat(fsrsCard, reviewTime);
 
   // Get the specific result for the user's rating
@@ -229,6 +233,7 @@ export function getIntervalPreviews(cardId: string): {
   const fsrsCard =
     dbCard.state === 0 ? createEmptyCard(now) : toFSRSCard(dbCard);
 
+  const fsrs = getFsrsInstance();
   const recordLog = fsrs.repeat(fsrsCard, now);
 
   return {

@@ -7,8 +7,19 @@ import {
   RatingValue,
   ScheduleResult,
   AppView,
+  AppSettings,
 } from "@/types";
 import { seedSampleData } from "@/lib/seedData";
+
+const DEFAULT_SETTINGS: AppSettings = {
+  aiProvider: "openai",
+  openaiApiKey: "",
+  anthropicApiKey: "",
+  ollamaModel: "llama3",
+  openaiModel: "gpt-4o",
+  anthropicModel: "claude-3-5-sonnet-20240620",
+  fsrsRequestRetention: 0.89,
+};
 
 interface AppState {
   cards: CardWithFSRS[];
@@ -27,6 +38,7 @@ interface AppState {
   smartViewCounts: Record<string, number>;
   selectedInboxItems: Set<string>;
   userDataPath: string | null;
+  settings: AppSettings;
 }
 
 interface AppActions {
@@ -74,6 +86,13 @@ interface AppActions {
     }
   ) => Promise<CardBrowserItem[]>;
 
+  // Settings Actions
+  updateSetting: <K extends keyof AppSettings>(
+    key: K,
+    value: AppSettings[K]
+  ) => Promise<void>;
+  loadSettings: () => Promise<void>;
+
   // Inbox Batch Actions
   toggleInboxSelection: (id: string) => void;
   addToInboxSelection: (ids: string[]) => void;
@@ -109,6 +128,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
   selectedInboxItems: new Set<string>(),
   userDataPath: null,
+  settings: DEFAULT_SETTINGS,
+
   setCurrentView: (view, itemId = null, options = undefined) =>
     set({ currentView: view, selectedItemId: itemId, viewOptions: options }),
 
@@ -129,6 +150,46 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         };
         set({ smartViewCounts: counts });
       }
+    }
+  },
+
+  loadSettings: async () => {
+    if (typeof window !== "undefined" && window.api) {
+      const result = await window.api.settings.getAll();
+      if (result.data) {
+        const dbSettings = result.data;
+        const currentSettings = { ...get().settings };
+
+        dbSettings.forEach((s) => {
+          const key = s.key as keyof AppSettings;
+          if (key in currentSettings) {
+            // Basic type conversion
+            if (typeof currentSettings[key] === "number") {
+              currentSettings[key] = parseFloat(s.value) as any;
+            } else {
+              currentSettings[key] = s.value as any;
+            }
+          }
+        });
+
+        set({ settings: currentSettings });
+      }
+    }
+  },
+
+  updateSetting: async (key, value) => {
+    if (typeof window !== "undefined" && window.api) {
+      // Save to DB
+      const stringValue = typeof value === "string" ? value : String(value);
+      await window.api.settings.set(key, stringValue);
+
+      // Update local state
+      set((state) => ({
+        settings: {
+          ...state.settings,
+          [key]: value,
+        },
+      }));
     }
   },
 
@@ -161,6 +222,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     try {
       // Check if window.api exists (Electron environment)
       if (typeof window !== "undefined" && window.api) {
+        // Load settings first as other things might depend on them
+        await get().loadSettings();
+
         // Get database status first (single efficient query)
         const statusResult = await window.api.db.status();
         const cardCount = statusResult.data?.cardCount ?? 0;

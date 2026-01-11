@@ -206,6 +206,7 @@ export interface ElectronAPI {
   };
   db: {
     status: () => Promise<IpcResult<DbStatus>>;
+    getPath: () => Promise<IpcResult<string | null>>;
   };
   ai: {
     getProviderStatus: () => Promise<IpcResult<AIProviderStatus>>;
@@ -247,6 +248,7 @@ export interface ElectronAPI {
         message: string;
       }) => void
     ) => () => void;
+    getOllamaModels: () => Promise<IpcResult<string[]>>;
   };
   files: {
     saveImage: (
@@ -267,6 +269,10 @@ export interface ElectronAPI {
     get: (key: string) => Promise<IpcResult<string | null>>;
     set: (key: string, value: string) => Promise<IpcResult<void>>;
     getParsed: <T>(key: string, defaultValue: T) => Promise<IpcResult<T>>;
+    getAll: () => Promise<IpcResult<{ key: string; value: string }[]>>;
+  };
+  db: {
+    getPath: () => Promise<IpcResult<string>>;
   };
   reloadApp: () => Promise<void>;
 }

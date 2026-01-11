@@ -2,6 +2,7 @@ import { ipcMain, BrowserWindow, app, Notification } from "electron";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
+import { resetAIClient, getAvailableOllamaModels } from "./ai-service";
 import {
   parseBoardQuestion,
   BoardQuestionContent,
@@ -1170,6 +1171,14 @@ export function registerIpcHandlers(): void {
     }
   });
 
+  ipcMain.handle("db:getPath", async (): Promise<IpcResult<string | null>> => {
+    try {
+      return success(getDbPath());
+    } catch (error) {
+      return failure(error);
+    }
+  });
+
   // --------------------------------------------------------------------------
   // AI Service Handlers
   // --------------------------------------------------------------------------
@@ -1393,6 +1402,19 @@ export function registerIpcHandlers(): void {
     async (_, key: string, value: string): Promise<IpcResult<void>> => {
       try {
         settingsQueries.set(key, value);
+
+        // Reset AI client if AI-specific settings change
+        if (
+          key === "aiProvider" ||
+          key === "openaiApiKey" ||
+          key === "anthropicApiKey" ||
+          key === "openaiModel" ||
+          key === "anthropicModel" ||
+          key === "ollamaModel"
+        ) {
+          resetAIClient();
+        }
+
         return success(undefined);
       } catch (error) {
         return failure(error);
@@ -1410,6 +1432,33 @@ export function registerIpcHandlers(): void {
       try {
         const value = settingsQueries.getParsed(key, defaultValue);
         return success(value);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "settings:getAll",
+    async (): Promise<IpcResult<{ key: string; value: string }[]>> => {
+      try {
+        return success(settingsQueries.getAll());
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // AI Handlers
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "ai:getOllamaModels",
+    async (): Promise<IpcResult<string[]>> => {
+      try {
+        const models = await getAvailableOllamaModels();
+        return success(models);
       } catch (error) {
         return failure(error);
       }

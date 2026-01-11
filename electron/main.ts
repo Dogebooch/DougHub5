@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from "electron";
+import { app, BrowserWindow, Menu, screen } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { initDatabase, closeDatabase, sourceItemQueries } from "./database";
@@ -35,7 +35,27 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 let win: BrowserWindow | null;
 
 function createWindow() {
+  const displays = screen.getAllDisplays();
+  // Prefer the second screen if it exists
+  const targetDisplay = displays.length > 1 ? displays[1] : displays[0];
+  const {
+    width: displayWidth,
+    height: displayHeight,
+    x: displayX,
+    y: displayY,
+  } = targetDisplay.bounds;
+
+  const width = 1280;
+  const height = 832;
+
   win = new BrowserWindow({
+    x: displayX + (displayWidth - width) / 2,
+    y: displayY + (displayHeight - height) / 2,
+    width,
+    height,
+    minWidth: 1024,
+    minHeight: 700,
+    show: false, // Don't show immediately to prevent focus stealing
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
@@ -46,6 +66,11 @@ function createWindow() {
   // Disable default menu to prevent Ctrl+Shift+S from being captured by "Save As"
   Menu.setApplicationMenu(null);
 
+  // Show window when ready but without stealing focus
+  win.once("ready-to-show", () => {
+    win?.showInactive();
+  });
+
   // Test active push message to Renderer-process.
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
@@ -53,8 +78,8 @@ function createWindow() {
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
-    // Open DevTools in development for debugging
-    win.webContents.openDevTools();
+    // Open DevTools in development for debugging, but don't steal focus
+    win.webContents.openDevTools({ mode: "detach", activate: false });
   } else {
     // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
