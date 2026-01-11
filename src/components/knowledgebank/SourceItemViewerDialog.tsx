@@ -52,7 +52,7 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
         {item.sourceType === "image" && item.mediaPath ? (
           <div className="rounded-lg overflow-hidden border bg-muted/30">
             <img
-              src={`file://${item.mediaPath}`}
+              src={`app-media://${item.mediaPath.replace(/\\/g, "/")}`}
               alt={item.title}
               className="max-w-full h-auto mx-auto block"
             />

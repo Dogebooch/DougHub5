@@ -1,5 +1,5 @@
-import { app, BrowserWindow, Menu, screen } from "electron";
-import { fileURLToPath } from "node:url";
+import { app, BrowserWindow, Menu, screen, protocol, net } from "electron";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 import {
   initDatabase,
@@ -16,6 +16,19 @@ import {
 } from "./capture-server";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Register app-media protocol to allow loading local images securely
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: "app-media",
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      bypassCSP: true,
+    },
+  },
+]);
 
 // The built directory structure
 //
@@ -109,7 +122,7 @@ function createWindow() {
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
-      webSecurity: false,
+      webSecurity: true,
     },
   });
 
@@ -168,6 +181,22 @@ app.on("activate", () => {
 });
 
 app.whenReady().then(() => {
+  // Handle app-media:// protocol
+  protocol.handle("app-media", (request) => {
+    try {
+      const url = new URL(request.url);
+      // On Windows, the path might start with / followed by a disk letter or just a path
+      // request.url is "app-media://images/abc.png"
+      // we want "images/abc.png"
+      const relativePath = decodeURIComponent(url.hostname + url.pathname);
+      const fullPath = path.join(app.getPath("userData"), relativePath);
+      return net.fetch(pathToFileURL(fullPath).toString());
+    } catch (error) {
+      console.error("[Protocol Handler] Error:", error);
+      return new Response("Not Found", { status: 404 });
+    }
+  });
+
   // Ensure backups directory exists
   ensureBackupsDir();
   console.log("[Backup] Backups directory ready");

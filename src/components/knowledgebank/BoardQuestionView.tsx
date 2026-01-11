@@ -52,36 +52,55 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     const vRaw = content.vignetteHtml || "";
     const qRaw = content.questionStemHtml || "";
 
-    if (!vRaw || !qRaw) return vRaw;
+    let finalHtml = vRaw.trim();
 
-    const v = vRaw.trim();
-    const q = qRaw.trim();
+    if (vRaw && qRaw) {
+      const v = vRaw.trim();
+      const q = qRaw.trim();
 
-    // Try basic string deduplication
-    if (v.endsWith(q)) {
-      // Basic stripping of the trailing question if it's a direct match
-      const stripped = v.slice(0, v.lastIndexOf(q)).trim();
-      // If we stripped too much or left it empty, revert
-      return stripped.length > 5 ? stripped : v;
-    }
+      // Try basic string deduplication
+      if (v.endsWith(q)) {
+        const stripped = v.slice(0, v.lastIndexOf(q)).trim();
+        finalHtml = stripped.length > 5 ? stripped : v;
+      } else {
+        // Try text-only comparison for more robustness against minor HTML/spacing differences
+        const vText = v.replace(/<[^>]*>/g, "").trim();
+        const qText = q.replace(/<[^>]*>/g, "").trim();
 
-    // Try text-only comparison for more robustness against minor HTML/spacing differences
-    const vText = v.replace(/<[^>]*>/g, "").trim();
-    const qText = q.replace(/<[^>]*>/g, "").trim();
-
-    if (vText.endsWith(qText) && qText.length > 0) {
-      // Find the last occurrence of the first few words of the question
-      // This is a bit risky but often question stems are in their own <p>
-      const qStart = qText.slice(0, 20);
-      const lastIndex = v.lastIndexOf(qStart);
-      if (lastIndex !== -1) {
-        const stripped = v.slice(0, lastIndex).trim();
-        return stripped.length > 5 ? stripped : v;
+        if (vText.endsWith(qText) && qText.length > 0) {
+          const qStart = qText.slice(0, 20);
+          const lastIndex = v.lastIndexOf(qStart);
+          if (lastIndex !== -1) {
+            const stripped = v.slice(0, lastIndex).trim();
+            finalHtml = stripped.length > 5 ? stripped : v;
+          }
+        }
       }
     }
 
-    return content.vignetteHtml;
-  }, [content.vignetteHtml, content.questionStemHtml]);
+    return processHtml(finalHtml);
+  }, [content.vignetteHtml, content.questionStemHtml, processHtml]);
+
+  const processedQuestionStem = React.useMemo(
+    () => processHtml(content.questionStemHtml),
+    [content.questionStemHtml, processHtml]
+  );
+  const processedExplanation = React.useMemo(
+    () => processHtml(content.explanationHtml),
+    [content.explanationHtml, processHtml]
+  );
+  const processedKeyPoints = React.useMemo(
+    () => processHtml(content.keyPointsHtml),
+    [content.keyPointsHtml, processHtml]
+  );
+  const processedPeerPearls = React.useMemo(
+    () => processHtml(content.peerPearlsHtml),
+    [content.peerPearlsHtml, processHtml]
+  );
+  const processedReferences = React.useMemo(
+    () => processHtml(content.referencesHtml),
+    [content.referencesHtml, processHtml]
+  );
 
   const isLongVignette = (content.vignetteHtml?.length || 0) > 600;
 
@@ -98,12 +117,35 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
   };
 
   const getImagePath = (localPath: string) => {
-    if (!userDataPath) return localPath;
-    // Ensure Windows paths work with file:// protocol by replacing backslashes and ensuring proper prefix
+    if (!localPath) return "";
+    // app-media:// protocol maps to userData folder
     const normalizedPath = localPath.replace(/\\/g, "/");
-    const fullPath = `${userDataPath}/${normalizedPath}`.replace(/\\/g, "/");
-    return `file://${fullPath}`;
+    return `app-media://${normalizedPath}`;
   };
+
+  /**
+   * Replaces remote image URLs in HTML string with local app-media hits
+   */
+  const processHtml = React.useCallback(
+    (html: string | undefined): string => {
+      if (!html) return "";
+      let processed = html;
+      content.images.forEach((img) => {
+        if (img.originalUrl && img.localPath) {
+          const localUrl = getImagePath(img.localPath);
+          // Simple string replace or regex is fine for these static URLs
+          const escapedUrl = img.originalUrl.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+          );
+          const regex = new RegExp(escapedUrl, "g");
+          processed = processed.replace(regex, localUrl);
+        }
+      });
+      return processed;
+    },
+    [content.images]
+  );
 
   const renderImages = (
     location:
@@ -299,7 +341,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
             </span>
             <div
               className="prose prose-sm max-w-none font-semibold text-lg text-foreground"
-              dangerouslySetInnerHTML={{ __html: content.questionStemHtml }}
+              dangerouslySetInnerHTML={{ __html: processedQuestionStem }}
             />
           </div>
 
@@ -324,6 +366,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   const isWrongUserChoice =
                     answer.isUserChoice && !answer.isCorrect;
                   const isCorrectAnswer = answer.isCorrect;
+                  const processedAnswerHtml = processHtml(answer.html);
 
                   return (
                     <tr
@@ -352,7 +395,9 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       <td className="px-4 py-3">
                         <div
                           className="prose prose-sm max-w-none"
-                          dangerouslySetInnerHTML={{ __html: answer.html }}
+                          dangerouslySetInnerHTML={{
+                            __html: processedAnswerHtml,
+                          }}
                         />
                       </td>
                       <td className="px-4 py-3 align-middle">
@@ -405,7 +450,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   <div
                     className="prose prose-sm max-w-none border-l-2 border-primary/20 pl-4 py-1"
                     dangerouslySetInnerHTML={{
-                      __html: content.explanationHtml,
+                      __html: processedExplanation,
                     }}
                   />
                   {renderImages("explanation")}
@@ -439,7 +484,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       <div
                         className="prose prose-sm max-w-none"
                         dangerouslySetInnerHTML={{
-                          __html: content.keyPointsHtml,
+                          __html: processedKeyPoints,
                         }}
                       />
                     </div>
@@ -475,7 +520,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       <div
                         className="prose prose-sm max-w-none"
                         dangerouslySetInnerHTML={{
-                          __html: content.peerPearlsHtml,
+                          __html: processedPeerPearls,
                         }}
                       />
                     </div>
@@ -510,7 +555,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                     <div
                       className="prose prose-xs max-w-none text-muted-foreground opacity-80"
                       dangerouslySetInnerHTML={{
-                        __html: content.referencesHtml,
+                        __html: processedReferences,
                       }}
                     />
                     {renderImages("references")}

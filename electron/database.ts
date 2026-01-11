@@ -1393,6 +1393,12 @@ export const cardQueries = {
     return rows.map(parseCardRow);
   },
 
+  getById(id: string): DbCard | null {
+    const stmt = getDatabase().prepare("SELECT * FROM cards WHERE id = ?");
+    const row = stmt.get(id) as CardRow | undefined;
+    return row ? parseCardRow(row) : null;
+  },
+
   insert(card: DbCard): void {
     const stmt = getDatabase().prepare(`
       INSERT INTO cards (
@@ -1416,7 +1422,7 @@ export const cardQueries = {
   },
 
   update(id: string, updates: Partial<DbCard>): void {
-    const current = cardQueries.getAll().find((c) => c.id === id);
+    const current = cardQueries.getById(id);
     if (!current) {
       throw new Error(`Card not found: ${id}`);
     }
@@ -1640,6 +1646,12 @@ export const noteQueries = {
     return rows.map(parseNoteRow);
   },
 
+  getById(id: string): DbNote | null {
+    const stmt = getDatabase().prepare("SELECT * FROM notes WHERE id = ?");
+    const row = stmt.get(id) as NoteRow | undefined;
+    return row ? parseNoteRow(row) : null;
+  },
+
   insert(note: DbNote): void {
     const stmt = getDatabase().prepare(`
       INSERT INTO notes (id, title, content, cardIds, tags, createdAt)
@@ -1653,7 +1665,7 @@ export const noteQueries = {
   },
 
   update(id: string, updates: Partial<DbNote>): void {
-    const current = noteQueries.getAll().find((n) => n.id === id);
+    const current = noteQueries.getById(id);
     if (!current) {
       throw new Error(`Note not found: ${id}`);
     }
