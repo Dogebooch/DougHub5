@@ -197,10 +197,10 @@ export function MistakesReviewModal({
             {/* Card Content Section */}
             <div className="space-y-4">
               <div className="p-6 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                <div className="text-xs font-semibold text-card-muted uppercase tracking-wider mb-3">
                   Front
                 </div>
-                <div className="text-foreground">
+                <div className="text-card-foreground">
                   <ClozeDisplay
                     front={currentCard?.front || ""}
                     revealed={true}

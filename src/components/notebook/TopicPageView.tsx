@@ -179,7 +179,7 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
                 Notebook Topic
               </span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight mb-2">
+            <h1 className="text-3xl font-bold tracking-tight mb-2 text-card-foreground">
               {topic.canonicalName}
             </h1>
             <div className="flex flex-wrap gap-2">
@@ -194,7 +194,7 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
                   </Badge>
                 ))
               ) : (
-                <span className="text-xs text-muted-foreground italic">
+                <span className="text-xs text-card-muted italic">
                   No aliases
                 </span>
               )}
@@ -202,14 +202,18 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
           </div>
           <div className="flex gap-4 text-right">
             <div className="flex flex-col items-end">
-              <div className="text-2xl font-bold">{totalCards}</div>
-              <div className="text-[11px] uppercase font-bold text-muted-foreground leading-none">
+              <div className="text-2xl font-bold text-card-foreground">
+                {totalCards}
+              </div>
+              <div className="text-[11px] uppercase font-bold text-card-muted leading-none">
                 Cards
               </div>
             </div>
             <div className="flex flex-col items-end border-l pl-4">
-              <div className="text-2xl font-bold">{blocks.length}</div>
-              <div className="text-[11px] uppercase font-bold text-muted-foreground leading-none">
+              <div className="text-2xl font-bold text-card-foreground">
+                {blocks.length}
+              </div>
+              <div className="text-[11px] uppercase font-bold text-card-muted leading-none">
                 Blocks
               </div>
             </div>

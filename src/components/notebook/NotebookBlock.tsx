@@ -149,7 +149,7 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
       {/* Header Row */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-tight">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-card-muted uppercase tracking-tight">
             <Layers className="w-3.5 h-3.5" />
             <span>Block {block.position + 1}</span>
           </div>
@@ -160,7 +160,7 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
               "text-[11px] px-1.5 py-0 h-4 font-semibold border-none transition-colors",
               (block.cardCount ?? 0) > 0
                 ? "bg-primary/20 text-primary"
-                : "bg-primary/10 text-muted-foreground/70"
+                : "bg-primary/10 text-card-muted"
             )}
             title={
               (block.cardCount ?? 0) > 0
@@ -174,7 +174,7 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
           {block.sourceItemId && (
             <button
               onClick={handleSourceClick}
-              className="flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/50 hover:bg-muted px-2 py-0.5 rounded-full border border-border/50 transition-colors"
+              className="flex items-center gap-1 text-[11px] text-card-muted bg-muted/50 hover:bg-muted px-2 py-0.5 rounded-full border border-border/50 transition-colors"
             >
               <LinkIcon className="w-3 h-3" />
               <span className="max-w-[150px] truncate">
@@ -189,7 +189,7 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
       {/* Content */}
       <div
         ref={contentRef}
-        className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed"
+        className="text-sm text-card-foreground whitespace-pre-wrap leading-relaxed"
       >
         {block.content}
       </div>

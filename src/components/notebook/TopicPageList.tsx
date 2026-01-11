@@ -5,6 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -42,7 +48,7 @@ interface TopicPageListProps {
 
 /**
  * TopicPageList
- * 
+ *
  * Sidebar component showing the list of topic pages with search and creation UI.
  */
 export const TopicPageList = ({
@@ -55,7 +61,9 @@ export const TopicPageList = ({
 }: TopicPageListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [pageToDelete, setPageToDelete] = useState<NotebookTopicPage | null>(null);
+  const [pageToDelete, setPageToDelete] = useState<NotebookTopicPage | null>(
+    null
+  );
   const [isDeleting, setIsDeleting] = useState(false);
   const [newTopicName, setNewTopicName] = useState("");
   const [suggestions, setSuggestions] = useState<CanonicalTopic[]>([]);
@@ -74,7 +82,7 @@ export const TopicPageList = ({
   const filteredPages = useMemo(() => {
     if (!searchQuery.trim()) return pages;
     const query = searchQuery.toLowerCase();
-    return pages.filter((page) => 
+    return pages.filter((page) =>
       getTopicName(page).toLowerCase().includes(query)
     );
   }, [pages, topics, searchQuery]);
@@ -87,7 +95,9 @@ export const TopicPageList = ({
       setIsSearching(true);
       debounceTimerRef.current = setTimeout(async () => {
         try {
-          const result = await window.api.canonicalTopics.suggestMatches(newTopicName);
+          const result = await window.api.canonicalTopics.suggestMatches(
+            newTopicName
+          );
           if (result.data) {
             setSuggestions(result.data);
           }
@@ -111,20 +121,26 @@ export const TopicPageList = ({
   const handleCreatePage = async (topicName: string) => {
     try {
       // 1. Get or create canonical topic
-      const topicResult = await window.api.canonicalTopics.createOrGet(topicName);
+      const topicResult = await window.api.canonicalTopics.createOrGet(
+        topicName
+      );
       if (topicResult.error || !topicResult.data) {
         console.error("Failed to get/create topic:", topicResult.error);
+        toast.error("Failed to resolve topic");
         return;
       }
-      
+
       const canonicalTopicId = topicResult.data.id;
 
       // Check if page already exists for this topic
-      const existingPage = pages.find(p => p.canonicalTopicId === canonicalTopicId);
+      const existingPage = pages.find(
+        (p) => p.canonicalTopicId === canonicalTopicId
+      );
       if (existingPage) {
         onSelect(existingPage.id);
         setIsDialogOpen(false);
         setNewTopicName("");
+        toast.info(`Already have a page for ${topicName}`);
         return;
       }
 
@@ -140,10 +156,12 @@ export const TopicPageList = ({
       const pageResult = await window.api.notebookPages.create(newPage);
       if (pageResult.error) {
         console.error("Failed to create page:", pageResult.error);
+        toast.error("Could not create notebook page");
         return;
       }
 
       // 3. Cleanup and notify parent
+      toast.success(`Created topic page: ${topicName}`);
       onPageCreated();
       onSelect(newPage.id);
       setIsDialogOpen(false);
@@ -155,7 +173,7 @@ export const TopicPageList = ({
   // Handle page deletion
   const handleDeletePage = async () => {
     if (!pageToDelete) return;
-    
+
     setIsDeleting(true);
     try {
       const result = await deleteNotebookPage(pageToDelete.id);
@@ -181,15 +199,24 @@ export const TopicPageList = ({
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Topic Pages
           </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={() => setIsDialogOpen(true)}
-            title="New Topic Page"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/30 text-primary transition-all duration-200"
+                  onClick={() => setIsDialogOpen(true)}
+                  aria-label="New Topic Page"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="text-xs font-medium">New Topic Page</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         <div className="relative">
@@ -201,23 +228,28 @@ export const TopicPageList = ({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-
-        <Button
-          className="w-full h-8 text-xs"
-          variant="outline"
-          onClick={() => setIsDialogOpen(true)}
-        >
-          <Plus className="mr-2 h-3.3 w-3.5" />
-          New Topic Page
-        </Button>
       </div>
 
       {/* List Area */}
       <div className="flex-1 overflow-y-auto">
         {pages.length === 0 ? (
-          <div className="p-8 text-center space-y-2">
+          <div className="p-8 text-center space-y-4">
             <BookOpen className="h-8 w-8 text-muted-foreground/30 mx-auto" />
-            <p className="text-xs text-muted-foreground">No topic pages yet</p>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">No topic pages yet</p>
+              <p className="text-xs text-muted-foreground">
+                Topics you curate will appear here.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs h-8"
+              onClick={() => setIsDialogOpen(true)}
+            >
+              <Plus className="mr-2 h-3.5 w-3.5" />
+              Create First Topic
+            </Button>
           </div>
         ) : filteredPages.length === 0 ? (
           <div className="p-8 text-center">
