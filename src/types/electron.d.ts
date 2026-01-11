@@ -171,6 +171,7 @@ export interface ElectronAPI {
       id: string,
       updates: Partial<NotebookTopicPage>
     ) => Promise<IpcResult<void>>;
+    delete: (id: string) => Promise<IpcResult<void>>;
   };
   notebookBlocks: {
     getByPage: (pageId: string) => Promise<IpcResult<NotebookBlock[]>>;

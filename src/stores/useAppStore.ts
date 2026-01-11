@@ -40,6 +40,9 @@ interface AppActions {
   addNote: (note: Note) => Promise<{ success: boolean; error?: string }>;
   updateNote: (note: Note) => Promise<{ success: boolean; error?: string }>;
   deleteNote: (id: string) => Promise<{ success: boolean; error?: string }>;
+  deleteNotebookPage: (
+    id: string
+  ) => Promise<{ success: boolean; error?: string }>;
   getCardsDueToday: () => CardWithFSRS[];
   scheduleCardReview: (
     cardId: string,
@@ -492,6 +495,31 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       };
     } catch (error) {
       console.error("[Store] Error scheduling review:", error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  deleteNotebookPage: async (id: string) => {
+    try {
+      if (typeof window !== "undefined" && window.api) {
+        const result = await window.api.notebookPages.delete(id);
+        if (result.error) {
+          console.error("[Store] Failed to delete notebook page:", result.error);
+          return { success: false, error: result.error };
+        }
+      }
+
+      // Update local state: remove cards that belonged to this page if they are in store
+      set((state) => ({
+        cards: state.cards.filter((c) => c.notebookTopicPageId !== id),
+      }));
+
+      // Refresh counts and smart view counts
+      await get().refreshCounts();
+
+      return { success: true };
+    } catch (error) {
+      console.error("[Store] Error deleting notebook page:", error);
       return { success: false, error: String(error) };
     }
   },

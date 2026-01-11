@@ -1976,6 +1976,45 @@ export const notebookTopicPageQueries = {
       cardIds: JSON.stringify(merged.cardIds),
     });
   },
+
+  delete(id: string): void {
+    const db = getDatabase();
+    db.transaction(() => {
+      // 1. Delete review logs for all cards belonging to this page
+      db.prepare(`
+        DELETE FROM review_logs 
+        WHERE cardId IN (SELECT id FROM cards WHERE notebookTopicPageId = ?)
+      `).run(id);
+
+      // 2. Delete all cards belonging to this page
+      db.prepare("DELETE FROM cards WHERE notebookTopicPageId = ?").run(id);
+
+      // 3. Find source items used in this page's blocks before deleting blocks
+      const sourceItems = db.prepare(`
+        SELECT DISTINCT sourceItemId FROM notebook_blocks WHERE notebookTopicPageId = ?
+      `).all(id) as { sourceItemId: string }[];
+
+      // 4. Delete blocks belonging to this page
+      db.prepare("DELETE FROM notebook_blocks WHERE notebookTopicPageId = ?").run(id);
+
+      // 5. Update SourceItem status for orphaned curated items
+      const checkStmt = db.prepare("SELECT COUNT(*) as count FROM notebook_blocks WHERE sourceItemId = ?");
+      const updateStmt = db.prepare("UPDATE source_items SET status = 'processed', updatedAt = ? WHERE id = ? AND status = 'curated'");
+      const now = new Date().toISOString();
+      
+      for (const item of sourceItems) {
+        if (item.sourceItemId) {
+          const result = checkStmt.get(item.sourceItemId) as { count: number };
+          if (result.count === 0) {
+            updateStmt.run(now, item.sourceItemId);
+          }
+        }
+      }
+
+      // 6. Delete the page itself
+      db.prepare("DELETE FROM notebook_topic_pages WHERE id = ?").run(id);
+    })();
+  },
 };
 
 function parseNotebookTopicPageRow(

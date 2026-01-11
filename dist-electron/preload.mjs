@@ -65,7 +65,8 @@ const api = {
     getAll: () => electron.ipcRenderer.invoke("notebookPages:getAll"),
     getById: (id) => electron.ipcRenderer.invoke("notebookPages:getById", id),
     create: (page) => electron.ipcRenderer.invoke("notebookPages:create", page),
-    update: (id, updates) => electron.ipcRenderer.invoke("notebookPages:update", id, updates)
+    update: (id, updates) => electron.ipcRenderer.invoke("notebookPages:update", id, updates),
+    delete: (id) => electron.ipcRenderer.invoke("notebookPages:delete", id)
   },
   notebookBlocks: {
     getByPage: (pageId) => electron.ipcRenderer.invoke("notebookBlocks:getByPage", pageId),

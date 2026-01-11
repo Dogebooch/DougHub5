@@ -81,6 +81,16 @@ export const NotebookView = () => {
     doInitialLoad();
   }, [fetchData]);
 
+  const handlePageDeleted = useCallback(
+    (deletedId: string) => {
+      if (selectedPageId === deletedId) {
+        setSelectedPageId(null);
+      }
+      fetchData();
+    },
+    [selectedPageId, fetchData]
+  );
+
   // Loading State
   if (isLoading) {
     return (
@@ -112,6 +122,7 @@ export const NotebookView = () => {
             selectedId={selectedPageId}
             onSelect={setSelectedPageId}
             onPageCreated={fetchData}
+            onPageDeleted={handlePageDeleted}
           />
         </div>
 
@@ -141,6 +152,7 @@ export const NotebookView = () => {
           selectedId={selectedPageId}
           onSelect={setSelectedPageId}
           onPageCreated={fetchData}
+          onPageDeleted={handlePageDeleted}
         />
       </div>
 

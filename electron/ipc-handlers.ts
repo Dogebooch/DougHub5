@@ -928,6 +928,18 @@ export function registerIpcHandlers(): void {
     }
   );
 
+  ipcMain.handle(
+    "notebookPages:delete",
+    async (_, id: string): Promise<IpcResult<void>> => {
+      try {
+        notebookTopicPageQueries.delete(id);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
   // --------------------------------------------------------------------------
   // Notebook Block Handlers (v3)
   // --------------------------------------------------------------------------

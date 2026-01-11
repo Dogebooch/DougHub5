@@ -96,6 +96,7 @@ const api = {
     create: (page: unknown) => ipcRenderer.invoke("notebookPages:create", page),
     update: (id: string, updates: unknown) =>
       ipcRenderer.invoke("notebookPages:update", id, updates),
+    delete: (id: string) => ipcRenderer.invoke("notebookPages:delete", id),
   },
   notebookBlocks: {
     getByPage: (pageId: string) =>

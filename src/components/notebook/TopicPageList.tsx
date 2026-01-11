@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Search, Plus, BookOpen, Loader2 } from "lucide-react";
+import { Search, Plus, BookOpen, Loader2, Trash2 } from "lucide-react";
 import { NotebookTopicPage, CanonicalTopic } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,25 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useAppStore } from "@/stores/useAppStore";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface TopicPageListProps {
   pages: NotebookTopicPage[];
@@ -19,6 +37,7 @@ interface TopicPageListProps {
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onPageCreated: () => void; // callback to refresh parent
+  onPageDeleted?: (id: string) => void;
 }
 
 /**
@@ -32,13 +51,18 @@ export const TopicPageList = ({
   selectedId,
   onSelect,
   onPageCreated,
+  onPageDeleted,
 }: TopicPageListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [pageToDelete, setPageToDelete] = useState<NotebookTopicPage | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [newTopicName, setNewTopicName] = useState("");
   const [suggestions, setSuggestions] = useState<CanonicalTopic[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { deleteNotebookPage } = useAppStore();
 
   // Helper function to get topic name
   const getTopicName = (page: NotebookTopicPage): string => {
@@ -128,7 +152,27 @@ export const TopicPageList = ({
       console.error("Error creating topic page:", error);
     }
   };
-
+  // Handle page deletion
+  const handleDeletePage = async () => {
+    if (!pageToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const result = await deleteNotebookPage(pageToDelete.id);
+      if (result.success) {
+        toast.success(`Deleted topic page: ${getTopicName(pageToDelete)}`);
+        onPageDeleted?.(pageToDelete.id);
+      } else {
+        toast.error(`Failed to delete topic page: ${result.error}`);
+      }
+    } catch (error) {
+      console.error("Delete failed:", error);
+      toast.error("An unexpected error occurred during deletion");
+    } finally {
+      setIsDeleting(false);
+      setPageToDelete(null);
+    }
+  };
   return (
     <div className="flex flex-col h-full bg-surface-base">
       {/* Header & Search */}
@@ -186,29 +230,41 @@ export const TopicPageList = ({
             {filteredPages.map((page) => {
               const isActive = selectedId === page.id;
               return (
-                <button
-                  key={page.id}
-                  onClick={() => onSelect(page.id)}
-                  className={cn(
-                    "w-full flex items-center justify-between px-4 py-2 text-sm transition-colors hover:bg-white/5 group",
-                    isActive
-                      ? "bg-primary/20 text-primary font-medium"
-                      : "text-foreground"
-                  )}
-                >
-                  <span className="truncate mr-2">{getTopicName(page)}</span>
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      "h-5 px-1.5 text-[11px] min-w-[20px] justify-center",
-                      isActive
-                        ? "bg-background/50"
-                        : "bg-muted group-hover:bg-muted/80"
-                    )}
-                  >
-                    {page.cardIds.length}
-                  </Badge>
-                </button>
+                <ContextMenu key={page.id}>
+                  <ContextMenuTrigger>
+                    <button
+                      onClick={() => onSelect(page.id)}
+                      className={cn(
+                        "w-full flex items-center justify-between px-4 py-2 text-sm transition-colors hover:bg-white/5 group",
+                        isActive
+                          ? "bg-primary/20 text-primary font-medium"
+                          : "text-foreground"
+                      )}
+                    >
+                      <span className="truncate mr-2">{getTopicName(page)}</span>
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          "h-5 px-1.5 text-[11px] min-w-[20px] justify-center",
+                          isActive
+                            ? "bg-background/50"
+                            : "bg-muted group-hover:bg-muted/80"
+                        )}
+                      >
+                        {page.cardIds.length}
+                      </Badge>
+                    </button>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent className="w-48">
+                    <ContextMenuItem
+                      className="text-destructive focus:text-destructive cursor-pointer"
+                      onSelect={() => setPageToDelete(page)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Topic Page
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
               );
             })}
           </div>
@@ -295,6 +351,44 @@ export const TopicPageList = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!pageToDelete}
+        onOpenChange={(open) => !open && setPageToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Topic Page?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the page "
+              {pageToDelete ? getTopicName(pageToDelete) : ""}", all its blocks,
+              and all {pageToDelete?.cardIds.length || 0} associated flashcards.
+              Source items will be returned to your inbox if they are not used elsewhere.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeletePage();
+              }}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Page"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
