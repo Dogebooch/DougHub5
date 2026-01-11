@@ -214,7 +214,7 @@ export function WeakTopicsView() {
                     value={100 - topic.avgDifficulty * 10}
                     className="h-1.5"
                     indicatorClassName={cn(
-                      topic.avgDifficulty > 9 ? "bg-red-500" : "bg-amber-500"
+                      topic.avgDifficulty > 9 ? "bg-destructive" : "bg-warning"
                     )}
                   />
                 </div>
@@ -254,8 +254,8 @@ export function WeakTopicsView() {
               className={cn(
                 "absolute bottom-0 left-0 right-0 h-0.5 transition-all duration-300",
                 topic.avgDifficulty > 9
-                  ? "bg-red-500/20 group-hover:bg-red-500"
-                  : "bg-amber-500/20 group-hover:bg-amber-500"
+                  ? "bg-destructive/20 group-hover:bg-destructive"
+                  : "bg-warning/20 group-hover:bg-warning"
               )}
             />
           </div>
@@ -273,7 +273,7 @@ function DifficultyBadge({ difficulty }: { difficulty: number }) {
       className={cn(
         "font-mono h-5 px-1.5 text-[11px]",
         !isCritical &&
-          "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200"
+          "bg-warning/20 text-warning border-warning/30 hover:bg-warning/30"
       )}
     >
       DL {difficulty.toFixed(1)}

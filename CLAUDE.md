@@ -32,6 +32,7 @@ IPC returns IpcResult<T>: { data, error: null } | { data: null, error }
 - No folders—tags + Smart Views only
 - Medical lists → overlapping cloze (not naked lists)
 - Performance: <200ms search, <20s capture, <500ms save
+- **Colors:** Always use theme variables (`bg-destructive`, `text-warning-foreground`) from `src/index.css`, never hardcoded Tailwind colors (`bg-red-500`) for themeable UI
 
 ## Adding DB Operations
 database.ts → ipc-handlers.ts → preload.ts → electron.d.ts → useAppStore.ts

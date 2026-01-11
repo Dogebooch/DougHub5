@@ -455,7 +455,7 @@ export function ReviewInterface() {
           isUrgentDifficulty
             ? "ring-2 ring-destructive/50"
             : isHighDifficulty
-            ? "ring-2 ring-amber-500/40"
+            ? "ring-2 ring-warning/40"
             : "",
           isHighDifficulty &&
             answerVisible &&
@@ -508,7 +508,7 @@ export function ReviewInterface() {
                 "flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider",
                 isUrgentDifficulty
                   ? "bg-destructive/10 text-destructive border border-destructive/20"
-                  : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                  : "bg-warning/10 text-warning border border-warning/20"
               )}
             >
               <AlertTriangle className="h-3 w-3" />
@@ -661,7 +661,7 @@ export function ReviewInterface() {
                 <Button
                   onClick={() => handleManualGrade(Rating.Hard)}
                   disabled={isSubmitting}
-                  className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-warning hover:bg-warning/90 text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                  className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-warning hover:bg-warning/90 text-warning-foreground border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
                 >
                   <span className="text-[11px] uppercase tracking-wider font-semibold text-warning-foreground/80">
                     Struggled
@@ -673,7 +673,7 @@ export function ReviewInterface() {
                 <Button
                   onClick={() => handleManualGrade(Rating.Good)}
                   disabled={isSubmitting}
-                  className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-info hover:bg-info/90 text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                  className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-info hover:bg-info/90 text-info-foreground border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
                 >
                   <span className="text-[11px] uppercase tracking-wider font-semibold text-info-foreground/80">
                     Recalled
@@ -685,7 +685,7 @@ export function ReviewInterface() {
                 <Button
                   onClick={() => handleManualGrade(Rating.Easy)}
                   disabled={isSubmitting}
-                  className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-success hover:bg-success/90 text-white border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                  className="min-w-[100px] h-12 elevation-1 hover:elevation-2 hover:translate-y-[-1px] transition-all bg-success hover:bg-success/90 text-success-foreground border-none rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
                 >
                   <span className="text-[11px] uppercase tracking-wider font-semibold text-success-foreground/80">
                     Mastered

@@ -55,24 +55,24 @@ export const CardWorthinessPanel: React.FC<CardWorthinessPanelProps> = ({
     switch (level) {
       case 'green':
         return {
-          color: 'bg-emerald-500',
+          color: 'bg-success',
           icon: CheckCircle2,
           pulse: false,
           label: 'Good',
         };
       case 'yellow':
         return {
-          color: 'bg-amber-400',
+          color: 'bg-warning',
           icon: AlertCircle,
           pulse: false, // Per QoL instructions: Yellow doesn't need urgency
           label: 'Warning',
         };
       case 'red':
         return {
-          color: 'bg-rose-500',
+          color: "bg-destructive",
           icon: XCircle,
           pulse: true,
-          label: 'Critical',
+          label: "Critical",
         };
       default:
         return {

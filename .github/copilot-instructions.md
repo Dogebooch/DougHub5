@@ -74,6 +74,7 @@ npm run lint     # ESLint (zero warnings)
 - `cn()` from `@/lib/utils` for Tailwind class merging
 - Path alias: `@/` → `src/`
 - Zustand for state; persist to SQLite first, then update local state
+- **Colors:** Always use theme variables (`bg-destructive`, `text-warning-foreground`) defined in `src/index.css`, never hardcoded Tailwind colors (`bg-red-500`, `text-amber-600`) to ensure theming consistency
 
 ## Adding Database Operations
 1. Query function in `electron/database.ts`

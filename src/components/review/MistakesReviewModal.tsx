@@ -270,7 +270,7 @@ export function MistakesReviewModal({
               ) : currentFeedback ? (
                 <div className="space-y-8 pb-4">
                   <section className="relative">
-                    <h4 className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-3">
+                    <h4 className="text-xs font-bold text-warning uppercase tracking-widest mb-3">
                       Conceptual Gap
                     </h4>
                     <p className="text-lg text-foreground/80 leading-relaxed italic border-l-4 border-warning/30 pl-6 py-1">
@@ -279,7 +279,7 @@ export function MistakesReviewModal({
                   </section>
 
                   <section>
-                    <h4 className="text-xs font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-widest mb-3">
+                    <h4 className="text-xs font-bold text-success uppercase tracking-widest mb-3">
                       Clinical Pearl
                     </h4>
                     <div className="p-6 rounded-xl bg-success/10 border border-success/30 text-foreground/90 leading-relaxed shadow-sm text-lg">

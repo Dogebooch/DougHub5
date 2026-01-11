@@ -421,7 +421,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
             >
               <div className="border-t border-border">
                 <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left">
-                  <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase text-amber-600 dark:text-amber-400">
+                  <span className="text-[10px] font-bold text-warning tracking-widest uppercase">
                     Key Points
                   </span>
                   <ChevronDown
@@ -433,7 +433,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="px-6 pb-6 pt-0">
-                    <div className="bg-amber-50/30 dark:bg-amber-950/10 border border-amber-200/50 dark:border-amber-900/50 rounded-lg p-4">
+                    <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
                       <div
                         className="prose prose-sm max-w-none"
                         dangerouslySetInnerHTML={{
