@@ -163,17 +163,18 @@ export async function processCapture(
   // 3. Check for duplicate by URL
   // Use optimized getByUrl first for exact matches, then fallback to normalized search
   const normalizedUrl = normalizeUrl(payload.url);
-  
+
   // Try exact match first (O(1))
   let existing = sourceItemQueries.getByUrl(payload.url);
-  
+
   // If no exact match, search all for normalized match
   if (!existing) {
     const existingItems = sourceItemQueries.getAll();
-    existing = existingItems.find((item) => {
-      if (item.sourceType !== "qbank" || !item.sourceUrl) return false;
-      return normalizeUrl(item.sourceUrl) === normalizedUrl;
-    }) || null;
+    existing =
+      existingItems.find((item) => {
+        if (item.sourceType !== "qbank" || !item.sourceUrl) return false;
+        return normalizeUrl(item.sourceUrl) === normalizedUrl;
+      }) || null;
   }
 
   let resultId: string;
@@ -229,7 +230,15 @@ export async function processCapture(
     resultId = id;
   }
 
-  // 4. Show system notification
+  // 4. Persist the raw HTML for provenance/debugging
+  try {
+    sourceItemQueries.saveRawPage(resultId, payload.pageHTML);
+  } catch (error) {
+    console.error("[Capture] Failed to save raw HTML:", error);
+    // Don't fail the whole capture just because raw HTML persistence failed
+  }
+
+  // 5. Show system notification
   const notification = new Notification({
     title: isUpdate ? "Question Updated" : "Question Captured",
     body: `${content.category || "Board Question"} - ${
@@ -740,6 +749,30 @@ export function registerIpcHandlers(): void {
     async (_, id: string): Promise<IpcResult<void>> => {
       try {
         sourceItemQueries.delete(id);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "sourceItems:getRawPage",
+    async (_, sourceItemId: string): Promise<IpcResult<string | null>> => {
+      try {
+        const html = sourceItemQueries.getRawPage(sourceItemId);
+        return success(html);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "sourceItems:purgeRawPages",
+    async (): Promise<IpcResult<void>> => {
+      try {
+        sourceItemQueries.purgeRawPages();
         return success(undefined);
       } catch (error) {
         return failure(error);

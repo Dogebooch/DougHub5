@@ -148,6 +148,8 @@ export interface ElectronAPI {
       updates: Partial<SourceItem>
     ) => Promise<IpcResult<void>>;
     delete: (id: string) => Promise<IpcResult<void>>;
+    getRawPage: (sourceItemId: string) => Promise<IpcResult<string | null>>;
+    purgeRawPages: () => Promise<IpcResult<void>>;
     onNew: (callback: (item: SourceItem) => void) => () => void;
   };
   canonicalTopics: {

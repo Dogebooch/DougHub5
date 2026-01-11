@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import fs from "fs";
 import path from "path";
+import zlib from "zlib";
 import { fileURLToPath } from "node:url";
 import { createBackup, restoreBackup } from "./backup-service";
 
@@ -208,8 +209,8 @@ export interface CardBrowserFilters {
 }
 
 export interface CardBrowserSort {
-  field: 'dueDate' | 'createdAt' | 'difficulty' | 'lastReview';
-  direction: 'asc' | 'desc';
+  field: "dueDate" | "createdAt" | "difficulty" | "lastReview";
+  direction: "asc" | "desc";
 }
 
 export interface CardBrowserRow extends CardRow {
@@ -317,8 +318,29 @@ interface SmartViewRow {
 }
 
 // ============================================================================
-// Database Initialization
+// Database Helpers & Compression
 // ============================================================================
+
+/**
+ * Compresses a string using Gzip. Returns a Buffer.
+ */
+function compressString(text: string): Buffer {
+  return zlib.gzipSync(text);
+}
+
+/**
+ * Decompresses a Gzip buffer back into a string.
+ */
+function decompressBuffer(buffer: Buffer): string {
+  try {
+    return zlib.gunzipSync(buffer).toString("utf-8");
+  } catch (error) {
+    console.error("[Database] Decompression failed:", error);
+    // If it's not a valid gzip buffer, it might be legacy plain text
+    // although SQLite returns Buffer for BLOB, we should be safe.
+    return buffer.toString("utf-8");
+  }
+}
 
 let db: Database.Database | null = null;
 let currentDbPath: string | null = null;
@@ -1031,6 +1053,113 @@ function migrateToV10(dbPath: string): void {
 }
 
 /**
+ * Migration to v11.
+ * Creates source_raw_pages table to persist original HTML of captures.
+ */
+function migrateToV11(dbPath: string): void {
+  console.log(
+    "[Migration] Starting migration to schema version 11 (Raw HTML Persistence)..."
+  );
+
+  const backupPath = createBackup(dbPath);
+  const database = getDatabase();
+
+  try {
+    database.transaction(() => {
+      if (!tableExists("source_raw_pages")) {
+        database.exec(`
+          CREATE TABLE source_raw_pages (
+            sourceItemId TEXT PRIMARY KEY,
+            htmlPayload TEXT NOT NULL,
+            createdAt TEXT NOT NULL,
+            FOREIGN KEY (sourceItemId) REFERENCES source_items(id) ON DELETE CASCADE
+          )
+        `);
+        console.log("[Migration] Created source_raw_pages table");
+      }
+      setSchemaVersion(11);
+    })();
+    console.log("[Migration] Successfully migrated to schema version 11");
+  } catch (error) {
+    console.error("[Migration] V11 Migration failed, restoring backup:", error);
+    database.close();
+    db = null;
+    restoreBackup(backupPath, dbPath);
+    db = new Database(dbPath);
+    db.pragma("journal_mode = WAL");
+    db.pragma("foreign_keys = ON");
+    throw error;
+  }
+}
+
+/**
+ * Migration to v12.
+ * Converts source_raw_pages.htmlPayload from TEXT to BLOB and applies compression.
+ * This significantly reduces database bloat for archived HTML.
+ */
+function migrateToV12(dbPath: string): void {
+  console.log(
+    "[Migration] Starting migration to schema version 12 (HTML Compression)..."
+  );
+
+  const backupPath = createBackup(dbPath);
+  const database = getDatabase();
+
+  try {
+    // 1. Create the new table with BLOB column
+    database.exec(`
+      CREATE TABLE source_raw_pages_new (
+        sourceItemId TEXT PRIMARY KEY,
+        htmlPayload BLOB NOT NULL,
+        createdAt TEXT NOT NULL,
+        FOREIGN KEY (sourceItemId) REFERENCES source_items(id) ON DELETE CASCADE
+      )
+    `);
+
+    // 2. Migrate and compress data
+    const rows = database
+      .prepare(
+        "SELECT sourceItemId, htmlPayload, createdAt FROM source_raw_pages"
+      )
+      .all() as {
+      sourceItemId: string;
+      htmlPayload: string;
+      createdAt: string;
+    }[];
+
+    const insertStmt = database.prepare(`
+      INSERT INTO source_raw_pages_new (sourceItemId, htmlPayload, createdAt)
+      VALUES (?, ?, ?)
+    `);
+
+    database.transaction(() => {
+      for (const row of rows) {
+        const compressed = compressString(row.htmlPayload);
+        insertStmt.run(row.sourceItemId, compressed, row.createdAt);
+      }
+    })();
+
+    // 3. Swap tables
+    database.exec("DROP TABLE source_raw_pages");
+    database.exec(
+      "ALTER TABLE source_raw_pages_new RENAME TO source_raw_pages"
+    );
+
+    setSchemaVersion(12);
+    console.log("[Migration] Successfully migrated to schema version 12");
+  } catch (error) {
+    console.error("[Migration] V12 Migration failed, restoring backup:", error);
+    database.close();
+    db = null;
+    restoreBackup(backupPath, dbPath);
+    db = new Database(dbPath);
+    db.pragma("journal_mode = WAL");
+    db.pragma("foreign_keys = ON");
+    throw error;
+  }
+}
+
+/**
  * Initialize the SQLite database.
  * Call this from main.ts after app.whenReady().
  *
@@ -1157,6 +1286,16 @@ export function initDatabase(dbPath: string): Database.Database {
   // Migration to v10 (Card Browser Prep)
   if (getSchemaVersion() < 10) {
     migrateToV10(dbPath);
+  }
+
+  // Migration to v11 (Board Question Raw HTML Persistence)
+  if (getSchemaVersion() < 11) {
+    migrateToV11(dbPath);
+  }
+
+  // Migration to v12 (HTML Compression)
+  if (getSchemaVersion() < 12) {
+    migrateToV12(dbPath);
   }
 
   // Seed system smart views (v3)
@@ -1761,6 +1900,30 @@ export const sourceItemQueries = {
       canonicalTopicIds: JSON.stringify(item.canonicalTopicIds),
       tags: JSON.stringify(item.tags),
     });
+  },
+
+  saveRawPage(sourceItemId: string, html: string): void {
+    const compressed = compressString(html);
+    const stmt = getDatabase().prepare(`
+      INSERT INTO source_raw_pages (sourceItemId, htmlPayload, createdAt)
+      VALUES (?, ?, ?)
+      ON CONFLICT(sourceItemId) DO UPDATE SET
+        htmlPayload = excluded.htmlPayload
+    `);
+    stmt.run(sourceItemId, compressed, new Date().toISOString());
+  },
+
+  getRawPage(sourceItemId: string): string | null {
+    const stmt = getDatabase().prepare(
+      "SELECT htmlPayload FROM source_raw_pages WHERE sourceItemId = ?"
+    );
+    const row = stmt.get(sourceItemId) as { htmlPayload: Buffer } | undefined;
+    return row ? decompressBuffer(row.htmlPayload) : null;
+  },
+
+  purgeRawPages(): void {
+    getDatabase().exec("DELETE FROM source_raw_pages");
+    console.log("[Database] Purged all raw HTML pages");
   },
 
   update(id: string, updates: Partial<DbSourceItem>): void {

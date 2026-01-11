@@ -45,6 +45,8 @@ const api = {
     create: (item) => electron.ipcRenderer.invoke("sourceItems:create", item),
     update: (id, updates) => electron.ipcRenderer.invoke("sourceItems:update", id, updates),
     delete: (id) => electron.ipcRenderer.invoke("sourceItems:delete", id),
+    getRawPage: (sourceItemId) => electron.ipcRenderer.invoke("sourceItems:getRawPage", sourceItemId),
+    purgeRawPages: () => electron.ipcRenderer.invoke("sourceItems:purgeRawPages"),
     onNew: (callback) => {
       const handler = (_event, item) => callback(item);
       electron.ipcRenderer.on("sourceItems:new", handler);

@@ -10,6 +10,7 @@ import { KnowledgeBankView } from "@/components/knowledgebank/KnowledgeBankView"
 import { NotebookView } from "@/components/notebook/NotebookView";
 import { WeakTopicsView } from "@/components/smartviews/WeakTopicsView";
 import { CardBrowserView } from "@/components/cards/CardBrowserView";
+import { SettingsView } from "@/components/settings/SettingsView";
 import { useAppStore } from "@/stores/useAppStore";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -114,20 +115,7 @@ export function AppLayout() {
       case "cards":
         return <CardBrowserView />;
       case "settings":
-        // TODO: Create a SettingsInterface component with sections for:
-        // - FSRS Algorithm Parameters: Allow user to view and customize their
-        //   personalized learning algorithm settings (retention target, weights,
-        //   learning steps, maximum interval, etc.)
-        // - Review Statistics: Display retrievability curves, review history
-        // - Data Management: Export/import, reset progress
-        return (
-          <div className="p-8 text-center">
-            <h1 className="text-2xl font-semibold mb-4">Settings</h1>
-            <p className="text-muted-foreground">
-              Settings page coming soon...
-            </p>
-          </div>
-        );
+        return <SettingsView />;
       default:
         // Fallback: redirect to inbox if unknown view
         console.warn(`Unknown view: ${currentView}, redirecting to inbox`);

@@ -87,6 +87,7 @@ interface AppActions {
   batchDeleteInbox: (
     itemIds: string[]
   ) => Promise<{ success: boolean; error?: string }>;
+  purgeRawPages: () => Promise<{ success: boolean; error?: string }>;
 }
 
 type AppStore = AppState & AppActions;
@@ -504,7 +505,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       if (typeof window !== "undefined" && window.api) {
         const result = await window.api.notebookPages.delete(id);
         if (result.error) {
-          console.error("[Store] Failed to delete notebook page:", result.error);
+          console.error(
+            "[Store] Failed to delete notebook page:",
+            result.error
+          );
           return { success: false, error: result.error };
         }
       }
@@ -640,6 +644,26 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       return { success: false, error: "window.api not available" };
     } catch (error) {
       console.error("[Store] batchDeleteInbox error:", error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  purgeRawPages: async () => {
+    try {
+      if (
+        typeof window !== "undefined" &&
+        window.api?.sourceItems?.purgeRawPages
+      ) {
+        const result = await window.api.sourceItems.purgeRawPages();
+        if (result.error) {
+          console.error("[Store] purgeRawPages failed:", result.error);
+          return { success: false, error: result.error };
+        }
+        return { success: true };
+      }
+      return { success: false, error: "window.api not available" };
+    } catch (error) {
+      console.error("[Store] purgeRawPages error:", error);
       return { success: false, error: String(error) };
     }
   },

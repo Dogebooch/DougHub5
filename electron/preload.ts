@@ -67,8 +67,11 @@ const api = {
     update: (id: string, updates: unknown) =>
       ipcRenderer.invoke("sourceItems:update", id, updates),
     delete: (id: string) => ipcRenderer.invoke("sourceItems:delete", id),
-    onNew: (callback: (item: any) => void) => {
-      const handler = (_event: Electron.IpcRendererEvent, item: any) =>
+    getRawPage: (sourceItemId: string) =>
+      ipcRenderer.invoke("sourceItems:getRawPage", sourceItemId),
+    purgeRawPages: () => ipcRenderer.invoke("sourceItems:purgeRawPages"),
+    onNew: (callback: (item: unknown) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, item: unknown) =>
         callback(item);
       ipcRenderer.on("sourceItems:new", handler);
       return () => ipcRenderer.removeListener("sourceItems:new", handler);

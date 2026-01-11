@@ -1,13 +1,7 @@
 import { app, BrowserWindow, Menu } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import crypto from "node:crypto";
-import {
-  initDatabase,
-  closeDatabase,
-  sourceItemQueries,
-  DbSourceItem,
-} from "./database";
+import { initDatabase, closeDatabase, sourceItemQueries } from "./database";
 import { registerIpcHandlers, processCapture } from "./ipc-handlers";
 import { ensureBackupsDir, cleanupOldBackups } from "./backup-service";
 import {
