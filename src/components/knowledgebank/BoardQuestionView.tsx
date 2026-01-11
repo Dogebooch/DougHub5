@@ -45,6 +45,37 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
   } | null>(null);
   const userDataPath = useAppStore((state) => state.userDataPath);
 
+  const getImagePath = (localPath: string) => {
+    if (!localPath) return "";
+    // app-media:// protocol maps to userData folder
+    const normalizedPath = localPath.replace(/\\/g, "/");
+    return `app-media://${normalizedPath}`;
+  };
+
+  /**
+   * Replaces remote image URLs in HTML string with local app-media hits
+   */
+  const processHtml = React.useCallback(
+    (html: string | undefined): string => {
+      if (!html) return "";
+      let processed = html;
+      content.images.forEach((img) => {
+        if (img.originalUrl && img.localPath) {
+          const localUrl = getImagePath(img.localPath);
+          // Simple string replace or regex is fine for these static URLs
+          const escapedUrl = img.originalUrl.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+          );
+          const regex = new RegExp(escapedUrl, "g");
+          processed = processed.replace(regex, localUrl);
+        }
+      });
+      return processed;
+    },
+    [content.images]
+  );
+
   // Deduplicate: If vignetteHtml ends with questionStemHtml, we should
   // probably not render the question part inside the vignette block
   // because it's rendered below in its own highlighted section.
@@ -115,37 +146,6 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
       return dateStr;
     }
   };
-
-  const getImagePath = (localPath: string) => {
-    if (!localPath) return "";
-    // app-media:// protocol maps to userData folder
-    const normalizedPath = localPath.replace(/\\/g, "/");
-    return `app-media://${normalizedPath}`;
-  };
-
-  /**
-   * Replaces remote image URLs in HTML string with local app-media hits
-   */
-  const processHtml = React.useCallback(
-    (html: string | undefined): string => {
-      if (!html) return "";
-      let processed = html;
-      content.images.forEach((img) => {
-        if (img.originalUrl && img.localPath) {
-          const localUrl = getImagePath(img.localPath);
-          // Simple string replace or regex is fine for these static URLs
-          const escapedUrl = img.originalUrl.replace(
-            /[.*+?^${}()|[\]\\]/g,
-            "\\$&"
-          );
-          const regex = new RegExp(escapedUrl, "g");
-          processed = processed.replace(regex, localUrl);
-        }
-      });
-      return processed;
-    },
-    [content.images]
-  );
 
   const renderImages = (
     location:

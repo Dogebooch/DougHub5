@@ -1,7 +1,7 @@
 import "electron";
 import "node:url";
 import "node:path";
-import { B, M, R, V } from "./main-BTz43cSJ.js";
+import { B, M, R, V } from "./main-CNUCJGyu.js";
 export {
   B as BoardQuestionView,
   M as MAIN_DIST,
