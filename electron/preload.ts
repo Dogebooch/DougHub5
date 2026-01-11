@@ -217,9 +217,6 @@ const api = {
     getUserDataPath: () => ipcRenderer.invoke("app:getUserDataPath"),
   },
   reloadApp: () => ipcRenderer.invoke("app:reload"),
-  db: {
-    getPath: () => ipcRenderer.invoke("db:getPath"),
-  },
 };
 
 // Expose typed API to renderer

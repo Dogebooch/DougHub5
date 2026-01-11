@@ -361,17 +361,6 @@ export function ReviewInterface() {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [
     answerVisible,
-    isSubmitting,
-    showingFeedback,
-    handleShowAnswer,
-    handleContinue,
-    handleManualGrade,
-    navigateToInbox,
-    currentCard,
-    setCurrentView,
-  ]);
-  }, [
-    answerVisible,
     handleShowAnswer,
     handleContinue,
     handleManualGrade,

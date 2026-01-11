@@ -1,394 +1,128 @@
 import Database from 'better-sqlite3';
 import fs from "fs";
 import path from "path";
-import zlib from "zlib";
 import { fileURLToPath } from "node:url";
 import { createBackup, restoreBackup } from "./backup-service";
+import {
+  compressString,
+  decompressBuffer,
+  getSchemaVersion as getSchemaVersionHelper,
+  setSchemaVersion as setSchemaVersionHelper,
+  columnExists as columnExistsHelper,
+  tableExists as tableExistsHelper,
+} from "./database/helpers";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ============================================================================
-// Types (local to database layer, will sync with types/index.ts in Phase 4)
+// Type Re-exports and Imports (from database/types.ts)
 // ============================================================================
 
-export type CardType = "standard" | "qa" | "cloze" | "vignette" | "list-cloze";
-export type ExtractionStatus = "pending" | "processing" | "completed";
+// Re-export types for external consumers
+export type {
+  CardType,
+  ExtractionStatus,
+  SourceType,
+  SourceItemStatus,
+  DbCard,
+  DbNote,
+  DbReviewLog,
+  DbQuickCapture,
+  DbConnection,
+  DbSourceItem,
+  DbCanonicalTopic,
+  DbNotebookTopicPage,
+  DbNotebookBlock,
+  DbMedicalAcronym,
+  DbSmartView,
+  WeakTopicSummary,
+  CardBrowserFilters,
+  CardBrowserSort,
+  DbStatus,
+  SearchFilter,
+  SearchResult,
+  SearchResultItem,
+} from "./database/types";
 
-// v3 Architecture types
-export type SourceType =
-  | "qbank"
-  | "article"
-  | "pdf"
-  | "image"
-  | "audio"
-  | "quickcapture"
-  | "manual";
-export type SourceItemStatus = "inbox" | "processed" | "curated";
-
-export interface DbCard {
-  id: string;
-  front: string;
-  back: string;
-  noteId: string;
-  tags: string[]; // Stored as JSON in DB
-  dueDate: string;
-  createdAt: string;
-  // FSRS fields
-  stability: number;
-  difficulty: number;
-  elapsedDays: number;
-  scheduledDays: number;
-  reps: number;
-  lapses: number;
-  state: number; // 0=New, 1=Learning, 2=Review, 3=Relearning
-  lastReview: string | null;
-  // Card type fields (v2)
-  cardType: CardType;
-  parentListId: string | null; // UUID for grouping medical list cards
-  listPosition: number | null; // Order within list
-  notebookTopicPageId: string | null;
-  sourceBlockId: string | null;
-  aiTitle: string | null;
-}
-
-export interface DbNote {
-  id: string;
-  title: string;
-  content: string;
-  cardIds: string[]; // Stored as JSON in DB
-  tags: string[]; // Stored as JSON in DB
-  createdAt: string;
-}
-
-export interface DbReviewLog {
-  id: string;
-  cardId: string;
-  rating: number; // 1=Again, 2=Hard, 3=Good, 4=Easy
-  state: number;
-  scheduledDays: number;
-  elapsedDays: number;
-  review: string;
-  createdAt: string;
-  // Response tracking fields (v2)
-  responseTimeMs: number | null; // Milliseconds to answer
-  partialCreditScore: number | null; // 0.0-1.0 for list partial recall
-  responseTimeModifier: number | null; // 0.85-1.15x modifier (v7)
-  userAnswer: string | null; // Prep for F18 Typed Answer Mode (v9)
-  userExplanation: string | null; // Prep for F20 Exam Trap Detection (v9)
-}
-
-export interface DbQuickCapture {
-  id: string;
-  content: string;
-  extractionStatus: ExtractionStatus;
-  createdAt: string;
-  processedAt: string | null;
-}
-
-export interface DbConnection {
-  id: string;
-  sourceNoteId: string;
-  targetNoteId: string;
-  semanticScore: number; // 0.0-1.0
-  createdAt: string;
-}
-
-// v3 Architecture - Database interfaces
-export interface DbSourceItem {
-  id: string;
-  sourceType: SourceType;
-  sourceName: string;
-  sourceUrl?: string;
-  title: string;
-  rawContent: string;
-  mediaPath?: string;
-  tempImageData?: string;
-  transcription?: string;
-  canonicalTopicIds: string[];
-  tags: string[];
-  questionId?: string;
-  status: SourceItemStatus;
-  createdAt: string;
-  processedAt?: string;
-  updatedAt?: string;
-}
-
-export interface DbCanonicalTopic {
-  id: string;
-  canonicalName: string;
-  aliases: string[];
-  domain: string;
-  parentTopicId?: string;
-  createdAt: string;
-}
-
-export interface DbNotebookTopicPage {
-  id: string;
-  canonicalTopicId: string;
-  cardIds: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface DbNotebookBlock {
-  id: string;
-  notebookTopicPageId: string;
-  sourceItemId: string;
-  content: string;
-  annotations?: string;
-  mediaPath?: string;
-  position: number;
-  cardCount: number;
-}
-
-export interface DbMedicalAcronym {
-  id?: number;
-  acronym: string;
-  expansion: string;
-  category?: string;
-}
-
-export interface DbSmartView {
-  id: string;
-  name: string;
-  icon: string;
-  filter: {
-    status?: string[];
-    sourceType?: string[];
-    topicIds?: string[];
-    tags?: string[];
-  };
-  sortBy: string;
-  isSystem: boolean;
-}
-
-export interface WeakTopicSummary {
-  topicId: string; // canonicalTopicId
-  topicName: string; // canonicalName
-  cardCount: number; // count of struggling cards
-  avgDifficulty: number; // average difficulty of struggling cards
-  notebookPageId: string; // for navigation
-  worstDifficulty: number;
-  worstCardId: string;
-  lastReviewDate: string | null;
-}
-
-// Raw row types (JSON fields are strings in SQLite)
-interface CardRow {
-  id: string;
-  front: string;
-  back: string;
-  noteId: string;
-  tags: string;
-  dueDate: string;
-  createdAt: string;
-  stability: number;
-  difficulty: number;
-  elapsedDays: number;
-  scheduledDays: number;
-  reps: number;
-  lapses: number;
-  state: number;
-  lastReview: string | null;
-  // Card type fields (v2)
-  cardType: string | null;
-  parentListId: string | null;
-  listPosition: number | null;
-  notebookTopicPageId: string | null;
-  sourceBlockId: string | null;
-  aiTitle: string | null;
-}
-
-// Card Browser filter types
-export interface CardBrowserFilters {
-  status?: number[]; // Filter by state (0,1,2,3)
-  topicId?: string; // Filter by notebookTopicPageId
-  tags?: string[]; // Filter by tags (any match)
-  leechesOnly?: boolean; // Only return leeches
-  search?: string; // Search in front/back text
-}
-
-export interface CardBrowserSort {
-  field: "dueDate" | "createdAt" | "difficulty" | "lastReview";
-  direction: "asc" | "desc";
-}
-
-export interface CardBrowserRow extends CardRow {
-  topicName: string | null;
-  siblingCount: number;
-  isLeech: number; // 0 or 1 in SQLite
-}
-
-interface NoteRow {
-  id: string;
-  title: string;
-  content: string;
-  cardIds: string;
-  tags: string;
-  createdAt: string;
-}
-
-interface ReviewLogRow {
-  id: string;
-  cardId: string;
-  rating: number;
-  state: number;
-  scheduledDays: number;
-  elapsedDays: number;
-  review: string;
-  createdAt: string;
-  // Response tracking fields (v2)
-  responseTimeMs: number | null;
-  partialCreditScore: number | null;
-  responseTimeModifier: number | null;
-  userAnswer: string | null;
-  userExplanation: string | null;
-}
-
-interface QuickCaptureRow {
-  id: string;
-  content: string;
-  extractionStatus: string;
-  createdAt: string;
-  processedAt: string | null;
-}
-
-interface ConnectionRow {
-  id: string;
-  sourceNoteId: string;
-  targetNoteId: string;
-  semanticScore: number;
-  createdAt: string;
-}
-
-// v3 Architecture - Row types (JSON fields as strings)
-interface SourceItemRow {
-  id: string;
-  sourceType: string;
-  sourceName: string;
-  sourceUrl: string | null;
-  title: string;
-  rawContent: string;
-  mediaPath: string | null;
-  transcription: string | null;
-  canonicalTopicIds: string; // JSON
-  tags: string; // JSON
-  questionId: string | null;
-  status: string;
-  createdAt: string;
-  processedAt: string | null;
-  updatedAt: string | null;
-}
-
-interface CanonicalTopicRow {
-  id: string;
-  canonicalName: string;
-  aliases: string; // JSON
-  domain: string;
-  parentTopicId: string | null;
-  createdAt: string;
-}
-
-interface NotebookTopicPageRow {
-  id: string;
-  canonicalTopicId: string;
-  cardIds: string; // JSON
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface NotebookBlockRow {
-  id: string;
-  notebookTopicPageId: string;
-  sourceItemId: string;
-  content: string;
-  annotations: string | null;
-  mediaPath: string | null;
-  position: number;
-  cardCount: number;
-}
-
-interface SmartViewRow {
-  id: string;
-  name: string;
-  icon: string;
-  filter: string; // JSON
-  sortBy: string;
-  isSystem: number; // SQLite INTEGER for boolean
-}
+// Import types for internal use in this file
+import type {
+  CardRow,
+  CardBrowserRow,
+  NoteRow,
+  ReviewLogRow,
+  QuickCaptureRow,
+  ConnectionRow,
+  SourceItemRow,
+  CanonicalTopicRow,
+  NotebookTopicPageRow,
+  NotebookBlockRow,
+  SmartViewRow,
+  CardType,
+  ExtractionStatus,
+  SourceType,
+  SourceItemStatus,
+  DbCard,
+  DbNote,
+  DbReviewLog,
+  DbQuickCapture,
+  DbConnection,
+  DbSourceItem,
+  DbCanonicalTopic,
+  DbNotebookTopicPage,
+  DbNotebookBlock,
+  DbMedicalAcronym,
+  DbSmartView,
+  WeakTopicSummary,
+  CardBrowserFilters,
+  CardBrowserSort,
+  DbStatus,
+  SearchFilter,
+  SearchResult,
+  SearchResultItem,
+} from "./database/types";
 
 // ============================================================================
-// Database Helpers & Compression
+// Database State
 // ============================================================================
-
-/**
- * Compresses a string using Gzip. Returns a Buffer.
- */
-function compressString(text: string): Buffer {
-  return zlib.gzipSync(text);
-}
-
-/**
- * Decompresses a Gzip buffer back into a string.
- */
-function decompressBuffer(buffer: Buffer): string {
-  try {
-    return zlib.gunzipSync(buffer).toString("utf-8");
-  } catch (error) {
-    console.error(
-      "[Database] Decompression failed, falling back to plain text:",
-      error
-    );
-    // If it's not a valid gzip buffer, it might be legacy plain text
-    // although SQLite returns Buffer for BLOB, we should be safe.
-    try {
-      return buffer.toString("utf-8");
-    } catch (fallbackError) {
-      console.error(
-        "[Database] Failed to decode buffer as UTF-8:",
-        fallbackError
-      );
-      throw new Error("Unable to decompress or decode buffer");
-    }
-  }
-}
 
 let db: Database.Database | null = null;
 let currentDbPath: string | null = null;
+
+// ============================================================================
+// Helper Function Wrappers (for backward compatibility)
+// ============================================================================
 
 /**
  * Get current schema version from user_version pragma.
  */
 function getSchemaVersion(): number {
-  return getDatabase().pragma("user_version", { simple: true }) as number;
+  return getSchemaVersionHelper(getDatabase());
 }
 
 /**
  * Set schema version via user_version pragma.
  */
 function setSchemaVersion(version: number): void {
-  getDatabase().pragma(`user_version = ${version}`);
+  setSchemaVersionHelper(getDatabase(), version);
 }
 
 /**
  * Check if a column exists in a table.
  */
 function columnExists(table: string, column: string): boolean {
-  const columns = getDatabase()
-    .prepare(`PRAGMA table_info(${table})`)
-    .all() as { name: string }[];
-  return columns.some((c) => c.name === column);
+  return columnExistsHelper(getDatabase(), table, column);
 }
 
 /**
  * Check if a table exists in the database.
  */
 function tableExists(table: string): boolean {
-  const result = getDatabase()
-    .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`)
-    .get(table) as { name: string } | undefined;
-  return result !== undefined;
+  return tableExistsHelper(getDatabase(), table);
 }
+
+// ============================================================================
+// Migrations
+// ============================================================================
 
 /**
  * Migrate database from v1 to v2.
@@ -1910,39 +1644,6 @@ export const connectionQueries = {
 // Settings Queries
 // ============================================================================
 
-export const settingsQueries = {
-  get(key: string): string | null {
-    const stmt = getDatabase().prepare(
-      "SELECT value FROM settings WHERE key = ?"
-    );
-    const row = stmt.get(key) as { value: string } | undefined;
-    return row ? row.value : null;
-  },
-
-  getParsed<T>(key: string, defaultValue: T): T {
-    const value = this.get(key);
-    if (value === null) return defaultValue;
-    try {
-      return JSON.parse(value) as T;
-    } catch (error) {
-      console.error(`[Settings] Failed to parse setting '${key}':`, error);
-      return defaultValue;
-    }
-  },
-
-  set(key: string, value: string): void {
-    const stmt = getDatabase().prepare(
-      "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)"
-    );
-    stmt.run(key, value);
-  },
-
-  getAll(): { key: string; value: string }[] {
-    const stmt = getDatabase().prepare("SELECT * FROM settings");
-    return stmt.all() as { key: string; value: string }[];
-  },
-};
-
 // ============================================================================
 // v3 Architecture - Source Item Queries
 // ============================================================================
@@ -3322,30 +3023,8 @@ export function invalidateAcronymCache(): void {
 }
 
 // ============================================================================
-// FTS5 Search Queries
+// Search Queries
 // ============================================================================
-
-export type SearchFilter = "all" | "cards" | "notes" | "inbox";
-
-export interface SearchResultItem {
-  id: string;
-  type: "card" | "note" | "source_item";
-  title: string;
-  snippet: string;
-  createdAt: string;
-  tags?: string[];
-}
-
-export interface SearchResult {
-  results: SearchResultItem[];
-  counts: {
-    all: number;
-    cards: number;
-    notes: number;
-    inbox: number;
-  };
-  queryTimeMs: number;
-}
 
 interface FtsRow {
   id: string;
@@ -3439,9 +3118,11 @@ export const searchQueries = {
       `);
       const cardRows = cardsStmt.all(ftsQuery, limit) as Array<{
         id: string;
-        front: string;
-        back: string;
+        createdAt: string;
         tags: string;
+        s1: string;
+        s2: string;
+        s3: string;
       }>;
       cardRows.forEach((row) => {
         const snippet =
@@ -3479,8 +3160,11 @@ export const searchQueries = {
       const noteRows = notesStmt.all(ftsQuery, limit) as Array<{
         id: string;
         title: string;
-        content: string;
+        createdAt: string;
         tags: string;
+        s1: string;
+        s2: string;
+        s3: string;
       }>;
       noteRows.forEach((row) => {
         const snippet =
@@ -3518,9 +3202,11 @@ export const searchQueries = {
       const sourceRows = sourceStmt.all(ftsQuery, limit) as Array<{
         id: string;
         title: string;
-        rawContent: string;
-        sourceName: string;
+        createdAt: string;
         tags: string;
+        s1: string;
+        s2: string;
+        s3: string;
       }>;
       sourceRows.forEach((row) => {
         const snippet =
@@ -3597,23 +3283,6 @@ export const searchQueries = {
 };
 
 // ============================================================================
-// Database Status
-// ============================================================================
-
-export interface DbStatus {
-  version: number;
-  cardCount: number;
-  noteCount: number;
-  sourceItemCount: number; // Added for v2
-  quickCaptureCount: number; // Legacy/Compat
-  inboxCount: number;
-  queueCount: number;
-  notebookCount: number; // Added for sidebar
-  connectionCount: number;
-  weakTopicsCount: number;
-}
-
-// ============================================================================
 // Settings Queries
 // ============================================================================
 
@@ -3678,6 +3347,11 @@ export const settingsQueries = {
     }
 
     return parseInt(result.value, 10);
+  },
+
+  getAll(): { key: string; value: string }[] {
+    const stmt = getDatabase().prepare("SELECT key, value FROM settings");
+    return stmt.all() as { key: string; value: string }[];
   },
 };
 

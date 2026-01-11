@@ -148,16 +148,16 @@ const api = {
   app: {
     getUserDataPath: () => electron.ipcRenderer.invoke("app:getUserDataPath")
   },
-  reloadApp: () => electron.ipcRenderer.invoke("app:reload"),
-  db: {
-    getPath: () => electron.ipcRenderer.invoke("db:getPath")
-  }
+  reloadApp: () => electron.ipcRenderer.invoke("app:reload")
 };
 electron.contextBridge.exposeInMainWorld("api", api);
 electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   on(...args) {
     const [channel, listener] = args;
-    return electron.ipcRenderer.on(channel, (event, ...args2) => listener(event, ...args2));
+    return electron.ipcRenderer.on(
+      channel,
+      (event, ...args2) => listener(event, ...args2)
+    );
   },
   off(...args) {
     const [channel, ...omit] = args;
@@ -172,6 +172,3 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
     return electron.ipcRenderer.invoke(channel, ...omit);
   }
 });
-console.log(
-  "[Preload] Script loaded successfully - window.api and window.ipcRenderer are ready"
-);

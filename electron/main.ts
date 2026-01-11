@@ -174,9 +174,9 @@ function createWindow() {
           `Failed to load from Vite dev server at ${VITE_DEV_SERVER_URL}.\n\nError: ${error.message}\n\nMake sure 'npm run dev' is running.`
         );
       });
-      // Open DevTools in development for debugging (disable with DOUGHUB_NO_DEVTOOLS=1)
+      // Open DevTools docked (disable with DOUGHUB_NO_DEVTOOLS=1)
       if (!process.env.DOUGHUB_NO_DEVTOOLS) {
-        win.webContents.openDevTools({ mode: "detach", activate: false });
+        win.webContents.openDevTools({ mode: "right", activate: false });
       }
     } catch (urlError) {
       console.error(
@@ -301,3 +301,103 @@ app.on("before-quit", () => {
   closeDatabase();
   console.log("[Database] Connection closed");
 });
+
+export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
+  content,
+  className,
+}) => {
+  const [isAttemptsOpen, setIsAttemptsOpen] = useState(false);
+  const [isExplanationOpen, setIsExplanationOpen] = useState(true);
+  const [isKeyPointsOpen, setIsKeyPointsOpen] = useState(true);
+  const [isPeerPearlsOpen, setIsPeerPearlsOpen] = useState(true);
+  const [isReferencesOpen, setIsReferencesOpen] = useState(false);
+  const [isVignetteExpanded, setIsVignetteExpanded] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<{
+    url: string;
+    caption?: string;
+  } | null>(null);
+
+  // --- Helper Functions moved up to avoid ReferenceError ---
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
+  const getImagePath = (localPath: string) => {
+    if (!localPath) return "";
+    // app-media:// protocol maps to userData folder
+    const normalizedPath = localPath.replace(/\\/g, "/");
+    return `app-media://${normalizedPath}`;
+  };
+
+  /**
+   * Replaces remote image URLs in HTML string with local app-media hits
+   */
+  const processHtml = React.useCallback(
+    (html: string | undefined): string => {
+      if (!html) return "";
+      let processed = html;
+      // Added safety check for content.images
+      (content.images || []).forEach((img) => {
+        if (img.originalUrl && img.localPath) {
+          const localUrl = getImagePath(img.localPath);
+          const escapedUrl = img.originalUrl.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+          );
+          const regex = new RegExp(escapedUrl, "g");
+          processed = processed.replace(regex, localUrl);
+        }
+      });
+      return processed;
+    },
+    [content.images]
+  );
+
+  // --- useMemo hooks now have access to processHtml ---
+
+  const displayVignetteHtml = React.useMemo(() => {
+    const vRaw = content.vignetteHtml || "";
+    const qRaw = content.questionStemHtml || "";
+
+    let finalHtml = vRaw.trim();
+
+    if (vRaw && qRaw) {
+      const v = vRaw.trim();
+      const q = qRaw.trim();
+
+      if (v.endsWith(q)) {
+        const stripped = v.slice(0, v.lastIndexOf(q)).trim();
+        finalHtml = stripped.length > 5 ? stripped : v;
+      } else {
+        const vText = v.replace(/<[^>]*>/g, "").trim();
+        const qText = q.replace(/<[^>]*>/g, "").trim();
+
+        if (vText.endsWith(qText) && qText.length > 0) {
+          const qStart = qText.slice(0, 20);
+          const lastIndex = v.lastIndexOf(qStart);
+          if (lastIndex !== -1) {
+            const stripped = v.slice(0, lastIndex).trim();
+            finalHtml = stripped.length > 5 ? stripped : v;
+          }
+        }
+      }
+    }
+
+    return processHtml(finalHtml);
+  }, [content.vignetteHtml, content.questionStemHtml, processHtml]);
+
+  const processedQuestionStem = React.useMemo(
+    () => processHtml(content.questionStemHtml),
+    [content.questionStemHtml, processHtml]
+  );
+  // ... and so on for other processed fields
+};
