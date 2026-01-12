@@ -48,6 +48,7 @@ const api = {
     delete: (id) => electron.ipcRenderer.invoke("sourceItems:delete", id),
     getRawPage: (sourceItemId) => electron.ipcRenderer.invoke("sourceItems:getRawPage", sourceItemId),
     purgeRawPages: () => electron.ipcRenderer.invoke("sourceItems:purgeRawPages"),
+    batchExtractMetadata: () => electron.ipcRenderer.invoke("sourceItems:batchExtractMetadata"),
     onNew: (callback) => {
       const handler = (_event, item) => callback(item);
       electron.ipcRenderer.on("sourceItems:new", handler);

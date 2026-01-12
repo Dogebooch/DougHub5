@@ -72,6 +72,8 @@ const api = {
     getRawPage: (sourceItemId: string) =>
       ipcRenderer.invoke("sourceItems:getRawPage", sourceItemId),
     purgeRawPages: () => ipcRenderer.invoke("sourceItems:purgeRawPages"),
+    batchExtractMetadata: () =>
+      ipcRenderer.invoke("sourceItems:batchExtractMetadata"),
     onNew: (callback: (item: unknown) => void) => {
       const handler = (_event: Electron.IpcRendererEvent, item: unknown) =>
         callback(item);

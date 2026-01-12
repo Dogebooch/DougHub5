@@ -2,7 +2,11 @@ import { ipcMain, BrowserWindow, app, Notification } from "electron";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
-import { resetAIClient, getAvailableOllamaModels } from "./ai-service";
+import {
+  resetAIClient,
+  getAvailableOllamaModels,
+  extractQuestionSummary,
+} from "./ai-service";
 import {
   parseBoardQuestion,
   BoardQuestionContent,
@@ -125,13 +129,13 @@ function normalizeUrl(urlStr: string): string {
     ];
     trackingParams.forEach((param) => url.searchParams.delete(param));
 
-    // For medical Q-Banks, we MUST keep query params because they often 
+    // For medical Q-Banks, we MUST keep query params because they often
     // contain the question ID or state. We only strip tracking params.
     // We also keep the hash if it exists, as some SPAs use it for routing.
-    
+
     // Sort query params for consistent normalization
     url.searchParams.sort();
-    
+
     return url.toString().toLowerCase().trim();
   } catch {
     return urlStr.toLowerCase().trim();
@@ -305,7 +309,7 @@ export async function processCapture(
         body: `${content.category || "Board Question"} - ${
           content.wasCorrect ? "Correct!" : "Incorrect"
         }`,
-        silent: false,
+        silent: true,
       });
       notification.show();
 
@@ -824,9 +828,46 @@ export function registerIpcHandlers(): void {
     "sourceItems:create",
     async (_, item: DbSourceItem): Promise<IpcResult<DbSourceItem>> => {
       try {
+        // Extract metadata for qbank questions
+        if (item.sourceType === "qbank" && !item.metadata) {
+          console.log(
+            `[IPC] Extracting metadata for QBank question: ${item.title.substring(
+              0,
+              50
+            )}...`
+          );
+          try {
+            const extracted = await extractQuestionSummary(
+              item.rawContent,
+              item.sourceType
+            );
+            if (extracted) {
+              item.metadata = {
+                ...extracted,
+                extractedAt: new Date().toISOString(),
+              };
+              console.log(
+                `[IPC] ✅ Metadata extracted: "${extracted.summary}"`
+              );
+            } else {
+              console.log(
+                "[IPC] ⚠️  No metadata extracted - will use fallback display"
+              );
+            }
+          } catch (extractError) {
+            // Extraction failed - continue without metadata
+            console.warn(
+              "[IPC] ❌ Failed to extract question summary:",
+              extractError
+            );
+          }
+        }
+
         sourceItemQueries.insert(item);
+        console.log(`[IPC] ✅ SourceItem saved: ${item.id}`);
         return success(item);
       } catch (error) {
+        console.error("[IPC] ❌ Failed to create SourceItem:", error);
         return failure(error);
       }
     }
@@ -878,6 +919,51 @@ export function registerIpcHandlers(): void {
       try {
         sourceItemQueries.purgeRawPages();
         return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  /**
+   * Batch process inbox items to extract metadata
+   */
+  ipcMain.handle(
+    "sourceItems:batchExtractMetadata",
+    async (): Promise<IpcResult<{ processed: number; failed: number }>> => {
+      try {
+        const items = sourceItemQueries.getInboxItemsWithoutMetadata();
+        let processed = 0;
+        let failed = 0;
+
+        for (const item of items) {
+          try {
+            const extracted = await extractQuestionSummary(
+              item.rawContent,
+              item.sourceType
+            );
+
+            if (extracted) {
+              sourceItemQueries.update(item.id, {
+                metadata: {
+                  ...extracted,
+                  extractedAt: new Date().toISOString(),
+                },
+              });
+              processed++;
+            } else {
+              failed++;
+            }
+          } catch (error) {
+            console.error(
+              `[IPC] Failed to extract metadata for item ${item.id}:`,
+              error
+            );
+            failed++;
+          }
+        }
+
+        return success({ processed, failed });
       } catch (error) {
         return failure(error);
       }

@@ -106,6 +106,12 @@ export interface DbSourceItem {
   canonicalTopicIds: string[];
   tags: string[];
   questionId?: string;
+  metadata?: {
+    summary?: string;
+    subject?: string;
+    questionType?: string;
+    extractedAt?: string;
+  };
   status: SourceItemStatus;
   createdAt: string;
   processedAt?: string;
@@ -274,6 +280,7 @@ export interface SourceItemRow {
   canonicalTopicIds: string; // JSON
   tags: string; // JSON
   questionId: string | null;
+  metadata: string | null; // JSON
   status: string;
   createdAt: string;
   processedAt: string | null;

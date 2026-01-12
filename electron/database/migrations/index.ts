@@ -11,6 +11,7 @@ import { migrateToV10 } from "./v10";
 import { migrateToV11 } from "./v11";
 import { migrateToV12 } from "./v12";
 import { migrateToV13 } from "./v13";
+import { migrateToV14 } from "./v14";
 
 export function runMigrations(dbPath: string): void {
   // Apply migrations in order until the schema reaches the latest version.
@@ -62,6 +63,10 @@ export function runMigrations(dbPath: string): void {
   }
   if (currentVersion < 13) {
     migrateToV13(dbPath);
+    currentVersion = getSchemaVersion();
+  }
+  if (currentVersion < 14) {
+    migrateToV14(dbPath);
   }
 }
 
@@ -78,4 +83,5 @@ export {
   migrateToV11,
   migrateToV12,
   migrateToV13,
+  migrateToV14,
 };

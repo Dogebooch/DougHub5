@@ -4,20 +4,20 @@ import {
   isYesterday, 
   parseISO 
 } from 'date-fns';
-import { Search, SortDesc, Inbox } from 'lucide-react';
+import { Search, SortDesc, Inbox, Sparkles } from "lucide-react";
 
-import { Input } from '@/components/ui/input';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SourceItemRow } from "./SourceItemRow";
 import { BatchActions } from "./BatchActions";
@@ -37,6 +37,7 @@ export function InboxView() {
   );
   const [sortBy, setSortBy] = useState<SortOrder>("newest");
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Dialog state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -222,6 +223,34 @@ export function InboxView() {
     setViewingItem(item);
   };
 
+  const handleBatchExtract = async () => {
+    setIsProcessing(true);
+    try {
+      const result = await window.api.sourceItems.batchExtractMetadata();
+      if (result.data) {
+        toast({
+          title: "Batch Processing Complete",
+          description: `Processed ${result.data.processed} items. ${result.data.failed} failed.`,
+        });
+        fetchInbox();
+      } else if (result.error) {
+        toast({
+          title: "Batch Processing Failed",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Batch Processing Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   if (isLoading && items.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -239,9 +268,25 @@ export function InboxView() {
             <Inbox className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight">Inbox Triage</h1>
           </div>
-          <span className="text-sm font-medium px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-            {items.length} total
-          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleBatchExtract}
+              disabled={
+                isProcessing ||
+                items.filter((i) => i.sourceType === "qbank" && !i.metadata)
+                  .length === 0
+              }
+              className="gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              {isProcessing ? "Processing..." : "Extract Summaries"}
+            </Button>
+            <span className="text-sm font-medium px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+              {items.length} total
+            </span>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-4 items-end">

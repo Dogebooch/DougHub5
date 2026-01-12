@@ -48,9 +48,11 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
     }
   };
 
-  const tags = sourceItem.tags || [];
-  const displayedTags = tags.slice(0, 3);
-  const remainingTagsCount = tags.length - 3;
+  // For qbank items: use AI summary as title if available, otherwise use original title
+  const displayTitle =
+    sourceItem.sourceType === "qbank" && sourceItem.metadata?.summary
+      ? sourceItem.metadata.summary
+      : sourceItem.title;
 
   return (
     <div
@@ -78,7 +80,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
       <div className="flex-grow min-w-0 flex flex-col gap-1">
         <div className="flex items-center gap-2 min-w-0">
           <h3 className="font-medium text-sm truncate leading-none text-card-foreground flex-1">
-            {sourceItem.title}
+            {displayTitle}
           </h3>
           <span className="text-[11px] text-card-muted whitespace-nowrap shrink-0 group-hover:hidden">
             {formatDistanceToNow(new Date(sourceItem.createdAt), {
@@ -88,21 +90,22 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
         </div>
 
         <div className="flex flex-wrap gap-1.5 group-hover:hidden">
-          {displayedTags.map((tag) => (
+          {/* Subject badge if available */}
+          {sourceItem.metadata?.subject && (
             <Badge
-              key={tag}
               variant="secondary"
-              className="px-1.5 py-0 text-[11px] font-normal bg-card-muted/10 text-card-muted border-none"
+              className="px-1.5 py-0 text-[11px] font-normal bg-primary/10 text-primary border-none"
             >
-              {tag}
+              {sourceItem.metadata.subject}
             </Badge>
-          ))}
-          {remainingTagsCount > 0 && (
+          )}
+          {/* Question type badge if available */}
+          {sourceItem.metadata?.questionType && (
             <Badge
               variant="secondary"
-              className="px-1.5 py-0 text-[11px] font-normal bg-card-muted/10 text-card-muted border-none"
+              className="px-1.5 py-0 text-[11px] font-normal bg-secondary/50 text-secondary-foreground border-none"
             >
-              +{remainingTagsCount}
+              {sourceItem.metadata.questionType}
             </Badge>
           )}
         </div>

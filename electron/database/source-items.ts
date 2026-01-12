@@ -79,11 +79,11 @@ export const sourceItemQueries = {
       INSERT INTO source_items (
         id, sourceType, sourceName, sourceUrl, title, rawContent,
         mediaPath, transcription, canonicalTopicIds, tags, questionId,
-        status, createdAt, processedAt, updatedAt
+        metadata, status, createdAt, processedAt, updatedAt
       ) VALUES (
         @id, @sourceType, @sourceName, @sourceUrl, @title, @rawContent,
         @mediaPath, @transcription, @canonicalTopicIds, @tags, @questionId,
-        @status, @createdAt, @processedAt, @updatedAt
+        @metadata, @status, @createdAt, @processedAt, @updatedAt
       )
     `);
     stmt.run({
@@ -96,6 +96,7 @@ export const sourceItemQueries = {
       mediaPath: item.mediaPath || null,
       transcription: item.transcription || null,
       questionId: item.questionId || null,
+      metadata: item.metadata ? JSON.stringify(item.metadata) : null,
       status: item.status,
       createdAt: item.createdAt,
       processedAt: item.processedAt || null,
@@ -148,6 +149,7 @@ export const sourceItemQueries = {
         canonicalTopicIds = @canonicalTopicIds,
         tags = @tags,
         questionId = @questionId,
+        metadata = @metadata,
         status = @status,
         createdAt = @createdAt,
         processedAt = @processedAt,
@@ -164,6 +166,7 @@ export const sourceItemQueries = {
       mediaPath: merged.mediaPath || null,
       transcription: merged.transcription || null,
       questionId: merged.questionId || null,
+      metadata: merged.metadata ? JSON.stringify(merged.metadata) : null,
       status: merged.status,
       createdAt: merged.createdAt,
       processedAt: merged.processedAt || null,
@@ -178,6 +181,17 @@ export const sourceItemQueries = {
       "DELETE FROM source_items WHERE id = @id"
     );
     stmt.run({ id });
+  },
+
+  /**
+   * Get all inbox items without metadata (for batch processing)
+   */
+  getInboxItemsWithoutMetadata(): DbSourceItem[] {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM source_items WHERE status = 'inbox' AND sourceType = 'qbank' AND metadata IS NULL ORDER BY createdAt DESC"
+    );
+    const rows = stmt.all() as SourceItemRow[];
+    return rows.map(parseSourceItemRow);
   },
 };
 
@@ -260,6 +274,7 @@ export function parseSourceItemRow(row: SourceItemRow): DbSourceItem {
     canonicalTopicIds: JSON.parse(row.canonicalTopicIds),
     tags: JSON.parse(row.tags),
     questionId: row.questionId || undefined,
+    metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
     status: row.status as SourceItemStatus,
     createdAt: row.createdAt,
     processedAt: row.processedAt || undefined,

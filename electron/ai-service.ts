@@ -1540,6 +1540,214 @@ export function findRelatedNotes(
 }
 
 // ============================================================================
+// Question Summary Extraction
+// ============================================================================
+
+/**
+ * Extract a concise summary for inbox triage differentiation.
+ * 
+ * Generates a 4-5 word summary that captures the key learning point or
+ * clinical question to help users quickly identify questions in their inbox.
+ * 
+ * Features:
+ * - 10 second timeout to prevent hanging
+ * - Single retry on transient failures
+ * - Comprehensive logging for debugging
+ * - Model-aware caching
+ * 
+ * @param content Raw question content (rawContent from SourceItem)
+ * @param sourceType Type of source (qbank, article, etc.)
+ * @returns Object with summary, subject, questionType, or null if extraction fails
+ */
+export async function extractQuestionSummary(
+  content: string,
+  sourceType: string
+): Promise<{
+  summary: string;
+  subject?: string;
+  questionType?: string;
+} | null> {
+  // Only process qbank questions for now
+  if (sourceType !== "qbank") {
+    console.log(`[AI Service] Skipping extraction - not qbank (${sourceType})`);
+    return null;
+  }
+
+  // Validate content length
+  if (!content || content.trim().length < 20) {
+    console.warn(
+      `[AI Service] Content too short for extraction: ${content.length} chars`
+    );
+    return null;
+  }
+
+  // Get config for cache key (include model to invalidate on model change)
+  const config = await getProviderConfig();
+  
+  // Check cache (include model in key)
+  const cacheKey = aiCache.key(
+    "question-summary",
+    config.model,
+    content.substring(0, 500)
+  );
+  const cached = aiCache.get<{
+    summary: string;
+    subject?: string;
+    questionType?: string;
+  }>(cacheKey);
+  if (cached) {
+    console.log("[AI Service] ✓ Cache hit:", cached.summary);
+    return cached;
+  }
+
+  // Truncate content to first 800 chars for efficiency
+  const truncatedContent = content.substring(0, 800);
+
+  const prompt = `You are a medical education AI assistant. Extract a concise summary from this board question.
+
+TASK: Analyze the clinical vignette and question stem to identify the core learning point.
+
+OUTPUT REQUIREMENTS:
+1. "summary": 4-5 word clinical question that captures the key decision point
+   - Use action verbs: "Managing", "Diagnosing", "Treating", "When to..."
+   - Be specific: Include the condition/scenario
+   - Examples: 
+     * "Managing atrial fibrillation stroke risk"
+     * "Diagnosing pulmonary embolism criteria"
+     * "When to anticoagulate DVT"
+
+2. "subject": Primary medical specialty (pick ONE most relevant)
+   - Options: Cardiology, Pulmonology, Neurology, Gastroenterology, Nephrology, Endocrinology, Rheumatology, Infectious Disease, Emergency Medicine, Critical Care, Hematology, Oncology, Other
+
+3. "questionType": Classification (pick ONE)
+   - "Diagnosis" - identifying a condition, using criteria/tests
+   - "Management" - treatment decisions, next best step
+   - "Mechanism" - pathophysiology, how something works
+   - "Risk Stratification" - scoring systems, prognosis
+   - "Other" - if none fit
+
+QUESTION CONTENT:
+${truncatedContent}
+
+RESPOND ONLY WITH VALID JSON:
+{
+  "summary": "4-5 word action-oriented clinical question",
+  "subject": "Primary specialty",
+  "questionType": "Diagnosis|Management|Mechanism|Risk Stratification|Other"
+}`;
+
+  // Retry logic: try once, retry once on failure
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      console.log(
+        `[AI Service] Extracting question summary (attempt ${attempt}/2)...`
+      );
+      const startTime = Date.now();
+
+      const client = await getClient();
+
+      console.log(`[AI Service] Using model: ${config.model}`);
+
+      // Create AbortController for 10s timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      try {
+        const completion = await client.chat.completions.create(
+          {
+            model: config.model,
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.2, // Lower for consistency
+            max_tokens: 150,
+          },
+          { signal: controller.signal as any }
+        );
+
+        clearTimeout(timeoutId);
+
+        const elapsedMs = Date.now() - startTime;
+        const responseText =
+          completion.choices[0]?.message?.content?.trim() || "";
+
+        console.log(`[AI Service] AI response received (${elapsedMs}ms)`);
+        console.log("[AI Service] Raw response:", responseText);
+
+        // Parse JSON response
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          console.warn("[AI Service] No JSON found in response:", responseText);
+          if (attempt < 2) {
+            console.log("[AI Service] Retrying in 1 second...");
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            continue;
+          }
+          return null;
+        }
+
+        const result = JSON.parse(jsonMatch[0]);
+
+        // Validate result
+        if (!result.summary || result.summary.split(" ").length < 3) {
+          console.warn("[AI Service] Invalid summary format:", result);
+          if (attempt < 2) {
+            console.log("[AI Service] Retrying in 1 second...");
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            continue;
+          }
+          return null;
+        }
+
+        // Cache successful result
+        aiCache.set(cacheKey, result);
+
+        console.log("[AI Service] ✅ Successfully extracted:", {
+          summary: result.summary,
+          subject: result.subject,
+          type: result.questionType,
+          duration: `${elapsedMs}ms`,
+        });
+
+        return {
+          summary: result.summary,
+          subject: result.subject || undefined,
+          questionType: result.questionType || undefined,
+        };
+      } catch (aiError) {
+        clearTimeout(timeoutId);
+        if ((aiError as any)?.name === "AbortError") {
+          console.warn("[AI Service] ⏱️  Timeout after 10s");
+          if (attempt < 2) {
+            console.log("[AI Service] Retrying in 1 second...");
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            continue;
+          }
+        }
+        throw aiError;
+      }
+    } catch (error) {
+      console.error(
+        `[AI Service] ❌ Failed to extract (attempt ${attempt}/2):`,
+        error
+      );
+      if (error instanceof Error) {
+        console.error("[AI Service] Error details:", {
+          message: error.message,
+          stack: error.stack?.split("\n").slice(0, 3).join("\n"),
+        });
+      }
+      if (attempt < 2) {
+        console.log("[AI Service] Retrying in 1 second...");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        continue;
+      }
+      return null;
+    }
+  }
+
+  return null;
+}
+
+// ============================================================================
 // Exports
 // ============================================================================
 

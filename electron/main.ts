@@ -22,6 +22,7 @@ import {
   stopCaptureServer,
   CapturePayload,
 } from "./capture-server";
+import { ensureOllamaRunning, getProviderStatus } from "./ai-service";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -269,6 +270,25 @@ app.whenReady().then(() => {
 
   // Register IPC handlers for renderer communication
   registerIpcHandlers();
+
+  // Warm up AI service in background (non-blocking)
+  // This ensures Ollama is ready when user first needs AI features
+  setTimeout(async () => {
+    try {
+      const status = await getProviderStatus();
+      if (status.isLocal && status.isConnected) {
+        console.log(
+          `[AI Service] Warmed up successfully - ${status.model} ready`
+        );
+      } else if (status.isLocal && !status.isConnected) {
+        console.log("[AI Service] Attempting to start Ollama in background...");
+        await ensureOllamaRunning();
+      }
+    } catch (error) {
+      console.warn("[AI Service] Background warmup failed:", error);
+      // Non-critical - will initialize on first use
+    }
+  }, 2000); // 2s delay to not block app startup
 
   // Start the Capture Server for browser extension captures
   startCaptureServer(async (payload: CapturePayload) => {
