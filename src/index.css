@@ -130,4 +130,25 @@
   .animate-pulse-subtle {
     animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+
+  /* List styles for medical content rendered in .prose containers */
+  .prose ul, ul.prose {
+    list-style-type: disc !important;
+    margin-left: 1.5rem !important;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .prose ol, ol.prose {
+    list-style-type: decimal !important;
+    margin-left: 1.5rem !important;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .prose li, li.prose {
+    margin-bottom: 0.5rem;
+    padding-left: 0.25rem;
+    display: list-item !important;
+  }
 }

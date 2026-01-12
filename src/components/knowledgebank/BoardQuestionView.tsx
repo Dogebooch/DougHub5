@@ -73,6 +73,54 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     [content.images]
   );
 
+  /**
+   * Ensures content is structured as a bulleted list.
+   * If the input is plain text or paragraphs, it wraps them in <ul><li> tags.
+   */
+  const formatAsBullets = React.useCallback(
+    (html: string | undefined): string => {
+      if (!html) return "";
+      const trimmed = html.trim();
+      if (!trimmed) return "";
+
+      // If it already contains list structure, just return it
+      if (
+        trimmed.includes("<li") ||
+        trimmed.includes("<ul") ||
+        trimmed.includes("<ol") ||
+        trimmed.includes("•") ||
+        trimmed.includes("&bull;")
+      ) {
+        return trimmed;
+      }
+
+      // If it contains paragraphs, convert <p> groups to <li> items
+      if (trimmed.includes("<p")) {
+        const bulleted = trimmed
+          .replace(/<p[^>]*?>/gi, "<li>")
+          .replace(/<\/p>/gi, "</li>");
+
+        // Cleanup any empty list items that might have been created
+        const cleaned = bulleted.replace(/<li>\s*<\/li>/gi, "");
+        return `<ul>${cleaned}</ul>`;
+      }
+
+      // Split by newlines if they exist, otherwise treat as single item
+      if (trimmed.includes("\n")) {
+        const items = trimmed
+          .split("\n")
+          .filter((line) => line.trim().length > 0)
+          .map((line) => `<li>${line.trim()}</li>`)
+          .join("");
+        return `<ul>${items}</ul>`;
+      }
+
+      // Fallback: wrap the entire block in a list
+      return `<ul><li>${trimmed}</li></ul>`;
+    },
+    []
+  );
+
   // Deduplicate: If vignetteHtml ends with questionStemHtml, we should
   // probably not render the question part inside the vignette block
   // because it's rendered below in its own highlighted section.
@@ -80,33 +128,72 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     const vRaw = content.vignetteHtml || "";
     const qRaw = content.questionStemHtml || "";
 
-    let finalHtml = vRaw.trim();
+    if (!vRaw) return "";
+    if (!qRaw) return processHtml(vRaw);
 
-    if (vRaw && qRaw) {
-      const v = vRaw.trim();
-      const q = qRaw.trim();
+    const v = vRaw.trim();
+    const q = qRaw.trim();
 
-      // Try basic string deduplication
-      if (v.endsWith(q)) {
-        const stripped = v.slice(0, v.lastIndexOf(q)).trim();
-        finalHtml = stripped.length > 5 ? stripped : v;
-      } else {
-        // Try text-only comparison for more robustness against minor HTML/spacing differences
-        const vText = v.replace(/<[^>]*>/g, "").trim();
-        const qText = q.replace(/<[^>]*>/g, "").trim();
-
-        if (vText.endsWith(qText) && qText.length > 0) {
-          const qStart = qText.slice(0, 20);
-          const lastIndex = v.lastIndexOf(qStart);
-          if (lastIndex !== -1) {
-            const stripped = v.slice(0, lastIndex).trim();
-            finalHtml = stripped.length > 5 ? stripped : v;
-          }
-        }
-      }
+    // 1. Exact suffix match (fastest and safest)
+    if (v.endsWith(q)) {
+      const stripped = v.slice(0, v.lastIndexOf(q)).trim();
+      return processHtml(stripped);
     }
 
-    return processHtml(finalHtml);
+    // 2. Fuzzy match logic
+    try {
+      // Normalize both to checking content overlap
+      const normalize = (s: string) =>
+        s
+          .replace(/<[^>]*>/g, " ") // Replace tags with space
+          .replace(/&nbsp;/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const vText = normalize(v);
+      const qText = normalize(q);
+
+      // Only attempt complex deduplication if we have a content match at the end
+      if (qText.length > 15 && vText.endsWith(qText)) {
+        // Construct a regex to find the start of the question in the HTML
+        // We take the first 40 characters of the question text
+        // and create a pattern that allows tags/whitespace between them
+        const qStartChars = q
+          .replace(/<[^>]*>/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 40)
+          .split("");
+
+        const pattern = qStartChars
+          .map((char) => {
+            const escaped = char.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            return `${escaped}(?:<[^>]*>|\\s|&nbsp;)*`;
+          })
+          .join("");
+
+        const regex = new RegExp(pattern, "gi");
+        let lastMatch: RegExpExecArray | null = null;
+        let match;
+
+        while ((match = regex.exec(v)) !== null) {
+          lastMatch = match;
+        }
+
+        if (lastMatch) {
+          // Found the question start in the HTML
+          // Verify we are indeed near the end (heuristic: remainder length checks)
+          // Actually, since vText ends with qText, the last match of qStart *should* be the one.
+          const stripped = v.slice(0, lastMatch.index).trim();
+          return processHtml(stripped);
+        }
+      }
+    } catch (e) {
+      console.warn("Deduplication logic failed", e);
+    }
+
+    // Fallback: Use the original if no robust removal was possible
+    return processHtml(v);
   }, [content.vignetteHtml, content.questionStemHtml, processHtml]);
 
   const processedQuestionStem = React.useMemo(
@@ -118,12 +205,12 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     [content.explanationHtml, processHtml]
   );
   const processedKeyPoints = React.useMemo(
-    () => processHtml(content.keyPointsHtml),
-    [content.keyPointsHtml, processHtml]
+    () => formatAsBullets(processHtml(content.keyPointsHtml)),
+    [content.keyPointsHtml, processHtml, formatAsBullets]
   );
   const processedPeerPearls = React.useMemo(
-    () => processHtml(content.peerPearlsHtml),
-    [content.peerPearlsHtml, processHtml]
+    () => formatAsBullets(processHtml(content.peerPearlsHtml)),
+    [content.peerPearlsHtml, processHtml, formatAsBullets]
   );
   const processedReferences = React.useMemo(
     () => processHtml(content.referencesHtml),
