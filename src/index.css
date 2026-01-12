@@ -152,4 +152,111 @@
     padding-left: 0.25rem;
     display: list-item !important;
   }
+
+  /* Table styles for medical content (MKSAP lab values, etc.) */
+  .prose table {
+    width: auto;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.875rem;
+  }
+
+  .prose table th,
+  .prose table td {
+    padding: 0.25rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+    border: none;
+  }
+
+  .prose table th {
+    font-weight: 500;
+    color: hsl(var(--card-muted-foreground));
+    white-space: nowrap;
+    padding-right: 1.5rem;
+  }
+
+  .prose table td {
+    color: hsl(var(--card-foreground));
+  }
+
+  /* MKSAP-specific: lab value tables often have minimal structure */
+  .prose table tr {
+    border-bottom: none;
+  }
+
+  /* Remove excessive spacing from empty cells */
+  .prose table td:empty,
+  .prose table th:empty {
+    padding: 0;
+    height: 0;
+    display: none;
+  }
+
+  /* Compact lab value display */
+  .prose table tbody tr {
+    line-height: 1.4;
+  }
+
+  /* Lab Values Table Styling */
+  .lab-values-table {
+    @apply w-full border-collapse my-4 bg-muted/30 rounded-lg overflow-hidden;
+    border: 1px solid theme('colors.border');
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .lab-values-table tr {
+    @apply border-b border-border/50 last:border-0;
+  }
+
+  .lab-values-table th {
+    @apply text-left p-2 pl-4 font-medium text-muted-foreground w-1/2 align-top text-sm;
+    background-color: theme('colors.muted / 0.2');
+  }
+
+  .lab-values-table td {
+    @apply p-2 pr-4 text-right font-mono text-sm align-top;
+  }
+
+  .lab-values-table tr:hover {
+    @apply bg-muted/50 transition-colors;
+  }
+
+  /* Override any MKSAP-specific grid/height styles that may have been captured */
+  .prose table,
+  .prose table *,
+  .prose [class*="lab"],
+  .prose [class*="stimulus"] table,
+  .prose [class*="stimulus"] table * {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    grid-template-rows: none !important;
+    grid-auto-rows: auto !important;
+  }
+
+  /* Force table cells to natural sizing */
+  .prose td,
+  .prose th {
+    display: table-cell !important;
+    height: auto !important;
+  }
+
+  .prose tr {
+    display: table-row !important;
+    height: auto !important;
+  }
+
+  .prose table {
+    display: table !important;
+  }
+
+  .prose tbody {
+    display: table-row-group !important;
+  }
+
+  .prose thead {
+    display: table-header-group !important;
+  }
 }

@@ -78,7 +78,7 @@ export function parseBoardQuestion(
   url: string,
   capturedAt: string
 ): BoardQuestionContent {
-  const $ = cheerio.load(html);
+  const $ = cheerio.load(html) as any;
 
   switch (siteName) {
     case "ACEP PeerPrep":
@@ -603,6 +603,9 @@ function parsePeerPrep(
  * - div.critique: Main explanation text (EXCLUDING aside.keypoints)
  * - aside.keypoints: Key Points box
  */
+/**
+ * Site-specific parser for MKSAP 19
+ */
 function parseMKSAP(
   $: cheerio.CheerioAPI,
   url: string,
@@ -640,34 +643,130 @@ function parseMKSAP(
   }
 
   // 1. Vignette - inside section.q_info > div.stimulus
-  // Get all paragraphs with data-hlid (the actual clinical content)
+  // Capture all clinical content in order (paragraphs and tables/labs)
   const stimulusEl = $("div.stimulus").first();
   const vignetteParagraphs: string[] = [];
 
-  stimulusEl.find("p[data-hlid]").each((_: number, el: cheerio.Element) => {
-    const html = $(el).html();
-    if (html && html.trim()) {
-      vignetteParagraphs.push(`<p>${html}</p>`);
+  // Group consecutive lab/vital rows into a single table
+  let currentLabTableRows: string[] = [];
+  const flushLabTable = () => {
+    if (currentLabTableRows.length > 0) {
+      vignetteParagraphs.push(
+        `<table class="lab-values-table"><tbody>${currentLabTableRows.join(
+          ""
+        )}</tbody></table>`
+      );
+      currentLabTableRows = [];
+    }
+  };
+
+  stimulusEl.children().each((_: number, child: cheerio.Element) => {
+    const $child = $(child);
+
+    // Skip technical/header/stats/highlighter divs
+    if (
+      $child.hasClass("header") ||
+      $child.hasClass("stats") ||
+      $child.hasClass("highlight-wrapper") ||
+      $child.hasClass("fab-highlight-menu") ||
+      $child.hasClass("fab-highlight-menu-item")
+    ) {
+      return;
+    }
+
+    // Handle lab/grid/vital divs
+    const isLab =
+      $child.is("div") &&
+      ($child.hasClass("grid") ||
+        $child.hasClass("lab") ||
+        $child.hasClass("vital") ||
+        $child.attr("class")?.includes("lab") ||
+        $child.attr("class")?.includes("vital") ||
+        $child.attr("style")?.includes("grid"));
+
+    if (isLab) {
+      // 1. Try to find label/value children (e.g., col-8/col-4)
+      const children = $child.children();
+      if (children.length >= 2) {
+        const label = children.eq(0).text().trim();
+        const value = children.eq(1).text().trim();
+        if (label || value) {
+          currentLabTableRows.push(
+            `<tr><th>${label}</th><td>${value}</td></tr>`
+          );
+        }
+      } else {
+        // Fallback: If it has children but they are nested, or just text
+        const text = $child.text().trim();
+        if (text) {
+          // If it looks like a single value row or header
+          currentLabTableRows.push(
+            `<tr><th colspan="2" class="text-center font-bold">${text}</th></tr>`
+          );
+        }
+      }
+      return;
+    }
+
+    // Any other element flushes the pending lab table
+    flushLabTable();
+
+    // Handle paragraphs
+    if ($child.is("p")) {
+      const html = $child.html();
+      if (html && (html.trim().length > 0 || $child.find("img").length > 0)) {
+        // Clean MKSAP garbage (highlighter buttons, etc.)
+        const normalized = html
+          .replace(/<button[^>]*>.*?<\/button>/g, "")
+          .replace(/&nbsp;/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (normalized) {
+          vignetteParagraphs.push(`<p>${normalized}</p>`);
+        }
+      }
+      return;
+    }
+
+    // Handle direct images or figures
+    if ($child.is("img") || $child.is("figure")) {
+      const imgHtml = $.html(child);
+      if (imgHtml) {
+        vignetteParagraphs.push(imgHtml);
+      }
+      return;
+    }
+
+    // Handle existing tables
+    if ($child.is("table")) {
+      const $table = $child.clone();
+      $table.removeAttr("style");
+      $table.find("*").removeAttr("style");
+      // Add or preserve the lab-values-table class if it looks like one
+      if (
+        $table.text().toLowerCase().includes("vitals") ||
+        $table.find("tr").length > 3
+      ) {
+        $table.addClass("lab-values-table");
+      }
+      vignetteParagraphs.push($.html($table));
+      return;
     }
   });
 
-  // Also capture any tables (lab values) in the stimulus
-  stimulusEl.find("table").each((_: number, el: cheerio.Element) => {
-    const tableHtml = $.html(el);
-    if (tableHtml) {
-      vignetteParagraphs.push(tableHtml);
-    }
-  });
+  // Final flush for any trailing labs
+  flushLabTable();
 
   let vignetteHtml = vignetteParagraphs.join("\n");
 
   // 2. Question Stem - inside fieldset > legend.header > p
-  const questionStemEl = $("fieldset.card-body legend.header p, fieldset legend p").first();
+  const questionStemEl = $(
+    "fieldset.card-body legend.header p, fieldset legend p, div.question-text"
+  ).first();
   let questionStemHtml = questionStemEl.html() || "";
 
   // Fallback: last paragraph of stimulus if no fieldset found
   if (!questionStemHtml && vignetteParagraphs.length > 0) {
-    // Check if last vignette paragraph looks like a question (ends with ?)
     const lastP = vignetteParagraphs[vignetteParagraphs.length - 1];
     if (lastP.includes("?")) {
       questionStemHtml = lastP.replace(/<\/?p>/g, "");
@@ -683,48 +782,47 @@ function parseMKSAP(
   // 3. Answers - inside div.options > div.body > div.option
   const answers: AnswerOption[] = [];
 
-  $("div.options div.body div.option").each((i: number, el: cheerio.Element) => {
-    const $el = $(el);
+  $("div.options div.body div.option").each(
+    (i: number, el: cheerio.Element) => {
+      const $el = $(el);
+      const letter =
+        $el.find("div.bubble span").first().text().trim() ||
+        String.fromCharCode(65 + i);
+      const answerText =
+        $el.find("span.answer-text span.text").html() ||
+        $el.find("span.answer-text").html() ||
+        "";
+      const optionClasses = $el.attr("class") || "";
+      const isCorrect = optionClasses.includes("r_a");
+      const isUserChoice = optionClasses.includes("s_a");
+      const peerText = $el.find("div.stats div.stat-label span").text();
+      const peerPercent = peerText
+        ? parseInt(peerText.replace(/[^0-9]/g, ""), 10)
+        : undefined;
 
-    // Extract letter from bubble span
-    const letter = $el.find("div.bubble span").first().text().trim() ||
-                   String.fromCharCode(65 + i);
-
-    // Extract answer text
-    const answerText = $el.find("span.answer-text span.text").html() ||
-                       $el.find("span.answer-text").html() ||
-                       "";
-
-    // Check if correct (r_a class) or user selected (s_a class)
-    const optionClasses = $el.attr("class") || "";
-    const isCorrect = optionClasses.includes("r_a");
-    const isUserChoice = optionClasses.includes("s_a");
-
-    // Extract peer percentage from stats
-    const peerText = $el.find("div.stats div.stat-label span").text();
-    const peerPercent = peerText ? parseInt(peerText.replace(/[^0-9]/g, ""), 10) : undefined;
-
-    if (answerText.trim()) {
-      answers.push({
-        letter,
-        html: answerText,
-        isCorrect,
-        isUserChoice,
-        peerPercent: isNaN(peerPercent!) ? undefined : peerPercent,
-      });
+      if (answerText.trim()) {
+        answers.push({
+          letter,
+          html: answerText,
+          isCorrect,
+          isUserChoice,
+          peerPercent: isNaN(peerPercent!) ? undefined : peerPercent,
+        });
+      }
     }
-  });
+  );
 
   const finalAnswers = deduplicateAnswers(answers);
   const wasCorrect = finalAnswers.some((a) => a.isUserChoice && a.isCorrect);
 
-  // 4. Explanation (Critique) - EXCLUDING keypoints aside
-  // Clone the critique div so we can remove keypoints without affecting original
+  // 4. Explanation (Critique)
   const critiqueEl = $("div.critique").first().clone();
-  critiqueEl.find("aside.keypoints").remove(); // Remove keypoints from explanation
-
-  // Also remove any navigation/UI elements that might have been captured
-  critiqueEl.find(".next-question, .related-content, .learning-plan, .topic-outline").remove();
+  critiqueEl.find("aside.keypoints").remove();
+  critiqueEl
+    .find(
+      ".next-question, .related-content, .learning-plan, .topic-outline, .bibliography"
+    )
+    .remove();
   critiqueEl.find("a.nav-link, button.nav-link").remove();
 
   let explanationHtml = critiqueEl.html() || "";
@@ -739,17 +837,24 @@ function parseMKSAP(
     explanationHtml = expositionEl.html() || "";
   }
 
+  // Educational Objective - Add to start of explanation if found
+  const objectiveEl = $(".objective").first();
+  if (objectiveEl.length) {
+    const objectiveText = objectiveEl.text().trim();
+    if (objectiveText && !explanationHtml.includes(objectiveText)) {
+      explanationHtml = `<div class="p-3 bg-primary/5 rounded-lg border border-primary/10 mb-4 font-medium text-sm text-primary"><strong>Objective:</strong> ${objectiveText}</div>${explanationHtml}`;
+    }
+  }
+
   // 5. Key Points - inside aside.keypoints
   const keyPointsEl = $("aside.keypoints").first();
   let keyPointsHtml: string | undefined;
 
   if (keyPointsEl.length) {
-    // Get just the list items, not the "Key Points" title
     const keyPointsList = keyPointsEl.find("ul").html();
     if (keyPointsList) {
       keyPointsHtml = `<ul>${keyPointsList}</ul>`;
     } else {
-      // Fallback: get all li items
       const items: string[] = [];
       keyPointsEl.find("li").each((_: number, el: cheerio.Element) => {
         const text = $(el).html();
@@ -761,7 +866,15 @@ function parseMKSAP(
     }
   }
 
-  // 6. Images
+  // 6. Bibliography (References)
+  let referencesHtml: string | undefined;
+  const bibEl = $(".bibliography").first().clone();
+  if (bibEl.length) {
+    bibEl.find("h3, h2, .h5").remove(); // Remove "Bibliography" header
+    referencesHtml = bibEl.html() || undefined;
+  }
+
+  // 7. Images
   const images: QuestionImage[] = [];
   const addImages = (
     containerSelector: string,
@@ -788,17 +901,24 @@ function parseMKSAP(
   addImages("div.stimulus", "question");
   addImages("div.critique", "explanation");
   addImages("aside.keypoints", "keypoint");
+  addImages(".bibliography", "explanation");
 
-  // 7. Metadata - category from breadcrumb
+  // 8. Metadata - category from breadcrumb
   let category: string | undefined;
   const breadcrumbItems: string[] = [];
-  $("ol.breadcrumb li.breadcrumb-item, nav.breadcrumb li").each((_: number, el: cheerio.Element) => {
-    const text = $(el).text().trim();
-    // Skip "MKSAP 19" and generic items
-    if (text && !text.toLowerCase().includes("mksap") && !text.includes("Question")) {
-      breadcrumbItems.push(text);
+  $("ol.breadcrumb li.breadcrumb-item, nav.breadcrumb li").each(
+    (_: number, el: cheerio.Element) => {
+      const text = $(el).text().trim();
+      // Skip "MKSAP 19" and generic items
+      if (
+        text &&
+        !text.toLowerCase().includes("mksap") &&
+        !text.includes("Question")
+      ) {
+        breadcrumbItems.push(text);
+      }
     }
-  });
+  );
 
   if (breadcrumbItems.length > 0) {
     // Use the most specific category (usually last meaningful item)
@@ -823,6 +943,7 @@ function parseMKSAP(
     wasCorrect,
     explanationHtml,
     keyPointsHtml,
+    referencesHtml,
     images: images.filter(
       (v, i, a) => a.findIndex((t) => t.url === v.url) === i
     ), // Dedupe

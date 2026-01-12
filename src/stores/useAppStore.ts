@@ -173,15 +173,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           dbSettings.forEach((s) => {
             const key = s.key as keyof AppSettings;
             if (key in currentSettings) {
-              // Basic type conversion
+              // Basic type conversion using type assertion
               const existingValue = currentSettings[key];
               if (typeof existingValue === "number") {
                 const parsed = Number.parseFloat(s.value);
-                currentSettings[key] = (
-                  Number.isNaN(parsed) ? existingValue : parsed
-                ) as AppSettings[typeof key];
+                (currentSettings as Record<string, unknown>)[key] =
+                  Number.isNaN(parsed) ? existingValue : parsed;
               } else {
-                currentSettings[key] = s.value as AppSettings[typeof key];
+                (currentSettings as Record<string, unknown>)[key] = s.value;
               }
             }
           });

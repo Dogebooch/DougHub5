@@ -1004,14 +1004,23 @@ function parseAIResponse<T>(text: string): T {
 // Concept Extraction
 // ============================================================================
 
+/** Raw AI response format - may have alternate field names */
+interface RawConceptFromAI {
+  // Standard names (from our schema)
+  text?: string;
+  conceptType?: string;
+  suggestedFormat?: string;
+  // Alternate names (some AI models return these)
+  concept?: string;
+  type?: string;
+  format?: string;
+  // Always present
+  confidence: number;
+}
+
 /** Response format for concept extraction */
 interface ConceptExtractionResponse {
-  concepts: Array<{
-    text: string;
-    conceptType: string;
-    confidence: number;
-    suggestedFormat: "qa" | "cloze";
-  }>;
+  concepts: RawConceptFromAI[];
 }
 
 /**
@@ -1048,20 +1057,20 @@ export async function extractConcepts(
       conceptsResponse
     );
     const parsed = parseAIResponse<
-      ConceptExtractionResponse | ExtractedConcept[]
+      ConceptExtractionResponse | RawConceptFromAI[]
     >(conceptsResponse);
     console.log("[AI Service] Parsed response:", parsed);
 
     // Handle both {concepts: [...]} and direct array [...] formats
-    let conceptsArray: ExtractedConcept[];
+    let rawConceptsArray: RawConceptFromAI[];
     if (Array.isArray(parsed)) {
       // Ollama sometimes returns array directly
-      conceptsArray = parsed;
+      rawConceptsArray = parsed;
     } else if (
       parsed &&
       Array.isArray((parsed as ConceptExtractionResponse).concepts)
     ) {
-      conceptsArray = (parsed as ConceptExtractionResponse).concepts;
+      rawConceptsArray = (parsed as ConceptExtractionResponse).concepts;
     } else {
       console.error(
         "[AI Service] Invalid response structure. Expected {concepts: [...]} or [...]"
@@ -1072,7 +1081,7 @@ export async function extractConcepts(
     }
 
     // Filter and validate concepts before mapping
-    const validConcepts = conceptsArray.filter((c) => {
+    const validConcepts = rawConceptsArray.filter((c) => {
       // Normalize field names (handle both 'text'/'concept', 'conceptType'/'type', etc.)
       const text = c.text || c.concept;
       const conceptType = c.conceptType || c.type;
@@ -1096,12 +1105,12 @@ export async function extractConcepts(
     });
 
     // Add unique IDs to validated concepts and normalize field names
-    const concepts = validConcepts.map((concept, index) => {
-      const text = concept.text || concept.concept;
-      const conceptType = concept.conceptType || concept.type;
+    const concepts: ExtractedConcept[] = validConcepts.map((concept, index) => {
+      const text = concept.text || concept.concept || "";
+      const conceptType = concept.conceptType || concept.type || "";
       const format = concept.suggestedFormat || concept.format;
       // Normalize format string
-      const normalizedFormat =
+      const normalizedFormat: "qa" | "cloze" =
         format === "Q&A" || format === "qa" ? "qa" : "cloze";
 
       return {
@@ -1109,7 +1118,7 @@ export async function extractConcepts(
         text: text,
         conceptType: conceptType,
         confidence: Math.min(1, Math.max(0, concept.confidence)), // Clamp to 0-1
-        suggestedFormat: normalizedFormat as "qa" | "cloze",
+        suggestedFormat: normalizedFormat,
       };
     });
 

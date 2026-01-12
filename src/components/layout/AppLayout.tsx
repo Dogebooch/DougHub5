@@ -33,7 +33,7 @@ export function AppLayout() {
   useEffect(() => {
     if (typeof window !== "undefined" && window.api?.sourceItems?.onNew) {
       const unsubscribe = window.api.sourceItems.onNew((item: SourceItem) => {
-        onNewSourceItem(item);
+        onNewSourceItem();
 
         toast({
           title: "Browser Capture Received",
@@ -131,7 +131,7 @@ export function AppLayout() {
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(63,150,143,0.04)_0%,transparent_60%)]" />
       <div className="fixed inset-0 pointer-events-none opacity-[0.02] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
-      <Header openQuickCapture={openQuickCapture} />
+      <Header />
 
       <div className="flex flex-1 relative z-10 overflow-hidden">
         <Sidebar />

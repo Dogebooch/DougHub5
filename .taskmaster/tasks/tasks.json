@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Database schema expansion for Quick Dump queue and medical features",
         "description": "Add quick_dumps table and extend cards/notes tables to support medical list processing, partial credit, response time tracking, and connection suggestions",
         "details": "",
@@ -76,7 +76,7 @@
         "updatedAt": "2026-01-05T00:05:06.017Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "AI service integration layer",
         "description": "Create local-first AI service with Ollama auto-detection, cloud fallbacks (OpenAI, DeepSeek, Anthropic), concept extraction, card format suggestions, and medical content processing",
         "details": "",
@@ -158,7 +158,7 @@
         "updatedAt": "2026-01-05T01:22:53.351Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "[ARCHIVED] AI-guided capture interface (v1)",
         "description": "ARCHIVED: v1 capture flow with AI concept extraction checkboxes. Superseded by v2 Two-Mode Capture (T118). Kept for historical reference.",
         "details": "Original flow: paste → AI extracts concepts → checkboxes → format suggestion → batch card creation. v2 uses simpler Save to Inbox flow.",
@@ -172,7 +172,7 @@
         "updatedAt": "2026-01-05T14:29:44.672Z"
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "Zero-decision review interface (eliminate grading buttons)",
         "description": "Replace 4-button grading (Again/Hard/Good/Easy) with Show Answer → Continue flow, letting FSRS auto-schedule based on response time",
         "details": "",
@@ -276,7 +276,7 @@
         "updatedAt": "2026-01-06T00:32:13.607Z"
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Global search with <200ms response time",
         "description": "Implement fast unified search across cards and notes with FTS5 full-text search, Cmd+F shortcut, instant results",
         "details": "",
@@ -385,7 +385,7 @@
         "updatedAt": "2026-01-06T05:12:32.737Z"
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "Auto-start Ollama from Electron on first AI request",
         "description": "Automatically start Ollama when the app needs AI services, eliminating the friction of manually starting Ollama before using the app",
         "details": "",
@@ -446,7 +446,7 @@
         "updatedAt": "2026-01-06T05:29:32.390Z"
       },
       {
-        "id": 31,
+        "id": "31",
         "title": "BUG FIX: Quick Dump saves to notes table instead of quick_dumps table",
         "description": "QuickDumpModal incorrectly saves content as a regular note instead of to the quick_dumps table, breaking the extraction queue workflow",
         "details": "",
@@ -460,7 +460,7 @@
         "updatedAt": "2026-01-06T02:11:06.148Z"
       },
       {
-        "id": 35,
+        "id": "35",
         "title": "[v2-T1] Data model v3: SourceItem, CanonicalTopic, NotebookTopicPage, SmartView schemas",
         "description": "Implement the v2 architecture data model with new tables for 3-layer system: Knowledge Bank (SourceItem), Notebook (NotebookTopicPage, NotebookBlock), and enhanced Cards with provenance. Add CanonicalTopic for topic normalization and SmartView for filtered access.",
         "details": "",
@@ -530,7 +530,7 @@
         ]
       },
       {
-        "id": 36,
+        "id": "36",
         "title": "[v2-T1.1] Topic normalization: alias table, matching rules, dedupe prevention",
         "description": "Implement topic alias matching system that normalizes user input to canonical topics. 'HOCM', 'HCM', 'hypertrophic cardiomyopathy' should all resolve to the same CanonicalTopic.",
         "details": "",
@@ -612,7 +612,7 @@
         "updatedAt": "2026-01-06T15:44:32.497Z"
       },
       {
-        "id": 38,
+        "id": "38",
         "title": "[v2-T2] Capture pipeline: Quick Dump → SourceItem (inbox), text + image support",
         "description": "Implement capture flow that creates SourceItems in Knowledge Bank with inbox status. Support text paste and image paste/drop.",
         "details": "TEXT CAPTURE: Complete ✓. IMAGE CAPTURE: NOT IMPLEMENTED (T38.2-T38.3 pending). Database supports images but UI lacks handlers.",
@@ -690,7 +690,7 @@
         "updatedAt": "2026-01-07T00:32:56.159Z"
       },
       {
-        "id": 40,
+        "id": "40",
         "title": "[v2-T3] Knowledge Bank UI: vertical list grouped by status, search, filters",
         "description": "Build the main Knowledge Bank view showing all SourceItems organized by status with filtering and search capabilities.",
         "details": "",
@@ -741,7 +741,7 @@
         "updatedAt": "2026-01-06T20:57:59.367Z"
       },
       {
-        "id": 41,
+        "id": "41",
         "title": "[v2-T4] Notebook UI: topic pages, add blocks from sources, enforce card-creation here only",
         "description": "Build the Notebook layer with topic pages containing blocks from Knowledge Bank. This is the ONLY place where cards can be created.",
         "details": "NOTEBOOK VIEW:\n\n1. TOPIC PAGE LIST:\n- Sidebar or list showing all NotebookTopicPages\n- Show: topic name, aliases, card count, source count\n- Search/filter by topic name\n- 'New Topic Page' button\n\n2. TOPIC PAGE VIEW:\n- Header: Topic name, aliases, stats\n- Blocks section: excerpts from SourceItems\n- Each block shows:\n  - Source reference (clickable deep link)\n  - Content excerpt\n  - Annotations (user notes)\n  - Actions: [Edit] [→ Source] [Generate Card]\n- Footer: [+ Add from Knowledge Bank] [Generate All Cards]\n\n3. ADD BLOCK FLOW:\n- Click '+ Add from Knowledge Bank'\n- Modal shows Knowledge Bank filtered to curated/processed\n- Select source item\n- Select excerpt (highlight text) or use full content\n- Save creates NotebookBlock linked to source\n- SourceItem status → 'curated'\n\n4. BLOCK MANAGEMENT:\n- Drag to reorder blocks (position field)\n- Edit block content (excerpt)\n- Add annotations\n- Delete block (doesn't delete source)\n\nCARD CREATION ENFORCED:\n- 'Generate Card' button ONLY appears on blocks\n- No card creation in Knowledge Bank\n- No card creation from scratch\n- All cards have notebookTopicPageId (enforced)\n\nCOMPONENTS:\n\n- src/components/notebook/NotebookView.tsx\n- src/components/notebook/TopicPageList.tsx\n- src/components/notebook/TopicPageView.tsx\n- src/components/notebook/NotebookBlock.tsx\n- src/components/notebook/AddBlockModal.tsx",
@@ -830,7 +830,7 @@
         "updatedAt": "2026-01-07T02:21:03.685Z"
       },
       {
-        "id": 42,
+        "id": "42",
         "title": "Card Generation from Notebook Blocks",
         "description": "Select text in NotebookBlock → AI suggests cards with format intelligence and card-worthiness feedback → user confirms → card created with provenance. Post-creation: blocks with cards show muted visual indicator.",
         "details": "CORE PHILOSOPHY:\nThe Notebook is the 'What Boards Test' registry—curated, clinically-relevant content. Card generation treats text selection as a conversation starter with AI, not a binding specification. User identifies what confuses them; AI becomes collaborative tutor evaluating whether confusion merits a flashcard.\n\nINTERACTION FLOW:\n1. HOVER & SELECT:\n- Hover over text in NotebookBlock shows subtle highlight\n- Click activates selection mode with context-aware bounding box (expands to semantic units: sentences, clinical facts, procedural steps)\n- Floating 'Generate Card' button anchors to selection\n- Click-to-activate prevents accidental triggers\n\n2. AI CONTEXT STRATEGY:\n- Full NotebookBlock content as context (prevents 'lost in the middle')\n- Highlighted portion marked with semantic emphasis\n- Optional 'Why do you want to learn this?' text field (teaching moment + format hint)\n- If user writes 'I keep confusing X with Y' → AI suggests discriminative format\n\n3. FORMAT INTELLIGENCE:\nAI auto-suggests one of five formats with visual explanation:\n- Clinical Vignette Q&A: diagnostic reasoning\n- Overlapping Cloze: lists that risk sibling contamination\n- Single-Fact Cloze: discrete knowledge\n- Image Occlusion: when images referenced\n- Procedural Sequential: step-based skills\nFormat shown as labeled dropdown, default is AI suggestion, instant override available.\n\n4. CARD-WORTHINESS SOFT-GATE (integrated, not separate F6):\n- Quality panel shows 3 traffic lights: Testable? One Concept? Discriminative?\n- Yellow/red indicators have expandable explanation panel\n- Options: [Edit First] [Create Anyway] (tracked) [Skip]\n- Teaches effective card design through use, not blocking\n\n5. PROCEDURAL CARDS (MVP):\n- AI detects procedural content (keywords: steps, procedure, technique, how to)\n- Generates two-part card: Front=supplies checklist (pre-revealed), Back=numbered steps\n- Uses standard card template; voice-activated equipment reveal deferred (see DEFERRED: Procedural Simulation Mode)\n\n6. CARD CREATION:\n- Card saved with: notebookTopicPageId, sourceBlockId, tags from topic, FSRS defaults\n- Toast: 'Card created' with [View] link\n- NotebookBlock shows muted visual indicator (subtle box around text) showing content has been turned into card(s)\n- Indicator is non-distracting (muted colors, optional hover to reveal)\n\n7. USER TEACHING MOMENTS:\n- When user creates basic list card, card-worthiness flags it\n- AI offers auto-generate improved versions (overlapping cloze, individual vignettes)\n\nPERFORMANCE TARGET:\n- Text selection to created card: <20 seconds including AI processing\n- Optimistic UI: AI thinking indicator immediately, streaming preview updates, editable fields before AI completes\n- Database writes async after Create click, local state updates first\n\nCOMPONENTS:\n- src/components/notebook/CardGenerationModal.tsx\n- src/components/notebook/CardSuggestionPreview.tsx\n- src/components/notebook/FormatSelector.tsx\n- src/components/notebook/CardWorthinessPanel.tsx\n- Update NotebookBlock.tsx: Add selection handling + card indicator styling\n\nAI FUNCTIONS in electron/ai-service.ts:\n- generateCardFromBlock(blockContent: string, topicContext: string, userIntent?: string): Promise<CardSuggestion[]>\n- evaluateCardWorthiness(cardContent: string): Promise<WorthinessResult>",
@@ -935,7 +935,7 @@
         "updatedAt": "2026-01-07T23:49:10.694Z"
       },
       {
-        "id": 44,
+        "id": "44",
         "title": "[v2-T8] Smart Views: system views (Inbox, Today, Queue, Weak Topics), filter engine",
         "description": "Implement Smart Views system with preset system views and a reusable filter engine for dynamic list filtering.",
         "details": "",
@@ -999,7 +999,7 @@
         "updatedAt": "2026-01-06T21:12:10.478Z"
       },
       {
-        "id": 45,
+        "id": "45",
         "title": "[v2-T6] FSRS integration: scheduling fields, review UI, response time tracking",
         "description": "Ensure FSRS integration works with new card provenance model. Track response times for future personalization.",
         "details": "FSRS FIELDS (already in cards table):\n- stability, difficulty, elapsedDays, scheduledDays\n- reps, lapses, state\n- dueDate, lastReview\n\nNEW TRACKING:\n- responseTimeMs in review_logs (already added in Task 1)\n- Track time from card shown to answer revealed\n- Track time from answer revealed to rating\n\nREVIEW UI UPDATES:\n\n1. PROVENANCE DISPLAY:\n- Show source: 'From: [Topic Name]'\n- Click to navigate to NotebookTopicPage\n- Show related cards count\n\n2. ZERO-DECISION FLOW:\n- Show Answer (Space)\n- Continue (Enter) = auto-grade based on response time\n- I Forgot (F) = grade as Again\n- Edit (E) = open card editor\n- Skip (S) = skip without grading\n\n3. LOW-EASE FLAGGING:\n- If card ease < 2.0 after review, flag for attention\n- Show in Weak Topics smart view\n- Suggest 'fix card' flow\n\nRESPONSE TIME LOGIC:\n- Fast correct (< 5s): increase ease slightly\n- Slow correct (> 15s): decrease ease slightly\n- Helps identify cards that need improvement\n\nCOMPONENTS:\n\n- Update src/components/review/ReviewInterface.tsx\n- Add response time tracking\n- Add provenance display\n- Connect to NotebookTopicPage navigation",
@@ -1085,7 +1085,7 @@
         "updatedAt": "2026-01-08T01:59:03.533Z"
       },
       {
-        "id": 91,
+        "id": "91",
         "title": "Debug and Fix Ollama AI Extraction Pipeline",
         "description": "Troubleshoot and resolve AI extraction issues with Ollama integration, focusing on JSON parsing, model compatibility, and response handling in the extractConcepts() function",
         "details": "",
@@ -1097,7 +1097,7 @@
         "updatedAt": "2026-01-06T04:58:26.652Z"
       },
       {
-        "id": 112,
+        "id": "112",
         "title": "Sidebar Consolidation: merge SmartViewSidebar into Sidebar",
         "description": "Delete SmartViewSidebar.tsx, consolidate navigation into single Sidebar component with DO NOW and LIBRARY sections",
         "details": "DO NOW: Review (primary), Inbox (secondary). LIBRARY: Notebook, Knowledge Bank. KB shows ALL items with inbox at top; Inbox is pre-filtered shortcut. Remove: Capture, Today, Queue, Topics, Stats.",
@@ -1172,7 +1172,7 @@
         "updatedAt": "2026-01-07T02:20:58.229Z"
       },
       {
-        "id": 113,
+        "id": "113",
         "title": "Image Capture Support: paste, drop, display in KB/Notebook",
         "description": "Add image paste/drop to QuickDumpModal, save images to userData/images/, display in Knowledge Bank and Notebook views.",
         "details": "SCOPE:\n1. QuickDumpModal: Add paste handler for clipboardData.files/items (image types), add drag-drop zone, show preview thumbnail before save\n2. IPC: Create images:save handler that writes Buffer to app.getPath('userData')/images/{uuid}.{ext}, returns mediaPath\n3. SourceItem: Save mediaPath field, display image in SourceItemRow and KnowledgeBankView\n4. NotebookBlock: Display block.mediaPath images in NotebookBlock component\n5. Card display: Show images on card front/back during review\n\nDatabase schema already supports imageData BLOB and mediaPath TEXT fields.",
@@ -1186,7 +1186,7 @@
         "subtasks": []
       },
       {
-        "id": 114,
+        "id": "114",
         "title": "Backup/Restore UI: auto-save toast, Settings restore button",
         "description": "Add UI indicators for existing backup-service.ts: toast notifications on auto-save, Settings page restore functionality.",
         "details": "EXISTING: electron/backup-service.ts has createBackup(), restoreBackup(), auto-backup with 7-day retention.\n\nNEW UI:\n1. Toast notification on successful auto-backup (every 30s or on significant changes)\n2. Settings page section: 'Data Backup' with:\n   - Last backup timestamp display\n   - [Backup Now] manual trigger button\n   - [Restore from Backup] opens file picker for .db files\n   - Warning dialog before restore (destructive operation)\n3. IPC: Expose backup:create, backup:restore, backup:getLastTimestamp\n\nGives user confidence data won't be lost during development iterations.",
@@ -1197,7 +1197,7 @@
         "subtasks": []
       },
       {
-        "id": 115,
+        "id": "115",
         "title": "Card Browser: view all cards with filters (topic, status, due date)",
         "description": "Dedicated view to browse, search, and filter all cards in the system. Enables card management beyond global search.",
         "details": "CARD BROWSER VIEW:\n1. Access: Add 'Cards' to LIBRARY section in Sidebar\n2. Layout: Vertical list of cards with preview (front truncated)\n3. Filters:\n   - Status chips: Due / New / Learning / Review / Suspended\n   - Topic dropdown (from CanonicalTopics)\n   - Tag filter\n   - Date range (created/due)\n4. Sort: Due date, Created date, Ease, Last reviewed\n5. Actions:\n   - Click card → expand preview (front + back)\n   - [Edit] → inline edit or modal\n   - [Suspend/Unsuspend]\n   - [Delete] with confirmation\n6. Bulk actions: Select multiple → suspend/delete\n\nReplaces standalone Queue view with richer functionality.",
@@ -1375,7 +1375,7 @@
         "updatedAt": "2026-01-08T19:05:35.357Z"
       },
       {
-        "id": 116,
+        "id": "116",
         "title": "Browser Capture Hook: local HTTP API for Tampermonkey integration",
         "description": "Expose local HTTP endpoint in Electron main process for browser scripts to send captured content directly to Knowledge Bank.",
         "details": "HTTP API SERVER:\n1. Start Express/http server on localhost:PORT (configurable, default 23847)\n2. Endpoint: POST /capture\n   - Body: { content: string, title?: string, sourceType: 'qbank'|'article'|'web', url?: string, imageBase64?: string }\n   - Returns: { success: boolean, sourceItemId?: string, error?: string }\n3. Security: localhost only, optional API key in header\n4. On receive: Create SourceItem in inbox, trigger refreshSmartViewCounts\n5. Settings UI: Enable/disable HTTP capture, show port, regenerate API key\n\nTAMPERMONKEY INTEGRATION:\n- User installs script that adds 'Send to DougHub' button on PeerPrep/MKSAP pages\n- Script extracts question HTML, sends to localhost endpoint\n- DougHub shows toast 'Captured from PeerPrep'\n\nNote: User has existing script to adapt.",
@@ -1388,7 +1388,7 @@
         "subtasks": []
       },
       {
-        "id": 117,
+        "id": "117",
         "title": "Basic Learning Mode: post-review mistakes summary with elaborated feedback",
         "description": "After review session, show 'Review Mistakes?' prompt displaying missed cards with AI-generated why-wrong explanations.",
         "details": "LEARNING MODE ENTRY:\n1. After review session ends (no more due cards or user exits):\n   - If mistakes > 0: Show modal 'Review X mistakes?'\n   - [Review Now] / [Skip]\n2. Mistakes Review UI:\n   - Vertical scroll through each mistake\n   - Show: Card front, your timing/grade, correct answer\n   - AI elaborated feedback: 'Why this is wrong: ...'\n   - 'Why correct answer is right: ...'\n   - Related concept hints\n3. AI Function: generateElaboratedFeedback(card, userResponse)\n   - Uses card content + topic context\n   - Returns { whyWrong: string, whyRight: string, relatedConcepts: string[] }\n4. End of mistakes: 'All reviewed!' with summary stats\n\nThis is the highest-yield learning pipeline feature. Other learning mode features (T94-T107) remain in DEFERRED.md for future implementation.",
@@ -1481,7 +1481,7 @@
         "updatedAt": "2026-01-08T03:13:19.881Z"
       },
       {
-        "id": 118,
+        "id": "118",
         "title": "Two-Mode Capture: FAB modal with auto-classification and Process Now button",
         "description": "Expand capture modal with content auto-classification, AI title generation, and disabled 'Process Now' button (enabled after T117 Learning Mode).",
         "details": "TWO-MODE CAPTURE PRINCIPLE:\n\n1. SINGLE CAPTURE MODAL (QuickDumpModal expansion):\n- Opened via FAB (+), global shortcut, drag-drop, or Tampermonkey prefill\n- Plaintext textarea with auto-detect: Text / URL / PDF / Image / QBank\n- AI auto-title (debounced, editable, fallback to truncation)\n\n2. TWO EXITS:\n- [Save to Inbox] (primary): Create SourceItem, close modal, show toast\n- [Process Now] (secondary, disabled initially): Create SourceItem, enter guided processing\n\n3. AUTO-CLASSIFICATION:\n- Detect content type from paste/drop\n- Show badge indicating detected type\n- Set sourceType field automatically\n\n4. PROCESS NOW BUTTON:\n- Initially disabled with tooltip 'Coming soon - complete Learning Mode first'\n- Enabled after T117 (Learning Mode) is complete\n- When enabled: saves to inbox then navigates to guided processing flow\n\nNOTE: This expands T38's basic capture with the two-mode principle. Inbox remains derived view (status='inbox').",
@@ -1570,7 +1570,7 @@
         "updatedAt": "2026-01-08T03:37:08.318Z"
       },
       {
-        "id": 119,
+        "id": "119",
         "title": "Insight Writing Modal: Redesign Add to Notebook Flow",
         "description": "Redesign AddToNotebookDialog with source preview, 'What did you learn?' textarea, and dual buttons (Save Draft / Get AI Feedback). Kill batch flow entirely. Single-item processing only.",
         "details": "INSIGHT WRITING MODAL DESIGN:\n\n1. MODAL STRUCTURE:\n- Source preview panel (read-only rawContent from SourceItem, scrollable)\n- 'What did you learn?' textarea (required, min 20 chars)\n- Topic selector (existing functionality)\n- 'Link to existing block?' prompt when topic already has blocks\n\n2. BOARD RELEVANCE PANEL (when topic selected):\n- Shows when: topic selected AND topic has qbank source_items with matching tags\n- Query: SELECT * FROM source_items WHERE sourceType='qbank' AND tags overlap with topic\n- Display: question count, accuracy (correct/total), commonly tested concepts (aggregated testedConcepts[]), user mistakes\n- Guidance text: 'Focus your insight on [weak concept] - you've struggled here'\n- Collapsible panel, default expanded\n\n3. TWO BUTTONS:\n- [Save Draft] (ghost/outline): Save userInsight to NotebookBlock without AI evaluation\n- [Get AI Feedback] (primary): Submit for AI evaluation before saving\n\n4. LINK TO EXISTING BLOCK:\n- When selected topic has existing blocks, show list of block summaries\n- User can choose 'Link to existing block' (adds sourceItemId to existing block's sources)\n- Or 'Create new block' (proceeds with insight writing)\n- Linking = no new writing needed, just association\n\n5. KILL BATCH FLOW:\n- Remove batchAddToNotebook from database.ts, ipc-handlers, preload, store\n- Remove BatchActions UI components that use batch notebook operations\n- Single-item 'Add to Notebook' is the only path\n\nPRINCIPLE: 'Extraction IS the learning' — each source forces articulation of what YOU learned from THAT source. Board Relevance guides WHAT to focus on based on your practice Q history.",
@@ -1589,7 +1589,8 @@
             "dependencies": [],
             "details": "Create src/components/notebook/BoardRelevancePanel.tsx. Props: topicId (string), topicTags (string[]), sourceContent (string), onRelevanceComputed (score: RelevanceScore, reason: string) => void. Query: getBoardRelevanceForTopic(topicTags) IPC handler that returns { questionsAttempted: number, correctCount: number, testedConcepts: { concept: string, count: number }[], missedConcepts: { concept: string, sourceItemId: string }[] }.\n\nDISPLAY:\n- Header: '📊 Board Relevance'\n- Stats: 'X Qs attempted | Y% accuracy'\n- 'Tested:' list with concepts + count\n- 'You missed:' list with concept names (amber highlight)\n- Relevance indicator with score badge + reason\n\nRELEVANCE SCORING LOGIC (call onRelevanceComputed when computed):\n| Condition | Score | Reason |\n|-----------|-------|--------|\n| sourceContent matches missedConcepts | high | 'Targets your weak area' |\n| sourceContent matches testedConcepts | medium | 'Board-tested topic' |\n| questionsAttempted === 0 | unknown | 'No practice Q data' |\n| Topic has Qs but no concept match | low | 'Not tested in your Qs' |\n\nMATCHING LOGIC: Simple keyword match - check if any concept string appears in sourceContent (case-insensitive). Check missedConcepts first (higher priority).\n\nUI: Use Collapsible from shadcn/ui, default open. Badge colors: high=green, medium=blue, low=gray, unknown=yellow. Only render if topic selected. Styling: Card with muted background, amber accent for mistakes section.",
             "status": "pending",
-            "testStrategy": "Select topic with qbank items where source matches missed concept, verify score=high. Select topic with qbank items where source matches tested concept, verify score=medium. Select topic with qbank items but no concept match, verify score=low. Select topic with no qbank items, verify score=unknown. Verify onRelevanceComputed callback fires with correct score/reason."
+            "testStrategy": "Select topic with qbank items where source matches missed concept, verify score=high. Select topic with qbank items where source matches tested concept, verify score=medium. Select topic with qbank items but no concept match, verify score=low. Select topic with no qbank items, verify score=unknown. Verify onRelevanceComputed callback fires with correct score/reason.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1598,13 +1599,14 @@
             "dependencies": [],
             "details": "Add getBoardRelevanceForTopic(topicTags: string[]) to database.ts. Query source_items WHERE sourceType='qbank' AND tags overlap with topicTags.\n\nRETURN INTERFACE:\n{\n  questionsAttempted: number,\n  correctCount: number,\n  accuracy: number, // percentage\n  testedConcepts: { concept: string, count: number }[],\n  missedConcepts: { concept: string, sourceItemId: string }[]\n}\n\nQUERY LOGIC:\n1. Base query: SELECT * FROM source_items WHERE sourceType='qbank' AND tags overlap topicTags\n2. Aggregate: COUNT(*) as questionsAttempted, SUM(CASE WHEN correctness='correct' THEN 1 ELSE 0 END) as correctCount\n3. Parse testedConcepts JSON arrays, flatten, count occurrences, return sorted by count desc\n4. For missedConcepts: Filter WHERE correctness='incorrect', extract testedConcepts with sourceItemId\n5. Calculate accuracy = (correctCount / questionsAttempted) * 100\n\nAdd IPC handler in ipc-handlers.ts: insights:getBoardRelevance. Expose in preload.ts and electron.d.ts.",
             "status": "pending",
-            "testStrategy": "Call insights:getBoardRelevance with sample topic tags. Verify correct aggregation of questions, accuracy, tested concepts. Verify mistakes filtered correctly. Test with no matching qbank items returns zeros."
+            "testStrategy": "Call insights:getBoardRelevance with sample topic tags. Verify correct aggregation of questions, accuracy, tested concepts. Verify mistakes filtered correctly. Test with no matching qbank items returns zeros.",
+            "parentId": "undefined"
           }
         ],
         "updatedAt": "2026-01-08T20:00:00.000Z"
       },
       {
-        "id": 120,
+        "id": "120",
         "title": "NotebookBlock Schema Extension for AI Evaluation",
         "description": "Add userInsight, aiEvaluation, relevanceScore, and relevanceReason columns to notebook_blocks table. aiEvaluation stores JSON blob with gaps, examTrapType, confusionTags, feedbackText, evaluatedAt.",
         "details": "SCHEMA CHANGES:\n\n1. NEW COLUMNS on notebook_blocks:\n- userInsight TEXT (nullable for existing blocks)\n- aiEvaluation TEXT (JSON blob, nullable)\n- relevanceScore TEXT (nullable) - 'high' | 'medium' | 'low' | 'unknown'\n- relevanceReason TEXT (nullable) - e.g., 'Targets your weak area' or 'No Q data'\n\n2. aiEvaluation JSON STRUCTURE:\n{\n  gaps: string[];           // Identified knowledge gaps\n  examTrapType?: ExamTrapType; // Only set for incorrect items\n  confusionTags?: string[];  // e.g., ['Methotrexate vs Methylnaltrexone']\n  feedbackText: string;      // AI's response to user's insight\n  evaluatedAt: string;       // ISO timestamp\n}\n\n3. ExamTrapType ENUM (for T122):\n- 'qualifier-misread' // 'most common' vs 'most common abnormality'\n- 'negation-blindness' // 'NOT associated with'\n- 'age-population-skip' // Missing 'in children' or 'in pregnant women'\n- 'absolute-terms' // 'always', 'never', 'only'\n- 'best-vs-correct' // Multiple correct, one is 'best'\n- 'timeline-confusion' // 'initial' vs 'definitive'\n\n4. MIGRATION:\n- ALTER TABLE notebook_blocks ADD COLUMN userInsight TEXT\n- ALTER TABLE notebook_blocks ADD COLUMN aiEvaluation TEXT\n- ALTER TABLE notebook_blocks ADD COLUMN relevanceScore TEXT\n- ALTER TABLE notebook_blocks ADD COLUMN relevanceReason TEXT\n- Existing blocks get null values (backward compatible)\n\n5. UPDATE DbNotebookBlock INTERFACE:\n- Add userInsight?: string\n- Add aiEvaluation?: NotebookBlockAiEvaluation (typed interface)\n- Add relevanceScore?: 'high' | 'medium' | 'low' | 'unknown'\n- Add relevanceReason?: string\n\n6. RELEVANCE SCORE LOGIC (set during Add to Notebook flow):\n- high: Content matches missedConcepts from practice Qs → 'Targets your weak area'\n- medium: Content matches testedConcepts → 'Board-tested topic'\n- unknown: No practice Q history for topic → 'No practice Q data'\n- low: Topic has Qs but content doesn't match tested concepts → 'Not tested in your Qs'",
@@ -1616,7 +1618,7 @@
         "updatedAt": "2026-01-09T00:00:00.000Z"
       },
       {
-        "id": 121,
+        "id": "121",
         "title": "AI Insight Evaluation Endpoint",
         "description": "Create IPC handler + AI prompt for evaluating user insights. Returns gaps, examTrapType (when incorrect), confusionTags, and feedbackText.",
         "details": "AI INSIGHT EVALUATION:\n\n1. NEW IPC HANDLER:\n- ai:evaluateInsight\n- Input: { userInsight: string, sourceContent: string, isIncorrect: boolean, topicContext?: string }\n- Output: IpcResult<NotebookBlockAiEvaluation>\n\n2. AI PROMPT DESIGN:\nYou are a medical education expert evaluating a learner's written insight.\n\nSOURCE CONTENT:\n{sourceContent}\n\nLEARNER'S INSIGHT:\n{userInsight}\n\nTOPIC CONTEXT: {topicContext}\n\nEvaluate the insight and return JSON:\n{\n  \"gaps\": [\"list of knowledge gaps or missing key points\"],\n  \"feedbackText\": \"Constructive feedback on the insight (2-3 sentences)\",\n  \"confusionTags\": [\"any concept pairs that might be confused\"],\n  \"examTrapType\": null // Only classify if this was a WRONG answer\n}\n\n3. EXAM TRAP CLASSIFICATION (only when isIncorrect=true):\nAdditional prompt section:\n\"The learner got this question WRONG. Classify the error type:\n- qualifier-misread: Misread qualifiers like 'most common' vs 'most common abnormality'\n- negation-blindness: Missed 'NOT' or 'EXCEPT' in question\n- age-population-skip: Missed population specifier (children, pregnant, elderly)\n- absolute-terms: Tricked by 'always', 'never', 'only' (usually wrong)\n- best-vs-correct: Picked correct but not BEST answer\n- timeline-confusion: Confused initial vs definitive management\n- null: Knowledge gap, not exam trap\"\n\n4. AI SERVICE FUNCTION:\n- electron/ai-service.ts: evaluateInsight()\n- Use Claude/OpenAI with JSON mode\n- Cache by hash(userInsight + sourceContent)\n\n5. IPC WIRING:\n- ipc-handlers.ts: add handler\n- preload.ts: expose window.api.ai.evaluateInsight\n- electron.d.ts: type definition",
@@ -1630,7 +1632,7 @@
         "updatedAt": "2026-01-08T20:00:00.000Z"
       },
       {
-        "id": 122,
+        "id": "122",
         "title": "AI Feedback Panel in Insight Modal",
         "description": "After 'Get AI Feedback' clicked, show inline panel in modal with gaps, exam trap type, confusion tags, and AI feedback. User can refine insight or accept.",
         "details": "AI FEEDBACK PANEL UI:\n\n1. TRIGGER:\n- User clicks [Get AI Feedback] button in Insight Writing Modal (T119)\n- Button shows loading spinner during AI call\n- Panel appears below insight textarea when response received\n\n2. PANEL LAYOUT:\n┌─────────────────────────────────────────┐\n│ AI Feedback                    [Retry] │\n├─────────────────────────────────────────┤\n│ 💡 Feedback:                            │\n│ \"Your insight captures the key point   │\n│ about X, but consider adding...\"        │\n├─────────────────────────────────────────┤\n│ ⚠️ Gaps Identified:                     │\n│ • Missing: mechanism of action          │\n│ • Consider: contraindications           │\n├─────────────────────────────────────────┤\n│ 🔀 Potential Confusions:                │\n│ [Methotrexate vs Methylnaltrexone]      │\n├─────────────────────────────────────────┤\n│ 🎯 Exam Trap Detected: (only if wrong)  │\n│ Qualifier Misread - You may have...     │\n└─────────────────────────────────────────┘\n\n3. USER ACTIONS:\n- Refine insight textarea based on feedback\n- Click [Get AI Feedback] again to re-evaluate\n- Click [Save to Notebook] to save with current aiEvaluation\n- Feedback panel collapses but aiEvaluation is stored\n\n4. SAVE BEHAVIOR:\n- If AI feedback received: save both userInsight AND aiEvaluation to block\n- If Save Draft (no AI): save only userInsight, aiEvaluation is null\n\n5. STYLING:\n- Use existing shadcn Alert/Card components\n- Color-code sections (amber for gaps, red for exam trap, blue for confusions)\n- Collapsible sections if too long",
@@ -1645,7 +1647,7 @@
         "updatedAt": "2026-01-08T20:00:00.000Z"
       },
       {
-        "id": 123,
+        "id": "123",
         "title": "Learning Tab Weak Points Panel",
         "description": "Add collapsible panel to Learning Tab showing aggregated weakness data: trap type breakdown, top confusion pairs, weak topics by difficulty. Pulls from review_logs + notebook_blocks.aiEvaluation.",
         "details": "WEAK POINTS PANEL:\n\n1. LOCATION:\n- Inside Learning Tab (ReviewInterface area)\n- Collapsible panel below daily review stats\n- Shows when user has review data (not on first use)\n\n2. PANEL SECTIONS:\n\n┌─────────────────────────────────────────┐\n│ 📊 Your Weak Points            [▼ Hide] │\n├─────────────────────────────────────────┤\n│ EXAM TRAPS (last 30 days)               │\n│ ┌────────────────────────────────────┐  │\n│ │ Qualifier Misread    ████████ 8    │  │\n│ │ Negation Blindness   ████ 4        │  │\n│ │ Timeline Confusion   ██ 2          │  │\n│ └────────────────────────────────────┘  │\n├─────────────────────────────────────────┤\n│ CONFUSION PAIRS                         │\n│ • Methotrexate ↔ Methylnaltrexone (3x)  │\n│ • Type 1 ↔ Type 2 RTA (2x)              │\n├─────────────────────────────────────────┤\n│ WEAK TOPICS (by card difficulty)        │\n│ • Nephrology (avg difficulty: 0.72)     │\n│ • Cardiology (avg difficulty: 0.68)     │\n│ [View all in Card Browser →]            │\n└─────────────────────────────────────────┘\n\n3. DATA SOURCES:\n- Exam traps: Aggregate examTrapType from notebook_blocks.aiEvaluation\n- Confusion pairs: Aggregate confusionTags from notebook_blocks.aiEvaluation\n- Weak topics: Existing WeakTopicSummary from T117/T45\n\n4. NEW IPC HANDLERS:\n- insights:getExamTrapBreakdown -> { trapType: string, count: number }[]\n- insights:getConfusionPairs -> { pair: string, count: number }[]\n- Reuse existing cards:getWeakTopics\n\n5. AGGREGATION QUERIES:\n- Group by examTrapType WHERE examTrapType IS NOT NULL, count, order by count DESC\n- Parse confusionTags JSON arrays, flatten, count occurrences\n- Time-bound to last 30 days for relevance\n\n6. UI INTEGRATION:\n- Add to ReviewInterface.tsx or create WeakPointsPanel.tsx component\n- Default collapsed, remembers state in localStorage\n- Only show sections with data (hide empty trap types)",
@@ -1660,14 +1662,14 @@
         "updatedAt": "2026-01-08T20:00:00.000Z"
       },
       {
-        "id": 124,
+        "id": "124",
         "title": "Tampermonkey Script Integration for Quick Capture",
         "description": "Hook up Tampermonkey script so user can auto-pull Board Questions from PeerPrep and MKSAP into Quick Capture Screen. Script sends question data to DougHub via local endpoint or clipboard, Quick Capture receives and pre-populates fields.",
         "details": "TAMPERMONKEY INTEGRATION:\n\n1. COMMUNICATION METHOD:\n- Option A: Local HTTP server in Electron (localhost:PORT)\n- Option B: Clipboard-based with special format detection\n- Option C: Custom protocol handler (doughub://capture?data=...)\n\n2. DATA PAYLOAD FROM SCRIPT:\n- Question stem text\n- Answer choices (if MCQ)\n- Correct answer (if available)\n- Source platform (PeerPrep/MKSAP)\n- URL/reference ID\n- Any associated explanation text\n\n3. QUICK CAPTURE INTEGRATION:\n- Detect incoming data from Tampermonkey\n- Pre-populate Quick Capture fields\n- Set sourceType appropriately\n- User reviews and confirms capture\n\n4. EXISTING SCRIPT:\n- User has basic Tampermonkey script already\n- Need to flesh out data extraction for each platform\n- Need to establish communication with DougHub app",
         "testStrategy": "Install Tampermonkey script, navigate to PeerPrep question, trigger capture. Verify data arrives in Quick Capture with fields pre-populated. Test MKSAP integration. Test error handling when DougHub not running.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1675,8 +1677,10 @@
             "description": "Implement localhost:23847 HTTP server to receive POST requests from Tampermonkey script with board question data payload",
             "dependencies": [],
             "details": "Create electron/capture-server.ts with Express server listening on port 23847. Implement POST /api/capture endpoint that receives CapturePayload (timestamp, url, hostname, siteName, pageHTML, images[]). Add error handling, CORS configuration for localhost only, and integration with main.ts to start server on app ready. Server should return JSON response with success/error status. Add graceful shutdown on app quit.",
-            "status": "pending",
-            "testStrategy": "Use curl or Postman to POST sample payload to localhost:23847/api/capture. Verify server starts with Electron app, accepts requests, and shuts down cleanly. Test error handling with malformed payloads."
+            "status": "done",
+            "testStrategy": "Use curl or Postman to POST sample payload to localhost:23847/api/capture. Verify server starts with Electron app, accepts requests, and shuts down cleanly. Test error handling with malformed payloads.",
+            "updatedAt": "2026-01-12T20:17:04.648Z",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1684,8 +1688,10 @@
             "description": "Define BoardQuestionContent types and create parser dispatcher with stub implementations for site-specific parsers",
             "dependencies": [],
             "details": "Create electron/parsers/board-question-parser.ts with functions to parse HTML into BoardQuestionContent structure (source, questionId, vignetteHtml, questionStemHtml, answers[], wasCorrect, explanationHtml, keyPointsHtml, images[]). Implement site-specific selector maps for PeerPrep (.questionStem, .answerOption, .correct-answer, .feedbackTab, .keyPointsTab, #media-links) and MKSAP 19 (.question-text, .answer-option, .critique, .educational-objective). Add duplicate detection logic by URL to append to attempts[] array. Export parseBoardQuestion(html: string, siteName: string, url: string) function.\n<info added on 2026-01-08T21:42:10.676Z>\nI'll analyze the codebase to understand the current parser structure and types before generating the subtask update.Based on my analysis of the codebase, here's the text that should be added to the subtask:\n\n---\n\nUPDATED SCOPE: This subtask creates types and base structure only. Site-specific implementations moved to T124.6 (PeerPrep) and T124.7 (MKSAP).\n\nCreate electron/parsers/ directory and electron/parsers/board-question-parser.ts file. Define BoardQuestionContent interface matching HANDOFF-T124.md spec (source, questionId, category, capturedAt, sourceUrl, vignetteHtml, questionStemHtml, answers[], wasCorrect, explanationHtml, keyPointsHtml, images[], attempts[]). Include AnswerOption interface with letter, html, isCorrect, isUserChoice, peerPercent fields. Include AttemptRecord interface with attemptNumber, date, chosenAnswer, wasCorrect, note fields. Create parseBoardQuestion(html: string, siteName: 'peerprep' | 'mksap', url: string): BoardQuestionContent function signature that dispatches to site-specific parsers. Add stub implementations for parsePeerPrep() and parseMKSAP() that throw new Error('Not implemented - see T124.6/T124.7'). Install cheerio for HTML parsing (npm install cheerio @types/cheerio). Export all types and parseBoardQuestion function. Aligns with existing IPC patterns in electron/ipc-handlers.ts and database types in electron/database.ts.\n</info added on 2026-01-08T21:42:10.676Z>",
-            "status": "pending",
-            "testStrategy": "Create unit tests with sample HTML from PeerPrep and MKSAP. Verify correct extraction of vignette, answers, explanations, and images. Test duplicate detection creates attempts entries. Validate output matches BoardQuestionContent schema."
+            "status": "done",
+            "testStrategy": "Create unit tests with sample HTML from PeerPrep and MKSAP. Verify correct extraction of vignette, answers, explanations, and images. Test duplicate detection creates attempts entries. Validate output matches BoardQuestionContent schema.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-12T20:17:04.652Z"
           },
           {
             "id": 3,
@@ -1693,8 +1699,10 @@
             "description": "Create service to download remote images from board questions and save them to userData/images/ directory as local files",
             "dependencies": [],
             "details": "Create electron/services/image-service.ts with downloadImage(url: string): Promise<string> function that fetches remote images, generates unique filenames using crypto.randomUUID(), saves to app.getPath('userData')/images/, and returns relative path (images/filename.ext). Handle image format detection from Content-Type header. Add retry logic for failed downloads. Process images[] array from CapturePayload and update BoardQuestionContent.images[] with localPath and location metadata. Create images directory if it doesn't exist.",
-            "status": "pending",
-            "testStrategy": "Test with various image URLs (jpg, png, gif). Verify files are saved to correct userData/images/ directory with unique names. Test error handling for 404s and network failures. Confirm relative paths are correctly formatted for cross-platform compatibility."
+            "status": "done",
+            "testStrategy": "Test with various image URLs (jpg, png, gif). Verify files are saved to correct userData/images/ directory with unique names. Test error handling for 404s and network failures. Confirm relative paths are correctly formatted for cross-platform compatibility.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-12T20:17:04.655Z"
           },
           {
             "id": 4,
@@ -1707,8 +1715,10 @@
               7
             ],
             "details": "In electron/ipc-handlers.ts, add capture:receive handler that: 1) calls board-question-parser to extract BoardQuestionContent, 2) calls image-service to download and save images, 3) creates SourceItem with sourceType='qbank' and rawContent=JSON.stringify(boardQuestionContent), 4) shows system notification using Electron Notification API even when backgrounded. Update electron/preload.ts to expose api.capture.receive(payload) method. Add TypeScript interfaces for CapturePayload and BoardQuestionContent to electron.d.ts. Update capture-server.ts to call IPC handler when POST is received.",
-            "status": "pending",
-            "testStrategy": "Send test capture from Tampermonkey script. Verify SourceItem is created in database with qbank sourceType. Confirm images are downloaded and paths stored correctly. Test system notification appears when app is backgrounded. Check IPC communication with Electron DevTools."
+            "status": "done",
+            "testStrategy": "Send test capture from Tampermonkey script. Verify SourceItem is created in database with qbank sourceType. Confirm images are downloaded and paths stored correctly. Test system notification appears when app is backgrounded. Check IPC communication with Electron DevTools.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-12T20:17:04.657Z"
           },
           {
             "id": 5,
@@ -1718,41 +1728,55 @@
               4
             ],
             "details": "Create src/components/BoardQuestionView.tsx component that renders BoardQuestionContent: vignetteHtml in styled container, questionStemHtml, answers[] with letter/html/isCorrect/peerPercent display, explanationHtml and keyPointsHtml as expandable sections, images with localPath rendering, and collapsible Attempts (N) badge showing attempts[] history. Add HTML rendering with safe styling (no sanitization per spec). Update user's Tampermonkey script to change target port to 23847, ensure it POSTs CapturePayload format with pageHTML and images[] to /api/capture endpoint. Add error handling and user feedback in script.\n<info added on 2026-01-08T21:43:48.551Z>\nI'll analyze the codebase to provide specific implementation guidance for the BoardQuestionView component.Based on my codebase analysis, here's the update text for the subtask focusing only on the BoardQuestionView React component:\n\n---\n\nCOMPONENT STRUCTURE:\n- Import shadcn/ui components: Card, CardHeader, CardTitle, CardContent (src/components/ui/card.tsx), Badge (src/components/ui/badge.tsx), Collapsible/CollapsibleTrigger/CollapsibleContent (src/components/ui/collapsible.tsx)\n- Import Tailwind utility: cn from @/lib/utils\n- Follow existing component patterns from src/components/cards/CardBrowserView.tsx and src/components/review/ReviewInterface.tsx\n\nINTERFACE DEFINITION (based on docs/HANDOFF-T124.md lines 54-98):\n```typescript\ninterface BoardQuestionContent {\n  source: 'peerprep' | 'mksap';\n  questionId?: string;\n  category?: string;\n  capturedAt: string;\n  sourceUrl: string;\n  vignetteHtml: string;\n  questionStemHtml: string;\n  answers: {\n    letter: string;\n    html: string;\n    isCorrect: boolean;\n    isUserChoice: boolean;\n    peerPercent?: number;\n  }[];\n  wasCorrect: boolean;\n  explanationHtml: string;\n  keyPointsHtml?: string;\n  images: {\n    localPath: string;\n    caption?: string;\n    location: 'vignette' | 'explanation' | 'keypoint';\n  }[];\n  attempts: {\n    attemptNumber: number;\n    date: string;\n    chosenAnswer: string;\n    wasCorrect: boolean;\n    note?: string;\n  }[];\n}\n```\n\nRENDER LAYOUT (reference design from docs/HANDOFF-T124.md lines 210-241):\n1. Card wrapper with header showing source badge, category, date, result indicator (✓/❌), and collapsible Attempts(N) badge\n2. Vignette section with vignetteHtml rendered via dangerouslySetInnerHTML, styled with prose class\n3. Question stem section with questionStemHtml\n4. Answers grid showing letter, html content, peer percentage bar chart, correct checkmark, user selection dot\n5. Collapsible sections for Explanation (explanationHtml) and Key Points (keyPointsHtml) using Collapsible components\n6. Image rendering: filter images by location field and display inline in respective sections using localPath\n\nHTML RENDERING:\n- Use dangerouslySetInnerHTML={{ __html: content }} for all HTML fields per spec requirement (no sanitization)\n- Apply Tailwind prose classes for medical content typography\n- Images: <img src={`file://${app.getPath('userData')}/images/${localPath}`} /> pattern\n\nSTYLING:\n- Follow existing component styling patterns from CardBrowserView.tsx\n- Use Badge variants (secondary, destructive, outline) for metadata display\n- Result indicator: green CheckCircle2 icon for correct, red XCircle for incorrect\n- Answer grid: flex layout with hover states, peer percentage as horizontal bar using Tailwind width utilities\n\nATTEMPTS BADGE:\n- Collapsible component toggled by Badge with Attempts(N) text\n- CollapsibleContent shows attempts[] array in reverse chronological order\n- Display format: \"Attempt {N} - {date} - {chosenAnswer} - {✓/❌} {note?}\"\n</info added on 2026-01-08T21:43:48.551Z>",
-            "status": "pending",
-            "testStrategy": "Open Knowledge Bank inbox, find qbank item, and verify BoardQuestionView renders all sections correctly including images, vignette, answers, and explanation."
+            "status": "done",
+            "testStrategy": "Open Knowledge Bank inbox, find qbank item, and verify BoardQuestionView renders all sections correctly including images, vignette, answers, and explanation.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-12T20:17:04.660Z"
           },
           {
             "id": 6,
             "title": "Implement PeerPrep HTML parser",
             "description": "Implement parsePeerPrep() function with ACEP PeerPrep-specific CSS selectors and extraction logic",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "Implement parsePeerPrep() function in electron/parsers/board-question-parser.ts. PeerPrep CSS selectors: vignette (.questionStem, .question-stem), answers (.answerOption, .answer-choice), correct answer (.correct-answer, [class*=\"correct\"]), user selection (.selected, .user-selected, [class*=\"selected\"]), peer percentages (.peer-response, .percentage), explanation (.feedbackTab, .feedback-content), key points (.keyPointsTab, .key-points), question images (#media-links a.fancybox), explanation images (.feedbackTab img, .keyPointsTab img). Extract peer percentage from adjacent text (e.g. '49%'). Parse each answer detecting correct and user-selected. Determine wasCorrect by comparing user choice to correct answer. Collect image URLs with source location for later download. Handle missing optional fields gracefully.",
-            "status": "pending",
-            "testStrategy": "Test with sample PeerPrep HTML. Verify extraction of vignette, answers with peer percentages, explanation, key points, and image URLs. Validate output matches BoardQuestionContent schema."
+            "status": "done",
+            "testStrategy": "Test with sample PeerPrep HTML. Verify extraction of vignette, answers with peer percentages, explanation, key points, and image URLs. Validate output matches BoardQuestionContent schema.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-12T20:17:04.662Z"
           },
           {
             "id": 7,
             "title": "Implement MKSAP HTML parser",
             "description": "Implement parseMKSAP() function with MKSAP 19-specific CSS selectors and extraction logic",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "Implement parseMKSAP() function in electron/parsers/board-question-parser.ts. MKSAP CSS selectors: vignette (.question-text, .stem), answers (.answer-option), correct answer (.correct), user selection (.selected), explanation (.critique, .explanation), educational objective (.educational-objective). MKSAP may not have peer percentages - leave undefined. Educational objective maps to keyPointsHtml. Handle MKSAP's different HTML structure for answers. Collect image URLs from question and explanation sections. Same approach as PeerPrep: preserve raw HTML, no sanitization.",
-            "status": "pending",
-            "testStrategy": "Test with sample MKSAP HTML. Verify extraction of vignette, answers, explanation, and educational objectives. Validate output matches BoardQuestionContent schema."
+            "status": "done",
+            "testStrategy": "Test with sample MKSAP HTML. Verify extraction of vignette, answers, explanation, and educational objectives. Validate output matches BoardQuestionContent schema.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-12T20:17:04.665Z"
           },
           {
             "id": 8,
             "title": "Update Tampermonkey script for DougHub integration",
             "description": "Update the Tampermonkey userscript to POST captured board questions to DougHub's localhost server",
-            "dependencies": [4],
+            "dependencies": [
+              4
+            ],
             "details": "Update Tampermonkey script: change target port from 55590 to 23847, POST to /api/capture endpoint. Send CapturePayload with timestamp (ISO string), url (window.location.href), hostname, siteName ('ACEP PeerPrep' | 'MKSAP 19' based on hostname), pageHTML (document.documentElement.outerHTML), bodyText (document.body.innerText), images array. Image extraction: find #media-links a.fancybox for PeerPrep question images, img tags in feedback sections with source location. Trigger detection: wait for 'Key Point' text (PeerPrep) or 'Correct Answer' text (MKSAP). Add 'Send to DougHub' button that appears after answer submission, styled to match site. Show loading state during POST, success/error toast notification. Retry logic: 3 attempts with exponential backoff (1s, 2s, 4s). User-friendly error if DougHub not running.",
-            "status": "pending",
-            "testStrategy": "Install updated Tampermonkey script. Navigate to PeerPrep question, submit answer, click Send to DougHub. Verify POST request sent to localhost:23847/api/capture with correct payload. Test error handling when DougHub is not running. Test on MKSAP question."
+            "status": "done",
+            "testStrategy": "Install updated Tampermonkey script. Navigate to PeerPrep question, submit answer, click Send to DougHub. Verify POST request sent to localhost:23847/api/capture with correct payload. Test error handling when DougHub is not running. Test on MKSAP question.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-12T20:17:04.667Z"
           }
         ],
-        "updatedAt": "2026-01-08T21:45:00.000Z"
+        "updatedAt": "2026-01-12T20:17:04.667Z"
       },
       {
-        "id": 125,
+        "id": "125",
         "title": "Data Logging Framework: Schema Extensions for Future AI",
         "description": "Add schema fields across layers to enable future AI features. Capture Screen: correctness field. Knowledge Bank: notes field. Cards: targetedConfusion field. Learning Tab: confidenceRating field. These fields prepare the data foundation for POST-MVP AI enhancements.",
         "details": "DATA LOGGING FRAMEWORK:\n\nPurpose: Add schema fields NOW so data starts accumulating for POST-MVP AI features.\n\n1. CAPTURE SCREEN (source_items table):\n- ADD: correctness TEXT (nullable) - 'correct' | 'incorrect' | null\n- Purpose: Track whether board question was answered correctly at capture time\n- UI: Add Correct/Incorrect toggle to QuickCaptureModal when sourceType is 'qbank'\n\n2. KNOWLEDGE BANK (source_items table):\n- ADD: notes TEXT (nullable)\n- Purpose: Informal annotations ('I thought X because Y')\n- UI: Add notes textarea to SourceItemDetail view\n- IPC: Extend sourceItems:update to handle notes field\n\n3. KNOWLEDGE BANK (source_items table):\n- ADD: testedConcepts TEXT (nullable, JSON array)\n- Purpose: AI-extracted testable concepts from board questions\n- Example: [\"Kanavel signs\", \"consult threshold\", \"empiric abx\"]\n- Populated: During T124 board Q capture via AI extraction from explanation/key points\n- Enables: Board Relevance Panel (T119) showing commonly tested concepts and user weak spots\n\n4. CARDS (cards table):\n- ADD: targetedConfusion TEXT (nullable)\n- Purpose: Which confusion pair this card addresses (e.g., 'Methotrexate vs Methylnaltrexone')\n- Set during card generation when aiEvaluation.confusionTags exists\n- UI: Show badge on card in Card Browser\n\n- ADD: relevanceScore TEXT (nullable) - 'high' | 'medium' | 'low' | 'unknown'\n- ADD: relevanceReason TEXT (nullable) - e.g., 'Targets your weak area'\n- Purpose: Inherited from parent NotebookBlock at card generation time\n- Enables: Batch Review Smart View to filter low-relevance cards\n\n5. LEARNING TAB (review_logs table):\n- ADD: confidenceRating TEXT (nullable) - 'forgot' | 'struggled' | 'knew_it'\n- Purpose: Explicit confidence signal beyond pass/fail\n- UI: Optional 3-button confidence rating after answer reveal (Forgot / Struggled / Knew It)\n- Default: null if user skips confidence rating\n\nMIGRATION:\n- All fields nullable with no default\n- Add columns via ALTER TABLE (7 total: correctness, notes, testedConcepts, targetedConfusion, relevanceScore, relevanceReason, confidenceRating)\n- Update DbSourceItem, DbCard, DbNotebookBlock interfaces\n- Update insert/update queries\n- No data migration needed (new fields only)\n\nDATA FLOW PREP:\n- These fields enable: Response time weighting, Aggregated confusion reports, Auto-generated comparison cards, AI practice questions, Semantic interference detection, 7-step learning pipeline, Board Relevance Panel (Practice Q cross-reference)",
@@ -1769,14 +1793,12 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-08T22:00:00.000Z",
+      "lastModified": "2026-01-12T20:17:04.668Z",
       "taskCount": 30,
-      "completedCount": 20,
+      "completedCount": 21,
       "tags": [
         "master"
-      ],
-      "created": "2026-01-08T21:26:51.746Z",
-      "description": "Tasks for master context"
+      ]
     }
   }
 }

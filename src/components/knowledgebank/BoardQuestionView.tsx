@@ -210,16 +210,16 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     // Heuristic: The actual question is usually the last sentence.
     // We look for the last sentence boundary: a punctuation followed by space and capital letter/tag.
     // Pattern: capture everything before the last sentence, then everything after the space.
-    const splitRegex = /^(.*[.?!])\s+([A-Z<].*)$/s;
+    const splitRegex = /^(.*[.?!])\s+([A-Z<][^.?!]*[.?!]?)$/s;
     const match = normalized.match(splitRegex);
 
     if (match) {
       const [_, context, question] = match;
-      return `${context} <strong class="font-bold text-foreground">${question}</strong>`;
+      return `${context} <strong class="font-bold text-card-foreground">${question}</strong>`;
     }
 
     // Fallback: If no clear split (e.g., single sentence), bold it all as it's the lead-in
-    return `<strong class="font-bold text-foreground">${normalized}</strong>`;
+    return `<strong class="font-bold text-card-foreground">${normalized}</strong>`;
   }, [content.questionStemHtml, processHtml]);
   const processedExplanation = React.useMemo(() => {
     let html = processHtml(content.explanationHtml);
@@ -273,7 +273,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
 
           if (!endsWithPunctuation && !startsLikeSentence) {
             return `<div class="mt-6 pt-4 border-t border-border/30">
-              <p${attrs1} class="!mt-0 !mb-2 font-semibold text-foreground">${trimmedTitle}</p>
+              <p${attrs1} class="!mt-0 !mb-2 font-semibold text-card-foreground">${trimmedTitle}</p>
             </div>${whitespace}<p${attrs2}>${body}`;
           }
           return match;
@@ -529,27 +529,44 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
         <div className="divide-y divide-border">
           {/* Question & Vignette Section */}
           <div className="p-6 bg-primary/5 border-y border-primary/10">
-            {displayVignetteHtml && (
-              <div
-                className="prose prose-sm max-w-none leading-relaxed mb-6 text-card-foreground/90 break-words"
-                dangerouslySetInnerHTML={{ __html: displayVignetteHtml }}
-              />
-            )}
+            {content.source === "mksap" ? (
+              // Truly unified view for MKSAP
+              <div className="prose prose-sm max-w-none leading-relaxed text-card-foreground break-words text-base space-y-4">
+                {displayVignetteHtml && (
+                  <div
+                    dangerouslySetInnerHTML={{ __html: displayVignetteHtml }}
+                  />
+                )}
+                <div
+                  dangerouslySetInnerHTML={{ __html: processedQuestionStem }}
+                />
+              </div>
+            ) : (
+              // Original split view for PeerPrep
+              <>
+                {displayVignetteHtml && (
+                  <div
+                    className="prose prose-sm max-w-none leading-relaxed mb-6 text-card-foreground/90 break-words"
+                    dangerouslySetInnerHTML={{ __html: displayVignetteHtml }}
+                  />
+                )}
 
-            <div
-              className={cn(
-                "space-y-3",
-                displayVignetteHtml && "pt-6 border-t border-primary/10"
-              )}
-            >
-              <span className="text-[10px] font-bold text-card-muted uppercase tracking-widest block">
-                Clinical Question
-              </span>
-              <div
-                className="prose prose-sm max-w-none font-normal text-lg text-card-foreground break-words"
-                dangerouslySetInnerHTML={{ __html: processedQuestionStem }}
-              />
-            </div>
+                <div
+                  className={cn(
+                    "space-y-3",
+                    displayVignetteHtml && "pt-6 border-t border-primary/10"
+                  )}
+                >
+                  <span className="text-[10px] font-bold text-card-muted uppercase tracking-widest block">
+                    Clinical Question
+                  </span>
+                  <div
+                    className="prose prose-sm max-w-none font-normal text-lg text-card-foreground break-words"
+                    dangerouslySetInnerHTML={{ __html: processedQuestionStem }}
+                  />
+                </div>
+              </>
+            )}
 
             {content.images.some(
               (img) =>

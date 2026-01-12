@@ -89,7 +89,7 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
   };
 
   type GeneratedCardData = {
-    format: "qa" | "cloze" | "overlapping-cloze" | "vignette";
+    format: "qa" | "cloze" | "overlapping-cloze" | "vignette" | "image-occlusion" | "procedural";
     front: string;
     back: string;
   };
@@ -116,6 +116,7 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
       createdAt: new Date().toISOString(),
       parentListId: null,
       listPosition: null,
+      aiTitle: null,
       // FSRS defaults
       stability: 0,
       difficulty: 0,
@@ -294,10 +295,8 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
           open={genModalOpen}
           onOpenChange={setGenModalOpen}
           selectedText={selectedText}
-          blockId={activeBlock.id}
           blockContent={activeBlock.content}
           topicName={topic.canonicalName}
-          notebookTopicPageId={pageId}
           onCreateCard={handleCreateCard}
         />
       )}

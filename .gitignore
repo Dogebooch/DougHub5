@@ -15,6 +15,7 @@ dist-electron/
 dist-ssr
 build/
 out/
+*.tsbuildinfo
 *.local
 
 # Editor directories and files
