@@ -289,8 +289,8 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     html = html.replace(choiceRegex, (match, tag, _full, letter1, letter2) => {
       if (tag) return tag;
       const letter = (letter1 || letter2 || "").toUpperCase();
-      // Return consistent MKSAP-style bolded reference
-      return `<strong class="text-primary font-bold">(Option ${letter})</strong>`;
+      // Return clean bolded reference without extra parentheses
+      return `<strong class="text-primary font-bold">Option ${letter}</strong>`;
     });
 
     return html;
@@ -531,7 +531,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
           <div className="p-6 bg-primary/5 border-y border-primary/10">
             {content.source === "mksap" ? (
               // Truly unified view for MKSAP
-              <div className="prose prose-sm max-w-none leading-relaxed text-card-foreground break-words text-base space-y-4">
+              <div className="prose prose-sm max-w-none leading-relaxed text-card-foreground break-words text-base space-y-4 prose-strong:font-bold prose-strong:text-card-foreground prose-b:font-bold prose-b:text-card-foreground">
                 {displayVignetteHtml && (
                   <div
                     dangerouslySetInnerHTML={{ __html: displayVignetteHtml }}
@@ -546,7 +546,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
               <>
                 {displayVignetteHtml && (
                   <div
-                    className="prose prose-sm max-w-none leading-relaxed mb-6 text-card-foreground/90 break-words"
+                    className="prose prose-sm max-w-none leading-relaxed mb-6 text-card-foreground/90 break-words prose-strong:font-bold prose-strong:text-card-foreground prose-b:font-bold prose-b:text-card-foreground"
                     dangerouslySetInnerHTML={{ __html: displayVignetteHtml }}
                   />
                 )}
@@ -561,7 +561,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                     Clinical Question
                   </span>
                   <div
-                    className="prose prose-sm max-w-none font-normal text-lg text-card-foreground break-words"
+                    className="prose prose-sm max-w-none font-normal text-lg text-card-foreground break-words prose-strong:font-bold prose-strong:text-card-foreground prose-b:font-bold prose-b:text-card-foreground"
                     dangerouslySetInnerHTML={{ __html: processedQuestionStem }}
                   />
                 </div>
@@ -625,7 +625,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   {/* Answer content */}
                   <div className="flex-1 px-4 py-3 min-w-0 overflow-hidden">
                     <div
-                      className="prose prose-sm max-w-none text-card-foreground [&>p]:m-0 break-words"
+                      className="prose prose-sm max-w-none text-card-foreground [&>p]:m-0 break-words prose-strong:font-bold prose-b:font-bold"
                       dangerouslySetInnerHTML={{ __html: processedAnswerHtml }}
                     />
                   </div>

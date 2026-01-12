@@ -338,3 +338,14 @@ export interface BoardQuestionContent {
   attempts: BoardAttempt[];
 }
 
+// Reference Ranges (MKSAP19)
+export interface ReferenceRange {
+  id?: number;
+  category: string;
+  test_name: string;
+  normal_range: string;
+  units: string | null;
+  si_range: string | null;
+  notes: string | null;
+  source: string;
+}

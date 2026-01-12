@@ -1,0 +1,1194 @@
+[
+  {
+    "category": "Chemistry",
+    "test_name": "Albumin",
+    "normal_range": "3.5-5.5 g/dL",
+    "units": "g/dL",
+    "si_range": "35-55 g/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Alkaline Phosphatase",
+    "normal_range": "36-92 U/L",
+    "units": "U/L",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Alpha-Fetoprotein",
+    "normal_range": "0.6-6.6 ng/mL",
+    "units": "ng/mL",
+    "si_range": "0.6-6.6 µg/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "ALT (Alanine Aminotransferase)",
+    "normal_range": "0-35 U/L",
+    "units": "U/L",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "AST (Aspartate Aminotransferase)",
+    "normal_range": "0-35 U/L",
+    "units": "U/L",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Ammonia",
+    "normal_range": "40-80 µg/dL",
+    "units": "µg/dL",
+    "si_range": "23-47 µmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Amylase",
+    "normal_range": "0-130 U/L",
+    "units": "U/L",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Bilirubin, Total",
+    "normal_range": "0.3-1.2 mg/dL",
+    "units": "mg/dL",
+    "si_range": "5.1-20.5 µmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Bilirubin, Direct",
+    "normal_range": "0-0.3 mg/dL",
+    "units": "mg/dL",
+    "si_range": "0-5.1 µmol/L",
+    "notes": null
+  },
+  {
+    "category": "Blood Gases",
+    "test_name": "Arterial pH",
+    "normal_range": "7.38-7.44",
+    "units": null,
+    "si_range": null,
+    "notes": "Ambient air"
+  },
+  {
+    "category": "Blood Gases",
+    "test_name": "Arterial PaCO2",
+    "normal_range": "35-45 mm Hg",
+    "units": "mm Hg",
+    "si_range": "4.7-6.0 kPa",
+    "notes": "Ambient air"
+  },
+  {
+    "category": "Blood Gases",
+    "test_name": "Arterial PaO2",
+    "normal_range": "80-100 mm Hg",
+    "units": "mm Hg",
+    "si_range": "10.6-13.3 kPa",
+    "notes": "Ambient air"
+  },
+  {
+    "category": "Blood Gases",
+    "test_name": "Oxygen Saturation",
+    "normal_range": "≥95%",
+    "units": "%",
+    "si_range": null,
+    "notes": "Ambient air"
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "BUN (Blood Urea Nitrogen)",
+    "normal_range": "8-20 mg/dL",
+    "units": "mg/dL",
+    "si_range": "2.9-7.1 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "BNP (B-type Natriuretic Peptide)",
+    "normal_range": "<100 pg/mL (unlikely HF); >400 pg/mL (likely HF)",
+    "units": "pg/mL",
+    "si_range": "<100 ng/L; >400 ng/L",
+    "notes": "Heart failure screening"
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Calcium",
+    "normal_range": "9-10.5 mg/dL",
+    "units": "mg/dL",
+    "si_range": "2.2-2.6 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Chloride",
+    "normal_range": "98-106 mEq/L",
+    "units": "mEq/L",
+    "si_range": "98-106 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Bicarbonate",
+    "normal_range": "23-28 mEq/L",
+    "units": "mEq/L",
+    "si_range": "23-28 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Immunology",
+    "test_name": "C3 Complement",
+    "normal_range": "55-120 mg/dL",
+    "units": "mg/dL",
+    "si_range": "550-1200 mg/L",
+    "notes": null
+  },
+  {
+    "category": "Immunology",
+    "test_name": "C4 Complement",
+    "normal_range": "10-40 mg/dL",
+    "units": "mg/dL",
+    "si_range": "100-400 mg/L",
+    "notes": null
+  },
+  {
+    "category": "Immunology",
+    "test_name": "C-Reactive Protein",
+    "normal_range": "0-0.8 mg/dL",
+    "units": "mg/dL",
+    "si_range": "0-8.0 mg/L",
+    "notes": "CV risk: <1.0 (low), 1.0-3.0 (average), >3.0 mg/L (high)"
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Creatine Kinase",
+    "normal_range": "30-170 U/L",
+    "units": "U/L",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Creatinine",
+    "normal_range": "0.7-1.3 mg/dL",
+    "units": "mg/dL",
+    "si_range": "61.9-115 µmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Sodium",
+    "normal_range": "136-145 mEq/L",
+    "units": "mEq/L",
+    "si_range": "136-145 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Potassium",
+    "normal_range": "3.5-5.0 mEq/L",
+    "units": "mEq/L",
+    "si_range": "3.5-5.0 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Coagulation",
+    "test_name": "Fibrinogen",
+    "normal_range": "150-350 mg/dL",
+    "units": "mg/dL",
+    "si_range": "1.5-3.5 g/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Folate",
+    "normal_range": "4.0-20 ng/mL",
+    "units": "ng/mL",
+    "si_range": "9.1-45.3 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Glucose, Fasting",
+    "normal_range": "70-100 mg/dL",
+    "units": "mg/dL",
+    "si_range": "3.9-5.6 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Gamma-Glutamyltransferase (GGT)",
+    "normal_range": "0-30 U/L",
+    "units": "U/L",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Immunology",
+    "test_name": "Globulins, Total",
+    "normal_range": "2.5-3.5 g/dL",
+    "units": "g/dL",
+    "si_range": "25-35 g/L",
+    "notes": null
+  },
+  {
+    "category": "Immunology",
+    "test_name": "IgG",
+    "normal_range": "640-1430 mg/dL",
+    "units": "mg/dL",
+    "si_range": "6.4-14.3 g/L",
+    "notes": null
+  },
+  {
+    "category": "Immunology",
+    "test_name": "IgA",
+    "normal_range": "70-300 mg/dL",
+    "units": "mg/dL",
+    "si_range": "0.7-3.0 g/L",
+    "notes": null
+  },
+  {
+    "category": "Immunology",
+    "test_name": "IgM",
+    "normal_range": "20-140 mg/dL",
+    "units": "mg/dL",
+    "si_range": "0.2-1.4 g/L",
+    "notes": null
+  },
+  {
+    "category": "Immunology",
+    "test_name": "IgD",
+    "normal_range": "<8 mg/dL",
+    "units": "mg/dL",
+    "si_range": "80 mg/L",
+    "notes": null
+  },
+  {
+    "category": "Immunology",
+    "test_name": "IgE",
+    "normal_range": "0-90 U/mL",
+    "units": "U/mL",
+    "si_range": "0-90 kU/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Ferritin",
+    "normal_range": "15-200 ng/mL",
+    "units": "ng/mL",
+    "si_range": "15-200 µg/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Iron, Serum",
+    "normal_range": "60-160 µg/dL",
+    "units": "µg/dL",
+    "si_range": "11-29 µmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "TIBC (Total Iron-Binding Capacity)",
+    "normal_range": "250-460 µg/dL",
+    "units": "µg/dL",
+    "si_range": "45-82 µmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Transferrin Saturation",
+    "normal_range": "20%-50%",
+    "units": "%",
+    "si_range": null,
+    "notes": "Calculated: serum iron ÷ TIBC × 100"
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "LDH (Lactate Dehydrogenase)",
+    "normal_range": "60-100 U/L",
+    "units": "U/L",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Lactate",
+    "normal_range": "0.5-1.6 mEq/L",
+    "units": "mEq/L",
+    "si_range": "0.5-1.6 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Lipase",
+    "normal_range": "13-60 U/L",
+    "units": "U/L",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Magnesium",
+    "normal_range": "1.5-2.4 mg/dL",
+    "units": "mg/dL",
+    "si_range": "0.62-0.99 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Osmolality, Serum",
+    "normal_range": "275-295 mOsm/kg H2O",
+    "units": "mOsm/kg H2O",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Phosphorus",
+    "normal_range": "3.0-4.5 mg/dL",
+    "units": "mg/dL",
+    "si_range": "0.97-1.45 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "PSA (Prostate-Specific Antigen)",
+    "normal_range": "<4 ng/mL",
+    "units": "ng/mL",
+    "si_range": "4 µg/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Protein, Total",
+    "normal_range": "6.0-7.8 g/dL",
+    "units": "g/dL",
+    "si_range": "60-78 g/L",
+    "notes": null
+  },
+  {
+    "category": "Immunology",
+    "test_name": "Rheumatoid Factor",
+    "normal_range": "<40 U/mL",
+    "units": "U/mL",
+    "si_range": "40 kU/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Triglycerides",
+    "normal_range": "<150 mg/dL (desirable)",
+    "units": "mg/dL",
+    "si_range": "1.69 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Uric Acid (Male)",
+    "normal_range": "3.7-8.6 mg/dL",
+    "units": "mg/dL",
+    "si_range": "0.22-0.50 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Uric Acid (Female)",
+    "normal_range": "2.4-5.8 mg/dL",
+    "units": "mg/dL",
+    "si_range": "0.14-0.34 mmol/L",
+    "notes": null
+  },
+  {
+    "category": "Chemistry",
+    "test_name": "Vitamin B12",
+    "normal_range": "200-800 pg/mL",
+    "units": "pg/mL",
+    "si_range": "148-590 pmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "ACTH",
+    "normal_range": "9-52 pg/mL",
+    "units": "pg/mL",
+    "si_range": "2-11 pmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Aldosterone, Supine",
+    "normal_range": "2-5 ng/dL",
+    "units": "ng/dL",
+    "si_range": "55-138 pmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Aldosterone, Standing",
+    "normal_range": "7-20 ng/dL",
+    "units": "ng/dL",
+    "si_range": "194-554 pmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Aldosterone, Urine",
+    "normal_range": "5-19 µg/24h",
+    "units": "µg/24h",
+    "si_range": "13.9-52.6 nmol/24h",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Epinephrine, Urine",
+    "normal_range": "2-24 µg/24h",
+    "units": "µg/24h",
+    "si_range": "10.92-131.04 nmol/24h",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Norepinephrine, Urine",
+    "normal_range": "15-100 µg/24h",
+    "units": "µg/24h",
+    "si_range": "88.65-591 nmol/24h",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Dopamine, Urine",
+    "normal_range": "52-480 µg/24h",
+    "units": "µg/24h",
+    "si_range": "339.56-3134.4 nmol/24h",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Cortisol, Free Urine",
+    "normal_range": "<50 µg/24h",
+    "units": "µg/24h",
+    "si_range": "138 nmol/24h",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Cortisol, Morning",
+    "normal_range": "5-25 µg/dL",
+    "units": "µg/dL",
+    "si_range": "138-690 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "DHEAS (Male)",
+    "normal_range": "1.3-5.5 µg/mL",
+    "units": "µg/mL",
+    "si_range": "3.5-14.9 µmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "DHEAS (Female)",
+    "normal_range": "0.6-3.3 µg/mL",
+    "units": "µg/mL",
+    "si_range": "1.6-8.9 µmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Epinephrine, Plasma",
+    "normal_range": "<75 ng/L (supine)",
+    "units": "ng/L",
+    "si_range": "410 pmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Estradiol (Male)",
+    "normal_range": "10-30 pg/mL",
+    "units": "pg/mL",
+    "si_range": "37-110 pmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Estradiol (Female, Day 1-10)",
+    "normal_range": "14-27 pg/mL",
+    "units": "pg/mL",
+    "si_range": "50-100 pmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Estradiol (Female, Day 11-20)",
+    "normal_range": "14-54 pg/mL",
+    "units": "pg/mL",
+    "si_range": "50-200 pmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Estradiol (Female, Day 21-30)",
+    "normal_range": "19-41 pg/mL",
+    "units": "pg/mL",
+    "si_range": "70-150 pmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "FSH (Male, Adult)",
+    "normal_range": "5-15 mU/mL",
+    "units": "mU/mL",
+    "si_range": "5-15 U/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "FSH (Female, Follicular/Luteal)",
+    "normal_range": "5-20 mU/mL",
+    "units": "mU/mL",
+    "si_range": "5-20 U/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "FSH (Female, Midcycle)",
+    "normal_range": "30-50 mU/mL",
+    "units": "mU/mL",
+    "si_range": "30-50 U/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "FSH (Female, Postmenopausal)",
+    "normal_range": ">35 mU/mL",
+    "units": "mU/mL",
+    "si_range": "35 U/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Growth Hormone",
+    "normal_range": "≥1 ng/mL after oral glucose",
+    "units": "ng/mL",
+    "si_range": "1 µg/L",
+    "notes": "Diagnostic of acromegaly"
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Hemoglobin A1c",
+    "normal_range": "<5.7%",
+    "units": "%",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "LH (Male)",
+    "normal_range": "3-15 mU/mL",
+    "units": "mU/mL",
+    "si_range": "3-15 U/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "LH (Female, Follicular/Luteal)",
+    "normal_range": "5-22 mU/mL",
+    "units": "mU/mL",
+    "si_range": "5-22 U/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "LH (Female, Midcycle)",
+    "normal_range": "30-250 mU/mL",
+    "units": "mU/mL",
+    "si_range": "30-250 U/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "LH (Female, Postmenopausal)",
+    "normal_range": ">30 mU/mL",
+    "units": "mU/mL",
+    "si_range": "30 U/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Metanephrine, Unconjugated (Urine)",
+    "normal_range": "90-315 µg/24h",
+    "units": "µg/24h",
+    "si_range": "456-1597 nmol/24h",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Normetanephrine (Urine)",
+    "normal_range": "122-676 µg/24h",
+    "units": "µg/24h",
+    "si_range": "666-3691 nmol/24h",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Metanephrines, Total (Urine)",
+    "normal_range": "224-832 µg/24h",
+    "units": "µg/24h",
+    "si_range": "1136-4218 nmol/24h",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Metanephrine, Free (Plasma)",
+    "normal_range": "≤57 pg/mL",
+    "units": "pg/mL",
+    "si_range": "0.2964 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Normetanephrine, Free (Plasma)",
+    "normal_range": "≤148 pg/mL",
+    "units": "pg/mL",
+    "si_range": "0.8288 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Metanephrines, Total (Plasma)",
+    "normal_range": "≤205 pg/mL",
+    "units": "pg/mL",
+    "si_range": "1.066 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Parathyroid Hormone (PTH)",
+    "normal_range": "10-65 pg/mL",
+    "units": "pg/mL",
+    "si_range": "10-65 ng/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Progesterone (Male, Adult)",
+    "normal_range": "0.27-0.9 ng/mL",
+    "units": "ng/mL",
+    "si_range": "0.9-2.9 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Progesterone (Female, Follicular)",
+    "normal_range": "0.33-1.20 ng/mL",
+    "units": "ng/mL",
+    "si_range": "1.0-3.8 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Progesterone (Female, Luteal)",
+    "normal_range": "0.72-17.8 ng/mL",
+    "units": "ng/mL",
+    "si_range": "2.3-56.6 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Progesterone (Female, Postmenopausal)",
+    "normal_range": "<0.2-1 ng/mL",
+    "units": "ng/mL",
+    "si_range": "0.6-3.18 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Progesterone (Female, On OCP)",
+    "normal_range": "0.34-0.92 ng/mL",
+    "units": "ng/mL",
+    "si_range": "1.1-2.9 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Prolactin (Male)",
+    "normal_range": "<15 ng/mL",
+    "units": "ng/mL",
+    "si_range": "15 µg/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Prolactin (Female)",
+    "normal_range": "<20 ng/mL",
+    "units": "ng/mL",
+    "si_range": "20 µg/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Testosterone, Total (Male, Adult)",
+    "normal_range": "300-1200 ng/dL",
+    "units": "ng/dL",
+    "si_range": "10-42 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Testosterone, Total (Female)",
+    "normal_range": "20-75 ng/dL",
+    "units": "ng/dL",
+    "si_range": "0.7-2.6 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Thyroid I-131 Uptake",
+    "normal_range": "10%-30% at 24h",
+    "units": "% of dose",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "TSH",
+    "normal_range": "0.5-5.0 µU/mL",
+    "units": "µU/mL",
+    "si_range": "0.5-5.0 mU/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "T4, Total",
+    "normal_range": "5-12 µg/dL",
+    "units": "µg/dL",
+    "si_range": "64-155 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "T4, Free",
+    "normal_range": "0.9-2.4 ng/dL",
+    "units": "ng/dL",
+    "si_range": "12-31 pmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Free T4 Index",
+    "normal_range": "4-11",
+    "units": null,
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "T3, Total",
+    "normal_range": "70-195 ng/dL",
+    "units": "ng/dL",
+    "si_range": "1.1-3.0 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "T3, Free",
+    "normal_range": "3.6-5.6 ng/L",
+    "units": "ng/L",
+    "si_range": "5.6-8.6 pmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Vitamin D, 1,25-dihydroxy",
+    "normal_range": "25-65 pg/mL",
+    "units": "pg/mL",
+    "si_range": "60-156 pmol/L",
+    "notes": null
+  },
+  {
+    "category": "Endocrine",
+    "test_name": "Vitamin D, 25-hydroxy",
+    "normal_range": "31-80 ng/mL",
+    "units": "ng/mL",
+    "si_range": "77-200 nmol/L",
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "Absolute Neutrophil Count",
+    "normal_range": ">1500/μL",
+    "units": "/μL",
+    "si_range": "1.50 × 10⁹/L",
+    "notes": null
+  },
+  {
+    "category": "Coagulation",
+    "test_name": "aPTT (Activated Partial Thromboplastin Time)",
+    "normal_range": "25-35 s",
+    "units": "s",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Coagulation",
+    "test_name": "D-dimer",
+    "normal_range": "<0.5 µg/mL",
+    "units": "µg/mL",
+    "si_range": "0.5 mg/L",
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "Erythrocyte Count (RBC)",
+    "normal_range": "4.2-5.9 × 10⁶/µL",
+    "units": "× 10⁶/µL",
+    "si_range": "4.2-5.9 × 10¹²/L",
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "ESR (Male)",
+    "normal_range": "0-15 mm/h",
+    "units": "mm/h",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "ESR (Female)",
+    "normal_range": "0-20 mm/h",
+    "units": "mm/h",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "Erythropoietin",
+    "normal_range": "5-36 mU/mL",
+    "units": "mU/mL",
+    "si_range": "5-36 U/L",
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "Haptoglobin",
+    "normal_range": "50-150 mg/dL",
+    "units": "mg/dL",
+    "si_range": "500-1500 mg/L",
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "Hematocrit (Male)",
+    "normal_range": "41%-51%",
+    "units": "%",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "Hematocrit (Female)",
+    "normal_range": "36%-47%",
+    "units": "%",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "Hemoglobin (Male)",
+    "normal_range": "14-17 g/dL",
+    "units": "g/dL",
+    "si_range": "140-170 g/L",
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "Hemoglobin (Female)",
+    "normal_range": "12-16 g/dL",
+    "units": "g/dL",
+    "si_range": "120-160 g/L",
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "WBC (Leukocyte Count)",
+    "normal_range": "4000-10,000/µL",
+    "units": "/µL",
+    "si_range": "4.0-10 × 10⁹/L",
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "MCH (Mean Corpuscular Hemoglobin)",
+    "normal_range": "28-32 pg",
+    "units": "pg",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "MCHC (Mean Corpuscular Hemoglobin Concentration)",
+    "normal_range": "32-36 g/dL",
+    "units": "g/dL",
+    "si_range": "320-360 g/L",
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "MCV (Mean Corpuscular Volume)",
+    "normal_range": "80-100 fL",
+    "units": "fL",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "Platelet Count",
+    "normal_range": "150,000-450,000/µL",
+    "units": "/µL",
+    "si_range": "150-450 × 10⁹/L",
+    "notes": null
+  },
+  {
+    "category": "Coagulation",
+    "test_name": "PT (Prothrombin Time)",
+    "normal_range": "11-13 s",
+    "units": "s",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hematology",
+    "test_name": "Reticulocyte Count",
+    "normal_range": "0.5%-1.5% of RBCs",
+    "units": "%",
+    "si_range": "23,000-90,000/µL (23-90 × 10⁹/L)",
+    "notes": null
+  },
+  {
+    "category": "Urine",
+    "test_name": "Albumin-Creatinine Ratio",
+    "normal_range": "<30 mg/g",
+    "units": "mg/g",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Urine",
+    "test_name": "Calcium, 24h",
+    "normal_range": "100-300 mg/24h",
+    "units": "mg/24h",
+    "si_range": "2.5-7.5 mmol/24h",
+    "notes": "Unrestricted diet"
+  },
+  {
+    "category": "Urine",
+    "test_name": "Creatinine, 24h",
+    "normal_range": "15-25 mg/kg/24h",
+    "units": "mg/kg/24h",
+    "si_range": "133-221 mmol/kg/24h",
+    "notes": null
+  },
+  {
+    "category": "Urine",
+    "test_name": "GFR (Stage G1)",
+    "normal_range": "≥90 mL/min/1.73m²",
+    "units": "mL/min/1.73m²",
+    "si_range": null,
+    "notes": "KDIGO category"
+  },
+  {
+    "category": "Urine",
+    "test_name": "GFR (Stage G2)",
+    "normal_range": "60-89 mL/min/1.73m²",
+    "units": "mL/min/1.73m²",
+    "si_range": null,
+    "notes": "KDIGO category"
+  },
+  {
+    "category": "Urine",
+    "test_name": "GFR (Stage G3a)",
+    "normal_range": "45-59 mL/min/1.73m²",
+    "units": "mL/min/1.73m²",
+    "si_range": null,
+    "notes": "KDIGO category"
+  },
+  {
+    "category": "Urine",
+    "test_name": "GFR (Stage G3b)",
+    "normal_range": "30-44 mL/min/1.73m²",
+    "units": "mL/min/1.73m²",
+    "si_range": null,
+    "notes": "KDIGO category"
+  },
+  {
+    "category": "Urine",
+    "test_name": "GFR (Stage G4)",
+    "normal_range": "15-29 mL/min/1.73m²",
+    "units": "mL/min/1.73m²",
+    "si_range": null,
+    "notes": "KDIGO category"
+  },
+  {
+    "category": "Urine",
+    "test_name": "GFR (Stage G5)",
+    "normal_range": "<15 mL/min/1.73m²",
+    "units": "mL/min/1.73m²",
+    "si_range": null,
+    "notes": "KDIGO category"
+  },
+  {
+    "category": "Urine",
+    "test_name": "Protein-Creatinine Ratio",
+    "normal_range": "≤150 mg/g",
+    "units": "mg/g",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Urine",
+    "test_name": "Uric Acid, 24h",
+    "normal_range": "250-750 mg/24h",
+    "units": "mg/24h",
+    "si_range": "1.48-4.43 mmol/24h",
+    "notes": "Varies with diet"
+  },
+  {
+    "category": "Pulmonary",
+    "test_name": "FEV1 (Forced Expiratory Volume in 1s)",
+    "normal_range": ">80% of predicted",
+    "units": "% predicted",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Pulmonary",
+    "test_name": "FVC (Forced Vital Capacity)",
+    "normal_range": ">80% of predicted",
+    "units": "% predicted",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Pulmonary",
+    "test_name": "FEV1/FVC Ratio",
+    "normal_range": ">0.70",
+    "units": "ratio",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "CSF",
+    "test_name": "CSF Cell Count",
+    "normal_range": "0-5/µL",
+    "units": "/µL",
+    "si_range": "0-5 × 10⁶/L",
+    "notes": null
+  },
+  {
+    "category": "CSF",
+    "test_name": "CSF Glucose",
+    "normal_range": "40-80 mg/dL",
+    "units": "mg/dL",
+    "si_range": "2.2-4.4 mmol/L",
+    "notes": "<40% of plasma is abnormal"
+  },
+  {
+    "category": "CSF",
+    "test_name": "CSF Opening Pressure",
+    "normal_range": "70-200 mm H2O",
+    "units": "mm H2O",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "CSF",
+    "test_name": "CSF Protein",
+    "normal_range": "15-60 mg/dL",
+    "units": "mg/dL",
+    "si_range": "150-600 mg/L",
+    "notes": null
+  },
+  {
+    "category": "Hemodynamic",
+    "test_name": "Cardiac Index",
+    "normal_range": "2.5-4.2 L/min/m²",
+    "units": "L/min/m²",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hemodynamic",
+    "test_name": "Left Ventricular Ejection Fraction",
+    "normal_range": ">55%",
+    "units": "%",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hemodynamic",
+    "test_name": "Pulmonary Artery Pressure (Systolic)",
+    "normal_range": "20-25 mm Hg",
+    "units": "mm Hg",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hemodynamic",
+    "test_name": "Pulmonary Artery Pressure (Diastolic)",
+    "normal_range": "5-10 mm Hg",
+    "units": "mm Hg",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hemodynamic",
+    "test_name": "Pulmonary Artery Pressure (Mean)",
+    "normal_range": "9-16 mm Hg",
+    "units": "mm Hg",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hemodynamic",
+    "test_name": "Pulmonary Capillary Wedge Pressure",
+    "normal_range": "6-12 mm Hg",
+    "units": "mm Hg",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hemodynamic",
+    "test_name": "Right Atrium Pressure (Mean)",
+    "normal_range": "0-5 mm Hg",
+    "units": "mm Hg",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hemodynamic",
+    "test_name": "Right Ventricle Pressure (Systolic)",
+    "normal_range": "20-25 mm Hg",
+    "units": "mm Hg",
+    "si_range": null,
+    "notes": null
+  },
+  {
+    "category": "Hemodynamic",
+    "test_name": "Right Ventricle Pressure (Diastolic)",
+    "normal_range": "0-5 mm Hg",
+    "units": "mm Hg",
+    "si_range": null,
+    "notes": null
+  }
+]

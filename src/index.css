@@ -198,16 +198,6 @@
     line-height: 1.4;
   }
 
-  /* Reset paragraph margins inside table cells - MKSAP wraps cell content in <p> tags
-     which inherit prose typography margins, causing large gaps between rows */
-  .prose table td p,
-  .prose table th p,
-  .prose table caption p {
-    margin: 0;
-    padding: 0;
-    line-height: inherit;
-  }
-
   /* Lab Values Table Styling */
   .lab-values-table {
     @apply w-full border-collapse my-4 bg-muted/30 rounded-lg overflow-hidden;
@@ -269,4 +259,30 @@
   .prose thead {
     display: table-header-group !important;
   }
+}
+
+/* CRITICAL: Table cell paragraph reset - placed OUTSIDE @layer for maximum specificity.
+   MKSAP HTML wraps table cell content in <p class="cell"> tags which inherit prose
+   typography margins, causing large gaps between table rows. */
+.prose table td p,
+.prose table th p,
+.prose table caption p,
+table.lab-values td p,
+table.lab-values th p,
+table.lab-values caption p {
+  margin: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+  line-height: 1.4 !important;
+}
+
+/* Hide broken MKSAP SVG icons - they reference symbols (#svg-lab, etc.) that don't exist
+   in our app, causing them to render as large empty placeholders (default SVG size ~300x150) */
+.prose table svg,
+.prose table .svg-icon,
+table.lab-values svg,
+table.lab-values .svg-icon,
+.prose .reference-link svg {
+  display: none !important;
 }

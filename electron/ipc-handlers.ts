@@ -47,6 +47,8 @@ import {
   SearchResult,
   CardBrowserFilters,
   CardBrowserSort,
+  referenceRangeQueries,
+  ReferenceRange,
 } from "./database";
 import {
   scheduleReview,
@@ -1039,7 +1041,9 @@ export function registerIpcHandlers(): void {
         let existingContent: BoardQuestionContent | null = null;
         try {
           if (item.rawContent) {
-            existingContent = JSON.parse(item.rawContent) as BoardQuestionContent;
+            existingContent = JSON.parse(
+              item.rawContent
+            ) as BoardQuestionContent;
           }
         } catch (e) {
           console.warn("[Reparse] Could not parse existing rawContent:", e);
@@ -1356,9 +1360,7 @@ export function registerIpcHandlers(): void {
 
             // Restore from backup
             if (reextractBackupFile && dbPath) {
-              console.log(
-                `[IPC] Restoring backup: ${reextractBackupFile}`
-              );
+              console.log(`[IPC] Restoring backup: ${reextractBackupFile}`);
               const backupPath = path.join(
                 getBackupsDir(),
                 reextractBackupFile
@@ -1391,12 +1393,16 @@ export function registerIpcHandlers(): void {
               });
               succeeded++;
               console.log(
-                `[IPC] ✅ [${i + 1}/${items.length}] Extracted: "${extracted.summary}"`
+                `[IPC] ✅ [${i + 1}/${items.length}] Extracted: "${
+                  extracted.summary
+                }"`
               );
             } else {
               failed++;
               console.log(
-                `[IPC] ⚠️ [${i + 1}/${items.length}] No extraction result for ${item.id}`
+                `[IPC] ⚠️ [${i + 1}/${items.length}] No extraction result for ${
+                  item.id
+                }`
               );
             }
           } catch (err) {
@@ -2181,6 +2187,54 @@ export function registerIpcHandlers(): void {
     async (): Promise<IpcResult<string>> => {
       try {
         return success(app.getPath("userData"));
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // ============================================================================
+  // Reference Ranges
+  // ============================================================================
+
+  ipcMain.handle(
+    "reference-ranges:getAll",
+    async (): Promise<IpcResult<ReferenceRange[]>> => {
+      try {
+        return success(referenceRangeQueries.getAll());
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "reference-ranges:search",
+    async (_event, query: string): Promise<IpcResult<ReferenceRange[]>> => {
+      try {
+        return success(referenceRangeQueries.search(query));
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "reference-ranges:getByCategory",
+    async (_event, category: string): Promise<IpcResult<ReferenceRange[]>> => {
+      try {
+        return success(referenceRangeQueries.getByCategory(category));
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "reference-ranges:getCategories",
+    async (): Promise<IpcResult<string[]>> => {
+      try {
+        return success(referenceRangeQueries.getCategories());
       } catch (error) {
         return failure(error);
       }

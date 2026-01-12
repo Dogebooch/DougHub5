@@ -68,6 +68,13 @@ export {
   invalidateAcronymCache,
   seedMedicalAcronymsFromLocalFile,
 } from "./database/medical-acronyms";
+export {
+  referenceRangeQueries,
+  getReferenceRangeCache,
+  invalidateReferenceRangeCache,
+  seedReferenceRangesFromLocalFile,
+} from "./database/reference-ranges";
+export type { ReferenceRange } from "./database/reference-ranges";
 export { searchQueries } from "./database/search";
 export { settingsQueries } from "./database/settings";
 export { getDatabaseStatus } from "./database/status";

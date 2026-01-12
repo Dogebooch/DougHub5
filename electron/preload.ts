@@ -74,8 +74,9 @@ const api = {
     purgeRawPages: () => ipcRenderer.invoke("sourceItems:purgeRawPages"),
     reparseFromRaw: (sourceItemId: string) =>
       ipcRenderer.invoke("sourceItems:reparseFromRaw", sourceItemId),
-    reparseAllFromRaw: (options?: { siteName?: "MKSAP 19" | "ACEP PeerPrep" }) =>
-      ipcRenderer.invoke("sourceItems:reparseAllFromRaw", options),
+    reparseAllFromRaw: (options?: {
+      siteName?: "MKSAP 19" | "ACEP PeerPrep";
+    }) => ipcRenderer.invoke("sourceItems:reparseAllFromRaw", options),
     onReparseProgress: (
       callback: (progress: {
         current: number;
@@ -132,8 +133,7 @@ const api = {
           handler
         );
     },
-    cancelReextract: () =>
-      ipcRenderer.invoke("sourceItems:cancelReextract"),
+    cancelReextract: () => ipcRenderer.invoke("sourceItems:cancelReextract"),
     onNew: (callback: (item: unknown) => void) => {
       const handler = (_event: Electron.IpcRendererEvent, item: unknown) =>
         callback(item);
@@ -144,7 +144,11 @@ const api = {
       callback: (payload: {
         sourceItemId: string;
         status: "started" | "completed" | "failed";
-        metadata?: { summary?: string; subject?: string; questionType?: string };
+        metadata?: {
+          summary?: string;
+          subject?: string;
+          questionType?: string;
+        };
       }) => void
     ) => {
       const handler = (
@@ -152,7 +156,11 @@ const api = {
         payload: {
           sourceItemId: string;
           status: "started" | "completed" | "failed";
-          metadata?: { summary?: string; subject?: string; questionType?: string };
+          metadata?: {
+            summary?: string;
+            subject?: string;
+            questionType?: string;
+          };
         }
       ) => callback(payload);
       ipcRenderer.on("sourceItems:aiExtraction", handler);
@@ -298,6 +306,14 @@ const api = {
   },
   app: {
     getUserDataPath: () => ipcRenderer.invoke("app:getUserDataPath"),
+  },
+  referenceRanges: {
+    getAll: () => ipcRenderer.invoke("reference-ranges:getAll"),
+    search: (query: string) =>
+      ipcRenderer.invoke("reference-ranges:search", query),
+    getByCategory: (category: string) =>
+      ipcRenderer.invoke("reference-ranges:getByCategory", category),
+    getCategories: () => ipcRenderer.invoke("reference-ranges:getCategories"),
   },
   reloadApp: () => ipcRenderer.invoke("app:reload"),
 };

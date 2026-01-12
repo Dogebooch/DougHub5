@@ -21,6 +21,7 @@ import type {
   SearchResult,
   WeakTopicSummary,
   CardBrowserItem,
+  ReferenceRange,
 } from "./index";
 import type {
   AIProviderStatus,
@@ -70,6 +71,7 @@ export type {
   SmartView,
   SearchFilter,
   SearchResult,
+  ReferenceRange,
 };
 
 // Re-export AI types
@@ -218,7 +220,11 @@ export interface ElectronAPI {
       callback: (payload: {
         sourceItemId: string;
         status: "started" | "completed" | "failed";
-        metadata?: { summary?: string; subject?: string; questionType?: string };
+        metadata?: {
+          summary?: string;
+          subject?: string;
+          questionType?: string;
+        };
       }) => void
     ) => () => void;
   };
@@ -343,6 +349,12 @@ export interface ElectronAPI {
   };
   db: {
     getPath: () => Promise<IpcResult<string>>;
+  };
+  referenceRanges: {
+    getAll: () => Promise<IpcResult<ReferenceRange[]>>;
+    search: (query: string) => Promise<IpcResult<ReferenceRange[]>>;
+    getByCategory: (category: string) => Promise<IpcResult<ReferenceRange[]>>;
+    getCategories: () => Promise<IpcResult<string[]>>;
   };
   reloadApp: () => Promise<void>;
 }

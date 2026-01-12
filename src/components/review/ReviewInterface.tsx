@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   Circle,
   CheckCircle2,
+  FlaskConical,
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { Rating } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { ClozeDisplay, ClozeAnswer } from "@/lib/cloze-renderer";
 import { MistakesReviewModal } from "./MistakesReviewModal";
+import { ReferenceRangesSheet } from "./ReferenceRangesSheet";
 import { getWindowApi } from "@/lib/safeWindowApi";
 
 const CONTINUE_LOCKOUT_MS = 400; // Prevent accidental double-taps
@@ -40,6 +42,9 @@ export function ReviewInterface() {
   const [mistakeCards, setMistakeCards] = useState<
     { cardId: string; responseTimeMs: number | null }[]
   >([]);
+
+  // Reference Ranges Sheet
+  const [showReferenceRanges, setShowReferenceRanges] = useState(false);
 
   // Task 5.6: Feedback state
   const [showingFeedback, setShowingFeedback] = useState(false);
@@ -363,6 +368,9 @@ export function ReviewInterface() {
         currentCard?.notebookTopicPageId
       ) {
         setCurrentView("notebook", currentCard.notebookTopicPageId);
+      } else if (e.key === "R" && e.shiftKey) {
+        e.preventDefault();
+        setShowReferenceRanges((prev) => !prev);
       }
     };
 
@@ -733,6 +741,24 @@ export function ReviewInterface() {
           Back to Inbox
         </button>
       </div>
+
+      {/* Reference Ranges Button */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setShowReferenceRanges(true)}
+        className="fixed bottom-6 right-6 h-11 shadow-lg hover:shadow-xl transition-all"
+        title="Reference Ranges (Shift+R)"
+      >
+        <FlaskConical className="h-4 w-4 mr-2" />
+        Ref Ranges
+      </Button>
+
+      {/* Reference Ranges Sheet */}
+      <ReferenceRangesSheet
+        open={showReferenceRanges}
+        onOpenChange={setShowReferenceRanges}
+      />
 
       {showMistakesModal && (
         <MistakesReviewModal

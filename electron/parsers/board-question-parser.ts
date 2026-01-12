@@ -842,7 +842,7 @@ function parseMKSAP(
   if (objectiveEl.length) {
     const objectiveText = objectiveEl.text().trim();
     if (objectiveText && !explanationHtml.includes(objectiveText)) {
-      explanationHtml = `<div class="p-3 bg-primary/5 rounded-lg border border-primary/10 mb-4 font-medium text-sm text-primary"><strong>Objective:</strong> ${objectiveText}</div>${explanationHtml}`;
+      explanationHtml = `<p class="font-medium text-sm text-primary">${objectiveText}</p>${explanationHtml}`;
     }
   }
 

@@ -9,6 +9,7 @@ import { createInitialSchema } from "./schema";
 import { runMigrations } from "./migrations";
 import { seedSystemSmartViews } from "./smart-views";
 import { seedMedicalAcronymsFromLocalFile } from "./medical-acronyms";
+import { seedReferenceRangesFromLocalFile } from "./reference-ranges";
 
 export function initDatabase(dbPath: string): Database.Database {
   const db = initializeConnection(dbPath);
@@ -26,6 +27,9 @@ export function initDatabase(dbPath: string): Database.Database {
   }
   if (updatedVersion >= 5) {
     seedMedicalAcronymsFromLocalFile();
+  }
+  if (updatedVersion >= 15) {
+    seedReferenceRangesFromLocalFile();
   }
   return db;
 }
