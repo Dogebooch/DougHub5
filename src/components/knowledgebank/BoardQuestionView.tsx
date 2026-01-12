@@ -278,7 +278,8 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
       | "explanation"
       | "keypoint"
       | "references"
-      | "peerpearls"
+      | "peerpearls",
+    size: "small" | "large" = "small"
   ) => {
     const sectionImages = content.images.filter(
       (img) => img.location === location
@@ -286,13 +287,24 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     if (sectionImages.length === 0) return null;
 
     return (
-      <div className="mt-4 flex flex-wrap gap-4 items-start">
+      <div
+        className={cn(
+          "mt-4 flex flex-wrap gap-4 items-start",
+          size === "large" ? "flex-col" : "flex-row"
+        )}
+      >
         {sectionImages.map((img, idx) => {
           const imagePath = getImagePath(img.localPath);
           return (
-            <div key={idx} className="flex flex-col items-center max-w-[30%]">
+            <div
+              key={idx}
+              className={cn(
+                "flex flex-col items-center",
+                size === "large" ? "w-full max-w-2xl" : "max-w-[30%]"
+              )}
+            >
               <div
-                className="relative group cursor-zoom-in"
+                className="relative group cursor-zoom-in w-full"
                 onClick={() =>
                   setZoomedImage({ url: imagePath, caption: img.caption })
                 }
@@ -300,7 +312,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 <img
                   src={imagePath}
                   alt={img.caption || `Image ${idx + 1}`}
-                  className="w-full h-auto rounded-md shadow-sm border border-border transition-transform hover:scale-[1.02]"
+                  className="w-full h-auto rounded-md shadow-sm border border-border transition-transform hover:scale-[1.01]"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center rounded-md">
                   <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6" />
@@ -636,7 +648,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                         }}
                       />
                     </div>
-                    {renderImages("peerpearls")}
+                    {renderImages("peerpearls", "large")}
                   </div>
                 </CollapsibleContent>
               </div>

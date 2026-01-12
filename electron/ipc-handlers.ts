@@ -125,18 +125,16 @@ function normalizeUrl(urlStr: string): string {
     ];
     trackingParams.forEach((param) => url.searchParams.delete(param));
 
-    let normalized = url.origin + url.pathname.toLowerCase();
-    // Remove trailing slash if not just the root
-    if (normalized.endsWith("/") && normalized.length > url.origin.length + 1) {
-      normalized = normalized.slice(0, -1);
-    }
-    return normalized;
+    // For medical Q-Banks, we MUST keep query params because they often 
+    // contain the question ID or state. We only strip tracking params.
+    // We also keep the hash if it exists, as some SPAs use it for routing.
+    
+    // Sort query params for consistent normalization
+    url.searchParams.sort();
+    
+    return url.toString().toLowerCase().trim();
   } catch {
-    let normalized = urlStr.toLowerCase().trim();
-    if (normalized.endsWith("/") && normalized.length > 1) {
-      normalized = normalized.slice(0, -1);
-    }
-    return normalized;
+    return urlStr.toLowerCase().trim();
   }
 }
 
@@ -190,19 +188,17 @@ export async function processCapture(
         });
       }
 
-      // 3. Check for duplicate by URL
-      // Use optimized getByUrl first for exact matches, then fallback to normalized search
-      // Try exact match first (O(1))
-      let existing = sourceItemQueries.getByUrl(payload.url);
+      // 3. Check for duplicate by Question ID or URL
+      let existing: DbSourceItem | null = null;
 
-      // If no exact match, search all for normalized match
+      // Try specific question ID first if parser found one
+      if (content.questionId) {
+        existing = sourceItemQueries.getByQuestionId(content.questionId);
+      }
+
+      // If no ID match, try exact URL match
       if (!existing) {
-        const existingItems = sourceItemQueries.getAll();
-        existing =
-          existingItems.find((item) => {
-            if (item.sourceType !== "qbank" || !item.sourceUrl) return false;
-            return normalizeUrl(item.sourceUrl) === normalizedUrl;
-          }) || null;
+        existing = sourceItemQueries.getByUrl(payload.url);
       }
 
       let resultId: string;
@@ -243,6 +239,7 @@ export async function processCapture(
 
         sourceItemQueries.update(existing.id, {
           rawContent: JSON.stringify(mergedContent),
+          questionId: content.questionId || existing.questionId,
           updatedAt: new Date().toISOString(),
           // status: existing.status // Keep existing status (could be 'processed' or 'curated')
         });
@@ -258,6 +255,7 @@ export async function processCapture(
           sourceType: "qbank",
           sourceName: payload.siteName,
           sourceUrl: payload.url, // Store original URL
+          questionId: content.questionId,
           rawContent: JSON.stringify(content),
           status: "inbox",
           createdAt: now,

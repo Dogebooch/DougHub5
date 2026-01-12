@@ -1706,6 +1706,14 @@ export const sourceItemQueries = {
     return row ? parseSourceItemRow(row) : null;
   },
 
+  getByQuestionId(questionId: string): DbSourceItem | null {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM source_items WHERE questionId = ?"
+    );
+    const row = stmt.get(questionId) as SourceItemRow | undefined;
+    return row ? parseSourceItemRow(row) : null;
+  },
+
   insert(item: DbSourceItem): void {
     const stmt = getDatabase().prepare(`
       INSERT INTO source_items (

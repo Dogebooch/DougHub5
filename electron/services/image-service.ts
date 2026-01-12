@@ -134,6 +134,7 @@ export async function downloadBoardQuestionImages(
     url: string;
     location:
       | "vignette"
+      | "question"
       | "explanation"
       | "keypoint"
       | "references"
@@ -144,6 +145,7 @@ export async function downloadBoardQuestionImages(
     localPath: string;
     location:
       | "vignette"
+      | "question"
       | "explanation"
       | "keypoint"
       | "references"
@@ -168,6 +170,7 @@ export async function downloadBoardQuestionImages(
     localPath: string;
     location:
       | "vignette"
+      | "question"
       | "explanation"
       | "keypoint"
       | "references"
