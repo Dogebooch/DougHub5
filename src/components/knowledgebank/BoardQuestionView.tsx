@@ -470,7 +470,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
 
           {/* Question Stem Section */}
           <div className="p-6 bg-primary/5 border-y border-primary/10">
-            <span className="text-[10px] font-bold text-primary/70 tracking-widest uppercase block mb-3">
+            <span className="text-[10px] font-bold text-card-foreground tracking-widest uppercase block mb-3">
               Clinical Question
             </span>
             <div
