@@ -233,11 +233,29 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
       });
     });
 
-    // Separate a leading "Key Takeaway" if there's notable text before the first header/choice marker
+    // Detect answer choice subheadings (PeerPrep-style): short lines followed by explanation paragraphs
+    // Pattern: <p> with short text (no period, under 60 chars) followed by <p> with longer text
+    // Examples: "Heated refrigerator chemicals", "Swimming pool maintenance agents"
+    html = html.replace(
+      /<p([^>]*)>([^<]{10,60})<\/p>\s*<p/gi,
+      (match, attrs, text) => {
+        const trimmed = text.trim();
+        // Only style as subheading if it looks like a title (no period at end, reasonably short)
+        if (trimmed && !trimmed.endsWith('.') && !trimmed.endsWith('?') && !trimmed.endsWith('!') && trimmed.length < 60) {
+          return `<div class="mt-8 pt-6 border-t border-card-muted/15 first:mt-0 first:pt-0 first:border-t-0">
+            <p class="!my-2 font-semibold text-card-foreground">${trimmed}</p>
+          </div>
+          <p`;
+        }
+        return match;
+      }
+    );
+
+    // Separate a leading "Key Takeaway" if there's notable text before the first header/choice marker/subheading
     const markerPattern = new RegExp(
       `(?:\\b(?:Option|Choice|Answer)\\s+[A-F]|\\([A-F]\\))|(?:${sectionHeaders
         .map((h) => h.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&"))
-        .join("|")})`,
+        .join("|")})|(?:border-t border-card-muted)`,
       "i"
     );
     const firstMarkerIndex = html.search(markerPattern);
@@ -245,39 +263,20 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
       const takeaway = html.slice(0, firstMarkerIndex);
       const rest = html.slice(firstMarkerIndex);
       html = `
-        <div class="mb-10 p-5 bg-primary/8 border-l-4 border-primary/40 rounded-r-lg shadow-sm">
-          <div class="flex items-center gap-2 mb-3">
-            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-            </svg>
-            <div class="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Key Takeaway</div>
-          </div>
-          <div class="text-[15px] leading-relaxed font-medium text-card-foreground/95">${takeaway}</div>
+        <div class="mb-8 p-5 bg-primary/5 border-l-4 border-primary/30 rounded-r-lg">
+          <div class="text-[15px] leading-relaxed text-card-foreground">${takeaway}</div>
         </div>
         ${rest}`;
     }
 
-    // Style Answer Choice references as clear delimiters for per-answer explanations
+    // Style Answer Choice references as bold inline text (clean, MKSAP-style)
     const choiceRegex =
       /(<[^>]+>)|(\b(?:Option|Choice|Answer)\s+([A-F])\b|\(([A-F])\)(?=\s|\.|,|$))/gi;
-    let seenFirstChoice = false;
     html = html.replace(choiceRegex, (match, tag, _full, letter1, letter2) => {
       if (tag) return tag;
       const letter = (letter1 || letter2 || "").toUpperCase();
-      const spacingClass = seenFirstChoice
-        ? "mt-8 pt-8 border-t border-card-muted/15"
-        : "mt-4";
-      seenFirstChoice = true;
-      return `
-          <div class="${spacingClass} mb-4">
-            <div class="flex items-center gap-3">
-              <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/15 text-primary font-black text-sm border-2 border-primary/30 shadow-sm">${letter}</div>
-              <div>
-                <div class="text-xs font-extrabold text-card-foreground/80 uppercase tracking-wider leading-none">Option ${letter}</div>
-                <div class="text-[10px] text-card-muted uppercase tracking-widest mt-0.5">Explanation</div>
-              </div>
-            </div>
-          </div>`;
+      // Simple bold inline reference like MKSAP uses
+      return `<strong class="text-primary font-bold">(Option ${letter})</strong>`;
     });
 
     return html;
@@ -675,7 +674,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 <div className="px-4 pb-6">
                   <div className="rounded-xl bg-card border border-border/50 overflow-hidden">
                     <div
-                      className="px-8 py-6 prose prose-sm max-w-none leading-relaxed prose-p:my-4 prose-p:text-card-foreground prose-p:leading-loose prose-strong:text-primary prose-strong:font-bold prose-headings:text-card-foreground prose-headings:font-bold prose-li:text-card-foreground prose-li:my-2 prose-b:text-card-foreground prose-a:text-primary prose-ul:my-4 prose-ol:my-4"
+                      className="px-8 py-6 prose prose-sm max-w-none leading-relaxed prose-p:my-6 prose-p:text-card-foreground prose-p:leading-[1.8] prose-strong:text-primary prose-strong:font-bold prose-headings:text-card-foreground prose-headings:font-bold prose-li:text-card-foreground prose-li:my-2 prose-b:text-card-foreground prose-a:text-primary prose-ul:my-5 prose-ol:my-5"
                       dangerouslySetInnerHTML={{
                         __html: processedExplanation,
                       }}
