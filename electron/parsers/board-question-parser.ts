@@ -70,6 +70,7 @@ export function parseBoardQuestion(
 
 /**
  * Helper to extract HTML from a section based on potential header text or class names.
+ * Enhanced to handle tab-based UIs common in PeerPrep and MKSAP.
  */
 function getSectionHtml(
   $: any,
@@ -82,18 +83,60 @@ function getSectionHtml(
     if (html && html.trim().length > 0) return html;
   }
 
-  // Then try searching by header text
+  // Then try searching by header text (including tab buttons)
   let foundHtml: string | undefined = undefined;
 
-  // Look for headings or spans containing the search title
-  $(":header, span, b, strong").each((_: number, el: any) => {
+  // Look for tab buttons, headings, or spans containing the search title
+  $(":header, span, b, strong, a, button, [role='tab']").each((_: number, el: any) => {
     const $el = $(el);
     const text = $el.text().trim().toLowerCase();
     if (text.includes(searchTitle.toLowerCase())) {
-      // Often the content is in the next sibling or a parent's next sibling
-      // This is a bit heuristic but common in qbank sites
-      const content = $el.next().html() || $el.parent().next().html();
-      if (content && content.trim().length > 10) {
+      // For tab-based UIs, check aria-controls or data-target attributes
+      const ariaControls = $el.attr('aria-controls');
+      const dataTarget = $el.attr('data-target') || $el.attr('href');
+      
+      if (ariaControls) {
+        // Tab panel referenced by aria-controls
+        const tabContent = $(`#${ariaControls}`).html();
+        if (tabContent && tabContent.trim().length > 0) {
+          foundHtml = tabContent;
+          return false; // break loop
+        }
+      }
+      
+      if (dataTarget) {
+        // Tab panel referenced by data-target or href
+        const targetId = dataTarget.replace(/^#/, '');
+        const tabContent = $(`#${targetId}`).html();
+        if (tabContent && tabContent.trim().length > 0) {
+          foundHtml = tabContent;
+          return false; // break loop
+        }
+      }
+      
+      // Fallback: Look for associated tab panel in common structures
+      // 1. Next sibling that's a tab-pane or tab-content
+      let content = $el.next('.tab-pane, .tab-content, [role="tabpanel"]').html();
+      
+      // 2. Parent's next sibling (common in nested tab structures)
+      if (!content) {
+        content = $el.parent().next('.tab-pane, .tab-content, [role="tabpanel"]').html();
+      }
+      
+      // 3. Any next sibling with substantial content
+      if (!content) {
+        content = $el.next().html() || $el.parent().next().html();
+      }
+      
+      // 4. Look for tab content container that follows the tab header section
+      if (!content) {
+        const $tabHeader = $el.closest('.nav-tabs, .tab-list, [role="tablist"]');
+        if ($tabHeader.length) {
+          content = $tabHeader.next('.tab-content, .tab-pane').html();
+        }
+      }
+      
+      if (content && content.trim().length > 0) {
         foundHtml = content;
         return false; // break loop
       }
@@ -234,26 +277,53 @@ function parsePeerPrep(
     lastP.remove();
     cleanedVignetteHtml = vignetteEl.html() || vignetteHtml;
   }
+  // PeerPrep uses "Reasoning" tab, MKSAP may use "Explanation"
   const explanationHtml =
+    getSectionHtml($, "Reasoning", [
+      ".feedbackTab",
+      ".feedback-content",
+      "#feedbackTab",
+      "#reasoning",
+      ".tab-pane.reasoning",
+      "[role='tabpanel'][id*='reasoning']",
+    ]) ||
     getSectionHtml($, "Explanation", [
       ".feedbackTab",
       ".feedback-content",
       "#feedbackTab",
-    ]) || "";
-  const keyPointsHtml = getSectionHtml($, "Key Point", [
-    ".keyPointsTab",
-    ".key-points",
-    "#keyPointsTab",
-  ]);
+      "#explanation",
+      ".tab-pane.explanation",
+    ]) ||
+    "";
+  // PeerPrep may use "Related Text / Key Point" or variations
+  const keyPointsHtml =
+    getSectionHtml($, "Related Text", [
+      ".keyPointsTab",
+      ".key-points",
+      "#keyPointsTab",
+      "#related-text",
+      ".tab-pane.key-point",
+    ]) ||
+    getSectionHtml($, "Key Point", [
+      ".keyPointsTab",
+      ".key-points",
+      "#keyPointsTab",
+    ]);
   const referencesHtml = getSectionHtml($, "References", [
     ".referencesTab",
     ".references",
     "#referencesTab",
+    "#references",
+    ".tab-pane.references",
+    "[role='tabpanel'][id*='references']",
   ]);
   const peerPearlsHtml = getSectionHtml($, "PEER Pearl", [
     ".peerPearlsTab",
     ".peer-pearls",
     "#peerPearlsTab",
+    "#peer-pearls",
+    ".tab-pane.peer-pearls",
+    "[role='tabpanel'][id*='peer']",
   ]);
 
   const images: QuestionImage[] = [];
