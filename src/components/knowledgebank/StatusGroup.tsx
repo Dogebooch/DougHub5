@@ -79,7 +79,7 @@ export const StatusGroup = ({
           </Badge>
         </div>
       </CollapsibleTrigger>
-      <CollapsibleContent>
+      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
         <div className="flex flex-col bg-card divide-y divide-border/30">
           {children}
         </div>

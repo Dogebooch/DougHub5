@@ -460,6 +460,34 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                     />
                   </Badge>
                 </CollapsibleTrigger>
+                <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+                  <div className="mt-3 p-3 bg-muted/50 rounded-md border border-border text-xs space-y-2">
+                    <h4 className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">
+                      Attempt History
+                    </h4>
+                    {[...content.attempts].reverse().map((attempt, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between border-b border-border/50 pb-1 last:border-0 last:pb-0"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">
+                            Attempt {attempt.attemptNumber}
+                          </span>
+                          <span className="text-muted-foreground">•</span>
+                          <span>{formatDate(attempt.date)}</span>
+                          <span className="text-muted-foreground">•</span>
+                          <span>Chose {attempt.chosenAnswer}</span>
+                        </div>
+                        {attempt.wasCorrect ? (
+                          <CheckCircle2 className="w-3 h-3 text-success" />
+                        ) : (
+                          <XCircle className="w-3 h-3 text-destructive" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
               </Collapsible>
             )}
           </div>
@@ -482,36 +510,6 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
             </Tooltip>
           </div>
         </div>
-
-        {/* Attempts History */}
-        {content.attempts && content.attempts.length > 0 && isAttemptsOpen && (
-          <div className="mt-3 p-3 bg-muted/50 rounded-md border border-border text-xs space-y-2">
-            <h4 className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">
-              Attempt History
-            </h4>
-            {[...content.attempts].reverse().map((attempt, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between border-b border-border/50 pb-1 last:border-0 last:pb-0"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">
-                    Attempt {attempt.attemptNumber}
-                  </span>
-                  <span className="text-muted-foreground">•</span>
-                  <span>{formatDate(attempt.date)}</span>
-                  <span className="text-muted-foreground">•</span>
-                  <span>Chose {attempt.chosenAnswer}</span>
-                </div>
-                {attempt.wasCorrect ? (
-                  <CheckCircle2 className="w-3 h-3 text-success" />
-                ) : (
-                  <XCircle className="w-3 h-3 text-destructive" />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </CardHeader>
 
       <CardContent className="p-0">
@@ -673,7 +671,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   )}
                 />
               </CollapsibleTrigger>
-              <CollapsibleContent>
+              <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                 <div className="px-4 pb-6">
                   <div className="rounded-xl bg-card border border-border/50 overflow-hidden">
                     <div
@@ -710,7 +708,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                     )}
                   />
                 </CollapsibleTrigger>
-                <CollapsibleContent>
+                <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                   <div className="px-4 pb-6">
                     <div className="rounded-xl bg-card border border-warning/20 overflow-hidden">
                       <div className="flex">
@@ -751,7 +749,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                     )}
                   />
                 </CollapsibleTrigger>
-                <CollapsibleContent>
+                <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                   <div className="px-4 pb-6">
                     <div className="rounded-xl bg-card border border-info/20 overflow-hidden">
                       <div className="flex">
@@ -791,7 +789,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                     )}
                   />
                 </CollapsibleTrigger>
-                <CollapsibleContent>
+                <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                   <div className="px-4 pb-5">
                     <div
                       className="pl-11 prose prose-xs prose-neutral dark:prose-invert max-w-none prose-p:text-muted-foreground prose-li:text-muted-foreground prose-a:text-muted-foreground prose-a:underline-offset-2"
