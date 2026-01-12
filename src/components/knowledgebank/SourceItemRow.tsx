@@ -142,14 +142,14 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
             )}
             {displayTitle}
           </h3>
-          <span className="text-[11px] text-card-muted whitespace-nowrap shrink-0 group-hover:hidden">
+          <span className="text-[11px] text-card-muted whitespace-nowrap shrink-0">
             {formatDistanceToNow(new Date(sourceItem.createdAt), {
               addSuffix: true,
             })}
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 group-hover:hidden">
+        <div className="flex items-center gap-1.5">
           {/* Subject badge if available */}
           {sourceItem.metadata?.subject && (
             <Badge

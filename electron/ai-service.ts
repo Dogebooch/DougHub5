@@ -210,7 +210,7 @@ export const PROVIDER_PRESETS: Record<AIProviderType, AIProviderConfig> = {
     type: "openai-compatible",
     baseURL: "http://localhost:11434/v1",
     apiKey: "ollama", // OpenAI SDK requires non-empty string; Ollama ignores it
-    model: "qwen2.5:7b-instruct", // Lightweight model for development
+    model: "qwen2.5:7b-instruct", // Tested winner: fast, clean JSON, accurate medical extraction
     timeout: 30000, // 30s for local processing (larger models need more time)
     isLocal: true,
   },

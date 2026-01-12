@@ -416,48 +416,20 @@ Inject into LLM context → Generate grounded response with source citations
 **Source:** Task T28 (Legacy)
 **Notes:** Current defaults work. This is for power users who want to configure providers.
 
-### Recommended Ollama Models - IMPLEMENTED ✓
-**Status:** Completed 2026-01-12
-**Winner:** `qwen2.5:7b-instruct` (tested winner for speed + accuracy in medical content extraction)
-**Test Results:**
-| Model | Time | JSON Clean? | Accuracy |
-|-------|------|-------------|----------|
-| qwen2.5:7b-instruct | ~8s | Yes (raw JSON) | ✓ Correct subject, questionType |
-| mistral-nemo:latest | ~10s | No (markdown wrapper) | ✓ Correct but verbose |
-| gemma2:27b | ~33s | No (markdown wrapper) | ✓ Correct |
-
-**Research Sources:**
-- JAMIA Open 2025: General-purpose models often outperform medical fine-tunes due to "catastrophic forgetting"
-- Tested: Meditron, BioMistral, MedGemma - showed lower accuracy on JSON extraction tasks
-- Key insight: Medical fine-tuning can lose general instruction-following ability
+### AI Model Selection - IMPLEMENTED ✓
+**Winner:** `qwen2.5:7b-instruct` — best balance of speed (~8s), clean JSON output, and accurate summaries
+**Tested:** meditron:7b (failed - base model, no instruction tuning), llama3.1:8b (works but verbose summaries), mistral-nemo (slower, markdown wrapping)
+**Key insight:** General instruction-tuned models beat medical fine-tunes for structured extraction tasks
 
 ### AI Task Configuration Framework - IMPLEMENTED ✓
-**Status:** Completed 2026-01-12
-**Location:** `electron/ai-service.ts` - `AI_TASK_CONFIGS` and `getTaskConfig()`
-**Design Decisions:**
-1. **ONE MODEL:** All tasks use `qwen2.5:7b-instruct` to avoid VRAM thrashing from model switching
-2. **TASK-SPECIFIC SETTINGS:** Temperature, max_tokens, timeout, cache TTL tuned per task type
-3. **KEEP_ALIVE:** Ollama keeps model warm for 30 min between calls
-4. **EASY EXTENSION:** Add new tasks to `AI_TASK_CONFIGS` record
+**Location:** `electron/ai-service.ts` - `AI_TASK_CONFIGS`
+**Design:** One model + task-specific settings (temp, tokens, timeout, cache TTL)
 
-**Current Task Configs:**
-- `question-summary`: temp=0.2, maxTokens=150, timeout=10s, cache=5min
-- `concept-extraction`: temp=0.3, maxTokens=500, timeout=15s, cache=5min
-- `card-suggestion`: temp=0.4, maxTokens=800, timeout=20s, cache=1min
-- `explanation-enhancement`: temp=0.5, maxTokens=1000, timeout=30s, cache=5min
-- `semantic-match`: temp=0.1, maxTokens=200, timeout=10s, cache=10min
-
-### Multi-Model Architecture (Future)
-**Description:** Advanced model switching for specialized tasks if testing shows significant accuracy gaps.
-**Priority:** Low
-**Source:** AI optimization research (2026-01-12)
-**Current State:** Single model approach is working well. No evidence that task-specific models improve results for our use cases.
-**Future Options if Needed:**
-- Model pooling with `keep_alive` parameter
-- Task batching to minimize model switches
-- Tiered models (small for simple, large for complex)
-- Remote API fallback for specialized tasks
-**Notes:** Only implement if specific tasks show >10% accuracy improvement with different models. Current approach prioritizes simplicity and speed.
+### Vision/Image Analysis (F45)
+**Status:** NOT IMPLEMENTED - current AI has no vision capability
+**Gap:** EKGs, CXRs, clinical photos are stored but not analyzed
+**Solution:** Add `llava:7b` or similar vision model for image description
+**Use case:** "Show me all ECG questions" requires AI-generated image descriptions
 
 ---
 
