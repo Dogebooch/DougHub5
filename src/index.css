@@ -198,6 +198,16 @@
     line-height: 1.4;
   }
 
+  /* Reset paragraph margins inside table cells - MKSAP wraps cell content in <p> tags
+     which inherit prose typography margins, causing large gaps between rows */
+  .prose table td p,
+  .prose table th p,
+  .prose table caption p {
+    margin: 0;
+    padding: 0;
+    line-height: inherit;
+  }
+
   /* Lab Values Table Styling */
   .lab-values-table {
     @apply w-full border-collapse my-4 bg-muted/30 rounded-lg overflow-hidden;
