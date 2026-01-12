@@ -289,13 +289,14 @@ function parsePeerPrep(
     const isCorrect =
       $el.hasClass("correct") ||
       $el.hasClass("correct-answer") ||
-      $el.attr("class")?.includes("correct") ||
+      // Precise check to avoid matching "incorrect"
+      /\bcorrect\b/.test($el.attr("class") || "") ||
       false;
     const isUserChoice =
       $el.hasClass("active") ||
       $el.hasClass("selected") ||
       $el.hasClass("user-selected") ||
-      $el.attr("class")?.includes("selected") ||
+      /\b(active|selected|user-selected)\b/.test($el.attr("class") || "") ||
       false;
 
     // PeerPrep uses .peer-percent span
@@ -328,45 +329,62 @@ function parsePeerPrep(
   }
   // PeerPrep uses "Reasoning" tab, MKSAP may use "Explanation"
   // Some sites use "Rationale", "Discussion", or "Commentary"
-  const explanationHtml =
-    getSectionHtml($, "Reasoning", [
-      "div.tab-pane:nth-child(1)",
-      ".feedbackTab",
-      ".feedback-content",
-      "#feedbackTab",
-      "#reasoning",
-      ".tab-pane.reasoning",
-    ]) ||
-    getSectionHtml($, "Explanation", [
-      "div.tab-pane:nth-child(1)",
-      ".feedbackTab",
-      ".feedback-content",
-      "#feedbackTab",
-      "#explanation",
-      ".tab-pane.explanation",
-    ]) ||
-    getSectionHtml($, "Rationale", [
-      "div.tab-pane:nth-child(1)",
-      ".rationale",
-      "#rationale",
-      ".tab-pane.rationale",
-    ]) ||
-    getSectionHtml($, "Discussion", [
-      ".discussion",
-      "#discussion",
-      ".tab-pane.discussion",
-    ]) ||
-    getSectionHtml($, "Commentary", [
-      ".commentary",
-      "#commentary",
-      ".tab-pane.commentary",
-    ]) ||
-    getSectionHtml($, "Analysis", [
-      ".analysis",
-      "#analysis",
-      ".tab-pane.analysis",
-    ]) ||
-    "";
+  //
+  // IMPORTANT: PeerPrep structure has .feedbackTab (short intro) AND .distractorFeedbacks
+  // (detailed explanations for each answer) as siblings inside the first .tab-pane.
+  // We need to get the ENTIRE first tab-pane content, not just .feedbackTab.
+  let explanationHtml = "";
+
+  // PeerPrep-specific: Look for the tab-pane containing .feedbackTab (the Reasoning tab)
+  // This gets the entire tab content including distractorFeedbacks
+  const reasoningTabPane = $(".tab-pane").filter(function (
+    this: cheerio.Element
+  ) {
+    return $(this).find(".feedbackTab").length > 0;
+  });
+  if (reasoningTabPane.length > 0) {
+    explanationHtml = reasoningTabPane.first().html() || "";
+  }
+
+  // Fallback to getSectionHtml for other site structures
+  if (!explanationHtml) {
+    explanationHtml =
+      getSectionHtml($, "Reasoning", [
+        ".feedbackTab",
+        ".feedback-content",
+        "#feedbackTab",
+        "#reasoning",
+        ".tab-pane.reasoning",
+      ]) ||
+      getSectionHtml($, "Explanation", [
+        ".feedbackTab",
+        ".feedback-content",
+        "#feedbackTab",
+        "#explanation",
+        ".tab-pane.explanation",
+      ]) ||
+      getSectionHtml($, "Rationale", [
+        ".rationale",
+        "#rationale",
+        ".tab-pane.rationale",
+      ]) ||
+      getSectionHtml($, "Discussion", [
+        ".discussion",
+        "#discussion",
+        ".tab-pane.discussion",
+      ]) ||
+      getSectionHtml($, "Commentary", [
+        ".commentary",
+        "#commentary",
+        ".tab-pane.commentary",
+      ]) ||
+      getSectionHtml($, "Analysis", [
+        ".analysis",
+        "#analysis",
+        ".tab-pane.analysis",
+      ]) ||
+      "";
+  }
   // PeerPrep may use "Related Text / Key Point" or variations
   const keyPointsHtml =
     getSectionHtml($, "Related Text", [

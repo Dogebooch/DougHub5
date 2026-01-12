@@ -492,14 +492,27 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   const isCorrectAnswer = answer.isCorrect;
                   const processedAnswerHtml = processHtml(answer.html);
 
+                  // Calculate if this is the most picked pear choice
+                  const maxPeerPercent = Math.max(
+                    ...displayedAnswers
+                      .map((a) => a.peerPercent || 0)
+                      .filter((p) => p > 0),
+                    0
+                  );
+                  const isMajorityChoice =
+                    answer.peerPercent !== undefined &&
+                    answer.peerPercent === maxPeerPercent &&
+                    maxPeerPercent > 0;
+
                   return (
                     <tr
                       key={idx}
                       className={cn(
-                        "border-t border-border group transition-colors",
+                        "border-t border-border group transition-colors relative",
                         isCorrectAnswer &&
-                          "bg-green-50/50 dark:bg-green-950/20",
-                        isWrongUserChoice && "bg-red-50/50 dark:bg-red-950/20",
+                          "bg-success/10 dark:bg-success/20 border-l-4 border-l-success",
+                        isWrongUserChoice &&
+                          "bg-destructive/10 dark:bg-destructive/20",
                         !isCorrectAnswer &&
                           !isWrongUserChoice &&
                           "hover:bg-muted/30"
@@ -507,18 +520,30 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                     >
                       <td className="px-4 py-3 text-center">
                         {isCorrectAnswer && (
-                          <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 mx-auto" />
+                          <CheckCircle2 className="w-5 h-5 text-success mx-auto" />
                         )}
                         {isWrongUserChoice && (
-                          <XCircle className="w-4 h-4 text-red-600 dark:text-red-400 mx-auto" />
+                          <XCircle className="w-5 h-5 text-destructive mx-auto" />
                         )}
                       </td>
-                      <td className="px-2 py-3 font-bold text-muted-foreground">
+                      <td
+                        className={cn(
+                          "px-2 py-3 font-bold",
+                          isCorrectAnswer
+                            ? "text-success"
+                            : isWrongUserChoice
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                        )}
+                      >
                         {answer.letter}
                       </td>
                       <td className="px-4 py-3">
                         <div
-                          className="prose prose-sm max-w-none"
+                          className={cn(
+                            "prose prose-sm max-w-none",
+                            isCorrectAnswer && "font-medium"
+                          )}
                           dangerouslySetInnerHTML={{
                             __html: processedAnswerHtml,
                           }}
@@ -526,13 +551,30 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       </td>
                       <td className="px-4 py-3 align-middle">
                         {answer.peerPercent !== undefined && (
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-medium leading-none">
-                              {answer.peerPercent}%
-                            </span>
-                            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className="flex flex-col gap-1.5 min-w-[80px]">
+                            <div className="flex items-center justify-between">
+                              <span
+                                className={cn(
+                                  "text-[10px] font-bold leading-none",
+                                  isMajorityChoice
+                                    ? "text-info-foreground bg-info px-1 rounded-sm"
+                                    : "text-muted-foreground"
+                                )}
+                              >
+                                {answer.peerPercent}%
+                              </span>
+                              {isMajorityChoice && (
+                                <span className="text-[8px] font-bold uppercase tracking-tighter text-info">
+                                  Majority
+                                </span>
+                              )}
+                            </div>
+                            <div className="w-full h-2 bg-muted rounded-full overflow-hidden border border-border/50">
                               <div
-                                className="h-full bg-primary/40 rounded-full"
+                                className={cn(
+                                  "h-full rounded-full transition-all duration-500",
+                                  isMajorityChoice ? "bg-info" : "bg-info/30"
+                                )}
                                 style={{ width: `${answer.peerPercent}%` }}
                               />
                             </div>
@@ -541,7 +583,12 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       </td>
                       <td className="px-4 py-3 text-center">
                         {answer.isUserChoice && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-primary mx-auto animate-in fade-in zoom-in" />
+                          <Badge
+                            variant="default"
+                            className="bg-primary hover:bg-primary text-[9px] font-black px-1.5 py-0 h-4 shadow-sm animate-in fade-in zoom-in slide-in-from-right-1"
+                          >
+                            YOU
+                          </Badge>
                         )}
                       </td>
                     </tr>
