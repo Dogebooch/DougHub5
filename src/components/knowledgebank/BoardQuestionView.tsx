@@ -510,9 +510,9 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       className={cn(
                         "border-t border-border group transition-colors relative",
                         isCorrectAnswer &&
-                          "bg-success/10 dark:bg-success/20 border-l-4 border-l-success",
+                          "bg-success/5 dark:bg-success/10 border-l-4 border-l-success/70",
                         isWrongUserChoice &&
-                          "bg-destructive/10 dark:bg-destructive/20",
+                          "bg-destructive/5 dark:bg-destructive/10",
                         !isCorrectAnswer &&
                           !isWrongUserChoice &&
                           "hover:bg-muted/30"
@@ -520,7 +520,9 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                     >
                       <td className="px-4 py-3 text-center">
                         {isCorrectAnswer && (
-                          <CheckCircle2 className="w-5 h-5 text-success mx-auto" />
+                          <div className="flex items-center justify-center w-7 h-7 rounded-full bg-success/10 dark:bg-success/20 mx-auto border border-success/30">
+                            <CheckCircle2 className="w-5 h-5 text-success" />
+                          </div>
                         )}
                         {isWrongUserChoice && (
                           <XCircle className="w-5 h-5 text-destructive mx-auto" />
@@ -528,7 +530,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       </td>
                       <td
                         className={cn(
-                          "px-2 py-3 font-bold",
+                          "px-2 py-3 font-bold text-base",
                           isCorrectAnswer
                             ? "text-success"
                             : isWrongUserChoice
@@ -542,7 +544,8 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                         <div
                           className={cn(
                             "prose prose-sm max-w-none",
-                            isCorrectAnswer && "font-medium"
+                            isCorrectAnswer &&
+                              "font-semibold text-success-foreground"
                           )}
                           dangerouslySetInnerHTML={{
                             __html: processedAnswerHtml,
@@ -552,28 +555,25 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       <td className="px-4 py-3 align-middle">
                         {answer.peerPercent !== undefined && (
                           <div className="flex flex-col gap-1.5 min-w-[80px]">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-end">
                               <span
                                 className={cn(
-                                  "text-[10px] font-bold leading-none",
-                                  isMajorityChoice
-                                    ? "text-info-foreground bg-info px-1 rounded-sm"
+                                  "text-xs font-semibold leading-none tabular-nums",
+                                  isCorrectAnswer
+                                    ? "text-success"
                                     : "text-muted-foreground"
                                 )}
                               >
                                 {answer.peerPercent}%
                               </span>
-                              {isMajorityChoice && (
-                                <span className="text-[8px] font-bold uppercase tracking-tighter text-info">
-                                  Majority
-                                </span>
-                              )}
                             </div>
-                            <div className="w-full h-2 bg-muted rounded-full overflow-hidden border border-border/50">
+                            <div className="w-full h-2.5 bg-muted/50 rounded-full overflow-hidden">
                               <div
                                 className={cn(
                                   "h-full rounded-full transition-all duration-500",
-                                  isMajorityChoice ? "bg-info" : "bg-info/30"
+                                  isCorrectAnswer
+                                    ? "bg-success/70"
+                                    : "bg-primary/40"
                                 )}
                                 style={{ width: `${answer.peerPercent}%` }}
                               />
@@ -763,3 +763,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     </Card>
   );
 };
+
+
+
+
