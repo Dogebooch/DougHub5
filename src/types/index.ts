@@ -64,6 +64,13 @@ export interface QuickCapture {
 }
 
 // v2 Architecture - Knowledge Bank Layer
+export interface SourceMetadata {
+  summary?: string; // AI-generated 4-5 word summary for inbox differentiation
+  subject?: string; // Medical subject (Cardiology, Pulm, etc.)
+  questionType?: string; // Diagnosis, Management, Mechanism, etc.
+  extractedAt?: string; // ISO timestamp of extraction
+}
+
 export interface SourceItem {
   id: string;
   sourceType: SourceType;
@@ -77,6 +84,7 @@ export interface SourceItem {
   canonicalTopicIds: string[];
   tags: string[];
   questionId?: string; // For qbank sources
+  metadata?: SourceMetadata; // AI-extracted summary and classification
   status: SourceItemStatus;
   createdAt: string;
   processedAt?: string;

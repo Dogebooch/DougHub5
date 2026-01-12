@@ -233,42 +233,6 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
       });
     });
 
-    // Detect answer choice subheadings (PeerPrep-style): short lines followed by explanation paragraphs
-    // Pattern: <p> with short text (no period, under 60 chars) followed by <p> with longer text
-    // Examples: "Heated refrigerator chemicals", "Swimming pool maintenance agents"
-    html = html.replace(
-      /<p([^>]*)>([^<]{10,60})<\/p>\s*<p/gi,
-      (match, attrs, text) => {
-        const trimmed = text.trim();
-        // Only style as subheading if it looks like a title (no period at end, reasonably short)
-        if (trimmed && !trimmed.endsWith('.') && !trimmed.endsWith('?') && !trimmed.endsWith('!') && trimmed.length < 60) {
-          return `<div class="mt-8 pt-6 border-t border-card-muted/15 first:mt-0 first:pt-0 first:border-t-0">
-            <p class="!my-2 font-semibold text-card-foreground">${trimmed}</p>
-          </div>
-          <p`;
-        }
-        return match;
-      }
-    );
-
-    // Separate a leading "Key Takeaway" if there's notable text before the first header/choice marker/subheading
-    const markerPattern = new RegExp(
-      `(?:\\b(?:Option|Choice|Answer)\\s+[A-F]|\\([A-F]\\))|(?:${sectionHeaders
-        .map((h) => h.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&"))
-        .join("|")})|(?:border-t border-card-muted)`,
-      "i"
-    );
-    const firstMarkerIndex = html.search(markerPattern);
-    if (firstMarkerIndex > 30) {
-      const takeaway = html.slice(0, firstMarkerIndex);
-      const rest = html.slice(firstMarkerIndex);
-      html = `
-        <div class="mb-8 p-5 bg-primary/5 border-l-4 border-primary/30 rounded-r-lg">
-          <div class="text-[15px] leading-relaxed text-card-foreground">${takeaway}</div>
-        </div>
-        ${rest}`;
-    }
-
     // Style Answer Choice references as bold inline text (clean, MKSAP-style)
     const choiceRegex =
       /(<[^>]+>)|(\b(?:Option|Choice|Answer)\s+([A-F])\b|\(([A-F])\)(?=\s|\.|,|$))/gi;
