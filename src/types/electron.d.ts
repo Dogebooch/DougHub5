@@ -166,6 +166,29 @@ export interface ElectronAPI {
     delete: (id: string) => Promise<IpcResult<void>>;
     getRawPage: (sourceItemId: string) => Promise<IpcResult<string | null>>;
     purgeRawPages: () => Promise<IpcResult<void>>;
+    reextractMetadata: (options?: {
+      ids?: string[];
+      overwrite?: boolean;
+    }) => Promise<
+      IpcResult<{
+        processed: number;
+        succeeded: number;
+        failed: number;
+        cancelled?: boolean;
+        restored?: boolean;
+      }>
+    >;
+    onReextractProgress: (
+      callback: (progress: {
+        current: number;
+        total: number;
+        succeeded: number;
+        failed: number;
+        currentItem?: string;
+        status?: "running" | "cancelled" | "restoring" | "complete";
+      }) => void
+    ) => () => void;
+    cancelReextract: () => Promise<IpcResult<void>>;
     onNew: (callback: (item: SourceItem) => void) => () => void;
   };
   canonicalTopics: {

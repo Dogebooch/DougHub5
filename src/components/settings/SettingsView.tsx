@@ -32,6 +32,14 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAppStore } from "@/stores/useAppStore";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import {
   ExternalLink,
   Database,
   Cpu,
@@ -39,6 +47,9 @@ import {
   Trash2,
   Download,
   AlertTriangle,
+  Sparkles,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { Card as CardType } from "@/types";
 
@@ -52,6 +63,15 @@ export function SettingsView() {
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [duplicateCards, setDuplicateCards] = useState<CardType[]>([]);
   const [isLoadingDuplicates, setIsLoadingDuplicates] = useState(false);
+  const [isReextractingMetadata, setIsReextractingMetadata] = useState(false);
+  const [extractionProgress, setExtractionProgress] = useState<{
+    current: number;
+    total: number;
+    succeeded: number;
+    failed: number;
+    currentItem?: string;
+    status?: "running" | "cancelled" | "restoring" | "complete";
+  } | null>(null);
 
   useEffect(() => {
     async function loadDbPath() {
@@ -215,6 +235,90 @@ export function SettingsView() {
       setIsLoadingDuplicates(false);
     }
   }, [toast]);
+
+  const handleCancelReextract = useCallback(async () => {
+    if (!window.api?.sourceItems?.cancelReextract) return;
+    await window.api.sourceItems.cancelReextract();
+  }, []);
+
+  const handleReextractMetadata = useCallback(
+    async (overwrite: boolean) => {
+      if (
+        !window.api?.sourceItems?.reextractMetadata ||
+        !window.api?.sourceItems?.onReextractProgress
+      ) {
+        toast({
+          title: "Not Available",
+          description: "Re-extraction API not available",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsReextractingMetadata(true);
+      setExtractionProgress({
+        current: 0,
+        total: 0,
+        succeeded: 0,
+        failed: 0,
+        status: "running",
+      });
+
+      // Subscribe to progress updates
+      const unsubscribe = window.api.sourceItems.onReextractProgress(
+        (progress) => {
+          setExtractionProgress(progress);
+        }
+      );
+
+      try {
+        const result = await window.api.sourceItems.reextractMetadata({
+          overwrite,
+        });
+
+        if (result.error) {
+          toast({
+            title: "Re-extraction Failed",
+            description: result.error,
+            variant: "destructive",
+          });
+        } else if (result.data) {
+          const { processed, succeeded, failed, cancelled, restored } =
+            result.data;
+          if (cancelled) {
+            toast({
+              title: "Re-extraction Cancelled",
+              description: restored
+                ? "Database restored to previous state."
+                : `Stopped at ${processed} questions.`,
+            });
+          } else if (processed === 0) {
+            toast({
+              title: "Nothing to Process",
+              description: "All questions already have metadata.",
+            });
+          } else {
+            toast({
+              title: "Re-extraction Complete",
+              description: `Processed ${processed} questions: ${succeeded} succeeded, ${failed} failed.`,
+              variant: failed > 0 ? "destructive" : "default",
+            });
+          }
+        }
+      } catch (error) {
+        toast({
+          title: "Re-extraction Failed",
+          description: String(error),
+          variant: "destructive",
+        });
+      } finally {
+        unsubscribe();
+        setIsReextractingMetadata(false);
+        setExtractionProgress(null);
+      }
+    },
+    [toast]
+  );
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
@@ -649,8 +753,161 @@ export function SettingsView() {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="border-border bg-surface-elevated/30">
+            <CardHeader>
+              <CardTitle>AI Metadata</CardTitle>
+              <CardDescription className="text-foreground/80">
+                Re-extract AI-generated summaries, topics, and tags for board
+                questions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Re-extract Question Metadata</p>
+                    <p className="text-sm text-foreground/80 leading-snug max-w-[400px]">
+                      Uses AI to regenerate summaries and classifications for
+                      all captured board questions. Useful after AI prompt
+                      improvements.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleReextractMetadata(false)}
+                      variant="outline"
+                      size="sm"
+                      disabled={isReextractingMetadata}
+                      className="gap-2"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      {isReextractingMetadata ? "Running..." : "Fill Missing"}
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={isReextractingMetadata}
+                          className="gap-2"
+                        >
+                          <Sparkles className="h-4 w-4 text-warning" />
+                          Re-extract All
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Re-extract All Metadata?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will re-run AI extraction on ALL board
+                            questions, overwriting existing summaries and
+                            classifications. This may take a while and will use
+                            API credits.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleReextractMetadata(true)}
+                          >
+                            Re-extract All
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Progress Dialog for AI Extraction */}
+      <Dialog open={isReextractingMetadata} onOpenChange={() => {}}>
+        <DialogContent
+          className="sm:max-w-md"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {extractionProgress?.status === "restoring" ? (
+                <>
+                  <Database className="h-5 w-5 text-warning animate-pulse" />
+                  Restoring Backup
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+                  Extracting AI Metadata
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {extractionProgress?.status === "restoring"
+                ? "Reverting database to previous state..."
+                : "Processing board questions. A backup was created before starting."}
+            </DialogDescription>
+          </DialogHeader>
+          {extractionProgress && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Progress</span>
+                  <span className="font-medium">
+                    {extractionProgress.current} / {extractionProgress.total}
+                  </span>
+                </div>
+                <Progress
+                  value={
+                    extractionProgress.total > 0
+                      ? (extractionProgress.current / extractionProgress.total) *
+                        100
+                      : 0
+                  }
+                  className="h-2"
+                />
+              </div>
+
+              <div className="flex justify-between text-sm">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                  <span>{extractionProgress.succeeded} succeeded</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <XCircle className="h-4 w-4 text-destructive" />
+                  <span>{extractionProgress.failed} failed</span>
+                </div>
+              </div>
+
+              {extractionProgress.currentItem &&
+                extractionProgress.status === "running" && (
+                  <div className="text-xs text-muted-foreground truncate border-t pt-3 mt-3">
+                    Processing: {extractionProgress.currentItem}
+                  </div>
+                )}
+
+              {extractionProgress.status === "running" && (
+                <div className="flex justify-end pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelReextract}
+                    className="gap-2"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Cancel & Restore
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

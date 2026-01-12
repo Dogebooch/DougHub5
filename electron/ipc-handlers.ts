@@ -273,6 +273,33 @@ export async function processCapture(
         });
         resultId = existing.id;
         isUpdate = true;
+
+        // If existing item lacks AI metadata, extract it now (async, non-blocking)
+        if (!existing.metadata) {
+          extractQuestionSummary(
+            JSON.stringify(mergedContent),
+            existing.sourceType
+          )
+            .then((extracted) => {
+              if (extracted) {
+                sourceItemQueries.update(existing.id, {
+                  metadata: {
+                    ...extracted,
+                    extractedAt: new Date().toISOString(),
+                  },
+                });
+                console.log(
+                  `[Capture] ✅ AI metadata extracted for existing item: "${extracted.summary}"`
+                );
+              }
+            })
+            .catch((err) => {
+              console.warn(
+                "[Capture] ⚠️ AI extraction failed for existing item:",
+                err
+              );
+            });
+        }
       } else {
         // Create new SourceItem
         const id = crypto.randomUUID();
@@ -938,6 +965,202 @@ export function registerIpcHandlers(): void {
       try {
         sourceItemQueries.purgeRawPages();
         return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // Track cancellation state for long-running operations
+  let reextractCancelled = false;
+  let reextractBackupFile: string | null = null;
+
+  /**
+   * Cancel an in-progress metadata re-extraction and restore backup
+   */
+  ipcMain.handle(
+    "sourceItems:cancelReextract",
+    async (): Promise<IpcResult<void>> => {
+      reextractCancelled = true;
+      console.log("[IPC] Metadata re-extraction cancellation requested");
+      return success(undefined);
+    }
+  );
+
+  /**
+   * Bulk re-extract AI metadata for qbank items from stored rawContent.
+   * Useful after AI prompt changes or for items captured before AI extraction was added.
+   * @param options.ids - Optional array of specific source item IDs to process. If omitted, processes all qbank items.
+   * @param options.overwrite - If true, re-extracts even if metadata exists. Default false (only missing).
+   */
+  ipcMain.handle(
+    "sourceItems:reextractMetadata",
+    async (
+      event,
+      options?: { ids?: string[]; overwrite?: boolean }
+    ): Promise<
+      IpcResult<{
+        processed: number;
+        succeeded: number;
+        failed: number;
+        cancelled?: boolean;
+        restored?: boolean;
+      }>
+    > => {
+      // Reset cancellation state
+      reextractCancelled = false;
+      reextractBackupFile = null;
+
+      try {
+        const { ids, overwrite = false } = options || {};
+        const sender = event.sender;
+
+        // Helper to send progress updates
+        const sendProgress = (data: {
+          current: number;
+          total: number;
+          succeeded: number;
+          failed: number;
+          currentItem?: string;
+          status?: "running" | "cancelled" | "restoring" | "complete";
+        }) => {
+          sender.send("sourceItems:reextractMetadata:progress", data);
+        };
+
+        // Get items to process
+        let items: DbSourceItem[];
+        if (ids && ids.length > 0) {
+          items = ids
+            .map((id) => sourceItemQueries.getById(id))
+            .filter((item): item is DbSourceItem => item !== null);
+        } else {
+          items = sourceItemQueries.getByType("qbank");
+        }
+
+        // Filter to only those needing extraction (unless overwrite)
+        if (!overwrite) {
+          items = items.filter((item) => !item.metadata);
+        }
+
+        // Early exit if nothing to process
+        if (items.length === 0) {
+          return success({ processed: 0, succeeded: 0, failed: 0 });
+        }
+
+        // Create backup before starting (for overwrite mode or any modification)
+        const dbPath = getDbPath();
+        if (dbPath) {
+          console.log("[IPC] Creating backup before metadata re-extraction...");
+          const backupPath = createBackup(dbPath);
+          reextractBackupFile = path.basename(backupPath);
+          console.log(`[IPC] Backup created: ${reextractBackupFile}`);
+        }
+
+        console.log(
+          `[IPC] Starting bulk metadata extraction for ${items.length} items (overwrite=${overwrite})`
+        );
+
+        // Send initial progress
+        sendProgress({
+          current: 0,
+          total: items.length,
+          succeeded: 0,
+          failed: 0,
+          status: "running",
+        });
+
+        let succeeded = 0;
+        let failed = 0;
+
+        for (let i = 0; i < items.length; i++) {
+          // Check for cancellation
+          if (reextractCancelled) {
+            console.log(
+              `[IPC] Re-extraction cancelled at ${i}/${items.length}`
+            );
+            sendProgress({
+              current: i,
+              total: items.length,
+              succeeded,
+              failed,
+              status: "restoring",
+            });
+
+            // Restore from backup
+            if (reextractBackupFile && dbPath) {
+              console.log(
+                `[IPC] Restoring backup: ${reextractBackupFile}`
+              );
+              const backupPath = path.join(
+                getBackupsDir(),
+                reextractBackupFile
+              );
+              restoreBackup(backupPath, dbPath);
+              console.log("[IPC] Backup restored successfully");
+            }
+
+            return success({
+              processed: i,
+              succeeded,
+              failed,
+              cancelled: true,
+              restored: !!reextractBackupFile,
+            });
+          }
+
+          const item = items[i];
+          try {
+            const extracted = await extractQuestionSummary(
+              item.rawContent,
+              item.sourceType
+            );
+            if (extracted) {
+              sourceItemQueries.update(item.id, {
+                metadata: {
+                  ...extracted,
+                  extractedAt: new Date().toISOString(),
+                },
+              });
+              succeeded++;
+              console.log(
+                `[IPC] ✅ [${i + 1}/${items.length}] Extracted: "${extracted.summary}"`
+              );
+            } else {
+              failed++;
+              console.log(
+                `[IPC] ⚠️ [${i + 1}/${items.length}] No extraction result for ${item.id}`
+              );
+            }
+          } catch (err) {
+            failed++;
+            console.warn(
+              `[IPC] ❌ [${i + 1}/${items.length}] Failed for ${item.id}:`,
+              err
+            );
+          }
+
+          // Send progress update after each item
+          sendProgress({
+            current: i + 1,
+            total: items.length,
+            succeeded,
+            failed,
+            currentItem: item.title,
+            status: "running",
+          });
+        }
+
+        console.log(
+          `[IPC] Bulk extraction complete: ${succeeded} succeeded, ${failed} failed`
+        );
+        sendProgress({
+          current: items.length,
+          total: items.length,
+          succeeded,
+          failed,
+          status: "complete",
+        });
+        return success({ processed: items.length, succeeded, failed });
       } catch (error) {
         return failure(error);
       }

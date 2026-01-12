@@ -48,6 +48,16 @@ const api = {
     delete: (id) => electron.ipcRenderer.invoke("sourceItems:delete", id),
     getRawPage: (sourceItemId) => electron.ipcRenderer.invoke("sourceItems:getRawPage", sourceItemId),
     purgeRawPages: () => electron.ipcRenderer.invoke("sourceItems:purgeRawPages"),
+    reextractMetadata: (options) => electron.ipcRenderer.invoke("sourceItems:reextractMetadata", options),
+    onReextractProgress: (callback) => {
+      const handler = (_event, progress) => callback(progress);
+      electron.ipcRenderer.on("sourceItems:reextractMetadata:progress", handler);
+      return () => electron.ipcRenderer.removeListener(
+        "sourceItems:reextractMetadata:progress",
+        handler
+      );
+    },
+    cancelReextract: () => electron.ipcRenderer.invoke("sourceItems:cancelReextract"),
     onNew: (callback) => {
       const handler = (_event, item) => callback(item);
       electron.ipcRenderer.on("sourceItems:new", handler);

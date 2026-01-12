@@ -19,11 +19,11 @@ import { cn } from "@/lib/utils";
 
 /** Clean display names for source labels */
 const SOURCE_DISPLAY_NAMES: Record<string, string> = {
-  PeerPrep: "PEERPrep",
+  PeerPrep: "PEER",
   MKSAP: "MKSAP",
   UWorld: "UWorld",
   Amboss: "Amboss",
-  BoardVitals: "BoardVitals",
+  BoardVitals: "Board Vitals",
   Rosh: "Rosh Review",
   NEJM: "NEJM",
   UpToDate: "UpToDate",
@@ -76,15 +76,15 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
       ? sourceItem.metadata.summary
       : sourceItem.title;
 
-  // Get source display label for qbank items
+  // Get source display label for items if available
   const sourceLabel = React.useMemo(() => {
-    if (sourceItem.sourceType !== "qbank") return null;
-    const name = sourceItem.sourceName?.toLowerCase() || "";
+    if (!sourceItem.sourceName) return null;
+    const name = sourceItem.sourceName.toLowerCase();
     for (const [key, label] of Object.entries(SOURCE_DISPLAY_NAMES)) {
       if (name.includes(key.toLowerCase())) return label;
     }
     return sourceItem.sourceName; // Fallback to raw name
-  }, [sourceItem.sourceName, sourceItem.sourceType]);
+  }, [sourceItem.sourceName]);
 
   // Get wasCorrect from rawContent for qbank items
   const wasCorrect = React.useMemo(() => {
@@ -127,19 +127,24 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
           aria-label={`Select ${sourceItem.title}`}
           className="border-card-muted/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
-        <div className="p-2 rounded-lg bg-black/5 flex items-center justify-center shrink-0">
+        <div
+          className={cn(
+            "w-9 h-10 rounded-lg bg-black/5 flex flex-col items-center justify-center shrink-0",
+            sourceLabel && "pt-1 px-0.5"
+          )}
+        >
           {getIcon()}
+          {sourceLabel && (
+            <span className="text-[8px] font-bold text-card-muted/80 tracking-tighter uppercase leading-[1.1] w-full text-center mt-0.5 break-words">
+              {sourceLabel}
+            </span>
+          )}
         </div>
       </div>
 
       <div className="flex-grow min-w-0 flex flex-col gap-1">
         <div className="flex items-center gap-2 min-w-0">
           <h3 className="font-medium text-sm truncate leading-normal text-card-foreground flex-1">
-            {sourceLabel && (
-              <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-[3px] text-[9px] font-bold bg-card-muted/10 text-card-muted/60 mr-2 tracking-tight uppercase border border-card-muted/5">
-                {sourceLabel}
-              </span>
-            )}
             {displayTitle}
           </h3>
           <span className="text-[11px] text-card-muted whitespace-nowrap shrink-0">

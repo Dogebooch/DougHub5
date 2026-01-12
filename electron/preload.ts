@@ -72,6 +72,38 @@ const api = {
     getRawPage: (sourceItemId: string) =>
       ipcRenderer.invoke("sourceItems:getRawPage", sourceItemId),
     purgeRawPages: () => ipcRenderer.invoke("sourceItems:purgeRawPages"),
+    reextractMetadata: (options?: { ids?: string[]; overwrite?: boolean }) =>
+      ipcRenderer.invoke("sourceItems:reextractMetadata", options),
+    onReextractProgress: (
+      callback: (progress: {
+        current: number;
+        total: number;
+        succeeded: number;
+        failed: number;
+        currentItem?: string;
+        status?: "running" | "cancelled" | "restoring" | "complete";
+      }) => void
+    ) => {
+      const handler = (
+        _event: Electron.IpcRendererEvent,
+        progress: {
+          current: number;
+          total: number;
+          succeeded: number;
+          failed: number;
+          currentItem?: string;
+          status?: "running" | "cancelled" | "restoring" | "complete";
+        }
+      ) => callback(progress);
+      ipcRenderer.on("sourceItems:reextractMetadata:progress", handler);
+      return () =>
+        ipcRenderer.removeListener(
+          "sourceItems:reextractMetadata:progress",
+          handler
+        );
+    },
+    cancelReextract: () =>
+      ipcRenderer.invoke("sourceItems:cancelReextract"),
     onNew: (callback: (item: unknown) => void) => {
       const handler = (_event: Electron.IpcRendererEvent, item: unknown) =>
         callback(item);

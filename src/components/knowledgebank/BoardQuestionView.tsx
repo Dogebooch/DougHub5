@@ -207,6 +207,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
 
     // Identify common headers and wrap them in a cleaner sub-header style (card-aware colors)
     const sectionHeaders = [
+      "Critique", // MKSAP-specific
       "Educational Objective",
       "Key Point",
       "Rationale",
@@ -245,7 +246,10 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
           // - No ending punctuation (., ?, !)
           // - Doesn't start with common sentence starters
           const endsWithPunctuation = /[.?!]$/.test(trimmedTitle);
-          const startsLikeSentence = /^(The|This|These|A|An|In|It|If|When|Although)\s/i.test(trimmedTitle);
+          const startsLikeSentence =
+            /^(The|This|These|A|An|In|It|If|When|Although)\s/i.test(
+              trimmedTitle
+            );
 
           if (!endsWithPunctuation && !startsLikeSentence) {
             return `<div class="mt-6 pt-4 border-t border-border/30">
@@ -257,13 +261,15 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
       );
     }
 
-    // Style Answer Choice references as bold inline text (clean, MKSAP-style)
+    // Improve the choiceRegex to catch "(Option B)", "Option B", and "(B)"
+    // while ensuring we don't catch random letters at the start of words
     const choiceRegex =
-      /(<[^>]+>)|(\b(?:Option|Choice|Answer)\s+([A-F])\b|\(([A-F])\)(?=\s|\.|,|$))/gi;
+      /(<[^>]+>)|(\b(?:Option|Choice|Answer|Choice Option)\s+([A-F])\b|(?<=\s|^)\(([A-F])\)(?=\s|\.|,|$))/gi;
+
     html = html.replace(choiceRegex, (match, tag, _full, letter1, letter2) => {
       if (tag) return tag;
       const letter = (letter1 || letter2 || "").toUpperCase();
-      // Simple bold inline reference like MKSAP uses
+      // Return consistent MKSAP-style bolded reference
       return `<strong class="text-primary font-bold">(Option ${letter})</strong>`;
     });
 

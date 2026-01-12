@@ -590,6 +590,18 @@ function parsePeerPrep(
 
 /**
  * Parses MKSAP 19 questions.
+ *
+ * MKSAP 19 HTML Structure:
+ * - section.q_info > div.stimulus: Contains vignette paragraphs (<p data-hlid>)
+ * - fieldset.card-body > legend.header > p: Question stem
+ * - div.options > div.body > div.option: Answer choices
+ *   - div.option.r_a = correct answer, div.option.s_a = user selected
+ *   - div.bubble > span: Letter (A, B, C...)
+ *   - span.answer-text > span.text: Answer text
+ *   - div.peer.bd > div.stats > div.stat-label > span: Peer percentage
+ * - section.answer > div.exposition: Answer & Critique header
+ * - div.critique: Main explanation text (EXCLUDING aside.keypoints)
+ * - aside.keypoints: Key Points box
  */
 function parseMKSAP(
   $: cheerio.CheerioAPI,
@@ -599,130 +611,205 @@ function parseMKSAP(
   // Extract questionId using multiple strategies
   let questionId: string | undefined = undefined;
 
-  // Strategy 1: Try URL path segments (MKSAP often uses /questions/{id})
-  try {
-    const urlObj = new URL(url);
-    const pathParts = urlObj.pathname.split("/");
-    const questionIndex = pathParts.indexOf("questions");
-    if (questionIndex !== -1 && pathParts[questionIndex + 1]) {
-      questionId = `mksap-${pathParts[questionIndex + 1]}`;
-    }
-  } catch (e) {
-    console.warn("[MKSAP Parser] URL parsing failed:", e);
+  // Strategy 1: data-testid on section.q_info (e.g., "mk19_a_np_q031")
+  const testId = $("section.q_info, [data-testid]").attr("data-testid");
+  if (testId) {
+    questionId = `mksap-${testId}`;
   }
 
-  // Strategy 2: Look for data attributes or question header text
+  // Strategy 2: URL path segments
   if (!questionId) {
-    questionId =
-      $("[data-question-id]").attr("data-question-id") ||
-      $(".question-header")
-        .text()
-        .match(/Question\s+(\d+)/)?.[1];
-
-    if (questionId && !questionId.startsWith("mksap-")) {
-      questionId = `mksap-${questionId}`;
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split("/");
+      const questionIndex = pathParts.indexOf("questions");
+      if (questionIndex !== -1 && pathParts[questionIndex + 1]) {
+        questionId = `mksap-${pathParts[questionIndex + 1]}`;
+      }
+    } catch (e) {
+      console.warn("[MKSAP Parser] URL parsing failed:", e);
     }
   }
 
-  // 1. Vignette & Stem
-  const vignetteEl = $(".question-text, .stem").first();
-  const vignetteHtml = vignetteEl.html() || "";
-
-  // Isolate question stem (often the last paragraph or sentence)
-  let questionStemHtml = "";
-  let cleanedVignetteHtml = vignetteHtml;
-
-  const paragraphs = vignetteEl.find("p");
-  if (paragraphs.length > 0) {
-    const lastP = paragraphs.last();
-    questionStemHtml = lastP.html() || lastP.text() || "";
-
-    // Remove the question stem from the vignette to avoid double display
-    // when sections are rendered separately.
-    if (vignetteHtml.trim().endsWith(questionStemHtml.trim())) {
-      lastP.remove();
-      cleanedVignetteHtml = vignetteEl.html() || vignetteHtml;
-    }
-  } else if (vignetteHtml) {
-    // If no paragraphs, attempt to split by last sentence
-    const text = vignetteEl.text().trim();
-    const sentences = text.split(/(?<=[.!?])\s+/);
-    questionStemHtml =
-      sentences.length > 0 ? sentences[sentences.length - 1] : vignetteHtml;
-  }
-
-  // Strategy 3: Final fallback - generate hash from vignette content
+  // Strategy 3: Article data-question-id attribute
   if (!questionId) {
-    questionId = generateQuestionHash(cleanedVignetteHtml);
-    console.log(
-      "[MKSAP Parser] No explicit questionId found, using content hash:",
-      questionId
-    );
+    const articleId = $("article.question").attr("data-question-id");
+    if (articleId) {
+      questionId = `mksap-${articleId}`;
+    }
   }
 
-  // 2. Answers
+  // 1. Vignette - inside section.q_info > div.stimulus
+  // Get all paragraphs with data-hlid (the actual clinical content)
+  const stimulusEl = $("div.stimulus").first();
+  const vignetteParagraphs: string[] = [];
+
+  stimulusEl.find("p[data-hlid]").each((_: number, el: cheerio.Element) => {
+    const html = $(el).html();
+    if (html && html.trim()) {
+      vignetteParagraphs.push(`<p>${html}</p>`);
+    }
+  });
+
+  // Also capture any tables (lab values) in the stimulus
+  stimulusEl.find("table").each((_: number, el: cheerio.Element) => {
+    const tableHtml = $.html(el);
+    if (tableHtml) {
+      vignetteParagraphs.push(tableHtml);
+    }
+  });
+
+  let vignetteHtml = vignetteParagraphs.join("\n");
+
+  // 2. Question Stem - inside fieldset > legend.header > p
+  const questionStemEl = $("fieldset.card-body legend.header p, fieldset legend p").first();
+  let questionStemHtml = questionStemEl.html() || "";
+
+  // Fallback: last paragraph of stimulus if no fieldset found
+  if (!questionStemHtml && vignetteParagraphs.length > 0) {
+    // Check if last vignette paragraph looks like a question (ends with ?)
+    const lastP = vignetteParagraphs[vignetteParagraphs.length - 1];
+    if (lastP.includes("?")) {
+      questionStemHtml = lastP.replace(/<\/?p>/g, "");
+      vignetteParagraphs.pop();
+      vignetteHtml = vignetteParagraphs.join("\n");
+    }
+  }
+
+  if (!questionId) {
+    questionId = generateQuestionHash(vignetteHtml);
+  }
+
+  // 3. Answers - inside div.options > div.body > div.option
   const answers: AnswerOption[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  $(".answer-option").each((i: number, el: any) => {
-    const $el = $(el);
-    const letter =
-      $el.attr("data-letter") ||
-      $el.find(".letter").text().trim().replace(".", "") ||
-      String.fromCharCode(65 + i);
-    const html = $el.find(".option-content, .text").html() || $el.html() || "";
-    const isCorrect = $el.hasClass("correct");
-    const isUserChoice = $el.hasClass("selected");
 
-    answers.push({
-      letter,
-      html: html.replace(/^[A-E]\.?\s*/, "").trim(), // Clean up leading letter if present
-      isCorrect,
-      isUserChoice,
-    });
+  $("div.options div.body div.option").each((i: number, el: cheerio.Element) => {
+    const $el = $(el);
+
+    // Extract letter from bubble span
+    const letter = $el.find("div.bubble span").first().text().trim() ||
+                   String.fromCharCode(65 + i);
+
+    // Extract answer text
+    const answerText = $el.find("span.answer-text span.text").html() ||
+                       $el.find("span.answer-text").html() ||
+                       "";
+
+    // Check if correct (r_a class) or user selected (s_a class)
+    const optionClasses = $el.attr("class") || "";
+    const isCorrect = optionClasses.includes("r_a");
+    const isUserChoice = optionClasses.includes("s_a");
+
+    // Extract peer percentage from stats
+    const peerText = $el.find("div.stats div.stat-label span").text();
+    const peerPercent = peerText ? parseInt(peerText.replace(/[^0-9]/g, ""), 10) : undefined;
+
+    if (answerText.trim()) {
+      answers.push({
+        letter,
+        html: answerText,
+        isCorrect,
+        isUserChoice,
+        peerPercent: isNaN(peerPercent!) ? undefined : peerPercent,
+      });
+    }
   });
 
   const finalAnswers = deduplicateAnswers(answers);
   const wasCorrect = finalAnswers.some((a) => a.isUserChoice && a.isCorrect);
 
-  // 3. Explanation & Key Points
-  const explanationHtml = $(".critique, .explanation").first().html() || "";
-  const keyPointsHtml = $(".educational-objective").first().html() || undefined;
+  // 4. Explanation (Critique) - EXCLUDING keypoints aside
+  // Clone the critique div so we can remove keypoints without affecting original
+  const critiqueEl = $("div.critique").first().clone();
+  critiqueEl.find("aside.keypoints").remove(); // Remove keypoints from explanation
 
-  // 4. Images
+  // Also remove any navigation/UI elements that might have been captured
+  critiqueEl.find(".next-question, .related-content, .learning-plan, .topic-outline").remove();
+  critiqueEl.find("a.nav-link, button.nav-link").remove();
+
+  let explanationHtml = critiqueEl.html() || "";
+
+  // Fallback: try section.answer .exposition if no .critique found
+  if (!explanationHtml) {
+    const expositionEl = $("section.answer div.exposition").first().clone();
+    expositionEl.find("aside.keypoints").remove();
+    expositionEl.find("h2").remove(); // Remove "Answer & Critique" header
+    expositionEl.find(".response").remove(); // Remove "You answered X" status
+    expositionEl.find(".source").remove(); // Remove "Question source" link
+    explanationHtml = expositionEl.html() || "";
+  }
+
+  // 5. Key Points - inside aside.keypoints
+  const keyPointsEl = $("aside.keypoints").first();
+  let keyPointsHtml: string | undefined;
+
+  if (keyPointsEl.length) {
+    // Get just the list items, not the "Key Points" title
+    const keyPointsList = keyPointsEl.find("ul").html();
+    if (keyPointsList) {
+      keyPointsHtml = `<ul>${keyPointsList}</ul>`;
+    } else {
+      // Fallback: get all li items
+      const items: string[] = [];
+      keyPointsEl.find("li").each((_: number, el: cheerio.Element) => {
+        const text = $(el).html();
+        if (text) items.push(`<li>${text}</li>`);
+      });
+      if (items.length) {
+        keyPointsHtml = `<ul>${items.join("")}</ul>`;
+      }
+    }
+  }
+
+  // 6. Images
   const images: QuestionImage[] = [];
   const addImages = (
     containerSelector: string,
-    location:
-      | "vignette"
-      | "question"
-      | "explanation"
-      | "keypoint"
-      | "references"
-      | "peerpearls"
+    location: QuestionImage["location"]
   ) => {
     $(containerSelector)
       .find("img")
       .each((_: number, el: cheerio.Element) => {
         const src = $(el).attr("src");
-        if (src) {
+        if (src && !src.includes("svg") && !src.includes("icon")) {
           images.push({
             url: src.startsWith("http") ? src : new URL(src, url).href,
             localPath: "",
-            caption: $(el).attr("alt") || undefined,
+            caption:
+              $(el).attr("alt") ||
+              $(el).closest("figure").find("figcaption").text() ||
+              undefined,
             location,
           });
         }
       });
   };
 
-  addImages(".question-text, .stem", "question");
-  addImages(".critique, .explanation", "explanation");
-  addImages(".educational-objective", "keypoint");
+  addImages("div.stimulus", "question");
+  addImages("div.critique", "explanation");
+  addImages("aside.keypoints", "keypoint");
 
-  // 5. Metadata
-  let category = $("title").text().split("|")[0].trim();
-  if (!category || category.toLowerCase().includes("mksap")) {
-    category = $(".breadcrumb").first().text().trim() || "Internal Medicine";
+  // 7. Metadata - category from breadcrumb
+  let category: string | undefined;
+  const breadcrumbItems: string[] = [];
+  $("ol.breadcrumb li.breadcrumb-item, nav.breadcrumb li").each((_: number, el: cheerio.Element) => {
+    const text = $(el).text().trim();
+    // Skip "MKSAP 19" and generic items
+    if (text && !text.toLowerCase().includes("mksap") && !text.includes("Question")) {
+      breadcrumbItems.push(text);
+    }
+  });
+
+  if (breadcrumbItems.length > 0) {
+    // Use the most specific category (usually last meaningful item)
+    category = breadcrumbItems[breadcrumbItems.length - 1];
+  }
+
+  if (!category) {
+    category = $("title").text().split("|")[0].trim();
+    if (category?.toLowerCase().includes("mksap")) {
+      category = undefined;
+    }
   }
 
   return {
@@ -730,13 +817,15 @@ function parseMKSAP(
     questionId,
     capturedAt,
     sourceUrl: url,
-    vignetteHtml: cleanedVignetteHtml,
+    vignetteHtml,
     questionStemHtml,
     answers: finalAnswers,
     wasCorrect,
     explanationHtml,
     keyPointsHtml,
-    images,
+    images: images.filter(
+      (v, i, a) => a.findIndex((t) => t.url === v.url) === i
+    ), // Dedupe
     attempts: [],
     category,
   };
