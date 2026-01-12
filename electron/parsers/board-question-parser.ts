@@ -32,6 +32,7 @@ export interface QuestionImage {
   caption?: string;
   location:
     | "vignette"
+    | "question"
     | "explanation"
     | "keypoint"
     | "references"
@@ -110,7 +111,10 @@ function deduplicateAnswers(answers: AnswerOption[]): AnswerOption[] {
   const uniqueByContent = new Map<string, AnswerOption>();
 
   for (const answer of answers) {
-    const text = answer.html.replace(/<[^>]*>/g, "").trim().toLowerCase();
+    const text = answer.html
+      .replace(/<[^>]*>/g, "")
+      .trim()
+      .toLowerCase();
     if (!text) continue;
 
     const existing = uniqueByContent.get(text);
@@ -255,7 +259,7 @@ function parsePeerPrep(
       images.push({
         url: href.startsWith("http") ? href : new URL(href, url).href,
         localPath: "",
-        location: "vignette",
+        location: "question",
       });
     }
   });
@@ -380,7 +384,7 @@ function parseMKSAP(
   const images: QuestionImage[] = [];
   const addImages = (
     containerSelector: string,
-    location: "vignette" | "explanation" | "keypoint"
+    location: "vignette" | "question" | "explanation" | "keypoint"
   ) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $(containerSelector)
@@ -398,7 +402,7 @@ function parseMKSAP(
       });
   };
 
-  addImages(".question-text, .stem", "vignette");
+  addImages(".question-text, .stem", "question");
   addImages(".critique, .explanation", "explanation");
   addImages(".educational-objective", "keypoint");
 

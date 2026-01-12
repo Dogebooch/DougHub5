@@ -38,7 +38,6 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
   const [isKeyPointsOpen, setIsKeyPointsOpen] = useState(true);
   const [isPeerPearlsOpen, setIsPeerPearlsOpen] = useState(true);
   const [isReferencesOpen, setIsReferencesOpen] = useState(false);
-  const [isVignetteExpanded, setIsVignetteExpanded] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<{
     url: string;
     caption?: string;
@@ -217,8 +216,6 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     [content.referencesHtml, processHtml]
   );
 
-  const isLongVignette = (content.vignetteHtml?.length || 0) > 600;
-
   // Deduplicate answers by letter, keeping the one with most metadata
   const displayedAnswers = React.useMemo(() => {
     if (!content.answers) return [];
@@ -277,6 +274,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
   const renderImages = (
     location:
       | "vignette"
+      | "question"
       | "explanation"
       | "keypoint"
       | "references"
@@ -424,52 +422,39 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
 
       <CardContent className="p-0">
         <div className="divide-y divide-border">
-          {/* Vignette Section */}
-          <div className="p-6 relative group/vignette">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase">
-                Patient Scenario
-              </span>
-              {isLongVignette && (
-                <button
-                  onClick={() => setIsVignetteExpanded(!isVignetteExpanded)}
-                  className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline"
-                >
-                  {isVignetteExpanded ? "Collapse" : "Show Full Scenario"}
-                </button>
-              )}
-            </div>
-
-            <div
-              className={cn(
-                "prose prose-sm max-w-none leading-relaxed transition-all duration-300",
-                isLongVignette &&
-                  !isVignetteExpanded &&
-                  "line-clamp-3 opacity-60"
-              )}
-              dangerouslySetInnerHTML={{ __html: displayVignetteHtml }}
-            />
-
-            {isLongVignette && !isVignetteExpanded && (
+          {/* Question & Vignette Section */}
+          <div className="p-6 bg-primary/5 border-y border-primary/10">
+            {displayVignetteHtml && (
               <div
-                className="absolute bottom-6 left-6 right-6 h-12 bg-gradient-to-t from-background via-background/80 to-transparent cursor-pointer"
-                onClick={() => setIsVignetteExpanded(true)}
+                className="prose prose-sm max-w-none leading-relaxed mb-6 text-foreground/90"
+                dangerouslySetInnerHTML={{ __html: displayVignetteHtml }}
               />
             )}
 
-            {(isVignetteExpanded || !isLongVignette) &&
-              renderImages("vignette")}
-          </div>
-
-          {/* Question Stem Section */}
-          <div className="p-6 bg-primary/5 border-y border-primary/10">
-            <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase block mb-3">
-              Clinical Question
-            </span>
             <div
-              className="prose prose-sm max-w-none font-semibold text-lg text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: processedQuestionStem }}
-            />
+              className={cn(
+                "space-y-3",
+                displayVignetteHtml && "pt-6 border-t border-primary/10"
+              )}
+            >
+              <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase block">
+                Clinical Question
+              </span>
+              <div
+                className="prose prose-sm max-w-none font-semibold text-lg text-muted-foreground"
+                dangerouslySetInnerHTML={{ __html: processedQuestionStem }}
+              />
+            </div>
+
+            {content.images.some(
+              (img) =>
+                img.location === "question" || img.location === "vignette"
+            ) && (
+              <div className="mt-6 pt-4 border-t border-primary/5">
+                {renderImages("question")}
+                {renderImages("vignette")}
+              </div>
+            )}
           </div>
 
           {/* Answers Section */}

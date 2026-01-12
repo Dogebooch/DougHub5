@@ -297,6 +297,7 @@ export interface BoardImage {
   caption?: string;
   location:
     | "vignette"
+    | "question"
     | "explanation"
     | "keypoint"
     | "references"
