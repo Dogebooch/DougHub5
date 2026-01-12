@@ -293,6 +293,25 @@ export async function processCapture(
         };
         sourceItemQueries.insert(sourceItem);
         resultId = id;
+
+        // Extract AI metadata for new board questions (async, non-blocking)
+        extractQuestionSummary(sourceItem.rawContent, sourceItem.sourceType)
+          .then((extracted) => {
+            if (extracted) {
+              sourceItemQueries.update(id, {
+                metadata: {
+                  ...extracted,
+                  extractedAt: new Date().toISOString(),
+                },
+              });
+              console.log(
+                `[Capture] ✅ AI metadata extracted: "${extracted.summary}"`
+              );
+            }
+          })
+          .catch((err) => {
+            console.warn("[Capture] ⚠️ AI extraction failed:", err);
+          });
       }
 
       // 4. Persist the raw HTML for provenance/debugging

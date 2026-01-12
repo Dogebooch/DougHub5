@@ -166,16 +166,17 @@
         btn.id = 'doughub-capture-btn';
         btn.style.cssText = `
             position: fixed;
-            bottom: 20px;
+            bottom: 120px;
             right: 20px;
             z-index: 99999;
-            padding: 12px 24px;
+            padding: 6px 12px;
             background-color: #2563eb;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px;
             font-family: sans-serif;
             font-weight: 600;
+            font-size: 12px;
             cursor: pointer;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             transition: all 0.2s;

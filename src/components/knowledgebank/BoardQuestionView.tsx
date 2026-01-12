@@ -233,6 +233,30 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
       });
     });
 
+    // PeerPrep-specific: Detect answer choice subheadings (short title lines followed by explanation)
+    // Pattern: <p> with short text (10-60 chars, no ending punctuation) followed by <p> with longer text
+    // Examples: "Heated refrigerator chemicals", "Swimming pool maintenance agents"
+    if (content.source === "peerprep") {
+      html = html.replace(
+        /<p([^>]*)>([^<]{10,60})<\/p>(\s*)<p([^>]*)>([^<]{80,})/gi,
+        (match, attrs1, title, whitespace, attrs2, body) => {
+          const trimmedTitle = title.trim();
+          // Only style as subheading if it looks like a title:
+          // - No ending punctuation (., ?, !)
+          // - Doesn't start with common sentence starters
+          const endsWithPunctuation = /[.?!]$/.test(trimmedTitle);
+          const startsLikeSentence = /^(The|This|These|A|An|In|It|If|When|Although)\s/i.test(trimmedTitle);
+
+          if (!endsWithPunctuation && !startsLikeSentence) {
+            return `<div class="mt-6 pt-4 border-t border-border/30">
+              <p${attrs1} class="!mt-0 !mb-2 font-semibold text-foreground">${trimmedTitle}</p>
+            </div>${whitespace}<p${attrs2}>${body}`;
+          }
+          return match;
+        }
+      );
+    }
+
     // Style Answer Choice references as bold inline text (clean, MKSAP-style)
     const choiceRegex =
       /(<[^>]+>)|(\b(?:Option|Choice|Answer)\s+([A-F])\b|\(([A-F])\)(?=\s|\.|,|$))/gi;
@@ -244,7 +268,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     });
 
     return html;
-  }, [content.explanationHtml, processHtml]);
+  }, [content.explanationHtml, content.source, processHtml]);
 
   const processedKeyPoints = React.useMemo(
     () => formatAsBullets(processHtml(content.keyPointsHtml)),
