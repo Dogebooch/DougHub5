@@ -467,7 +467,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
               Clinical Question
             </span>
             <div
-              className="prose prose-sm max-w-none font-semibold text-lg text-foreground"
+              className="prose prose-sm max-w-none font-semibold text-lg text-muted-foreground"
               dangerouslySetInnerHTML={{ __html: processedQuestionStem }}
             />
           </div>
