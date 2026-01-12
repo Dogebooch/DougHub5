@@ -74,7 +74,6 @@ export function Sidebar({ className }: SidebarProps) {
       id: "notebook",
       label: "Notebook",
       icon: BookOpen,
-      badge: smartViewCounts.notebook || 0,
       implemented: true,
     },
     {
@@ -116,12 +115,7 @@ export function Sidebar({ className }: SidebarProps) {
           !isActive && "text-muted-foreground hover:text-foreground",
           !item.implemented &&
             "opacity-40 cursor-not-allowed hover:bg-transparent",
-          collapsed && "justify-center px-0",
-          // T112.2: Subtle glow when Review has due cards
-          item.id === "review" &&
-            item.badge &&
-            item.badge > 0 &&
-            "ring-2 ring-primary/60 ring-offset-1 ring-offset-background"
+          collapsed && "justify-center px-0"
         )}
       >
         <Icon

@@ -219,48 +219,41 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
 
   const isLongVignette = (content.vignetteHtml?.length || 0) > 600;
 
-  // Deduplicate answers by both letter and content, keeping the one with most info
+  // Deduplicate answers by letter, keeping the one with most metadata
   const displayedAnswers = React.useMemo(() => {
     if (!content.answers) return [];
 
-    // 1. Deduplicate by content text first
-    const uniqueByContent = new Map<string, (typeof content.answers)[0]>();
-    for (const answer of content.answers) {
-      const text = (answer.html || "")
-        .replace(/<[^>]*>/g, "")
+    // Normalize text for comparison: strip HTML, collapse whitespace, lowercase
+    const normalizeText = (html: string) =>
+      (html || "")
+        .replace(/<[^>]*>/g, "") // Remove HTML tags
+        .replace(/\s+/g, " ") // Collapse whitespace
         .trim()
         .toLowerCase();
+
+    const getScore = (a: (typeof content.answers)[0]) => {
+      let score = 0;
+      if (a.isUserChoice) score += 100;
+      if (a.isCorrect) score += 50;
+      if (a.peerPercent !== undefined) score += 20;
+      if (/^[A-F]$/i.test(a.letter)) score += 10;
+      return score;
+    };
+
+    // Deduplicate by letter first (primary key)
+    const uniqueByLetter = new Map<string, (typeof content.answers)[0]>();
+    for (const answer of content.answers) {
+      const text = normalizeText(answer.html);
       if (!text) continue;
 
-      const existing = uniqueByContent.get(text);
-      const getScore = (a: (typeof content.answers)[0]) => {
-        let score = 0;
-        if (a.isUserChoice) score += 100;
-        if (a.isCorrect) score += 50;
-        if (a.peerPercent !== undefined) score += 20;
-        if (/^[A-F]$/i.test(a.letter)) score += 10;
-        return score;
-      };
+      // Only keep valid answer letters (A-F)
+      if (!/^[A-F]$/i.test(answer.letter)) continue;
+
+      const letterKey = answer.letter.toUpperCase();
+      const existing = uniqueByLetter.get(letterKey);
 
       if (!existing || getScore(answer) > getScore(existing)) {
-        uniqueByContent.set(text, answer);
-      }
-    }
-
-    // 2. Deduplicate by letter (in case different letters were assigned to the same content)
-    const uniqueByLetter = new Map<string, (typeof content.answers)[0]>();
-    for (const answer of uniqueByContent.values()) {
-      const existing = uniqueByLetter.get(answer.letter);
-      const getScore = (a: (typeof content.answers)[0]) => {
-        let score = 0;
-        if (a.isUserChoice) score += 100;
-        if (a.isCorrect) score += 50;
-        if (a.peerPercent !== undefined) score += 20;
-        return score;
-      };
-
-      if (!existing || getScore(answer) > getScore(existing)) {
-        uniqueByLetter.set(answer.letter, answer);
+        uniqueByLetter.set(letterKey, answer);
       }
     }
 
@@ -470,7 +463,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
 
           {/* Question Stem Section */}
           <div className="p-6 bg-primary/5 border-y border-primary/10">
-            <span className="text-[10px] font-bold text-primary/70 tracking-widest uppercase block mb-3">
+            <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase block mb-3">
               Clinical Question
             </span>
             <div
