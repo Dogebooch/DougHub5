@@ -73,7 +73,7 @@ export function parseBoardQuestion(
  * Enhanced to handle tab-based UIs common in PeerPrep and MKSAP.
  */
 function getSectionHtml(
-  $: any,
+  $: cheerio.CheerioAPI,
   searchTitle: string,
   selectors: string[]
 ): string | undefined {
@@ -240,7 +240,7 @@ function deduplicateAnswers(answers: AnswerOption[]): AnswerOption[] {
  * Implementation planned for T124.6.
  */
 function parsePeerPrep(
-  $: any,
+  $: cheerio.CheerioAPI,
   url: string,
   capturedAt: string
 ): BoardQuestionContent {
@@ -538,9 +538,8 @@ function parsePeerPrep(
 /**
  * Parses MKSAP 19 questions.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseMKSAP(
-  $: any,
+  $: cheerio.CheerioAPI,
   url: string,
   capturedAt: string
 ): BoardQuestionContent {

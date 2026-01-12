@@ -41,8 +41,10 @@ export function WeakTopicsView() {
       } else if (result.data) {
         setTopics(result.data);
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch weak topics");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch weak topics"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +63,7 @@ export function WeakTopicsView() {
           return b.cardCount - a.cardCount;
         case "name":
           return a.topicName.localeCompare(b.topicName);
-        case "recent":
+        case "recent": {
           const dateA = a.lastReviewDate
             ? new Date(a.lastReviewDate).getTime()
             : 0;
@@ -69,6 +71,7 @@ export function WeakTopicsView() {
             ? new Date(b.lastReviewDate).getTime()
             : 0;
           return dateB - dateA;
+        }
         default:
           return 0;
       }

@@ -1,42 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Loader2, 
-  Sparkles, 
-  ChevronDown, 
-  ChevronLeft, 
+import {
+  Loader2,
+  Sparkles,
+  ChevronLeft,
   ChevronRight,
   AlertTriangle,
-  Info
-} from 'lucide-react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from '@/components/ui/dialog';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-import { CardSuggestion, CardFormat, WorthinessResult } from '@/types/ai';
-import { CardWorthinessPanel } from './CardWorthinessPanel';
+  Info,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { CardSuggestion, CardFormat, WorthinessResult } from "@/types/ai";
+import { CardWorthinessPanel } from "./CardWorthinessPanel";
 
 interface CardGenerationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedText: string;
-  blockId: string;
-  blockContent: string;      // full block for AI context
-  topicName: string;         // for display + AI context
-  notebookTopicPageId: string; // for card provenance
+  blockContent: string; // full block for AI context
+  topicName: string; // for display + AI context
   onCreateCard: (data: {
     format: CardFormat;
     front: string;
@@ -46,36 +42,46 @@ interface CardGenerationModalProps {
 }
 
 const FORMAT_OPTIONS = [
-  { value: 'qa', label: 'Q&A', description: 'Question and answer' },
-  { value: 'cloze', label: 'Cloze', description: 'Fill in the blank' },
-  { value: 'overlapping-cloze', label: 'Overlapping Cloze', description: 'For lists (prevents sibling interference)' },
-  { value: 'image-occlusion', label: 'Image Occlusion', description: 'Hide parts of an image' },
-  { value: 'procedural', label: 'Procedural', description: 'Step-by-step procedure' },
+  { value: "qa", label: "Q&A", description: "Question and answer" },
+  { value: "cloze", label: "Cloze", description: "Fill in the blank" },
+  {
+    value: "overlapping-cloze",
+    label: "Overlapping Cloze",
+    description: "For lists (prevents sibling interference)",
+  },
+  {
+    value: "image-occlusion",
+    label: "Image Occlusion",
+    description: "Hide parts of an image",
+  },
+  {
+    value: "procedural",
+    label: "Procedural",
+    description: "Step-by-step procedure",
+  },
 ];
 
 export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
   open,
   onOpenChange,
   selectedText,
-  blockId,
   blockContent,
   topicName,
-  notebookTopicPageId,
-  onCreateCard
+  onCreateCard,
 }) => {
   // State
   const [suggestions, setSuggestions] = useState<CardSuggestion[] | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  const [userIntent, setUserIntent] = useState('');
+
+  const [userIntent, setUserIntent] = useState("");
   const [showIntent, setShowIntent] = useState(false);
-  
-  const [editedFront, setEditedFront] = useState('');
-  const [editedBack, setEditedBack] = useState('');
+
+  const [editedFront, setEditedFront] = useState("");
+  const [editedBack, setEditedBack] = useState("");
   const [isDirty, setIsDirty] = useState(false);
-  
+
   const [showFullText, setShowFullText] = useState(false);
 
   // Fetch suggestions
@@ -83,7 +89,11 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
     setIsLoading(true);
     setError(null);
     try {
-      const result = await window.api.ai.generateCards(blockContent, topicName, userIntent);
+      const result = await window.api.ai.generateCards(
+        blockContent,
+        topicName,
+        userIntent
+      );
       if (result.error) {
         setError(result.error);
       } else if (result.data) {
@@ -96,7 +106,7 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
         }
       }
     } catch (err) {
-      setError('Failed to generate suggestions. Please try again.');
+      setError("Failed to generate suggestions. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +120,7 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
       setSuggestions(null);
       setSelectedIndex(0);
       setError(null);
-      setUserIntent('');
+      setUserIntent("");
       setShowIntent(false);
       setIsDirty(false);
     }
@@ -136,29 +146,29 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
       format: currentSuggestion.format,
       front: editedFront,
       back: editedBack,
-      worthiness: currentSuggestion.worthiness
+      worthiness: currentSuggestion.worthiness,
     });
     onOpenChange(false);
   };
 
   const handleFormatChange = (format: CardFormat) => {
     if (!suggestions) return;
-    
+
     // Find if we have a suggestion for this format already
-    const existingIndex = suggestions.findIndex(s => s.format === format);
+    const existingIndex = suggestions.findIndex((s) => s.format === format);
     if (existingIndex !== -1) {
       setSelectedIndex(existingIndex);
     } else {
-      // If we don't have a suggestion for this specific format, 
+      // If we don't have a suggestion for this specific format,
       // we might want to tell the AI to regenerate or just update the format type locally.
       // For now, let's just update the local suggestion format if possible, or keep as is.
       // Per instructions: "if AI provided a suggestion for that format, use it; otherwise keep current front/back"
-      
+
       // We'll update the current suggestion object (locally)
       const updatedSuggestions = [...suggestions];
       updatedSuggestions[selectedIndex] = {
         ...updatedSuggestions[selectedIndex],
-        format: format
+        format: format,
       };
       setSuggestions(updatedSuggestions);
     }
@@ -166,19 +176,25 @@ export const CardGenerationModal: React.FC<CardGenerationModalProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Ctrl+Enter always works
-    if (e.key === 'Enter' && e.ctrlKey) {
+    if (e.key === "Enter" && e.ctrlKey) {
       e.preventDefault();
       handleCreateCard();
     }
     // Plain Enter only works if not in a textarea
-    if (e.key === 'Enter' && !e.ctrlKey && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+    if (
+      e.key === "Enter" &&
+      !e.ctrlKey &&
+      (e.target as HTMLElement).tagName !== "TEXTAREA"
+    ) {
       e.preventDefault();
       handleCreateCard();
     }
   };
 
   const isLongText = selectedText.length > 150;
-  const displayText = showFullText ? selectedText : selectedText.slice(0, 100) + (isLongText ? '...' : '');
+  const displayText = showFullText
+    ? selectedText
+    : selectedText.slice(0, 100) + (isLongText ? "..." : "");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

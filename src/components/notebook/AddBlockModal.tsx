@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Loader2, Search } from 'lucide-react';
+import { Loader2, Search } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,13 +7,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
-import { SourceItem, NotebookBlock } from '@/types';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import { SourceItem, NotebookBlock } from "@/types";
 
 interface AddBlockModalProps {
   open: boolean;
@@ -23,13 +23,13 @@ interface AddBlockModalProps {
 }
 
 const SOURCE_TYPE_LABELS: Record<string, string> = {
-  qbank: 'Q Bank',
-  article: 'Article',
-  pdf: 'PDF',
-  image: 'Image',
-  audio: 'Audio',
-  quickcapture: 'Quick Capture',
-  manual: 'Manual',
+  qbank: "Q Bank",
+  article: "Article",
+  pdf: "PDF",
+  image: "Image",
+  audio: "Audio",
+  quickcapture: "Quick Capture",
+  manual: "Manual",
 };
 
 export function AddBlockModal({
@@ -40,7 +40,7 @@ export function AddBlockModal({
 }: AddBlockModalProps) {
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -54,15 +54,15 @@ export function AddBlockModal({
       setLoading(true);
       try {
         const result = await window.api.sourceItems.getAll();
-        
+
         if (cancelled) return;
 
         if (result.error) {
-          console.error('Failed to fetch sources:', result.error);
+          console.error("Failed to fetch sources:", result.error);
           toast({
-            title: 'Error',
-            description: 'Failed to load sources from Knowledge Bank',
-            variant: 'destructive',
+            title: "Error",
+            description: "Failed to load sources from Knowledge Bank",
+            variant: "destructive",
           });
           setSources([]);
           return;
@@ -70,16 +70,16 @@ export function AddBlockModal({
 
         // Filter to only processed/curated items (exclude inbox)
         const eligible = (result.data || []).filter(
-          (item) => item.status === 'processed' || item.status === 'curated'
+          (item) => item.status === "processed" || item.status === "curated"
         );
         setSources(eligible);
       } catch (error) {
         if (cancelled) return;
-        console.error('Error fetching sources:', error);
+        console.error("Error fetching sources:", error);
         toast({
-          title: 'Error',
-          description: 'An unexpected error occurred',
-          variant: 'destructive',
+          title: "Error",
+          description: "An unexpected error occurred",
+          variant: "destructive",
         });
         setSources([]);
       } finally {
@@ -99,14 +99,14 @@ export function AddBlockModal({
   // Reset search when modal closes
   useEffect(() => {
     if (!open) {
-      setSearch('');
+      setSearch("");
     }
   }, [open]);
 
   // Filter sources by search term (useMemo for performance)
   const filteredSources = useMemo(() => {
     if (!search.trim()) return sources;
-    
+
     const searchLower = search.toLowerCase();
     return sources.filter((source) =>
       source.title.toLowerCase().includes(searchLower)
@@ -118,16 +118,19 @@ export function AddBlockModal({
 
     try {
       // 1. Fetch existing blocks to determine next position
-      const blocksResult = await window.api.notebookBlocks.getByPage(notebookTopicPageId);
-      
+      const blocksResult = await window.api.notebookBlocks.getByPage(
+        notebookTopicPageId
+      );
+
       if (blocksResult.error) {
         throw new Error(blocksResult.error);
       }
 
       const existingBlocks = blocksResult.data || [];
-      const maxPosition = existingBlocks.length > 0
-        ? Math.max(...existingBlocks.map((b) => b.position))
-        : 0;
+      const maxPosition =
+        existingBlocks.length > 0
+          ? Math.max(...existingBlocks.map((b) => b.position))
+          : 0;
 
       // 2. Create new block
       const newBlock: NotebookBlock = {
@@ -142,7 +145,7 @@ export function AddBlockModal({
       };
 
       const createResult = await window.api.notebookBlocks.create(newBlock);
-      
+
       if (createResult.error) {
         throw new Error(createResult.error);
       }
@@ -150,7 +153,7 @@ export function AddBlockModal({
       // 3. Update source status to 'curated'
       // Note: Log warning if this fails but don't block success flow
       const updateResult = await window.api.sourceItems.update(source.id, {
-        status: 'curated',
+        status: "curated",
       });
 
       if (updateResult.error) {
@@ -161,18 +164,19 @@ export function AddBlockModal({
 
       // 4. Success feedback
       toast({
-        title: 'Block Added',
+        title: "Block Added",
         description: `"${source.title}" added to notebook`,
       });
 
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
-      console.error('Error creating block:', error);
+    } catch (error) {
+      console.error("Error creating block:", error);
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to add block',
-        variant: 'destructive',
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to add block",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);

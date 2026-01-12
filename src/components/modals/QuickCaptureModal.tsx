@@ -127,19 +127,6 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
   };
 
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        handleCancel();
-      }
-    };
-
-    if (isOpen) {
-      window.addEventListener("keydown", handleEscape);
-      return () => window.removeEventListener("keydown", handleEscape);
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
     // 1. Instant detection for the badge
     if (contentType === "text") {
       setDetectedType(detectContentType(content));
@@ -255,14 +242,27 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setContent("");
     setTitle("");
     setIsTitleManual(false);
     setImageData(null);
     setContentType("text");
     onClose();
-  };
+  }, [onClose]);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        handleCancel();
+      }
+    };
+
+    if (isOpen) {
+      window.addEventListener("keydown", handleEscape);
+      return () => window.removeEventListener("keydown", handleEscape);
+    }
+  }, [isOpen, handleCancel]);
 
   useEffect(() => {
     if (isOpen) {

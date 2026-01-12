@@ -1,11 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  BookOpen, 
-  Sparkles, 
-  Plus, 
-  Loader2,
-  Library
-} from 'lucide-react';
+import React, { useCallback, useEffect, useState } from "react";
+import { BookOpen, Sparkles, Plus, Loader2, Library } from "lucide-react";
 import {
   NotebookTopicPage,
   NotebookBlock,
@@ -48,7 +42,7 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
   const [selectedText, setSelectedText] = useState("");
   const [activeBlock, setActiveBlock] = useState<NotebookBlock | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -74,17 +68,19 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
 
       // Notify parent of refresh if needed (e.g. updating sidebar counts)
       onRefresh();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching topic page:", err);
-      setError(err.message || "Failed to load topic page");
+      setError(
+        err instanceof Error ? err.message : "Failed to load topic page"
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [pageId, onRefresh]);
 
   useEffect(() => {
     fetchData();
-  }, [pageId]);
+  }, [fetchData]);
 
   const handleGenerateCardTrigger = (text: string, block: NotebookBlock) => {
     setSelectedText(text);
@@ -92,16 +88,22 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
     setGenModalOpen(true);
   };
 
-  const handleCreateCard = async (data: any) => {
+  type GeneratedCardData = {
+    format: "qa" | "cloze" | "overlapping-cloze" | "vignette";
+    front: string;
+    back: string;
+  };
+
+  const handleCreateCard = async (data: GeneratedCardData) => {
     if (!activeBlock || !topic) return;
 
     // Map AI format to database card type
-    let cardType: any = "qa";
+    let cardType: CardWithFSRS["cardType"] = "qa";
     if (data.format === "cloze") cardType = "cloze";
     if (data.format === "overlapping-cloze") cardType = "list-cloze";
     if (data.format === "vignette") cardType = "vignette";
 
-    const newCard: any = {
+    const newCard: CardWithFSRS = {
       id: crypto.randomUUID(),
       front: data.front,
       back: data.back,

@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
-  Home,
   Play,
   Zap,
   Settings,
@@ -37,78 +36,81 @@ export function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null);
   const setCurrentView = useAppStore((state) => state.setCurrentView);
 
-  const commands: Command[] = [
-    {
-      id: "quick-capture",
-      label: "Quick Capture",
-      icon: <Zap className="h-4 w-4" />,
-      action: () => {
-        onOpenQuickCapture();
-        onClose();
+  const commands: Command[] = useMemo(
+    () => [
+      {
+        id: "quick-capture",
+        label: "Quick Capture",
+        icon: <Zap className="h-4 w-4" />,
+        action: () => {
+          onOpenQuickCapture();
+          onClose();
+        },
+        keywords: ["capture", "add", "new", "create", "dump", "save", "quick"],
       },
-      keywords: ["capture", "add", "new", "create", "dump", "save", "quick"],
-    },
-    {
-      id: "inbox",
-      label: "Go to Inbox",
-      icon: <Inbox className="h-4 w-4" />,
-      action: () => {
-        setCurrentView("inbox");
-        onClose();
+      {
+        id: "inbox",
+        label: "Go to Inbox",
+        icon: <Inbox className="h-4 w-4" />,
+        action: () => {
+          setCurrentView("inbox");
+          onClose();
+        },
+        keywords: ["inbox", "triage", "home", "start"],
       },
-      keywords: ["inbox", "triage", "home", "start"],
-    },
-    {
-      id: "review",
-      label: "Go to Learn",
-      icon: <Play className="h-4 w-4" />,
-      action: () => {
-        setCurrentView("review");
-        onClose();
+      {
+        id: "review",
+        label: "Go to Learn",
+        icon: <Play className="h-4 w-4" />,
+        action: () => {
+          setCurrentView("review");
+          onClose();
+        },
+        keywords: ["learn", "cards", "study", "review"],
       },
-      keywords: ["learn", "cards", "study", "review"],
-    },
-    {
-      id: "notebook",
-      label: "Go to Notebook",
-      icon: <BookOpen className="h-4 w-4" />,
-      action: () => {
-        setCurrentView("notebook");
-        onClose();
+      {
+        id: "notebook",
+        label: "Go to Notebook",
+        icon: <BookOpen className="h-4 w-4" />,
+        action: () => {
+          setCurrentView("notebook");
+          onClose();
+        },
+        keywords: ["notebook", "notes", "topics", "curate"],
       },
-      keywords: ["notebook", "notes", "topics", "curate"],
-    },
-    {
-      id: "knowledgebank",
-      label: "Go to Knowledge Bank",
-      icon: <Brain className="h-4 w-4" />,
-      action: () => {
-        setCurrentView("knowledgebank");
-        onClose();
+      {
+        id: "knowledgebank",
+        label: "Go to Knowledge Bank",
+        icon: <Brain className="h-4 w-4" />,
+        action: () => {
+          setCurrentView("knowledgebank");
+          onClose();
+        },
+        keywords: ["bank", "knowledge", "sources", "raw"],
       },
-      keywords: ["bank", "knowledge", "sources", "raw"],
-    },
-    {
-      id: "cards",
-      label: "Go to Cards",
-      icon: <Layers className="h-4 w-4" />,
-      action: () => {
-        setCurrentView("cards");
-        onClose();
+      {
+        id: "cards",
+        label: "Go to Cards",
+        icon: <Layers className="h-4 w-4" />,
+        action: () => {
+          setCurrentView("cards");
+          onClose();
+        },
+        keywords: ["cards", "browser", "flashcards", "edit"],
       },
-      keywords: ["cards", "browser", "flashcards", "edit"],
-    },
-    {
-      id: "settings",
-      label: "Settings",
-      icon: <Settings className="h-4 w-4" />,
-      action: () => {
-        setCurrentView("settings");
-        onClose();
+      {
+        id: "settings",
+        label: "Settings",
+        icon: <Settings className="h-4 w-4" />,
+        action: () => {
+          setCurrentView("settings");
+          onClose();
+        },
+        keywords: ["settings", "preferences", "config"],
       },
-      keywords: ["settings", "preferences", "config"],
-    },
-  ];
+    ],
+    [onClose, onOpenQuickCapture, setCurrentView]
+  );
 
   const filteredCommands = useMemo(() => {
     if (!search.trim()) return commands;

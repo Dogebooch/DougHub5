@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, Plus, BookOpen, Loader2, Trash2 } from "lucide-react";
 import { NotebookTopicPage, CanonicalTopic } from "@/types";
 import { Input } from "@/components/ui/input";
@@ -73,10 +73,13 @@ export const TopicPageList = ({
   const { deleteNotebookPage } = useAppStore();
 
   // Helper function to get topic name
-  const getTopicName = (page: NotebookTopicPage): string => {
-    const topic = topics.get(page.canonicalTopicId);
-    return topic?.canonicalName ?? "Unknown Topic";
-  };
+  const getTopicName = useCallback(
+    (page: NotebookTopicPage): string => {
+      const topic = topics.get(page.canonicalTopicId);
+      return topic?.canonicalName ?? "Unknown Topic";
+    },
+    [topics]
+  );
 
   // Filtered pages based on search query
   const filteredPages = useMemo(() => {
@@ -85,7 +88,7 @@ export const TopicPageList = ({
     return pages.filter((page) =>
       getTopicName(page).toLowerCase().includes(query)
     );
-  }, [pages, topics, searchQuery]);
+  }, [getTopicName, pages, searchQuery]);
 
   // Topic suggestion logic for Dialog
   useEffect(() => {

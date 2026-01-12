@@ -1,4 +1,12 @@
-import { app, BrowserWindow, Menu, screen, protocol, net } from "electron";
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  screen,
+  protocol,
+  net,
+  dialog,
+} from "electron";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 import {
@@ -168,7 +176,6 @@ function createWindow() {
       win.loadURL(VITE_DEV_SERVER_URL).catch((error) => {
         console.error("[Dev Mode] Failed to load from Vite dev server:", error);
         // Show error dialog to developer
-        const { dialog } = require("electron");
         dialog.showErrorBox(
           "Dev Server Error",
           `Failed to load from Vite dev server at ${VITE_DEV_SERVER_URL}.\n\nError: ${error.message}\n\nMake sure 'npm run dev' is running.`
@@ -197,7 +204,6 @@ function createWindow() {
     );
     win.loadFile(path.join(RENDERER_DIST, "index.html")).catch((error) => {
       console.error("[Production Mode] Failed to load built files:", error);
-      const { dialog } = require("electron");
       dialog.showErrorBox(
         "Startup Error",
         `Failed to load application files.\n\nError: ${error.message}\n\nTry rebuilding with 'npm run build'.`

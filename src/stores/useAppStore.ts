@@ -71,7 +71,7 @@ interface AppActions {
   initialize: () => Promise<void>;
   refreshCounts: () => Promise<void>;
   refreshSmartViewCounts: () => Promise<void>;
-  onNewSourceItem: (item: any) => void;
+  onNewSourceItem: () => void;
   getBrowserList: (
     filters?: {
       status?: number[];
@@ -137,7 +137,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     if (typeof window !== "undefined" && window.api) {
       const statusResult = await window.api.db.status();
       if (statusResult.error) {
-        console.error("[Store] Failed to refresh smart view counts:", statusResult.error);
+        console.error(
+          "[Store] Failed to refresh smart view counts:",
+          statusResult.error
+        );
         return;
       }
 
@@ -170,10 +173,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             const key = s.key as keyof AppSettings;
             if (key in currentSettings) {
               // Basic type conversion
-              if (typeof (currentSettings as any)[key] === "number") {
-                (currentSettings as any)[key] = parseFloat(s.value);
+              const existingValue = currentSettings[key];
+              if (typeof existingValue === "number") {
+                const parsed = Number.parseFloat(s.value);
+                currentSettings[key] = (
+                  Number.isNaN(parsed) ? existingValue : parsed
+                ) as AppSettings[typeof key];
               } else {
-                (currentSettings as any)[key] = s.value;
+                currentSettings[key] = s.value as AppSettings[typeof key];
               }
             }
           });
@@ -193,8 +200,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const stringValue = typeof value === "string" ? value : String(value);
         const result = await window.api.settings.set(key, stringValue);
 
-        if (result && (result as any).error) {
-          console.error(`[Store] Failed to update setting ${key}:`, (result as any).error);
+        if (result?.error) {
+          console.error(
+            `[Store] Failed to update setting ${key}:`,
+            result.error
+          );
           return;
         }
 
@@ -234,7 +244,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     }
   },
 
-  onNewSourceItem: (item) => {
+  onNewSourceItem: () => {
     // Refresh counts and smart view counts in background
     get().refreshCounts();
   },

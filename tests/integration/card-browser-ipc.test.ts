@@ -3,8 +3,7 @@
  * Tests T115.3 implementation
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import Database from 'better-sqlite3';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from 'fs';
 import path from 'path';
 import { cardQueries, initializeDatabase } from '../../electron/database';

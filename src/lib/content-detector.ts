@@ -15,7 +15,7 @@ export function detectContentType(content: string, isImage?: boolean): ContentTy
   const qbankMarkers = [
     /Question ID:/i,
     /Stem:/i,
-    /^[A-E][.\)]\s/m, // e.g. A. B. C. at start of line
+    /^[A-E][.)]\s/m, // e.g. A. B. C. at start of line
   ];
 
   let matches = 0;

@@ -6,6 +6,10 @@ import {
   Clock,
   ExternalLink,
   ZoomIn,
+  FileText,
+  Lightbulb,
+  Sparkles,
+  BookOpen,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,10 +18,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { BoardQuestionContent } from "@/types";
 import { cn } from "@/lib/utils";
-import { useAppStore } from "@/stores/useAppStore";
 import {
   Tooltip,
   TooltipTrigger,
@@ -42,7 +45,6 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     url: string;
     caption?: string;
   } | null>(null);
-  const userDataPath = useAppStore((state) => state.userDataPath);
 
   const getImagePath = (localPath: string) => {
     if (!localPath) return "";
@@ -199,10 +201,48 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     () => processHtml(content.questionStemHtml),
     [content.questionStemHtml, processHtml]
   );
-  const processedExplanation = React.useMemo(
-    () => processHtml(content.explanationHtml),
-    [content.explanationHtml, processHtml]
-  );
+  const processedExplanation = React.useMemo(() => {
+    let html = processHtml(content.explanationHtml);
+    if (!html) return "";
+
+    // 1. Bold and colorize Answer Choice references: Option A, (B), Choice C, Answer D
+    // Handles variants like "Option A", "(A)", "Choice A", "Answer A"
+    // Uses a regex that avoids matching inside HTML tags
+    html = html.replace(
+      /(<[^>]+>)|(\b(?:Option|Choice|Answer|Choice)\s+([A-F])\b|\(([A-F])\)(?=\s|\.|,|$))/gi,
+      (match, tag) => {
+        if (tag) return tag;
+        return `<strong class="text-primary font-bold transition-colors hover:text-primary/80 cursor-default">${match}</strong>`;
+      }
+    );
+
+    // 2. Identify common headers and wrap them in a cleaner sub-header style
+    const sectionHeaders = [
+      "Educational Objective",
+      "Key Point",
+      "Rationale",
+      "Clinical Pearl",
+      "Incorrect Answer",
+      "Incorrect Answers",
+      "Distractor Analysis",
+      "Discussion",
+    ];
+
+    sectionHeaders.forEach((header) => {
+      // Avoid matching inside tags and look for header at logical breaks
+      const regex = new RegExp(
+        `(<[^>]+>)|(?:\\b|^)(${header})(?::|\\.|\\b)`,
+        "gi"
+      );
+      html = html.replace(regex, (match, tag, h) => {
+        if (tag) return tag;
+        return `<span class="block text-[10px] font-extrabold text-muted-foreground/70 tracking-[0.15em] uppercase mt-6 mb-2 first:mt-0">${h}</span>`;
+      });
+    });
+
+    return html;
+  }, [content.explanationHtml, processHtml]);
+
   const processedKeyPoints = React.useMemo(
     () => formatAsBullets(processHtml(content.keyPointsHtml)),
     [content.keyPointsHtml, processHtml, formatAsBullets]
@@ -216,9 +256,11 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     [content.referencesHtml, processHtml]
   );
 
+  const answers = content.answers;
+
   // Deduplicate answers by letter, keeping the one with most metadata
   const displayedAnswers = React.useMemo(() => {
-    if (!content.answers) return [];
+    if (!answers) return [];
 
     // Normalize text for comparison: strip HTML, collapse whitespace, lowercase
     const normalizeText = (html: string) =>
@@ -238,8 +280,8 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     };
 
     // Deduplicate by letter first (primary key)
-    const uniqueByLetter = new Map<string, (typeof content.answers)[0]>();
-    for (const answer of content.answers) {
+    const uniqueByLetter = new Map<string, (typeof answers)[0]>();
+    for (const answer of answers) {
       const text = normalizeText(answer.html);
       if (!text) continue;
 
@@ -257,7 +299,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     return Array.from(uniqueByLetter.values()).sort((a, b) =>
       a.letter.localeCompare(b.letter)
     );
-  }, [content.answers]);
+  }, [answers]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -341,8 +383,8 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
               className={cn(
                 "capitalize",
                 content.source === "peerprep"
-                  ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
-                  : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                  ? "bg-info/10 text-info border-info/20"
+                  : "bg-success/10 text-success border-success/20"
               )}
             >
               {content.source === "peerprep" ? "PeerPrep" : "MKSAP"}
@@ -422,9 +464,9 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   <span>Chose {attempt.chosenAnswer}</span>
                 </div>
                 {attempt.wasCorrect ? (
-                  <CheckCircle2 className="w-3 h-3 text-green-500" />
+                  <CheckCircle2 className="w-3 h-3 text-success" />
                 ) : (
-                  <XCircle className="w-3 h-3 text-red-500" />
+                  <XCircle className="w-3 h-3 text-destructive" />
                 )}
               </div>
             ))}
@@ -470,143 +512,118 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
           </div>
 
           {/* Answers Section */}
-          <div className="p-0 overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-muted/30 text-[10px] uppercase tracking-wider text-muted-foreground text-left">
-                  <th className="px-4 py-2 font-medium w-12 text-center">
-                    Res
-                  </th>
-                  <th className="px-2 py-2 font-medium w-10">Ltr</th>
-                  <th className="px-4 py-2 font-medium">Answer Option</th>
-                  <th className="px-4 py-2 font-medium w-32">Peers</th>
-                  <th className="px-4 py-2 font-medium w-12 text-center">
-                    You
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayedAnswers.map((answer, idx) => {
-                  const isWrongUserChoice =
-                    answer.isUserChoice && !answer.isCorrect;
-                  const isCorrectAnswer = answer.isCorrect;
-                  const processedAnswerHtml = processHtml(answer.html);
+          <div className="px-4 py-3 space-y-2">
+            {displayedAnswers.map((answer, idx) => {
+              const isWrongUserChoice =
+                answer.isUserChoice && !answer.isCorrect;
+              const isCorrectAnswer = answer.isCorrect;
+              const processedAnswerHtml = processHtml(answer.html);
 
-                  // Calculate if this is the most picked pear choice
-                  const maxPeerPercent = Math.max(
-                    ...displayedAnswers
-                      .map((a) => a.peerPercent || 0)
-                      .filter((p) => p > 0),
-                    0
-                  );
-                  const isMajorityChoice =
-                    answer.peerPercent !== undefined &&
-                    answer.peerPercent === maxPeerPercent &&
-                    maxPeerPercent > 0;
+              return (
+                <div
+                  key={idx}
+                  className={cn(
+                    "relative flex items-stretch rounded-lg border transition-all",
+                    // Base state
+                    "border-border/50 bg-card",
+                    // Correct answer styling
+                    isCorrectAnswer && "border-success/50 bg-success/5",
+                    // Wrong user choice
+                    isWrongUserChoice &&
+                      "border-destructive/50 bg-destructive/5",
+                    // User's choice emphasis (subtle)
+                    answer.isUserChoice &&
+                      "ring-2 ring-offset-1 ring-offset-background",
+                    answer.isUserChoice && isCorrectAnswer && "ring-success/40",
+                    answer.isUserChoice &&
+                      !isCorrectAnswer &&
+                      "ring-destructive/40"
+                  )}
+                >
+                  {/* Letter badge */}
+                  <div
+                    className={cn(
+                      "flex items-center justify-center w-12 shrink-0 rounded-l-lg font-bold text-lg",
+                      isCorrectAnswer
+                        ? "bg-success/15 text-success"
+                        : isWrongUserChoice
+                        ? "bg-destructive/15 text-destructive"
+                        : "bg-muted/30 text-muted-foreground"
+                    )}
+                  >
+                    {answer.letter}
+                  </div>
 
-                  return (
-                    <tr
-                      key={idx}
-                      className={cn(
-                        "border-t border-border group transition-colors relative",
-                        isCorrectAnswer &&
-                          "bg-success/5 dark:bg-success/10 border-l-4 border-l-success/70",
-                        isWrongUserChoice &&
-                          "bg-destructive/5 dark:bg-destructive/10",
-                        !isCorrectAnswer &&
-                          !isWrongUserChoice &&
-                          "hover:bg-muted/30"
-                      )}
-                    >
-                      <td className="px-4 py-3 text-center">
-                        {isCorrectAnswer && (
-                          <div className="flex items-center justify-center w-7 h-7 rounded-full bg-success/10 dark:bg-success/20 mx-auto border border-success/30">
-                            <CheckCircle2 className="w-5 h-5 text-success" />
-                          </div>
-                        )}
-                        {isWrongUserChoice && (
-                          <XCircle className="w-5 h-5 text-destructive mx-auto" />
-                        )}
-                      </td>
-                      <td
-                        className={cn(
-                          "px-2 py-3 font-bold text-base",
-                          isCorrectAnswer
-                            ? "text-success"
-                            : isWrongUserChoice
-                            ? "text-destructive"
-                            : "text-muted-foreground"
-                        )}
-                      >
-                        {answer.letter}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div
-                          className={cn(
-                            "prose prose-sm max-w-none",
-                            isCorrectAnswer &&
-                              "font-semibold text-success-foreground"
-                          )}
-                          dangerouslySetInnerHTML={{
-                            __html: processedAnswerHtml,
-                          }}
-                        />
-                      </td>
-                      <td className="px-4 py-3 align-middle">
-                        {answer.peerPercent !== undefined && (
-                          <div className="flex flex-col gap-1.5 min-w-[80px]">
-                            <div className="flex items-center justify-end">
-                              <span
-                                className={cn(
-                                  "text-xs font-semibold leading-none tabular-nums",
-                                  isCorrectAnswer
-                                    ? "text-success"
-                                    : "text-muted-foreground"
-                                )}
-                              >
-                                {answer.peerPercent}%
-                              </span>
-                            </div>
-                            <div className="w-full h-2.5 bg-muted/50 rounded-full overflow-hidden">
-                              <div
-                                className={cn(
-                                  "h-full rounded-full transition-all duration-500",
-                                  isCorrectAnswer
-                                    ? "bg-success/70"
-                                    : "bg-primary/40"
-                                )}
-                                style={{ width: `${answer.peerPercent}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {answer.isUserChoice && (
-                          <Badge
-                            variant="default"
-                            className="bg-primary hover:bg-primary text-[9px] font-black px-1.5 py-0 h-4 shadow-sm animate-in fade-in zoom-in slide-in-from-right-1"
+                  {/* Answer content */}
+                  <div className="flex-1 px-4 py-3 min-w-0">
+                    <div
+                      className="prose prose-sm max-w-none text-card-foreground [&>p]:m-0"
+                      dangerouslySetInnerHTML={{ __html: processedAnswerHtml }}
+                    />
+                  </div>
+
+                  {/* Right side: peer stats + indicators */}
+                  <div className="flex items-center gap-3 pr-4 shrink-0">
+                    {/* Peer percentage */}
+                    {answer.peerPercent !== undefined && (
+                      <div className="flex flex-col gap-1.5 min-w-[72px]">
+                        <div className="flex items-center justify-end">
+                          <span
+                            className={cn(
+                              "text-xs font-semibold tabular-nums",
+                              isCorrectAnswer
+                                ? "text-success"
+                                : "text-muted-foreground"
+                            )}
                           >
-                            YOU
-                          </Badge>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            {answer.peerPercent}%
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-muted/40 rounded-full overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all duration-500",
+                              isCorrectAnswer
+                                ? "bg-success/70"
+                                : "bg-muted-foreground/30"
+                            )}
+                            style={{ width: `${answer.peerPercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Status indicator */}
+                    <div className="flex flex-col items-center gap-0.5 min-w-[48px]">
+                      {isCorrectAnswer && (
+                        <CheckCircle2 className="w-5 h-5 text-success" />
+                      )}
+                      {isWrongUserChoice && (
+                        <XCircle className="w-5 h-5 text-destructive" />
+                      )}
+                      {answer.isUserChoice && (
+                        <span className="text-[9px] font-bold tracking-wider uppercase text-muted-foreground/70">
+                          You
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Explanation Section */}
           <Collapsible
             open={isExplanationOpen}
             onOpenChange={setIsExplanationOpen}
-            className="p-0"
           >
             <div className="border-t border-border">
-              <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
-                <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase">
+              <CollapsibleTrigger className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors group">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary shrink-0">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <span className="flex-1 text-sm font-semibold text-foreground text-left">
                   Explanation
                 </span>
                 <ChevronDown
@@ -617,13 +634,15 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="px-6 pb-6 pt-0">
-                  <div
-                    className="prose prose-sm max-w-none border-l-2 border-primary/20 pl-4 py-1"
-                    dangerouslySetInnerHTML={{
-                      __html: processedExplanation,
-                    }}
-                  />
+                <div className="px-4 pb-6">
+                  <div className="rounded-xl bg-card border border-border/50 overflow-hidden">
+                    <div
+                      className="px-6 py-5 prose prose-sm max-w-none leading-relaxed prose-p:my-3 prose-p:text-foreground prose-strong:text-primary prose-strong:font-semibold prose-headings:text-foreground prose-headings:font-semibold prose-li:text-foreground prose-b:text-foreground prose-a:text-primary"
+                      dangerouslySetInnerHTML={{
+                        __html: processedExplanation,
+                      }}
+                    />
+                  </div>
                   {renderImages("explanation")}
                 </div>
               </CollapsibleContent>
@@ -635,11 +654,13 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
             <Collapsible
               open={isKeyPointsOpen}
               onOpenChange={setIsKeyPointsOpen}
-              className="p-0"
             >
               <div className="border-t border-border">
-                <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left">
-                  <span className="text-[10px] font-bold text-warning tracking-widest uppercase">
+                <CollapsibleTrigger className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors group">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-warning/15 text-warning shrink-0">
+                    <Lightbulb className="w-4 h-4" />
+                  </div>
+                  <span className="flex-1 text-sm font-semibold text-foreground text-left">
                     Key Points
                   </span>
                   <ChevronDown
@@ -650,14 +671,17 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="px-6 pb-6 pt-0">
-                    <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
-                      <div
-                        className="prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{
-                          __html: processedKeyPoints,
-                        }}
-                      />
+                  <div className="px-4 pb-6">
+                    <div className="rounded-xl bg-card border border-warning/20 overflow-hidden">
+                      <div className="flex">
+                        <div className="w-1 bg-warning shrink-0" />
+                        <div
+                          className="flex-1 px-5 py-4 prose prose-sm max-w-none prose-p:text-foreground prose-li:text-foreground prose-li:my-0.5 prose-ul:my-2 prose-p:my-2 prose-headings:text-foreground prose-strong:text-foreground prose-b:text-foreground prose-a:text-primary"
+                          dangerouslySetInnerHTML={{
+                            __html: processedKeyPoints,
+                          }}
+                        />
+                      </div>
                     </div>
                     {renderImages("keypoint")}
                   </div>
@@ -666,17 +690,19 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
             </Collapsible>
           )}
 
-          {/* Peer Pearls Section */}
+          {/* Pearls Section */}
           {content.peerPearlsHtml && (
             <Collapsible
               open={isPeerPearlsOpen}
               onOpenChange={setIsPeerPearlsOpen}
-              className="p-0"
             >
               <div className="border-t border-border">
-                <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left">
-                  <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase text-indigo-600 dark:text-indigo-400">
-                    Peer Pearls
+                <CollapsibleTrigger className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors group">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-info/15 text-info shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <span className="flex-1 text-sm font-semibold text-foreground text-left">
+                    Pearls
                   </span>
                   <ChevronDown
                     className={cn(
@@ -686,16 +712,18 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="px-6 pb-6 pt-0">
-                    <div className="bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-200/50 dark:border-indigo-900/50 rounded-lg p-4">
-                      <div
-                        className="prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{
-                          __html: processedPeerPearls,
-                        }}
-                      />
+                  <div className="px-4 pb-6">
+                    <div className="rounded-xl bg-card border border-info/20 overflow-hidden">
+                      <div className="flex">
+                        <div className="w-1 bg-info shrink-0" />
+                        <div
+                          className="flex-1 px-5 py-4 prose prose-sm max-w-none prose-p:text-foreground prose-li:text-foreground prose-p:my-2 prose-li:my-0.5 prose-headings:text-foreground prose-strong:text-foreground prose-b:text-foreground prose-a:text-primary"
+                          dangerouslySetInnerHTML={{
+                            __html: processedPeerPearls,
+                          }}
+                        />
+                      </div>
                     </div>
-                    {renderImages("peerpearls", "large")}
                   </div>
                 </CollapsibleContent>
               </div>
@@ -707,11 +735,13 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
             <Collapsible
               open={isReferencesOpen}
               onOpenChange={setIsReferencesOpen}
-              className="p-0"
             >
               <div className="border-t border-border">
-                <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left">
-                  <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase">
+                <CollapsibleTrigger className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors group">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-muted/50 text-muted-foreground shrink-0">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <span className="flex-1 text-sm font-medium text-muted-foreground text-left">
                     References
                   </span>
                   <ChevronDown
@@ -722,9 +752,9 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="px-6 pb-6 pt-0">
+                  <div className="px-4 pb-5">
                     <div
-                      className="prose prose-xs max-w-none text-muted-foreground opacity-80"
+                      className="pl-11 prose prose-xs prose-neutral dark:prose-invert max-w-none prose-p:text-muted-foreground prose-li:text-muted-foreground prose-a:text-muted-foreground prose-a:underline-offset-2"
                       dangerouslySetInnerHTML={{
                         __html: processedReferences,
                       }}

@@ -1,14 +1,7 @@
 import { SearchBar } from "./SearchBar";
 import { useAppStore } from "@/stores/useAppStore";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { RotateCw } from "lucide-react";
-
-interface HeaderProps {
-  openQuickCapture?: () => void; // Available for future quick capture button in header
-}
-
-export function Header({ openQuickCapture: _openQuickCapture }: HeaderProps) {
+export function Header() {
   const setCurrentView = useAppStore((state) => state.setCurrentView);
   const isBrowserMode = typeof window !== "undefined" && !window.api;
 

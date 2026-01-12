@@ -75,7 +75,7 @@ export function InboxView() {
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.api?.sourceItems?.onNew) {
-      const unsubscribe = window.api.sourceItems.onNew((item: any) => {
+      const unsubscribe = window.api.sourceItems.onNew((item: SourceItem) => {
         if (item.status === "inbox") {
           setItems((prev) => {
             // Remove existing version if present, then add new one to top

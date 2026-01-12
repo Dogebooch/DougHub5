@@ -959,13 +959,13 @@ export async function extractConcepts(
       "[AI Service] Raw concept extraction response:",
       conceptsResponse
     );
-    let parsed = parseAIResponse<ConceptExtractionResponse | Array<any>>(
-      conceptsResponse
-    );
+    const parsed = parseAIResponse<
+      ConceptExtractionResponse | ExtractedConcept[]
+    >(conceptsResponse);
     console.log("[AI Service] Parsed response:", parsed);
 
     // Handle both {concepts: [...]} and direct array [...] formats
-    let conceptsArray: Array<any>;
+    let conceptsArray: ExtractedConcept[];
     if (Array.isArray(parsed)) {
       // Ollama sometimes returns array directly
       conceptsArray = parsed;

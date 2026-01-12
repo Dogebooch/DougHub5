@@ -35,7 +35,7 @@ export interface ProcessedListCard {
  */
 export function extractListTitle(content: string): string {
   const firstLine = content.split('\n')[0].trim();
-  return firstLine.replace(/[:\?]$/, '').trim() || 'Medical List';
+  return firstLine.replace(/[:?]$/, "").trim() || "Medical List";
 }
 
 // ============================================================================

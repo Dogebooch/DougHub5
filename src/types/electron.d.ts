@@ -33,6 +33,21 @@ import type {
   ElaboratedFeedback,
 } from "./ai";
 
+export interface CapturePayload {
+  timestamp: string;
+  url: string;
+  hostname: string;
+  siteName: "ACEP PeerPrep" | "MKSAP 19";
+  pageHTML: string;
+  bodyText: string;
+  images: {
+    url: string;
+    title: string;
+    type: "fancybox-gallery" | "inline-image";
+    source: "question" | "feedback" | "keypoints" | "references" | "other";
+  }[];
+}
+
 // Re-export database types for convenience
 export type {
   Card,
@@ -259,9 +274,9 @@ export interface ElectronAPI {
   };
   capture: {
     process: (
-      payload: any
+      payload: CapturePayload
     ) => Promise<IpcResult<{ id: string; isUpdate: boolean }>>;
-    onReceived: (callback: (payload: any) => void) => () => void;
+    onReceived: (callback: (payload: CapturePayload) => void) => () => void;
   };
   app: {
     getUserDataPath: () => Promise<IpcResult<string>>;

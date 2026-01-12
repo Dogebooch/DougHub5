@@ -12,6 +12,7 @@ import { WeakTopicsView } from "@/components/smartviews/WeakTopicsView";
 import { CardBrowserView } from "@/components/cards/CardBrowserView";
 import { SettingsView } from "@/components/settings/SettingsView";
 import { useAppStore } from "@/stores/useAppStore";
+import type { SourceItem } from "@/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ export function AppLayout() {
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.api?.sourceItems?.onNew) {
-      const unsubscribe = window.api.sourceItems.onNew((item: any) => {
+      const unsubscribe = window.api.sourceItems.onNew((item: SourceItem) => {
         onNewSourceItem(item);
 
         toast({

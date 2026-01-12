@@ -24,65 +24,67 @@ export function createTempTestDir(prefix: string = 'doughub-test'): string {
 export const mockApp = {
   getPath: vi.fn((name: string) => {
     // Return test-specific temp directories for each path type
-    const tempBase = path.join(os.tmpdir(), 'doughub-test-app')
-    fs.mkdirSync(tempBase, { recursive: true })
-    
+    const tempBase = path.join(os.tmpdir(), "doughub-test-app");
+    fs.mkdirSync(tempBase, { recursive: true });
+
     switch (name) {
-      case 'userData':
-        const userDataPath = path.join(tempBase, 'userData')
-        fs.mkdirSync(userDataPath, { recursive: true })
-        return userDataPath
-      case 'appData':
-        const appDataPath = path.join(tempBase, 'appData')
-        fs.mkdirSync(appDataPath, { recursive: true })
-        return appDataPath
-      case 'temp':
-        return os.tmpdir()
+      case "userData": {
+        const userDataPath = path.join(tempBase, "userData");
+        fs.mkdirSync(userDataPath, { recursive: true });
+        return userDataPath;
+      }
+      case "appData": {
+        const appDataPath = path.join(tempBase, "appData");
+        fs.mkdirSync(appDataPath, { recursive: true });
+        return appDataPath;
+      }
+      case "temp":
+        return os.tmpdir();
       default:
-        return tempBase
+        return tempBase;
     }
   }),
   whenReady: vi.fn(() => Promise.resolve()),
   quit: vi.fn(),
   on: vi.fn(),
   once: vi.fn(),
-}
+};
 
 /**
  * Mock IPC Main (for main process testing)
  */
 export const mockIpcMain = {
-  handle: vi.fn((channel: string, handler: (...args: any[]) => any) => {
+  handle: vi.fn((channel: string, handler: (...args: unknown[]) => unknown) => {
     // Store handlers for testing
-    mockIpcMain._handlers.set(channel, handler)
+    mockIpcMain._handlers.set(channel, handler);
   }),
   removeHandler: vi.fn((channel: string) => {
-    mockIpcMain._handlers.delete(channel)
+    mockIpcMain._handlers.delete(channel);
   }),
-  _handlers: new Map<string, (...args: any[]) => any>(),
-  
+  _handlers: new Map<string, (...args: unknown[]) => unknown>(),
+
   // Test helper: Invoke a handler as if from renderer
-  _invokeHandler: async (channel: string, ...args: any[]) => {
-    const handler = mockIpcMain._handlers.get(channel)
+  _invokeHandler: async (channel: string, ...args: unknown[]) => {
+    const handler = mockIpcMain._handlers.get(channel);
     if (!handler) {
-      throw new Error(`No handler registered for channel: ${channel}`)
+      throw new Error(`No handler registered for channel: ${channel}`);
     }
-    return await handler({}, ...args)
+    return await handler({}, ...args);
   },
-}
+};
 
 /**
  * Mock IPC Renderer (for renderer process testing)
  */
 export const mockIpcRenderer = {
-  invoke: vi.fn(async (channel: string, ...args: any[]) => {
+  invoke: vi.fn(async (channel: string, ...args: unknown[]) => {
     // In tests, invoke the registered main process handler
-    return await mockIpcMain._invokeHandler(channel, ...args)
+    return await mockIpcMain._invokeHandler(channel, ...args);
   }),
   on: vi.fn(),
   once: vi.fn(),
   removeListener: vi.fn(),
-}
+};
 
 /**
  * Mock BrowserWindow
