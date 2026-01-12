@@ -109,7 +109,7 @@ export interface DbSourceItem {
   metadata?: {
     summary?: string;
     subject?: string;
-    questionType?: string;
+    questionType?: string; // Silent metadata for card generation AI (not shown in UI)
     extractedAt?: string;
   };
   status: SourceItemStatus;

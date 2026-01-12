@@ -157,7 +157,7 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
           <Badge
             variant="secondary"
             className={cn(
-              "text-[11px] px-1.5 py-0 h-4 font-semibold border-none transition-colors",
+              "text-[11px] px-1.5 py-0.5 h-5 font-semibold border-none transition-colors",
               (block.cardCount ?? 0) > 0
                 ? "bg-primary/20 text-primary"
                 : "bg-primary/10 text-card-muted"

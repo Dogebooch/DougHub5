@@ -926,51 +926,6 @@ export function registerIpcHandlers(): void {
   );
 
   /**
-   * Batch process inbox items to extract metadata
-   */
-  ipcMain.handle(
-    "sourceItems:batchExtractMetadata",
-    async (): Promise<IpcResult<{ processed: number; failed: number }>> => {
-      try {
-        const items = sourceItemQueries.getInboxItemsWithoutMetadata();
-        let processed = 0;
-        let failed = 0;
-
-        for (const item of items) {
-          try {
-            const extracted = await extractQuestionSummary(
-              item.rawContent,
-              item.sourceType
-            );
-
-            if (extracted) {
-              sourceItemQueries.update(item.id, {
-                metadata: {
-                  ...extracted,
-                  extractedAt: new Date().toISOString(),
-                },
-              });
-              processed++;
-            } else {
-              failed++;
-            }
-          } catch (error) {
-            console.error(
-              `[IPC] Failed to extract metadata for item ${item.id}:`,
-              error
-            );
-            failed++;
-          }
-        }
-
-        return success({ processed, failed });
-      } catch (error) {
-        return failure(error);
-      }
-    }
-  );
-
-  /**
    * Capture: Process a board question payload from the browser extension
    */
   ipcMain.handle(

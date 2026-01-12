@@ -113,6 +113,94 @@ class AICache {
 export const aiCache = new AICache();
 
 // ============================================================================
+// AI Task Configuration Framework
+// ============================================================================
+//
+// This framework allows different AI tasks to have optimized settings while
+// sharing a single model to avoid VRAM thrashing. Key design decisions:
+//
+// 1. ONE MODEL: All tasks use qwen2.5:7b-instruct (tested winner for speed + accuracy)
+// 2. TASK-SPECIFIC PROMPTS: Each task type has its own optimized prompt template
+// 3. TASK-SPECIFIC SETTINGS: Temperature, max_tokens tuned per task
+// 4. KEEP_ALIVE: Model stays warm between calls (30 min default in Ollama)
+//
+// To add a new AI task:
+// 1. Add entry to AI_TASK_CONFIGS with task-specific settings
+// 2. Create the task function using getTaskConfig() for settings
+//
+// Future: Could add model override per task if testing shows benefit
+// ============================================================================
+
+/** Configuration for a specific AI task */
+export interface AITaskConfig {
+  name: string;
+  description: string;
+  temperature: number; // 0.0-1.0: lower = more deterministic
+  maxTokens: number; // Max response length
+  timeoutMs: number; // Task-specific timeout
+  cacheTTLMs: number; // How long to cache results
+}
+
+/** Task-specific configurations (all use same model) */
+export const AI_TASK_CONFIGS: Record<string, AITaskConfig> = {
+  "question-summary": {
+    name: "Question Summary Extraction",
+    description: "Extract summary, subject, and questionType from board questions",
+    temperature: 0.2, // Low for consistent classification
+    maxTokens: 150, // JSON output is compact
+    timeoutMs: 10000, // 10s - quick extraction
+    cacheTTLMs: 300000, // 5 min cache
+  },
+  "concept-extraction": {
+    name: "Concept Extraction",
+    description: "Extract key medical concepts from content",
+    temperature: 0.3,
+    maxTokens: 500,
+    timeoutMs: 15000,
+    cacheTTLMs: 300000,
+  },
+  "card-suggestion": {
+    name: "Card Suggestion",
+    description: "Suggest flashcard format and content from notebook blocks",
+    temperature: 0.4, // Slightly creative for card phrasing
+    maxTokens: 800,
+    timeoutMs: 20000,
+    cacheTTLMs: 60000, // 1 min - user may iterate
+  },
+  "explanation-enhancement": {
+    name: "Explanation Enhancement",
+    description: "Enhance or clarify medical explanations",
+    temperature: 0.5,
+    maxTokens: 1000,
+    timeoutMs: 30000,
+    cacheTTLMs: 300000,
+  },
+  "semantic-match": {
+    name: "Semantic Matching",
+    description: "Find semantically similar content",
+    temperature: 0.1, // Very deterministic
+    maxTokens: 200,
+    timeoutMs: 10000,
+    cacheTTLMs: 600000, // 10 min
+  },
+};
+
+/**
+ * Get configuration for a specific AI task.
+ * Falls back to sensible defaults if task not found.
+ */
+export function getTaskConfig(taskName: string): AITaskConfig {
+  return AI_TASK_CONFIGS[taskName] || {
+    name: taskName,
+    description: "Unknown task",
+    temperature: 0.3,
+    maxTokens: 500,
+    timeoutMs: 15000,
+    cacheTTLMs: 300000,
+  };
+}
+
+// ============================================================================
 // Provider Presets
 // ============================================================================
 
@@ -1557,7 +1645,7 @@ export function findRelatedNotes(
  * 
  * @param content Raw question content (rawContent from SourceItem)
  * @param sourceType Type of source (qbank, article, etc.)
- * @returns Object with summary, subject, questionType, or null if extraction fails
+ * @returns Object with summary and subject, or null if extraction fails
  */
 export async function extractQuestionSummary(
   content: string,
@@ -1603,38 +1691,39 @@ export async function extractQuestionSummary(
   // Truncate content to first 800 chars for efficiency
   const truncatedContent = content.substring(0, 800);
 
-  const prompt = `You are a medical education AI assistant. Extract a concise summary from this board question.
+  const prompt = `You are a medical education AI extracting metadata from EM/IM board questions.
 
-TASK: Analyze the clinical vignette and question stem to identify the core learning point.
+TASK: Extract summary, subject, and question type for flashcard optimization.
 
-OUTPUT REQUIREMENTS:
-1. "summary": 4-5 word clinical question that captures the key decision point
-   - Use action verbs: "Managing", "Diagnosing", "Treating", "When to..."
-   - Be specific: Include the condition/scenario
-   - Examples: 
-     * "Managing atrial fibrillation stroke risk"
-     * "Diagnosing pulmonary embolism criteria"
-     * "When to anticoagulate DVT"
+OUTPUT (JSON only):
+1. "summary": 4-6 word clinical action phrase
+   - Start with verb: "Managing", "Diagnosing", "Treating", "Recognizing", "When to..."
+   - Examples: "Managing agitation in delirium", "Recognizing carbon monoxide toxicity"
 
-2. "subject": Primary medical specialty (pick ONE most relevant)
-   - Options: Cardiology, Pulmonology, Neurology, Gastroenterology, Nephrology, Endocrinology, Rheumatology, Infectious Disease, Emergency Medicine, Critical Care, Hematology, Oncology, Other
+2. "subject": Pick ONE:
+   Cardiology | Pulmonology | Neurology | GI | Nephrology | Endocrinology | Rheumatology | ID | Heme/Onc | Toxicology | Trauma | Resuscitation | Derm | Psychiatry | OB/GYN | Peds | MSK | ENT | Ophthalmology | Allergy | Palliative | Preventive | Other
 
-3. "questionType": Classification (pick ONE)
-   - "Diagnosis" - identifying a condition, using criteria/tests
-   - "Management" - treatment decisions, next best step
-   - "Mechanism" - pathophysiology, how something works
-   - "Risk Stratification" - scoring systems, prognosis
-   - "Other" - if none fit
+3. "questionType": Pick ONE (for card generation):
+   - Diagnosis: Identify condition from presentation/findings
+   - Management: Choose treatment, intervention, or next step
+   - Workup: Select appropriate test/imaging/lab
+   - Mechanism: Explain pathophysiology or drug action
+   - Prognosis: Predict outcome or risk stratification
+   - Prevention: Screening, prophylaxis, risk reduction
+   - Pharmacology: Drug choice, dosing, interactions, side effects
+   - Anatomy: Structure identification or localization
+   - Complications: Recognize or prevent adverse outcomes
+   - Contraindications: Identify when NOT to do something
+   - Criteria: Apply diagnostic/classification criteria
+   - Emergent: Time-critical intervention decision
 
-QUESTION CONTENT:
+CONTENT:
 ${truncatedContent}
 
-RESPOND ONLY WITH VALID JSON:
-{
-  "summary": "4-5 word action-oriented clinical question",
-  "subject": "Primary specialty",
-  "questionType": "Diagnosis|Management|Mechanism|Risk Stratification|Other"
-}`;
+{"summary": "...", "subject": "...", "questionType": "..."}`;
+
+  // Get task-specific configuration
+  const taskConfig = getTaskConfig("question-summary");
 
   // Retry logic: try once, retry once on failure
   for (let attempt = 1; attempt <= 2; attempt++) {
@@ -1646,19 +1735,19 @@ RESPOND ONLY WITH VALID JSON:
 
       const client = await getClient();
 
-      console.log(`[AI Service] Using model: ${config.model}`);
+      console.log(`[AI Service] Using model: ${config.model} | Task: ${taskConfig.name}`);
 
-      // Create AbortController for 10s timeout
+      // Create AbortController with task-specific timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), taskConfig.timeoutMs);
 
       try {
         const completion = await client.chat.completions.create(
           {
             model: config.model,
             messages: [{ role: "user", content: prompt }],
-            temperature: 0.2, // Lower for consistency
-            max_tokens: 150,
+            temperature: taskConfig.temperature,
+            max_tokens: taskConfig.maxTokens,
           },
           { signal: controller.signal as any }
         );
@@ -1697,13 +1786,13 @@ RESPOND ONLY WITH VALID JSON:
           return null;
         }
 
-        // Cache successful result
-        aiCache.set(cacheKey, result);
+        // Cache successful result with task-specific TTL
+        aiCache.set(cacheKey, result, taskConfig.cacheTTLMs);
 
         console.log("[AI Service] ✅ Successfully extracted:", {
           summary: result.summary,
           subject: result.subject,
-          type: result.questionType,
+          questionType: result.questionType,
           duration: `${elapsedMs}ms`,
         });
 
@@ -1715,7 +1804,7 @@ RESPOND ONLY WITH VALID JSON:
       } catch (aiError) {
         clearTimeout(timeoutId);
         if ((aiError as any)?.name === "AbortError") {
-          console.warn("[AI Service] ⏱️  Timeout after 10s");
+          console.warn(`[AI Service] ⏱️  Timeout after ${taskConfig.timeoutMs}ms`);
           if (attempt < 2) {
             console.log("[AI Service] Retrying in 1 second...");
             await new Promise((resolve) => setTimeout(resolve, 1000));

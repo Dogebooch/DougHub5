@@ -4,7 +4,7 @@ import {
   isYesterday, 
   parseISO 
 } from 'date-fns';
-import { Search, SortDesc, Inbox, Sparkles } from "lucide-react";
+import { Search, SortDesc, Inbox } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +17,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SourceItemRow } from "./SourceItemRow";
@@ -37,7 +38,6 @@ export function InboxView() {
   );
   const [sortBy, setSortBy] = useState<SortOrder>("newest");
   const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   // Dialog state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -223,34 +223,6 @@ export function InboxView() {
     setViewingItem(item);
   };
 
-  const handleBatchExtract = async () => {
-    setIsProcessing(true);
-    try {
-      const result = await window.api.sourceItems.batchExtractMetadata();
-      if (result.data) {
-        toast({
-          title: "Batch Processing Complete",
-          description: `Processed ${result.data.processed} items. ${result.data.failed} failed.`,
-        });
-        fetchInbox();
-      } else if (result.error) {
-        toast({
-          title: "Batch Processing Failed",
-          description: result.error,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Batch Processing Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   if (isLoading && items.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -260,49 +232,47 @@ export function InboxView() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background overflow-hidden">
-      {/* Header with sticky behavior */}
-      <header className="flex-none p-4 border-b border-border/30 space-y-4 bg-background z-10">
+    <div className="flex flex-col h-full bg-background overflow-hidden pb-4">
+      {/* Header section with refined separation */}
+      <header className="flex-none mb-6 space-y-5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Inbox className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Inbox Triage</h1>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/10 flex items-center justify-center">
+              <Inbox className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                Inbox Triage
+              </h1>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-semibold mt-0.5">
+                Initial Capture Queue
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
+            <Badge
               variant="outline"
-              onClick={handleBatchExtract}
-              disabled={
-                isProcessing ||
-                items.filter((i) => i.sourceType === "qbank" && !i.metadata)
-                  .length === 0
-              }
-              className="gap-2"
+              className="bg-primary/5 text-primary border-primary/20 font-bold px-3 py-1 text-[11px]"
             >
-              <Sparkles className="h-4 w-4" />
-              {isProcessing ? "Processing..." : "Extract Summaries"}
-            </Button>
-            <span className="text-sm font-medium px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-              {items.length} total
-            </span>
+              {items.length} TOTAL
+            </Badge>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-4 items-end">
+        <div className="flex flex-wrap gap-4 items-end bg-surface-elevated/30 p-4 rounded-xl border border-border/50 shadow-sm backdrop-blur-sm">
           <div className="flex-1 min-w-[200px] space-y-2">
             <Label
               htmlFor="search"
-              className="text-xs uppercase tracking-wider text-muted-foreground"
+              className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-bold ml-1"
             >
-              Search Title
+              Search Inbox
             </Label>
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
               <Input
                 id="search"
-                placeholder="Find a source..."
-                className="pl-9 bg-muted/50 border-none"
+                placeholder="Filter by title..."
+                className="pl-9 bg-background/50 border-border/10 ring-offset-background transition-all focus-visible:ring-1 focus-visible:ring-primary/30 h-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -310,7 +280,7 @@ export function InboxView() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+            <Label className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-bold ml-1">
               Source Type
             </Label>
             <Select
@@ -319,11 +289,13 @@ export function InboxView() {
                 setFilterSourceType(v as SourceType | "all")
               }
             >
-              <SelectTrigger className="w-[140px] bg-muted/50 border-none h-10">
+              <SelectTrigger className="w-[150px] bg-background/50 border-border/10 h-10 ring-offset-background transition-all focus:ring-1 focus:ring-primary/30">
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types ({items.length})</SelectItem>
+                <SelectItem value="all">
+                  All Sources ({items.length})
+                </SelectItem>
                 <SelectItem value="qbank">
                   QBank ({sourceTypeCounts.qbank})
                 </SelectItem>
@@ -349,20 +321,20 @@ export function InboxView() {
             </Select>
           </div>
 
-          <div className="space-y-2 min-w-[200px]">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <SortDesc className="h-3 w-3" /> Sort Order
+          <div className="space-y-2 min-w-[180px]">
+            <Label className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-bold ml-1 flex items-center gap-1.5 focus:ring-1 focus:ring-primary/30">
+              <SortDesc className="h-3 w-3" /> Order
             </Label>
             <RadioGroup
               value={sortBy}
               onValueChange={(v) => setSortBy(v as SortOrder)}
-              className="flex items-center gap-4 bg-muted/50 h-10 px-3 rounded-md border-none"
+              className="flex items-center gap-4 bg-background/40 h-10 px-3 rounded-md border border-border/10 shadow-inner"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="newest" id="newest" />
                 <Label
                   htmlFor="newest"
-                  className="text-sm cursor-pointer whitespace-nowrap"
+                  className="text-xs font-medium cursor-pointer whitespace-nowrap"
                 >
                   Newest
                 </Label>
@@ -371,7 +343,7 @@ export function InboxView() {
                 <RadioGroupItem value="oldest" id="oldest" />
                 <Label
                   htmlFor="oldest"
-                  className="text-sm cursor-pointer whitespace-nowrap"
+                  className="text-xs font-medium cursor-pointer whitespace-nowrap"
                 >
                   Oldest
                 </Label>
@@ -379,7 +351,7 @@ export function InboxView() {
             </RadioGroup>
           </div>
 
-          <div className="flex items-center gap-2 h-10 self-end ml-auto px-1">
+          <div className="flex items-center gap-3 h-10 self-end ml-auto px-1">
             <Checkbox
               id="select-all"
               checked={
@@ -390,10 +362,11 @@ export function InboxView() {
                   : false
               }
               onCheckedChange={handleSelectAllToggle}
+              className="border-muted-foreground/30 data-[state=checked]:bg-primary"
             />
             <Label
               htmlFor="select-all"
-              className="text-sm font-medium cursor-pointer whitespace-nowrap"
+              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground cursor-pointer whitespace-nowrap transition-colors"
             >
               Select Visible
             </Label>

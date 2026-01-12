@@ -190,7 +190,7 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
                   <Badge
                     key={alias}
                     variant="secondary"
-                    className="text-[11px] px-1.5 py-0 font-medium h-5"
+                    className="text-[11px] px-1.5 py-0.5.5 font-medium h-5"
                   >
                     {alias}
                   </Badge>

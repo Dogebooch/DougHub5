@@ -65,9 +65,9 @@ export interface QuickCapture {
 
 // v2 Architecture - Knowledge Bank Layer
 export interface SourceMetadata {
-  summary?: string; // AI-generated 4-5 word summary for inbox differentiation
-  subject?: string; // Medical subject (Cardiology, Pulm, etc.)
-  questionType?: string; // Diagnosis, Management, Mechanism, etc.
+  summary?: string; // AI-generated 4-6 word summary for inbox differentiation
+  subject?: string; // Medical subject (Cardiology, Pulm, Toxicology, etc.)
+  questionType?: string; // Silent metadata for card generation AI (Management, Diagnosis, etc.)
   extractedAt?: string; // ISO timestamp of extraction
 }
 

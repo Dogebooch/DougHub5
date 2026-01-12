@@ -166,9 +166,6 @@ export interface ElectronAPI {
     delete: (id: string) => Promise<IpcResult<void>>;
     getRawPage: (sourceItemId: string) => Promise<IpcResult<string | null>>;
     purgeRawPages: () => Promise<IpcResult<void>>;
-    batchExtractMetadata: () => Promise<
-      IpcResult<{ processed: number; failed: number }>
-    >;
     onNew: (callback: (item: SourceItem) => void) => () => void;
   };
   canonicalTopics: {

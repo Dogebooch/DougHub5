@@ -182,17 +182,6 @@ export const sourceItemQueries = {
     );
     stmt.run({ id });
   },
-
-  /**
-   * Get all inbox items without metadata (for batch processing)
-   */
-  getInboxItemsWithoutMetadata(): DbSourceItem[] {
-    const stmt = getDatabase().prepare(
-      "SELECT * FROM source_items WHERE status = 'inbox' AND sourceType = 'qbank' AND metadata IS NULL ORDER BY createdAt DESC"
-    );
-    const rows = stmt.all() as SourceItemRow[];
-    return rows.map(parseSourceItemRow);
-  },
 };
 
 export const quickCaptureQueries = {

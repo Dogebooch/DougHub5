@@ -24,6 +24,12 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
 }) => {
   if (!item) return null;
 
+  // For qbank items: use AI summary as title if available
+  const displayTitle =
+    item.sourceType === "qbank" && item.metadata?.summary
+      ? item.metadata.summary
+      : item.title;
+
   const renderContent = () => {
     // Specialized viewer for structured QBank questions
     if (item.sourceType === "qbank" && item.rawContent) {
@@ -53,7 +59,7 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
           <div className="rounded-lg overflow-hidden border bg-muted/30">
             <img
               src={`app-media://${item.mediaPath.replace(/\\/g, "/")}`}
-              alt={item.title}
+              alt={displayTitle}
               className="max-w-full h-auto mx-auto block"
             />
           </div>
@@ -83,25 +89,25 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-6 pb-2 border-b flex-none">
           <div className="flex items-center gap-2 mb-2">
             <Badge variant="outline" className="capitalize">
               {item.sourceType}
             </Badge>
             {item.sourceName && (
-               <span className="text-xs text-muted-foreground">{item.sourceName}</span>
+              <span className="text-xs text-muted-foreground">
+                {item.sourceName}
+              </span>
             )}
           </div>
-          <DialogTitle className="line-clamp-1">{item.title}</DialogTitle>
+          <DialogTitle className="line-clamp-1">{displayTitle}</DialogTitle>
           <DialogDescription className="hidden">
             Content viewer
           </DialogDescription>
         </DialogHeader>
-        
-        <ScrollArea className="flex-1 p-6">
-          {renderContent()}
-        </ScrollArea>
+
+        <ScrollArea className="flex-1 p-6">{renderContent()}</ScrollArea>
       </DialogContent>
     </Dialog>
   );

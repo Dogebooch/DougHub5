@@ -126,10 +126,14 @@ export function Sidebar({ className }: SidebarProps) {
             <span className="flex-1 text-left">{item.label}</span>
             {item.badge !== undefined && item.badge > 0 && (
               <Badge
-                variant="secondary"
+                variant="outline"
                 className={cn(
-                  "h-5 min-w-[20px] px-1.5 text-[11px] font-bold",
-                  isActive ? "bg-primary/30 text-primary" : "bg-white/10"
+                  "h-4.5 min-w-[18px] px-1 text-[10px] font-bold border-none",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : item.id === "inbox"
+                    ? "bg-primary/15 text-primary"
+                    : "bg-white/10 text-muted-foreground"
                 )}
               >
                 {item.badge}

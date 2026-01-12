@@ -1,11 +1,33 @@
 import React from 'react';
-import { BookOpen, FileText, Image, Mic, Zap, Edit, Trash2 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { SourceItem } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { cn } from '@/lib/utils';
+import {
+  BookOpen,
+  FileText,
+  Image,
+  Mic,
+  Zap,
+  Edit,
+  Trash2,
+  Check,
+  X,
+} from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { SourceItem } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+
+/** Clean display names for source labels */
+const SOURCE_DISPLAY_NAMES: Record<string, string> = {
+  PeerPrep: "PEERPrep",
+  MKSAP: "MKSAP",
+  UWorld: "UWorld",
+  Amboss: "Amboss",
+  BoardVitals: "BoardVitals",
+  Rosh: "Rosh Review",
+  NEJM: "NEJM",
+  UpToDate: "UpToDate",
+};
 
 interface SourceItemRowProps {
   sourceItem: SourceItem;
@@ -54,16 +76,49 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
       ? sourceItem.metadata.summary
       : sourceItem.title;
 
+  // Get source display label for qbank items
+  const sourceLabel = React.useMemo(() => {
+    if (sourceItem.sourceType !== "qbank") return null;
+    const name = sourceItem.sourceName?.toLowerCase() || "";
+    for (const [key, label] of Object.entries(SOURCE_DISPLAY_NAMES)) {
+      if (name.includes(key.toLowerCase())) return label;
+    }
+    return sourceItem.sourceName; // Fallback to raw name
+  }, [sourceItem.sourceName, sourceItem.sourceType]);
+
+  // Get wasCorrect from rawContent for qbank items
+  const wasCorrect = React.useMemo(() => {
+    if (sourceItem.sourceType !== "qbank") return null;
+    try {
+      const content = JSON.parse(sourceItem.rawContent);
+      return content.wasCorrect;
+    } catch {
+      return null;
+    }
+  }, [sourceItem.sourceType, sourceItem.rawContent]);
+
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(sourceItem)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen(sourceItem);
+        }
+      }}
       className={cn(
-        "group flex items-center gap-4 py-2 px-4 transition-colors hover:bg-black/5 text-card-foreground",
+        "group flex items-center gap-4 py-2 px-4 transition-colors hover:bg-black/5 text-card-foreground min-w-0 overflow-hidden relative cursor-pointer outline-none focus-visible:bg-black/5",
         isSelected && "bg-primary/10",
         isHighlighted &&
           "bg-warning/10 border-l-4 border-l-warning animate-pulse-subtle"
       )}
     >
-      <div className="flex items-center gap-4 shrink-0">
+      <div
+        className="flex items-center gap-4 shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
         <Checkbox
           checked={isSelected}
           onCheckedChange={(checked) =>
@@ -79,7 +134,12 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
 
       <div className="flex-grow min-w-0 flex flex-col gap-1">
         <div className="flex items-center gap-2 min-w-0">
-          <h3 className="font-medium text-sm truncate leading-none text-card-foreground flex-1">
+          <h3 className="font-medium text-sm truncate leading-normal text-card-foreground flex-1">
+            {sourceLabel && (
+              <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-[3px] text-[9px] font-bold bg-card-muted/10 text-card-muted/60 mr-2 tracking-tight uppercase border border-card-muted/5">
+                {sourceLabel}
+              </span>
+            )}
             {displayTitle}
           </h3>
           <span className="text-[11px] text-card-muted whitespace-nowrap shrink-0 group-hover:hidden">
@@ -89,29 +149,30 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
           </span>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 group-hover:hidden">
+        <div className="flex items-center gap-1.5 group-hover:hidden">
           {/* Subject badge if available */}
           {sourceItem.metadata?.subject && (
             <Badge
               variant="secondary"
-              className="px-1.5 py-0 text-[11px] font-normal bg-primary/10 text-primary border-none"
+              className="px-1.5 py-0 text-[10px] font-normal bg-primary/10 text-primary border-none"
             >
               {sourceItem.metadata.subject}
             </Badge>
           )}
-          {/* Question type badge if available */}
-          {sourceItem.metadata?.questionType && (
-            <Badge
-              variant="secondary"
-              className="px-1.5 py-0 text-[11px] font-normal bg-secondary/50 text-secondary-foreground border-none"
-            >
-              {sourceItem.metadata.questionType}
-            </Badge>
-          )}
+          {/* Correct/Incorrect indicator for qbank items */}
+          {wasCorrect !== null &&
+            (wasCorrect ? (
+              <Check className="h-3.5 w-3.5 text-success" />
+            ) : (
+              <X className="h-3.5 w-3.5 text-destructive" />
+            ))}
         </div>
       </div>
 
-      <div className="items-center gap-2 hidden group-hover:flex focus-within:flex whitespace-nowrap shrink-0">
+      <div
+        className="items-center gap-2 hidden group-hover:flex focus-within:flex whitespace-nowrap shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
         <Button
           size="sm"
           variant="outline"

@@ -481,7 +481,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
           <div className="p-6 bg-primary/5 border-y border-primary/10">
             {displayVignetteHtml && (
               <div
-                className="prose prose-sm max-w-none leading-relaxed mb-6 text-foreground/90"
+                className="prose prose-sm max-w-none leading-relaxed mb-6 text-foreground/90 break-words"
                 dangerouslySetInnerHTML={{ __html: displayVignetteHtml }}
               />
             )}
@@ -496,7 +496,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 Clinical Question
               </span>
               <div
-                className="prose prose-sm max-w-none font-semibold text-lg text-muted-foreground"
+                className="prose prose-sm max-w-none font-semibold text-lg text-muted-foreground break-words"
                 dangerouslySetInnerHTML={{ __html: processedQuestionStem }}
               />
             </div>
@@ -556,9 +556,9 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   </div>
 
                   {/* Answer content */}
-                  <div className="flex-1 px-4 py-3 min-w-0">
+                  <div className="flex-1 px-4 py-3 min-w-0 overflow-hidden">
                     <div
-                      className="prose prose-sm max-w-none text-card-foreground [&>p]:m-0"
+                      className="prose prose-sm max-w-none text-card-foreground [&>p]:m-0 break-words"
                       dangerouslySetInnerHTML={{ __html: processedAnswerHtml }}
                     />
                   </div>
@@ -638,7 +638,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 <div className="px-4 pb-6">
                   <div className="rounded-xl bg-card border border-border/50 overflow-hidden">
                     <div
-                      className="px-8 py-6 prose prose-sm max-w-none leading-relaxed prose-p:my-6 prose-p:text-card-foreground prose-p:leading-[1.8] prose-strong:text-primary prose-strong:font-bold prose-headings:text-card-foreground prose-headings:font-bold prose-li:text-card-foreground prose-li:my-2 prose-b:text-card-foreground prose-a:text-primary prose-ul:my-5 prose-ol:my-5"
+                      className="px-8 py-6 prose prose-sm max-w-none leading-relaxed prose-p:my-6 prose-p:text-card-foreground prose-p:leading-[1.8] prose-strong:text-primary prose-strong:font-bold prose-headings:text-card-foreground prose-headings:font-bold prose-li:text-card-foreground prose-li:my-2 prose-b:text-card-foreground prose-a:text-primary prose-ul:my-5 prose-ol:my-5 break-words"
                       dangerouslySetInnerHTML={{
                         __html: processedExplanation,
                       }}
@@ -677,7 +677,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       <div className="flex">
                         <div className="w-1 bg-warning shrink-0" />
                         <div
-                          className="flex-1 px-5 py-4 prose prose-sm max-w-none prose-p:text-card-foreground prose-li:text-card-foreground prose-li:my-0.5 prose-ul:my-2 prose-p:my-2 prose-headings:text-card-foreground prose-strong:text-card-foreground prose-b:text-card-foreground prose-a:text-primary"
+                          className="flex-1 px-5 py-4 prose prose-sm max-w-none prose-p:text-card-foreground prose-li:text-card-foreground prose-li:my-0.5 prose-ul:my-2 prose-p:my-2 prose-headings:text-card-foreground prose-strong:text-card-foreground prose-b:text-card-foreground prose-a:text-primary break-words"
                           dangerouslySetInnerHTML={{
                             __html: processedKeyPoints,
                           }}
@@ -718,7 +718,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       <div className="flex">
                         <div className="w-1 bg-info shrink-0" />
                         <div
-                          className="flex-1 px-5 py-4 prose prose-sm max-w-none prose-p:text-card-foreground prose-li:text-card-foreground prose-p:my-2 prose-li:my-0.5 prose-headings:text-card-foreground prose-strong:text-card-foreground prose-b:text-card-foreground prose-a:text-primary"
+                          className="flex-1 px-5 py-4 prose prose-sm max-w-none prose-p:text-card-foreground prose-li:text-card-foreground prose-p:my-2 prose-li:my-0.5 prose-headings:text-card-foreground prose-strong:text-card-foreground prose-b:text-card-foreground prose-a:text-primary break-words"
                           dangerouslySetInnerHTML={{
                             __html: processedPeerPearls,
                           }}

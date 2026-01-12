@@ -389,7 +389,7 @@ function CardRow({
           <Badge
             variant="outline"
             className={cn(
-              "text-[10px] px-2 py-0 h-6 gap-1 shrink-0 font-semibold uppercase tracking-wider",
+              "text-[10px] px-2 py-0.5 h-6 gap-1 shrink-0 font-semibold uppercase tracking-wider",
               status.className
             )}
           >
@@ -454,7 +454,7 @@ function CardRow({
                   <Badge
                     key={tag}
                     variant="secondary"
-                    className="text-[10px] py-0 px-2 font-normal"
+                    className="text-[10px] py-0.5 px-2 font-normal"
                   >
                     #{tag}
                   </Badge>
