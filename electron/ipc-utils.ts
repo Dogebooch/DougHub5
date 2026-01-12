@@ -19,3 +19,26 @@ export function notifyOllamaStatus(status: OllamaStatus, message: string): void 
     win.webContents.send("ai:ollamaStatus", { status, message });
   }
 }
+
+export type AIExtractionStatus = "started" | "completed" | "failed";
+
+export interface AIExtractionPayload {
+  sourceItemId: string;
+  status: AIExtractionStatus;
+  metadata?: {
+    summary?: string;
+    subject?: string;
+    questionType?: string;
+  };
+}
+
+/**
+ * Send AI metadata extraction status notification to the renderer process.
+ * Used to show real-time extraction progress on inbox items.
+ */
+export function notifyAIExtraction(payload: AIExtractionPayload): void {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (win && !win.isDestroyed()) {
+    win.webContents.send("sourceItems:aiExtraction", payload);
+  }
+}

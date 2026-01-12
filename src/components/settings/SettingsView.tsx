@@ -50,6 +50,7 @@ import {
   Sparkles,
   CheckCircle2,
   XCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Card as CardType } from "@/types";
 
@@ -71,6 +72,14 @@ export function SettingsView() {
     failed: number;
     currentItem?: string;
     status?: "running" | "cancelled" | "restoring" | "complete";
+  } | null>(null);
+  const [isReparsingQuestions, setIsReparsingQuestions] = useState(false);
+  const [reparseProgress, setReparseProgress] = useState<{
+    current: number;
+    total: number;
+    succeeded: number;
+    failed: number;
+    skipped: number;
   } | null>(null);
 
   useEffect(() => {
@@ -315,6 +324,77 @@ export function SettingsView() {
         unsubscribe();
         setIsReextractingMetadata(false);
         setExtractionProgress(null);
+      }
+    },
+    [toast]
+  );
+
+  const handleReparseQuestions = useCallback(
+    async (siteName?: "MKSAP 19" | "ACEP PeerPrep") => {
+      if (
+        !window.api?.sourceItems?.reparseAllFromRaw ||
+        !window.api?.sourceItems?.onReparseProgress
+      ) {
+        toast({
+          title: "Not Available",
+          description: "Re-parse API not available",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsReparsingQuestions(true);
+      setReparseProgress({
+        current: 0,
+        total: 0,
+        succeeded: 0,
+        failed: 0,
+        skipped: 0,
+      });
+
+      // Subscribe to progress updates
+      const unsubscribe = window.api.sourceItems.onReparseProgress(
+        (progress) => {
+          setReparseProgress(progress);
+        }
+      );
+
+      try {
+        const result = await window.api.sourceItems.reparseAllFromRaw(
+          siteName ? { siteName } : undefined
+        );
+
+        if (result.error) {
+          toast({
+            title: "Re-parse Failed",
+            description: result.error,
+            variant: "destructive",
+          });
+        } else if (result.data) {
+          const { processed, succeeded, failed, skipped } = result.data;
+          if (processed === 0 || (succeeded === 0 && skipped === processed)) {
+            toast({
+              title: "Nothing to Process",
+              description: "No questions with stored HTML found.",
+            });
+          } else {
+            toast({
+              title: "Re-parse Complete",
+              description: `Processed ${processed}: ${succeeded} updated, ${failed} failed, ${skipped} skipped.`,
+              variant: failed > 0 ? "destructive" : "default",
+            });
+          }
+        }
+      } catch (error) {
+        toast({
+          title: "Re-parse Failed",
+          description: String(error),
+          variant: "destructive",
+        });
+      } finally {
+        unsubscribe();
+        setIsReparsingQuestions(false);
+        setReparseProgress(null);
       }
     },
     [toast]
@@ -820,11 +900,113 @@ export function SettingsView() {
                     </AlertDialog>
                   </div>
                 </div>
+
+                {/* Re-parse Questions Section */}
+                <div className="flex items-center justify-between border-t pt-6">
+                  <div>
+                    <p className="font-medium">Re-parse Question HTML</p>
+                    <p className="text-sm text-foreground/80 leading-snug max-w-[400px]">
+                      Re-parses stored raw HTML to update question display
+                      (vignette, answers, explanation). Use after parser fixes.
+                      Preserves attempt history and downloaded images.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleReparseQuestions("MKSAP 19")}
+                      variant="outline"
+                      size="sm"
+                      disabled={isReparsingQuestions || isReextractingMetadata}
+                      className="gap-2"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      {isReparsingQuestions ? "Running..." : "MKSAP Only"}
+                    </Button>
+                    <Button
+                      onClick={() => handleReparseQuestions()}
+                      variant="outline"
+                      size="sm"
+                      disabled={isReparsingQuestions || isReextractingMetadata}
+                      className="gap-2"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      All Questions
+                    </Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Progress Dialog for Re-parsing */}
+      <Dialog open={isReparsingQuestions} onOpenChange={() => {}}>
+        <DialogContent
+          className="sm:max-w-md"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-primary animate-spin" />
+              Re-parsing Questions
+            </DialogTitle>
+            <DialogDescription>
+              Updating parsed content from stored HTML...
+            </DialogDescription>
+          </DialogHeader>
+
+          {reparseProgress && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>
+                    Progress: {reparseProgress.current} / {reparseProgress.total}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {reparseProgress.total > 0
+                      ? Math.round(
+                          (reparseProgress.current / reparseProgress.total) *
+                            100
+                        )
+                      : 0}
+                    %
+                  </span>
+                </div>
+                <Progress
+                  value={
+                    reparseProgress.total > 0
+                      ? (reparseProgress.current / reparseProgress.total) * 100
+                      : 0
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                <div className="bg-success/10 rounded-md p-2">
+                  <div className="font-semibold text-success">
+                    {reparseProgress.succeeded}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Updated</div>
+                </div>
+                <div className="bg-destructive/10 rounded-md p-2">
+                  <div className="font-semibold text-destructive">
+                    {reparseProgress.failed}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Failed</div>
+                </div>
+                <div className="bg-muted rounded-md p-2">
+                  <div className="font-semibold text-muted-foreground">
+                    {reparseProgress.skipped}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Skipped</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Progress Dialog for AI Extraction */}
       <Dialog open={isReextractingMetadata} onOpenChange={() => {}}>

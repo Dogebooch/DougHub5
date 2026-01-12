@@ -197,10 +197,30 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     return processHtml(v);
   }, [content.vignetteHtml, content.questionStemHtml, processHtml]);
 
-  const processedQuestionStem = React.useMemo(
-    () => processHtml(content.questionStemHtml),
-    [content.questionStemHtml, processHtml]
-  );
+  const processedQuestionStem = React.useMemo(() => {
+    const raw = processHtml(content.questionStemHtml);
+    if (!raw) return "";
+
+    // Normalize whitespace to make regex more predictable
+    const normalized = raw
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Heuristic: The actual question is usually the last sentence.
+    // We look for the last sentence boundary: a punctuation followed by space and capital letter/tag.
+    // Pattern: capture everything before the last sentence, then everything after the space.
+    const splitRegex = /^(.*[.?!])\s+([A-Z<].*)$/s;
+    const match = normalized.match(splitRegex);
+
+    if (match) {
+      const [_, context, question] = match;
+      return `${context} <strong class="font-bold text-foreground">${question}</strong>`;
+    }
+
+    // Fallback: If no clear split (e.g., single sentence), bold it all as it's the lead-in
+    return `<strong class="font-bold text-foreground">${normalized}</strong>`;
+  }, [content.questionStemHtml, processHtml]);
   const processedExplanation = React.useMemo(() => {
     let html = processHtml(content.explanationHtml);
     if (!html) return "";
@@ -511,7 +531,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
           <div className="p-6 bg-primary/5 border-y border-primary/10">
             {displayVignetteHtml && (
               <div
-                className="prose prose-sm max-w-none leading-relaxed mb-6 text-foreground/90 break-words"
+                className="prose prose-sm max-w-none leading-relaxed mb-6 text-card-foreground/90 break-words"
                 dangerouslySetInnerHTML={{ __html: displayVignetteHtml }}
               />
             )}
@@ -522,11 +542,11 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 displayVignetteHtml && "pt-6 border-t border-primary/10"
               )}
             >
-              <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase block">
+              <span className="text-[10px] font-bold text-card-muted uppercase tracking-widest block">
                 Clinical Question
               </span>
               <div
-                className="prose prose-sm max-w-none font-semibold text-lg text-muted-foreground break-words"
+                className="prose prose-sm max-w-none font-normal text-lg text-card-foreground break-words"
                 dangerouslySetInnerHTML={{ __html: processedQuestionStem }}
               />
             </div>

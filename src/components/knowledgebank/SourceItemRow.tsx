@@ -9,6 +9,7 @@ import {
   Trash2,
   Check,
   X,
+  Loader2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { SourceItem } from "@/types";
@@ -33,6 +34,7 @@ interface SourceItemRowProps {
   sourceItem: SourceItem;
   isSelected: boolean;
   isHighlighted?: boolean;
+  isExtracting?: boolean;
   onToggleSelect: (id: string, checked: boolean) => void;
   onAddToNotebook: (item: SourceItem) => void;
   onViewInNotebook?: (item: SourceItem) => void;
@@ -44,6 +46,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
   sourceItem,
   isSelected,
   isHighlighted,
+  isExtracting,
   onToggleSelect,
   onAddToNotebook,
   onViewInNotebook,
@@ -147,7 +150,14 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
           <h3 className="font-medium text-sm truncate leading-normal text-card-foreground flex-1">
             {displayTitle}
           </h3>
-          <span className="text-[11px] text-card-muted whitespace-nowrap shrink-0">
+          {/* AI extraction spinner - shows when metadata is being extracted */}
+          {isExtracting && (
+            <Loader2
+              className="h-3.5 w-3.5 text-primary/60 animate-spin shrink-0"
+              aria-label="Extracting metadata..."
+            />
+          )}
+          <span className="text-[11px] text-card-muted whitespace-nowrap shrink-0 group-hover:hidden group-focus-within:hidden">
             {formatDistanceToNow(new Date(sourceItem.createdAt), {
               addSuffix: true,
             })}
@@ -175,7 +185,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
       </div>
 
       <div
-        className="items-center gap-2 hidden group-hover:flex focus-within:flex whitespace-nowrap shrink-0"
+        className="items-center gap-2 hidden group-hover:flex group-focus-within:flex whitespace-nowrap shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         <Button

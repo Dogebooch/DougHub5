@@ -13,6 +13,7 @@ import {
 } from "./parsers/board-question-parser";
 import { downloadBoardQuestionImages } from "./services/image-service";
 import { CapturePayload } from "./capture-server";
+import { notifyAIExtraction } from "./ipc-utils";
 import {
   cardQueries,
   noteQueries,
@@ -276,6 +277,8 @@ export async function processCapture(
 
         // If existing item lacks AI metadata, extract it now (async, non-blocking)
         if (!existing.metadata) {
+          notifyAIExtraction({ sourceItemId: existing.id, status: "started" });
+
           extractQuestionSummary(
             JSON.stringify(mergedContent),
             existing.sourceType
@@ -291,6 +294,13 @@ export async function processCapture(
                 console.log(
                   `[Capture] ✅ AI metadata extracted for existing item: "${extracted.summary}"`
                 );
+                notifyAIExtraction({
+                  sourceItemId: existing.id,
+                  status: "completed",
+                  metadata: extracted,
+                });
+              } else {
+                notifyAIExtraction({ sourceItemId: existing.id, status: "completed" });
               }
             })
             .catch((err) => {
@@ -298,6 +308,7 @@ export async function processCapture(
                 "[Capture] ⚠️ AI extraction failed for existing item:",
                 err
               );
+              notifyAIExtraction({ sourceItemId: existing.id, status: "failed" });
             });
         }
       } else {
@@ -322,6 +333,9 @@ export async function processCapture(
         resultId = id;
 
         // Extract AI metadata for new board questions (async, non-blocking)
+        // Notify renderer that extraction has started
+        notifyAIExtraction({ sourceItemId: id, status: "started" });
+
         extractQuestionSummary(sourceItem.rawContent, sourceItem.sourceType)
           .then((extracted) => {
             if (extracted) {
@@ -334,10 +348,20 @@ export async function processCapture(
               console.log(
                 `[Capture] ✅ AI metadata extracted: "${extracted.summary}"`
               );
+              // Notify renderer that extraction completed with metadata
+              notifyAIExtraction({
+                sourceItemId: id,
+                status: "completed",
+                metadata: extracted,
+              });
+            } else {
+              // No metadata extracted (not a qbank item, etc.)
+              notifyAIExtraction({ sourceItemId: id, status: "completed" });
             }
           })
           .catch((err) => {
             console.warn("[Capture] ⚠️ AI extraction failed:", err);
+            notifyAIExtraction({ sourceItemId: id, status: "failed" });
           });
       }
 
@@ -953,6 +977,250 @@ export function registerIpcHandlers(): void {
       try {
         const html = sourceItemQueries.getRawPage(sourceItemId);
         return success(html);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  /**
+   * Re-parse a board question from its stored raw HTML.
+   * This allows updating parsed content when parser logic changes without re-capturing.
+   * Preserves: attempt history, images (localPaths), metadata
+   * Updates: vignette, question stem, answers, explanation, key points, etc.
+   */
+  ipcMain.handle(
+    "sourceItems:reparseFromRaw",
+    async (
+      _,
+      sourceItemId: string
+    ): Promise<
+      IpcResult<{ success: boolean; message: string; updated?: boolean }>
+    > => {
+      try {
+        // 1. Get the source item
+        const item = sourceItemQueries.getById(sourceItemId);
+        if (!item) {
+          return success({
+            success: false,
+            message: `Source item not found: ${sourceItemId}`,
+          });
+        }
+
+        // 2. Get the stored raw HTML
+        const rawHtml = sourceItemQueries.getRawPage(sourceItemId);
+        if (!rawHtml) {
+          return success({
+            success: false,
+            message: "No raw HTML stored for this item. Re-capture required.",
+          });
+        }
+
+        // 3. Determine site type from sourceName
+        let siteName: "ACEP PeerPrep" | "MKSAP 19";
+        if (
+          item.sourceName?.toLowerCase().includes("mksap") ||
+          item.sourceUrl?.includes("mksap")
+        ) {
+          siteName = "MKSAP 19";
+        } else if (
+          item.sourceName?.toLowerCase().includes("peerprep") ||
+          item.sourceUrl?.includes("peerprep")
+        ) {
+          siteName = "ACEP PeerPrep";
+        } else {
+          return success({
+            success: false,
+            message: `Unknown source type: ${item.sourceName}`,
+          });
+        }
+
+        // 4. Parse existing content to preserve attempt history
+        let existingContent: BoardQuestionContent | null = null;
+        try {
+          if (item.rawContent) {
+            existingContent = JSON.parse(item.rawContent) as BoardQuestionContent;
+          }
+        } catch (e) {
+          console.warn("[Reparse] Could not parse existing rawContent:", e);
+        }
+
+        // 5. Re-parse the HTML
+        const newContent = parseBoardQuestion(
+          rawHtml,
+          siteName,
+          item.sourceUrl || "",
+          item.createdAt
+        );
+
+        // 6. Preserve important data from existing content
+        if (existingContent) {
+          // Preserve attempt history
+          newContent.attempts = existingContent.attempts || [];
+
+          // Preserve image localPaths (don't re-download)
+          if (existingContent.images && existingContent.images.length > 0) {
+            newContent.images = newContent.images.map((newImg) => {
+              // Try to find matching existing image by URL
+              const existingImg = existingContent!.images.find(
+                (e) => e.url === newImg.url
+              );
+              if (existingImg?.localPath) {
+                return { ...newImg, localPath: existingImg.localPath };
+              }
+              return newImg;
+            });
+          }
+        }
+
+        // 7. Update the source item
+        sourceItemQueries.update(sourceItemId, {
+          rawContent: JSON.stringify(newContent),
+          questionId: newContent.questionId || item.questionId,
+          updatedAt: new Date().toISOString(),
+        });
+
+        console.log(
+          `[Reparse] Successfully re-parsed source item ${sourceItemId} (${siteName})`
+        );
+        return success({
+          success: true,
+          message: `Re-parsed successfully from stored HTML`,
+          updated: true,
+        });
+      } catch (error) {
+        console.error("[Reparse] Error:", error);
+        return failure(error);
+      }
+    }
+  );
+
+  /**
+   * Bulk re-parse all board questions from stored raw HTML.
+   * Useful when parser logic changes.
+   */
+  ipcMain.handle(
+    "sourceItems:reparseAllFromRaw",
+    async (
+      event,
+      options?: { siteName?: "MKSAP 19" | "ACEP PeerPrep" }
+    ): Promise<
+      IpcResult<{
+        processed: number;
+        succeeded: number;
+        failed: number;
+        skipped: number;
+      }>
+    > => {
+      try {
+        const sender = event.sender;
+        const items = sourceItemQueries.getByType("qbank");
+
+        let processed = 0;
+        let succeeded = 0;
+        let failed = 0;
+        let skipped = 0;
+
+        for (const item of items) {
+          processed++;
+
+          // Filter by site if specified
+          if (options?.siteName) {
+            const isMksap =
+              item.sourceName?.toLowerCase().includes("mksap") ||
+              item.sourceUrl?.includes("mksap");
+            const isPeerprep =
+              item.sourceName?.toLowerCase().includes("peerprep") ||
+              item.sourceUrl?.includes("peerprep");
+
+            if (options.siteName === "MKSAP 19" && !isMksap) {
+              skipped++;
+              continue;
+            }
+            if (options.siteName === "ACEP PeerPrep" && !isPeerprep) {
+              skipped++;
+              continue;
+            }
+          }
+
+          // Check if raw HTML exists
+          const rawHtml = sourceItemQueries.getRawPage(item.id);
+          if (!rawHtml) {
+            skipped++;
+            continue;
+          }
+
+          try {
+            // Determine site type
+            let siteName: "ACEP PeerPrep" | "MKSAP 19";
+            if (
+              item.sourceName?.toLowerCase().includes("mksap") ||
+              item.sourceUrl?.includes("mksap")
+            ) {
+              siteName = "MKSAP 19";
+            } else {
+              siteName = "ACEP PeerPrep";
+            }
+
+            // Parse existing content
+            let existingContent: BoardQuestionContent | null = null;
+            try {
+              if (item.rawContent) {
+                existingContent = JSON.parse(
+                  item.rawContent
+                ) as BoardQuestionContent;
+              }
+            } catch (e) {
+              // ignore parse errors
+            }
+
+            // Re-parse
+            const newContent = parseBoardQuestion(
+              rawHtml,
+              siteName,
+              item.sourceUrl || "",
+              item.createdAt
+            );
+
+            // Preserve data
+            if (existingContent) {
+              newContent.attempts = existingContent.attempts || [];
+              if (existingContent.images?.length > 0) {
+                newContent.images = newContent.images.map((newImg) => {
+                  const existingImg = existingContent!.images.find(
+                    (e) => e.url === newImg.url
+                  );
+                  return existingImg?.localPath
+                    ? { ...newImg, localPath: existingImg.localPath }
+                    : newImg;
+                });
+              }
+            }
+
+            // Update
+            sourceItemQueries.update(item.id, {
+              rawContent: JSON.stringify(newContent),
+              questionId: newContent.questionId || item.questionId,
+              updatedAt: new Date().toISOString(),
+            });
+
+            succeeded++;
+          } catch (e) {
+            console.error(`[Reparse] Failed for ${item.id}:`, e);
+            failed++;
+          }
+
+          // Send progress
+          sender.send("sourceItems:reparseFromRaw:progress", {
+            current: processed,
+            total: items.length,
+            succeeded,
+            failed,
+            skipped,
+          });
+        }
+
+        return success({ processed, succeeded, failed, skipped });
       } catch (error) {
         return failure(error);
       }

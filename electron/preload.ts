@@ -72,6 +72,36 @@ const api = {
     getRawPage: (sourceItemId: string) =>
       ipcRenderer.invoke("sourceItems:getRawPage", sourceItemId),
     purgeRawPages: () => ipcRenderer.invoke("sourceItems:purgeRawPages"),
+    reparseFromRaw: (sourceItemId: string) =>
+      ipcRenderer.invoke("sourceItems:reparseFromRaw", sourceItemId),
+    reparseAllFromRaw: (options?: { siteName?: "MKSAP 19" | "ACEP PeerPrep" }) =>
+      ipcRenderer.invoke("sourceItems:reparseAllFromRaw", options),
+    onReparseProgress: (
+      callback: (progress: {
+        current: number;
+        total: number;
+        succeeded: number;
+        failed: number;
+        skipped: number;
+      }) => void
+    ) => {
+      const handler = (
+        _event: Electron.IpcRendererEvent,
+        progress: {
+          current: number;
+          total: number;
+          succeeded: number;
+          failed: number;
+          skipped: number;
+        }
+      ) => callback(progress);
+      ipcRenderer.on("sourceItems:reparseFromRaw:progress", handler);
+      return () =>
+        ipcRenderer.removeListener(
+          "sourceItems:reparseFromRaw:progress",
+          handler
+        );
+    },
     reextractMetadata: (options?: { ids?: string[]; overwrite?: boolean }) =>
       ipcRenderer.invoke("sourceItems:reextractMetadata", options),
     onReextractProgress: (
@@ -109,6 +139,25 @@ const api = {
         callback(item);
       ipcRenderer.on("sourceItems:new", handler);
       return () => ipcRenderer.removeListener("sourceItems:new", handler);
+    },
+    onAIExtraction: (
+      callback: (payload: {
+        sourceItemId: string;
+        status: "started" | "completed" | "failed";
+        metadata?: { summary?: string; subject?: string; questionType?: string };
+      }) => void
+    ) => {
+      const handler = (
+        _event: Electron.IpcRendererEvent,
+        payload: {
+          sourceItemId: string;
+          status: "started" | "completed" | "failed";
+          metadata?: { summary?: string; subject?: string; questionType?: string };
+        }
+      ) => callback(payload);
+      ipcRenderer.on("sourceItems:aiExtraction", handler);
+      return () =>
+        ipcRenderer.removeListener("sourceItems:aiExtraction", handler);
     },
   },
   canonicalTopics: {

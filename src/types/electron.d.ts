@@ -166,6 +166,30 @@ export interface ElectronAPI {
     delete: (id: string) => Promise<IpcResult<void>>;
     getRawPage: (sourceItemId: string) => Promise<IpcResult<string | null>>;
     purgeRawPages: () => Promise<IpcResult<void>>;
+    reparseFromRaw: (
+      sourceItemId: string
+    ) => Promise<
+      IpcResult<{ success: boolean; message: string; updated?: boolean }>
+    >;
+    reparseAllFromRaw: (options?: {
+      siteName?: "MKSAP 19" | "ACEP PeerPrep";
+    }) => Promise<
+      IpcResult<{
+        processed: number;
+        succeeded: number;
+        failed: number;
+        skipped: number;
+      }>
+    >;
+    onReparseProgress: (
+      callback: (progress: {
+        current: number;
+        total: number;
+        succeeded: number;
+        failed: number;
+        skipped: number;
+      }) => void
+    ) => () => void;
     reextractMetadata: (options?: {
       ids?: string[];
       overwrite?: boolean;
@@ -190,6 +214,13 @@ export interface ElectronAPI {
     ) => () => void;
     cancelReextract: () => Promise<IpcResult<void>>;
     onNew: (callback: (item: SourceItem) => void) => () => void;
+    onAIExtraction: (
+      callback: (payload: {
+        sourceItemId: string;
+        status: "started" | "completed" | "failed";
+        metadata?: { summary?: string; subject?: string; questionType?: string };
+      }) => void
+    ) => () => void;
   };
   canonicalTopics: {
     getAll: () => Promise<IpcResult<CanonicalTopic[]>>;

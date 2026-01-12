@@ -578,7 +578,7 @@ function CardRow({
 function CardPreviewPane({ card }: { card: CardBrowserItem | null }) {
   if (!card) {
     return (
-      <div className="h-[120px] border-t bg-muted/20 flex items-center justify-center text-muted-foreground text-sm">
+      <div className="h-[120px] border-t bg-surface-elevated/50 flex items-center justify-center text-muted-foreground text-sm">
         <div className="flex items-center gap-2">
           <Info className="w-4 h-4" />
           <span>Select a card to preview</span>
@@ -587,18 +587,33 @@ function CardPreviewPane({ card }: { card: CardBrowserItem | null }) {
     );
   }
 
+  const truncatedFront =
+    card.front.length > 120 ? card.front.substring(0, 120) + "..." : card.front;
   const truncatedBack =
-    card.back.length > 150 ? card.back.substring(0, 150) + "..." : card.back;
+    card.back.length > 120 ? card.back.substring(0, 120) + "..." : card.back;
 
   return (
-    <div className="h-[120px] border-t bg-muted/40 flex flex-col p-3 gap-2 overflow-hidden shadow-inner">
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-foreground line-clamp-3 leading-relaxed whitespace-pre-wrap">
-          {truncatedBack}
-        </p>
+    <div className="h-[130px] border-t bg-surface-elevated flex flex-col p-4 gap-3 overflow-hidden shadow-inner">
+      <div className="flex-1 flex gap-4 min-w-0">
+        <div className="flex-1 min-w-0">
+          <span className="text-[10px] font-bold text-primary/70 uppercase tracking-widest block mb-1">
+            Question
+          </span>
+          <p className="text-sm font-semibold text-foreground line-clamp-2 leading-relaxed whitespace-pre-wrap italic">
+            {truncatedFront}
+          </p>
+        </div>
+        <div className="flex-1 min-w-0 border-l border-border/30 pl-4">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">
+            Answer Preview
+          </span>
+          <p className="text-xs text-foreground/80 line-clamp-3 leading-relaxed whitespace-pre-wrap">
+            {truncatedBack}
+          </p>
+        </div>
       </div>
 
-      <div className="flex items-center gap-6 pt-2 border-t border-border/30">
+      <div className="flex items-center gap-6 pt-2 border-t border-border/20">
         <div
           className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
           title="FSRS Difficulty"

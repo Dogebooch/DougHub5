@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { 
   isToday, 
   isYesterday, 
@@ -38,6 +38,9 @@ export function InboxView() {
   );
   const [sortBy, setSortBy] = useState<SortOrder>("newest");
   const [isLoading, setIsLoading] = useState(true);
+
+  // Track items currently having AI metadata extracted
+  const [extractingIds, setExtractingIds] = useState<Set<string>>(new Set());
 
   // Dialog state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -83,6 +86,39 @@ export function InboxView() {
             const filtered = prev.filter((i) => i.id !== item.id);
             return [item, ...filtered];
           });
+        }
+      });
+      return unsubscribe;
+    }
+  }, []);
+
+  // Listen for AI extraction status updates
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.api?.sourceItems?.onAIExtraction) {
+      const unsubscribe = window.api.sourceItems.onAIExtraction((payload) => {
+        const { sourceItemId, status, metadata } = payload;
+
+        if (status === "started") {
+          // Add to extracting set
+          setExtractingIds((prev) => new Set(prev).add(sourceItemId));
+        } else {
+          // Remove from extracting set (completed or failed)
+          setExtractingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(sourceItemId);
+            return next;
+          });
+
+          // Update item with new metadata if extraction succeeded
+          if (status === "completed" && metadata) {
+            setItems((prev) =>
+              prev.map((item) =>
+                item.id === sourceItemId
+                  ? { ...item, metadata: { ...item.metadata, ...metadata } }
+                  : item
+              )
+            );
+          }
         }
       });
       return unsubscribe;
@@ -241,9 +277,7 @@ export function InboxView() {
               <Inbox className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                Inbox Triage
-              </h1>
+              <h1 className="text-2xl font-bold tracking-tight">Inbox</h1>
               <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-semibold mt-0.5">
                 Initial Capture Queue
               </p>
@@ -396,6 +430,7 @@ export function InboxView() {
                         key={item.id}
                         sourceItem={item}
                         isSelected={selectedInboxItems.has(item.id)}
+                        isExtracting={extractingIds.has(item.id)}
                         onToggleSelect={() => toggleInboxSelection(item.id)}
                         onAddToNotebook={handleAddToNotebook}
                         onOpen={handleOpen}

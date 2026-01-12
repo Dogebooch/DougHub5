@@ -48,6 +48,16 @@ const api = {
     delete: (id) => electron.ipcRenderer.invoke("sourceItems:delete", id),
     getRawPage: (sourceItemId) => electron.ipcRenderer.invoke("sourceItems:getRawPage", sourceItemId),
     purgeRawPages: () => electron.ipcRenderer.invoke("sourceItems:purgeRawPages"),
+    reparseFromRaw: (sourceItemId) => electron.ipcRenderer.invoke("sourceItems:reparseFromRaw", sourceItemId),
+    reparseAllFromRaw: (options) => electron.ipcRenderer.invoke("sourceItems:reparseAllFromRaw", options),
+    onReparseProgress: (callback) => {
+      const handler = (_event, progress) => callback(progress);
+      electron.ipcRenderer.on("sourceItems:reparseFromRaw:progress", handler);
+      return () => electron.ipcRenderer.removeListener(
+        "sourceItems:reparseFromRaw:progress",
+        handler
+      );
+    },
     reextractMetadata: (options) => electron.ipcRenderer.invoke("sourceItems:reextractMetadata", options),
     onReextractProgress: (callback) => {
       const handler = (_event, progress) => callback(progress);
@@ -62,6 +72,11 @@ const api = {
       const handler = (_event, item) => callback(item);
       electron.ipcRenderer.on("sourceItems:new", handler);
       return () => electron.ipcRenderer.removeListener("sourceItems:new", handler);
+    },
+    onAIExtraction: (callback) => {
+      const handler = (_event, payload) => callback(payload);
+      electron.ipcRenderer.on("sourceItems:aiExtraction", handler);
+      return () => electron.ipcRenderer.removeListener("sourceItems:aiExtraction", handler);
     }
   },
   canonicalTopics: {
