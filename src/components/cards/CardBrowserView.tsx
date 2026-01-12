@@ -62,6 +62,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import { useToast } from "@/hooks/use-toast";
 import type { CardBrowserItem, NotebookBlock } from "@/types";
 import { cn } from "@/lib/utils";
+import { getWindowApi } from "@/lib/safeWindowApi";
 import { CardEditModal } from "./CardEditModal";
 
 import { LucideIcon } from "lucide-react";
@@ -694,6 +695,8 @@ export function CardBrowserView() {
   const [suspendingCardId, setSuspendingCardId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const isMounted = useRef(true);
+
   // Selection state
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(
     new Set()
@@ -703,6 +706,12 @@ export function CardBrowserView() {
 
   const getBrowserList = useAppStore((state) => state.getBrowserList);
   const { toast } = useToast();
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Persist compact mode preference
   useEffect(() => {
@@ -721,8 +730,17 @@ export function CardBrowserView() {
   }, [searchQuery]);
 
   const fetchCards = useCallback(async () => {
+    if (!isMounted.current) return;
+
     setIsLoading(true);
     try {
+      const api = getWindowApi();
+      if (!api) {
+        console.warn("[CardBrowser] window.api unavailable - fetch skipped");
+        if (isMounted.current) setIsLoading(false);
+        return;
+      }
+
       const filters: { leechesOnly?: boolean; search?: string } = {};
 
       if (activeTab === "leeches") {
@@ -736,11 +754,15 @@ export function CardBrowserView() {
         field: sortField,
         direction: sortDirection,
       });
-      setCards(result || []);
+      if (isMounted.current) {
+        setCards(result || []);
+      }
     } catch (error) {
       console.error("Failed to fetch cards:", error);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   }, [getBrowserList, activeTab, debouncedSearch, sortField, sortDirection]);
 
@@ -804,7 +826,17 @@ export function CardBrowserView() {
       }
 
       try {
-        const result = await window.api.cards.getBySiblings(sourceBlockId);
+        const api = getWindowApi();
+        if (!api) {
+          toast({
+            title: "Unavailable",
+            description: "Card details require the Electron bridge.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const result = await api.cards.getBySiblings(sourceBlockId);
         if (result.data) {
           // Filter out the current card to only show TRUE siblings
           const actualSiblings = result.data.filter((c) => c.id !== cardId);
@@ -858,9 +890,19 @@ export function CardBrowserView() {
     const newState = anyUnsuspended ? 4 : 2; // Suspend all or Unsuspend all
 
     try {
+      const api = getWindowApi();
+      if (!api) {
+        toast({
+          title: "Unavailable",
+          description: "Cannot update cards without the Electron bridge.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Process sequentially as per clarification
       for (const cardId of selectedCardIds) {
-        await window.api.cards.update(cardId, { state: newState });
+        await api.cards.update(cardId, { state: newState });
       }
 
       toast({
@@ -886,8 +928,18 @@ export function CardBrowserView() {
 
     setIsBatchProcessing(true);
     try {
+      const api = getWindowApi();
+      if (!api) {
+        toast({
+          title: "Unavailable",
+          description: "Cannot delete cards without the Electron bridge.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       for (const cardId of selectedCardIds) {
-        await window.api.cards.remove(cardId);
+        await api.cards.remove(cardId);
       }
 
       toast({
@@ -917,10 +969,20 @@ export function CardBrowserView() {
       setSourceBlockData(null); // Clear previous content
 
       try {
+        const api = getWindowApi();
+        if (!api) {
+          toast({
+            title: "Unavailable",
+            description: "Cannot load source without the Electron bridge.",
+            variant: "destructive",
+          });
+          return;
+        }
+
         // Fetch block content and sibling cards in parallel
         const [blockResult, siblingsResult] = await Promise.all([
-          window.api.notebookBlocks.getById(card.sourceBlockId),
-          window.api.cards.getBySiblings(card.sourceBlockId),
+          api.notebookBlocks.getById(card.sourceBlockId),
+          api.cards.getBySiblings(card.sourceBlockId),
         ]);
 
         setSourceBlockData({
@@ -965,7 +1027,17 @@ export function CardBrowserView() {
       const newState = isSuspended ? 2 : 4;
 
       try {
-        const result = await window.api.cards.update(card.id, {
+        const api = getWindowApi();
+        if (!api) {
+          toast({
+            title: "Unavailable",
+            description: "Cannot update cards without the Electron bridge.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const result = await api.cards.update(card.id, {
           state: newState,
         });
         if (result.error) {
@@ -1006,7 +1078,17 @@ export function CardBrowserView() {
 
     setIsDeleting(true);
     try {
-      const result = await window.api.cards.remove(deletingCard.id);
+      const api = getWindowApi();
+      if (!api) {
+        toast({
+          title: "Unavailable",
+          description: "Cannot delete cards without the Electron bridge.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const result = await api.cards.remove(deletingCard.id);
       if (result.error) {
         toast({
           title: "Failed to delete card",

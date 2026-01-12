@@ -10,6 +10,7 @@ import {
   AppSettings,
 } from "@/types";
 import { seedSampleData } from "@/lib/seedData";
+import { getWindowApi } from "@/lib/safeWindowApi";
 
 const DEFAULT_SETTINGS: AppSettings = {
   aiProvider: "openai",
@@ -456,7 +457,13 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       direction: "asc" | "desc";
     }
   ) => {
-    const result = await window.api.cards.getBrowserList(filters, sort);
+    const api = getWindowApi();
+    if (!api) {
+      console.warn("[Store] window.api unavailable - browser list skipped");
+      return [];
+    }
+
+    const result = await api.cards.getBrowserList(filters, sort);
     if (result.error) {
       console.error("[Store] Failed to get browser list:", result.error);
       return [];

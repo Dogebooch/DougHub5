@@ -14,6 +14,7 @@ import { Rating } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { ClozeDisplay, ClozeAnswer } from "@/lib/cloze-renderer";
 import { MistakesReviewModal } from "./MistakesReviewModal";
+import { getWindowApi } from "@/lib/safeWindowApi";
 
 const CONTINUE_LOCKOUT_MS = 400; // Prevent accidental double-taps
 
@@ -116,7 +117,15 @@ export function ReviewInterface() {
   useEffect(() => {
     let active = true;
     if (currentCard?.notebookTopicPageId) {
-      window.api.cards
+      const api = getWindowApi();
+      if (!api) {
+        setTopicInfo(null);
+        return () => {
+          active = false;
+        };
+      }
+
+      api.cards
         .getTopicMetadata(currentCard.notebookTopicPageId)
         .then((res) => {
           if (active && res.data) {

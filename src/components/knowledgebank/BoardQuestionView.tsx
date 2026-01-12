@@ -205,18 +205,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     let html = processHtml(content.explanationHtml);
     if (!html) return "";
 
-    // 1. Bold and colorize Answer Choice references: Option A, (B), Choice C, Answer D
-    // Handles variants like "Option A", "(A)", "Choice A", "Answer A"
-    // Uses a regex that avoids matching inside HTML tags
-    html = html.replace(
-      /(<[^>]+>)|(\b(?:Option|Choice|Answer|Choice)\s+([A-F])\b|\(([A-F])\)(?=\s|\.|,|$))/gi,
-      (match, tag) => {
-        if (tag) return tag;
-        return `<strong class="text-primary font-bold transition-colors hover:text-primary/80 cursor-default">${match}</strong>`;
-      }
-    );
-
-    // 2. Identify common headers and wrap them in a cleaner sub-header style
+    // Identify common headers and wrap them in a cleaner sub-header style (card-aware colors)
     const sectionHeaders = [
       "Educational Objective",
       "Key Point",
@@ -229,15 +218,66 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     ];
 
     sectionHeaders.forEach((header) => {
-      // Avoid matching inside tags and look for header at logical breaks
       const regex = new RegExp(
         `(<[^>]+>)|(?:\\b|^)(${header})(?::|\\.|\\b)`,
         "gi"
       );
       html = html.replace(regex, (match, tag, h) => {
         if (tag) return tag;
-        return `<span class="block text-[10px] font-extrabold text-muted-foreground/70 tracking-[0.15em] uppercase mt-6 mb-2 first:mt-0">${h}</span>`;
+        return `<div class="mt-10 mb-4 first:mt-0 pt-6 first:pt-0 border-t border-card-muted/20 first:border-t-0">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="h-1 w-1 rounded-full bg-primary/60"></div>
+            <span class="text-xs font-extrabold text-primary/80 tracking-[0.15em] uppercase">${h}</span>
+          </div>
+        </div>`;
       });
+    });
+
+    // Separate a leading "Key Takeaway" if there's notable text before the first header/choice marker
+    const markerPattern = new RegExp(
+      `(?:\\b(?:Option|Choice|Answer)\\s+[A-F]|\\([A-F]\\))|(?:${sectionHeaders
+        .map((h) => h.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&"))
+        .join("|")})`,
+      "i"
+    );
+    const firstMarkerIndex = html.search(markerPattern);
+    if (firstMarkerIndex > 30) {
+      const takeaway = html.slice(0, firstMarkerIndex);
+      const rest = html.slice(firstMarkerIndex);
+      html = `
+        <div class="mb-10 p-5 bg-primary/8 border-l-4 border-primary/40 rounded-r-lg shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+            </svg>
+            <div class="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Key Takeaway</div>
+          </div>
+          <div class="text-[15px] leading-relaxed font-medium text-card-foreground/95">${takeaway}</div>
+        </div>
+        ${rest}`;
+    }
+
+    // Style Answer Choice references as clear delimiters for per-answer explanations
+    const choiceRegex =
+      /(<[^>]+>)|(\b(?:Option|Choice|Answer)\s+([A-F])\b|\(([A-F])\)(?=\s|\.|,|$))/gi;
+    let seenFirstChoice = false;
+    html = html.replace(choiceRegex, (match, tag, _full, letter1, letter2) => {
+      if (tag) return tag;
+      const letter = (letter1 || letter2 || "").toUpperCase();
+      const spacingClass = seenFirstChoice
+        ? "mt-8 pt-8 border-t border-card-muted/15"
+        : "mt-4";
+      seenFirstChoice = true;
+      return `
+          <div class="${spacingClass} mb-4">
+            <div class="flex items-center gap-3">
+              <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/15 text-primary font-black text-sm border-2 border-primary/30 shadow-sm">${letter}</div>
+              <div>
+                <div class="text-xs font-extrabold text-card-foreground/80 uppercase tracking-wider leading-none">Option ${letter}</div>
+                <div class="text-[10px] text-card-muted uppercase tracking-widest mt-0.5">Explanation</div>
+              </div>
+            </div>
+          </div>`;
     });
 
     return html;
@@ -623,12 +663,12 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary shrink-0">
                   <FileText className="w-4 h-4" />
                 </div>
-                <span className="flex-1 text-sm font-semibold text-foreground text-left">
+                <span className="flex-1 text-sm font-semibold text-card-foreground text-left">
                   Explanation
                 </span>
                 <ChevronDown
                   className={cn(
-                    "w-4 h-4 text-muted-foreground transition-transform",
+                    "w-4 h-4 text-card-muted transition-transform",
                     isExplanationOpen && "rotate-180"
                   )}
                 />
@@ -637,7 +677,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 <div className="px-4 pb-6">
                   <div className="rounded-xl bg-card border border-border/50 overflow-hidden">
                     <div
-                      className="px-6 py-5 prose prose-sm max-w-none leading-relaxed prose-p:my-3 prose-p:text-foreground prose-strong:text-primary prose-strong:font-semibold prose-headings:text-foreground prose-headings:font-semibold prose-li:text-foreground prose-b:text-foreground prose-a:text-primary"
+                      className="px-8 py-6 prose prose-sm max-w-none leading-relaxed prose-p:my-4 prose-p:text-card-foreground prose-p:leading-loose prose-strong:text-primary prose-strong:font-bold prose-headings:text-card-foreground prose-headings:font-bold prose-li:text-card-foreground prose-li:my-2 prose-b:text-card-foreground prose-a:text-primary prose-ul:my-4 prose-ol:my-4"
                       dangerouslySetInnerHTML={{
                         __html: processedExplanation,
                       }}
@@ -660,12 +700,12 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-warning/15 text-warning shrink-0">
                     <Lightbulb className="w-4 h-4" />
                   </div>
-                  <span className="flex-1 text-sm font-semibold text-foreground text-left">
+                  <span className="flex-1 text-sm font-semibold text-card-foreground text-left">
                     Key Points
                   </span>
                   <ChevronDown
                     className={cn(
-                      "w-4 h-4 text-muted-foreground transition-transform",
+                      "w-4 h-4 text-card-muted transition-transform",
                       isKeyPointsOpen && "rotate-180"
                     )}
                   />
@@ -676,7 +716,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       <div className="flex">
                         <div className="w-1 bg-warning shrink-0" />
                         <div
-                          className="flex-1 px-5 py-4 prose prose-sm max-w-none prose-p:text-foreground prose-li:text-foreground prose-li:my-0.5 prose-ul:my-2 prose-p:my-2 prose-headings:text-foreground prose-strong:text-foreground prose-b:text-foreground prose-a:text-primary"
+                          className="flex-1 px-5 py-4 prose prose-sm max-w-none prose-p:text-card-foreground prose-li:text-card-foreground prose-li:my-0.5 prose-ul:my-2 prose-p:my-2 prose-headings:text-card-foreground prose-strong:text-card-foreground prose-b:text-card-foreground prose-a:text-primary"
                           dangerouslySetInnerHTML={{
                             __html: processedKeyPoints,
                           }}
@@ -701,12 +741,12 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-info/15 text-info shrink-0">
                     <Sparkles className="w-4 h-4" />
                   </div>
-                  <span className="flex-1 text-sm font-semibold text-foreground text-left">
+                  <span className="flex-1 text-sm font-semibold text-card-foreground text-left">
                     Pearls
                   </span>
                   <ChevronDown
                     className={cn(
-                      "w-4 h-4 text-muted-foreground transition-transform",
+                      "w-4 h-4 text-card-muted transition-transform",
                       isPeerPearlsOpen && "rotate-180"
                     )}
                   />
@@ -717,7 +757,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       <div className="flex">
                         <div className="w-1 bg-info shrink-0" />
                         <div
-                          className="flex-1 px-5 py-4 prose prose-sm max-w-none prose-p:text-foreground prose-li:text-foreground prose-p:my-2 prose-li:my-0.5 prose-headings:text-foreground prose-strong:text-foreground prose-b:text-foreground prose-a:text-primary"
+                          className="flex-1 px-5 py-4 prose prose-sm max-w-none prose-p:text-card-foreground prose-li:text-card-foreground prose-p:my-2 prose-li:my-0.5 prose-headings:text-card-foreground prose-strong:text-card-foreground prose-b:text-card-foreground prose-a:text-primary"
                           dangerouslySetInnerHTML={{
                             __html: processedPeerPearls,
                           }}

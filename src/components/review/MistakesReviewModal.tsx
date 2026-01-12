@@ -18,6 +18,7 @@ import {
 import { useAppStore } from "@/stores/useAppStore";
 import { ElaboratedFeedback } from "@/types/ai";
 import { ClozeDisplay, ClozeAnswer } from "@/lib/cloze-renderer";
+import { getWindowApi } from "@/lib/safeWindowApi";
 
 interface MistakesReviewModalProps {
   mistakes: { cardId: string; responseTimeMs: number | null }[];
@@ -82,9 +83,18 @@ export function MistakesReviewModal({
       });
 
       try {
+        const api = getWindowApi();
+        if (!api) {
+          setErrors((prev) => ({
+            ...prev,
+            [card.id]: "Electron bridge unavailable for AI feedback.",
+          }));
+          return;
+        }
+
         let topicContext = "General Medical Knowledge";
         if (card.notebookTopicPageId) {
-          const topicResult = await window.api.cards.getTopicMetadata(
+          const topicResult = await api.cards.getTopicMetadata(
             card.notebookTopicPageId
           );
           if (topicResult.data) {
@@ -92,7 +102,7 @@ export function MistakesReviewModal({
           }
         }
 
-        const result = await window.api.ai.generateElaboratedFeedback(
+        const result = await api.ai.generateElaboratedFeedback(
           { front: card.front, back: card.back, cardType: card.cardType },
           topicContext,
           mistake.responseTimeMs
