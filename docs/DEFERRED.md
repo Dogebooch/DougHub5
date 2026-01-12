@@ -498,6 +498,24 @@ Inject into LLM context → Generate grounded response with source citations
 **Source:** TaskMaster AI setup docs (post-mvp-search.txt)
 **Notes:** High complexity. Requires OCR infrastructure and FTS5 indexing strategy.
 
+### AI Image Analysis for Board Questions (F45)
+**Description:** Use vision models to analyze and describe images in captured board questions (ECGs, X-rays, clinical photos, flowcharts). Store AI-generated descriptions alongside image metadata for searchability.
+**Priority:** Medium
+**Source:** User request (2026-01-11)
+**Use Cases:**
+1. **Vibe searching:** "Show me all questions with ECG images" or "Find questions with chest X-rays showing pneumothorax"
+2. **AI-assisted studying:** "Quiz me on ECG interpretation" → surfaces all ECG-related questions
+3. **Content discovery:** Find visually similar images across your question bank
+**Implementation:**
+1. Add `aiDescription TEXT` column to image metadata in BoardQuestionContent
+2. During capture, send images to vision model (Claude Vision/GPT-4V) with prompt: "Describe this medical image. Include: image type, key findings, anatomical structures, any text/labels visible."
+3. Store description in `aiDescription` field
+4. Index descriptions in FTS5 for search
+5. Optional: Generate embeddings for semantic image search
+**Current State:** Images stored with url, localPath, caption, location — no content analysis
+**Cost Consideration:** Vision API calls per image add capture latency and cost. Consider: batch processing, async background analysis, user opt-in
+**Notes:** High value for board prep where image interpretation is heavily tested. Enables "show me all ECGs I've seen" without manual tagging. Related to F2 (embeddings) for semantic search enhancement.
+
 ### Video Transcription Search
 **Description:** Transcribe video/audio content using Whisper for searchability.
 **Priority:** Low
