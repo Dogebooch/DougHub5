@@ -168,17 +168,7 @@ function parsePeerPrep(
   url: string,
   capturedAt: string
 ): BoardQuestionContent {
-  const vignetteEl = $(".questionStem, .question-stem").first();
-  const vignetteHtml = vignetteEl.html() || "";
-  const lastP = vignetteEl.find("p").last();
-  const questionStemHtml = lastP.html() || vignetteHtml;
-
-  let cleanedVignetteHtml = vignetteHtml;
-  if (vignetteHtml.trim().endsWith(questionStemHtml.trim())) {
-    lastP.remove();
-    cleanedVignetteHtml = vignetteEl.html() || vignetteHtml;
-  }
-
+  // Extract answers first so we can remove them from DOM
   const answers: AnswerOption[] = [];
   const answerSelectors = [".choices li", ".answerOption", ".answer-choice"];
 
@@ -228,6 +218,22 @@ function parsePeerPrep(
 
   const finalAnswers = deduplicateAnswers(answers);
   const wasCorrect = finalAnswers.some((a) => a.isUserChoice && a.isCorrect);
+
+  // Clean answers from DOM to prevent duplication in vignette
+  // We remove the specific options and common containers that might hold them
+  $(".choices, .answerList, .answer-choice, .answerOption").remove();
+
+  // Extract vignette and stem from cleaned DOM
+  const vignetteEl = $(".questionStem, .question-stem").first();
+  const vignetteHtml = vignetteEl.html() || "";
+  const lastP = vignetteEl.find("p").last();
+  const questionStemHtml = lastP.html() || vignetteHtml;
+
+  let cleanedVignetteHtml = vignetteHtml;
+  if (vignetteHtml.trim().endsWith(questionStemHtml.trim())) {
+    lastP.remove();
+    cleanedVignetteHtml = vignetteEl.html() || vignetteHtml;
+  }
   const explanationHtml =
     getSectionHtml($, "Explanation", [
       ".feedbackTab",
