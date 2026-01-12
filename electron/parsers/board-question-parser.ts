@@ -386,39 +386,84 @@ function parsePeerPrep(
       "";
   }
   // PeerPrep may use "Related Text / Key Point" or variations
-  const keyPointsHtml =
-    getSectionHtml($, "Related Text", [
-      "div.tab-pane:nth-child(2)",
-      ".keyPointsTab",
-      ".key-points",
-      "#keyPointsTab",
-      "#related-text",
-      ".tab-pane.key-point",
-    ]) ||
-    getSectionHtml($, "Key Point", [
-      "div.tab-pane:nth-child(2)",
-      ".keyPointsTab",
-      ".key-points",
-      "#keyPointsTab",
-    ]) ||
-    getSectionHtml($, "Bottom Line", [
-      ".bottom-line",
-      "#bottom-line",
-      ".tab-pane.bottom-line",
+  // The keyPointsTab is inside a tab-pane, get entire pane content
+  let keyPointsHtml: string | undefined;
+  const keyPointsTabPane = $(".tab-pane").filter(function (
+    this: cheerio.Element
+  ) {
+    return $(this).find(".keyPointsTab").length > 0;
+  });
+  if (keyPointsTabPane.length > 0) {
+    keyPointsHtml = keyPointsTabPane.first().html() || undefined;
+  }
+  if (!keyPointsHtml) {
+    keyPointsHtml =
+      getSectionHtml($, "Related Text", [
+        ".keyPointsTab",
+        ".key-points",
+        "#keyPointsTab",
+        "#related-text",
+        ".tab-pane.key-point",
+      ]) ||
+      getSectionHtml($, "Key Point", [
+        ".keyPointsTab",
+        ".key-points",
+        "#keyPointsTab",
+      ]) ||
+      getSectionHtml($, "Bottom Line", [
+        ".bottom-line",
+        "#bottom-line",
+        ".tab-pane.bottom-line",
+      ]);
+  }
+
+  // References tab - PeerPrep uses .referenceTab (singular, not plural)
+  let referencesHtml: string | undefined;
+  const referencesTabPane = $(".tab-pane").filter(function (
+    this: cheerio.Element
+  ) {
+    // Find tab-pane with .referenceTab that does NOT contain PEER Pearl content (images)
+    const $pane = $(this);
+    return (
+      $pane.find(".referenceTab").length > 0 &&
+      $pane.find(".referenceTab img").length === 0
+    );
+  });
+  if (referencesTabPane.length > 0) {
+    referencesHtml = referencesTabPane.first().html() || undefined;
+  }
+  if (!referencesHtml) {
+    referencesHtml = getSectionHtml($, "References", [
+      ".referenceTab",
+      ".referencesTab",
+      ".references",
+      "#referencesTab",
+      "#references",
+      ".tab-pane.references",
     ]);
-  const referencesHtml = getSectionHtml($, "References", [
-    "div.tab-pane:nth-child(3)",
-    ".referencesTab",
-    ".references",
-    "#referencesTab",
-    "#references",
-    ".tab-pane.references",
-  ]);
-  const peerPearlsHtml = getSectionHtml($, "PEER Pearl", [
-    "div.tab-pane:nth-child(4)",
-    ".tab-pane.peer-pearls",
-    "#peer-pearls",
-  ]);
+  }
+
+  // PEER Pearls tab - also uses .referenceTab but typically contains images/infographics
+  let peerPearlsHtml: string | undefined;
+  const peerPearlsTabPane = $(".tab-pane").filter(function (
+    this: cheerio.Element
+  ) {
+    // Find tab-pane with .referenceTab that DOES contain images (PEER Pearl infographics)
+    const $pane = $(this);
+    return (
+      $pane.find(".referenceTab").length > 0 &&
+      $pane.find(".referenceTab img").length > 0
+    );
+  });
+  if (peerPearlsTabPane.length > 0) {
+    peerPearlsHtml = peerPearlsTabPane.first().html() || undefined;
+  }
+  if (!peerPearlsHtml) {
+    peerPearlsHtml = getSectionHtml($, "PEER Pearl", [
+      ".tab-pane.peer-pearls",
+      "#peer-pearls",
+    ]);
+  }
 
   const images: QuestionImage[] = [];
 
