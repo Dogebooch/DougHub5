@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import * as crypto from "crypto";
 
 export interface BoardQuestionContent {
   source: "peerprep" | "mksap";
@@ -45,6 +46,27 @@ export interface AttemptRecord {
   chosenAnswer: string;
   wasCorrect: boolean;
   note?: string;
+}
+
+/**
+ * Generate a stable hash from question content to use as pseudo-questionId
+ * when no explicit ID is available. Uses first 200 chars of cleaned vignette text.
+ */
+function generateQuestionHash(vignetteHtml: string): string {
+  // Strip HTML tags and normalize whitespace
+  const cleanText = vignetteHtml
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, 200);
+  
+  // Generate SHA256 hash and take first 12 chars for readability
+  const hash = crypto.createHash('sha256')
+    .update(cleanText)
+    .digest('hex')
+    .substring(0, 12);
+  
+  return `hash-${hash}`;
 }
 
 /**
@@ -244,20 +266,38 @@ function parsePeerPrep(
   url: string,
   capturedAt: string
 ): BoardQuestionContent {
-  // Extract questionId from URL if possible
+  // Extract questionId using multiple strategies
   let questionId: string | undefined = undefined;
+
+  // Strategy 1: Try URL query parameters (e.g., ?questionId=123 or ?qid=123)
+  // This is the ONLY reliable source for PeerPrep - URL params are unique per question
   try {
     const urlObj = new URL(url);
-    questionId = urlObj.searchParams.get("questionId") || undefined;
+    questionId =
+      urlObj.searchParams.get("questionId") ||
+      urlObj.searchParams.get("qid") ||
+      urlObj.searchParams.get("question") ||
+      undefined;
+
+    if (questionId) {
+      questionId = `peerprep-${questionId}`;
+    }
   } catch (e) {
-    void e; // Ignore URL parsing errors
+    console.warn("[PeerPrep Parser] URL parsing failed:", e);
   }
 
-  // If not in URL, try to find it in the page content
+  // Strategy 2: Look for data attributes or specific DOM elements with question IDs
+  // Skip page title/body text searches - PeerPrep shows session counter ("Question #1")
+  // which is NOT unique across different questions
   if (!questionId) {
-    questionId =
+    const dataId =
       $(".question-id, [data-question-id]").attr("data-question-id") ||
-      $(".question-id").text().match(/\d+/)?.[0];
+      $(".question-id").text().match(/\d+/)?.[0] ||
+      $("[id^='question-']").attr("id")?.replace("question-", "");
+
+    if (dataId) {
+      questionId = `peerprep-${dataId}`;
+    }
   }
 
   // Extract answers first so we can remove them from DOM
@@ -327,6 +367,19 @@ function parsePeerPrep(
     lastP.remove();
     cleanedVignetteHtml = vignetteEl.html() || vignetteHtml;
   }
+
+  // Strategy 3: Final fallback - generate hash from vignette content
+  // This ensures every unique question gets a unique ID
+  if (!questionId) {
+    questionId = generateQuestionHash(cleanedVignetteHtml);
+    console.log(
+      "[PeerPrep Parser] No explicit questionId found, using content hash:",
+      questionId
+    );
+  } else {
+    console.log("[PeerPrep Parser] Using questionId:", questionId);
+  }
+
   // PeerPrep uses "Reasoning" tab, MKSAP may use "Explanation"
   // Some sites use "Rationale", "Discussion", or "Commentary"
   //
@@ -543,26 +596,32 @@ function parseMKSAP(
   url: string,
   capturedAt: string
 ): BoardQuestionContent {
-  // Extract questionId from URL or HTML
+  // Extract questionId using multiple strategies
   let questionId: string | undefined = undefined;
+
+  // Strategy 1: Try URL path segments (MKSAP often uses /questions/{id})
   try {
     const urlObj = new URL(url);
-    // MKSAP often uses /questions/{id} or similar
     const pathParts = urlObj.pathname.split("/");
     const questionIndex = pathParts.indexOf("questions");
     if (questionIndex !== -1 && pathParts[questionIndex + 1]) {
-      questionId = pathParts[questionIndex + 1];
+      questionId = `mksap-${pathParts[questionIndex + 1]}`;
     }
   } catch (e) {
-    void e; // Ignore URL parsing errors
+    console.warn("[MKSAP Parser] URL parsing failed:", e);
   }
 
+  // Strategy 2: Look for data attributes or question header text
   if (!questionId) {
     questionId =
       $("[data-question-id]").attr("data-question-id") ||
       $(".question-header")
         .text()
         .match(/Question\s+(\d+)/)?.[1];
+
+    if (questionId && !questionId.startsWith("mksap-")) {
+      questionId = `mksap-${questionId}`;
+    }
   }
 
   // 1. Vignette & Stem
@@ -590,6 +649,15 @@ function parseMKSAP(
     const sentences = text.split(/(?<=[.!?])\s+/);
     questionStemHtml =
       sentences.length > 0 ? sentences[sentences.length - 1] : vignetteHtml;
+  }
+
+  // Strategy 3: Final fallback - generate hash from vignette content
+  if (!questionId) {
+    questionId = generateQuestionHash(cleanedVignetteHtml);
+    console.log(
+      "[MKSAP Parser] No explicit questionId found, using content hash:",
+      questionId
+    );
   }
 
   // 2. Answers

@@ -68,7 +68,7 @@ export const sourceItemQueries = {
 
   getByQuestionId(questionId: string): DbSourceItem | null {
     const stmt = getDatabase().prepare(
-      "SELECT * FROM source_items WHERE questionId = ?"
+      "SELECT * FROM source_items WHERE sourceType = 'qbank' AND questionId = ?"
     );
     const row = stmt.get(questionId) as SourceItemRow | undefined;
     return row ? parseSourceItemRow(row) : null;

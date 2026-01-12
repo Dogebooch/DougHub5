@@ -194,11 +194,35 @@ export async function processCapture(
       // Try specific question ID first if parser found one
       if (content.questionId) {
         existing = sourceItemQueries.getByQuestionId(content.questionId);
+        if (existing) {
+          console.log(
+            `[Capture] Found existing question by questionId: ${content.questionId} (source item: ${existing.id})`
+          );
+        } else {
+          console.log(
+            `[Capture] No existing question found for questionId: ${content.questionId}`
+          );
+        }
       }
 
-      // If no ID match, try exact URL match
-      if (!existing) {
+      // IMPORTANT: Do NOT fall back to URL matching for board questions
+      // Board question URLs (especially PeerPrep) are often session-based and don't uniquely
+      // identify questions. We rely ONLY on questionId (which includes content hashes).
+      // URL fallback would cause different questions from the same session to update each other.
+      //
+      // For board questions: questionId is always set (either explicit ID or content hash),
+      // so this path only runs if questionId somehow wasn't generated (shouldn't happen).
+      if (!existing && !content.questionId) {
         existing = sourceItemQueries.getByUrl(payload.url);
+        if (existing) {
+          console.log(
+            `[Capture] Found existing question by URL: ${payload.url} (source item: ${existing.id})`
+          );
+        } else {
+          console.log(`[Capture] Creating new question capture`);
+        }
+      } else if (!existing) {
+        console.log(`[Capture] Creating new question capture`);
       }
 
       let resultId: string;
