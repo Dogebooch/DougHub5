@@ -1,0 +1,724 @@
+
+<div class="container-fluid">
+<div class="" style="background: #f5f5f5;">
+<div id="header">
+<div class="logo-area">
+<h1 class="logo-image">PEERprep for Programs</h1>
+
+</div>
+</div>
+<main id="main-content">
+<div id="teApp" ng-app="te-app" ng-controller="te-controller" testids="47625|58416|47522|47523|47524|47525|47526|47527|47528|47529|47531|47532|47533|47534|47535|47378|47537|47538|47530|47539|47540|47541|47603|47622|47607|47609|47611|47613|47615|56955|57139|57140|57141|57142|57143|57144|57145|57146|57147|57148|57149|57150|57151|57152|57153|57154|57155|57156|57157|57158|57159|57160|57161|57162|57163|57164|57165|57166|57167|57168|57169|57170|57171|57172|57173|57174|57175|57176|57177|57178|57179|57180|57181|57182|57183|57184|57185|57186|57187|57188|57189|57190|57191|57192|57193|57194|57195|57196|57197|59738|59739|59740|59741|59742|59743|59744|59745|59746|59747|59748|59749|59750|59751|59752|59753|59754|59755|59757|59758|59759|59760|59761|59762|59763|59764|59765|59766|59767|59768|61172|64361|64362|64264|64265|64266|64267|64268|64269|64354|64355|64356|64357|64358|64359|63683|63684|63685|63686|63687|63240|63241|63242|63243|63244|63245|63246|63247|63248|63249|63250|63251|63252|63253|61092|61117|61121|61119|60121|61118|61120|61116|50262|50263|50264|50265|50266|50267|50268|50269|50271|50272|50273|50274|50275|50276|50277|50278|50270|50279|50280|50281" historyview="detailed" rendermode="0" pid="17946302" dashboardurl="https://learn.acep.org/diweb/assessment/self/home/self-eid/17946302/self-sid/198530441" hideattempts="true" context="/diweb" resourcepath="/resource/te6" historyurl="https://learn.acep.org/diweb/assessment/self/history/self-eid/17946302/self-sid/198530441" saexternalid="PEERprep_Programs" class="sa-PEERprep_Programs ng-scope">
+<!-- ngIf: global.previewMode -->
+<div class="loading-message ng-hide" ng-show="loading">Loading</div>
+<!-- ngInclude: templateUrl --><div ng-include="templateUrl" class="ng-scope"><!-- ngIf: te.questionResponsePage --><div id="questionPage" ng-swipe-left="swipeLeft()" ng-swipe-right="swipeRight()" ng-if="te.questionResponsePage" ng-swipe-disable-mouse="" class="ng-scope">
+	<div class="row">
+		<div class="column col-md-12">
+			<div class="page-header  exam-header">
+				<div class="page-title pull-left">
+					<h1>
+						<span class="ng-binding">PEERprep for Programs</span>
+					</h1>
+					<!-- ngIf: settings.modeName --><div ng-if="settings.modeName" class="test-mode ng-binding ng-scope">Mode: <span class="mode-name ng-binding">Study Mode</span></div><!-- end ngIf: settings.modeName -->
+				</div>
+				<div class="pull-right" style="padding-left: 10px;">
+					<div>
+						<!-- ngIf: settings.gotoQuestion --><div class="dropdown question-dropdown ng-scope" id="questionsDropdown" ng-if="settings.gotoQuestion">
+							<button class="btn btn-default dropdown-toggle ng-binding" type="button" data-toggle="dropdown" ng-disabled="inProgress">Select a Question <i class="fa fa-caret-down" aria-hidden="true"></i></button>
+							<ul class="dropdown-menu pre-scrollable">
+								<!-- ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 --><i class="fa fa-circle ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount &gt; 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 1</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 --><i class="fa fa-circle ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount &gt; 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 2</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 --><i class="fa fa-circle ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount &gt; 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 3</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 --><i class="fa fa-circle ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount &gt; 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 4</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 --><i class="fa fa-circle ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount &gt; 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 5</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 --><i class="fa fa-circle ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount &gt; 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 6</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 --><i class="fa fa-circle ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount &gt; 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 7</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 --><i class="fa fa-circle ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount &gt; 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 8</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 --><i class="fa fa-circle ng-scope current-question" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount &gt; 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding current-question">Question 9</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 --><i class="fa fa-circle ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount &gt; 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 10</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 --><i class="fa fa-circle-o ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount === 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 11</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 --><i class="fa fa-circle-o ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount === 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 12</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 --><i class="fa fa-circle-o ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount === 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 13</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 --><i class="fa fa-circle-o ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount === 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 14</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 --><i class="fa fa-circle-o ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount === 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 15</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 --><i class="fa fa-circle-o ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount === 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 16</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 --><i class="fa fa-circle-o ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount === 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 17</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 --><i class="fa fa-circle-o ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount === 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 18</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 --><i class="fa fa-circle-o ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount === 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 19</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses --><li ng-repeat="questionAttemptStatus in settings.questionAttemptStatuses" ng-click="jumpToQuestion(questionAttemptStatus.index)" class="ng-scope">
+									<!-- ngIf: questionAttemptStatus.attemptCount === 0 --><i class="fa fa-circle-o ng-scope" ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" aria-hidden="true" ng-if="questionAttemptStatus.attemptCount === 0"></i><!-- end ngIf: questionAttemptStatus.attemptCount === 0 -->
+									<!-- ngIf: questionAttemptStatus.attemptCount > 0 -->
+									<span ng-class="{'current-question' : (te.index === questionAttemptStatus.index)}" class="ng-binding">Question 20</span>
+									<!-- ngIf: questionAttemptStatus.marked -->
+								</li><!-- end ngRepeat: questionAttemptStatus in settings.questionAttemptStatuses -->
+							</ul>
+						</div><!-- end ngIf: settings.gotoQuestion -->
+						<!-- ngIf: (settings.displayAnswerReview || settings.allowSuspend || !settings.mustAnswerAllQuestions) --><div class="dropdown options-dropdown ng-scope mobile-only" ng-class="{'mobile-only' : settings.gotoQuestion}" id="optionsDropdown" ng-if="(settings.displayAnswerReview || settings.allowSuspend || !settings.mustAnswerAllQuestions)">
+							<button class="btn btn-default dropdown-toggle ng-binding" type="button" data-toggle="dropdown" ng-disabled="inProgress">Options <i class="fa fa-caret-down" aria-hidden="true"></i></button>
+							<ul class="dropdown-menu">
+								<li id="viewAllQuestionOption"><!-- ngIf: settings.displayAnswerReview --><a ng-click="viewAllQuestions()" ng-if="settings.displayAnswerReview" class="ng-binding ng-scope">Show All Questions</a><!-- end ngIf: settings.displayAnswerReview --></li>
+								<li id="viewMarkedQuestionOption"><!-- ngIf: settings.displayAnswerReview --><a ng-click="viewMarkedQuestions()" ng-if="settings.displayAnswerReview" class="ng-binding ng-scope">View Marked Questions</a><!-- end ngIf: settings.displayAnswerReview --></li>
+								<li id="pauseTestOption"><!-- ngIf: settings.allowSuspend --><a ng-click="pauseTest()" ng-if="settings.allowSuspend" class="ng-binding ng-scope">Pause and Exit</a><!-- end ngIf: settings.allowSuspend --></li>
+								<li id="submitTestOption"><!-- ngIf: !settings.mustAnswerAllQuestions --></li>
+							</ul>
+						</div><!-- end ngIf: (settings.displayAnswerReview || settings.allowSuspend || !settings.mustAnswerAllQuestions) -->
+						<!-- ngIf: settings.displayAnswerReview --><button class="btn btn-default ng-binding ng-scope" ng-click="viewAllQuestions()" ng-if="settings.displayAnswerReview" ng-disabled="inProgress" id="oldSaveAndExitButton">Submit and Exit</button><!-- end ngIf: settings.displayAnswerReview -->
+						<!-- ngIf: settings.gotoQuestion && settings.displayAnswerReview --><button id="viewAllQuestionButton" class="btn btn-default tablet-desktop-only ng-binding ng-scope" ng-click="viewAllQuestions()" ng-if="settings.gotoQuestion &amp;&amp; settings.displayAnswerReview">Show All Questions</button><!-- end ngIf: settings.gotoQuestion && settings.displayAnswerReview -->
+						<!-- ngIf: settings.gotoQuestion && settings.displayAnswerReview --><button id="viewMarkedQuestionButton" class="btn btn-default tablet-desktop-only ng-binding ng-scope" ng-click="viewMarkedQuestions()" ng-if="settings.gotoQuestion &amp;&amp; settings.displayAnswerReview">View Marked Questions</button><!-- end ngIf: settings.gotoQuestion && settings.displayAnswerReview -->
+						<!-- ngIf: settings.gotoQuestion && settings.allowSuspend --><button id="pauseTestButton" class="btn btn-default tablet-desktop-only ng-binding ng-scope" ng-click="pauseTest()" ng-if="settings.gotoQuestion &amp;&amp; settings.allowSuspend">Pause and Exit</button><!-- end ngIf: settings.gotoQuestion && settings.allowSuspend -->
+						<!-- ngIf: settings.gotoQuestion && !settings.mustAnswerAllQuestions -->
+					</div>
+					<!-- ngIf: settings.testTimeLimitInSeconds > 0 || settings.questionTimeLimitInSeconds > 0 || settings.practiceCountDownInSeconds > 0 || settings.practiceCountUpInSeconds > 0 || te.questionCountUpStartTime -->
+					<!-- ngIf: section && section.remainingTimeInSeconds > 0 -->
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row" ng-mousedown="displayOptionPopover.close()">
+		<div class="column col-md-8 col-xs-12 center-block">
+			<!-- ngIf: settings.displayHelpText && settings.helpTextHtml -->
+			<div id="alert-placeholder" ng-show="te.questions[0].markForReview" class="active ng-hide">
+				<div class="alert alert-success" role="alert">
+					<a class="close" data-dismiss="alert"><i class="fa fa-times-circle-o" aria-hidden="true"></i></a>
+					<span class="ng-binding">
+						<i class="fa fa-bookmark"></i> This question has been added to the Marked list. You can view all Marked questions by clicking the Options -&gt; View Marked Questions menu.
+					</span>
+				</div>
+			</div>
+			<form id="exam-form" class="ng-pristine ng-valid ng-submitted">
+				<div class="apps-List">
+					<ul id="appsList" class="appsList">
+						<!-- ngRepeat: app in settings.apps --><div ng-repeat="app in settings.apps" tooltip-enable="!is_touch_enabled()" uib-tooltip="Simple Calculator" tooltip-append-to-body="true" tooltip-placement="left" class="ng-scope">
+							<a app-popover="" popover-place="left" app-url="https://calculator-1.com/outdoor/?f=666666&amp;r=666666" app-style="width: 219px; height: 302px;" popover-trigger="app.open" context-path="/diweb" data-original-title="" title="">
+								<img ng-src="https://cdn2.iconfinder.com/data/icons/picons-basic-3/57/basic3-105_calculator-128.png" width="32" height="32" src="https://cdn2.iconfinder.com/data/icons/picons-basic-3/57/basic3-105_calculator-128.png">
+							</a>
+						</div><!-- end ngRepeat: app in settings.apps --><div ng-repeat="app in settings.apps" tooltip-enable="!is_touch_enabled()" uib-tooltip="Common Abbreviations" tooltip-append-to-body="true" tooltip-placement="left" class="ng-scope">
+							<a app-popover="" popover-place="left" app-url="te-tracking/app/resource?appId=947" app-style="width: 220px; height: 300px;" popover-trigger="app.open" context-path="/diweb" data-original-title="" title="">
+								<img ng-src="https://cdn.mycrowdwisdom.com/acep/Images/Abbreviation-Icon.png" width="32" height="32" src="https://cdn.mycrowdwisdom.com/acep/Images/Abbreviation-Icon.png">
+							</a>
+						</div><!-- end ngRepeat: app in settings.apps --><div ng-repeat="app in settings.apps" tooltip-enable="!is_touch_enabled()" uib-tooltip="Normal Laboratory Values" tooltip-append-to-body="true" tooltip-placement="left" class="ng-scope">
+							<a app-popover="" popover-place="left" app-url="te-tracking/app/resource?appId=948" app-style="width: 220px; height: 300px;" popover-trigger="app.open" context-path="/diweb" data-original-title="" title="">
+								<img ng-src="https://cdn.mycrowdwisdom.com/acep/Images/Lab-Values-Icon%20%28002%29.png" width="32" height="32" src="https://cdn.mycrowdwisdom.com/acep/Images/Lab-Values-Icon%20%28002%29.png">
+							</a>
+						</div><!-- end ngRepeat: app in settings.apps -->
+					</ul>
+				</div>
+				<div style="clear: both;"></div>
+
+				<!-- ngRepeat: question in te.questions --><div class="widget exam-question multiple-choice ng-scope answer-stats answered incorrect" ng-style="{'font-family': global.format.fontFamily, 'font-size': global.format.fontSize+'em'}" ng-class="{'answered' : question.remediationDisplay, 'correct' : question.remediationDisplay &amp;&amp; question.remediation.correctResponse &amp;&amp; !question.remediation.requireManualGrading, 'incorrect' : question.remediationDisplay &amp;&amp; !question.remediation.correctResponse &amp;&amp; !question.remediation.requireManualGrading, 'manual-grading' : question.remediation.requireManualGrading, 'answer-stats' : settings.showAnswerStatistics}" ng-repeat="question in te.questions" style="font-family: Open Sans; font-size: 1.2em;">
+
+					<div class="inner">
+						<div class="question-number ng-scope" translate="LABEL_QUESTION_INDEX" translate-values="{displayOrder: (te.questionIndex || question.displayOrder), totalQuestionCount: (te.totalQuestions || settings.totalQuestionCount)}">Question 9 of 20</div>
+						<div class="question-info-right">
+							<div class="question-id ng-binding ng-hide" ng-show="question.displayNumber">#</div>
+							<!-- ngIf: settings.languageToggling -->
+							<!-- ngIf: settings.displayAnswerReview --><div ng-if="settings.displayAnswerReview" class="question-bookmark ng-scope ng-hide" ng-show="te.questions[0].markForReview" uib-tooltip="This question has been added to the Marked list. You can view all Marked questions by clicking the Options -&gt; View Marked Questions menu." tooltip-append-to-body="true" ng-click="toggleFavorite()">
+								<i class="fa fa-bookmark"></i>
+							</div><!-- end ngIf: settings.displayAnswerReview -->
+							<!-- ngIf: settings.displayAnswerReview --><div ng-if="settings.displayAnswerReview" class="question-bookmark ng-scope" ng-hide="te.questions[0].markForReview" uib-tooltip="Click to add this question to the Marked list." tooltip-append-to-body="true" ng-click="toggleFavorite()">
+								<i class="fa fa-bookmark-o"></i>
+							</div><!-- end ngIf: settings.displayAnswerReview -->
+						</div>
+						<div class="question">
+							<div class="questionStem ng-binding ng-isolate-scope" ng-bind-html="trustedHtml(question.stem)" highlight="settings.allowHighlightText"><font size="3" face="arial">A 40-year-old man presents for altered mental status. On arrival, he is actively hallucinating. He suddenly starts screaming, spitting, and kicking at staff. Attempts at verbal de-escalation fail. Further history and vitals cannot be obtained. In anticipation of giving chemical sedation, his chart is reviewed. It includes an ECG (shown) from a recent visit. 
+
+<p></p>
+Which sedative agent is most likely to harm this patient? 
+</font></div>
+							<!-- ngIf: question.medias.length > 0 --><div id="media-links" fancybox="" ng-if="question.medias.length &gt; 0" class="ng-scope">
+								<!-- ngRepeat: media in question.medias --><a class="fancybox ng-scope" rel="gallery1" href="https://cdn.mycrowdwisdom.com/acep/te-questions/ACE_1252.1_ECG_long_QT-1621894705940.jpg" title="Credit: Whitney Redline Sherman, MD, WellSpan York Hospital." ng-repeat="media in question.medias" data-fancybox-type="image">
+									<img ng-src="https://cdn.mycrowdwisdom.com/acep/te-questions/ACE_1252.1_ECG_long_QT-1621894705940.jpg" alt="Credit: Whitney Redline Sherman, MD, WellSpan York Hospital." src="https://cdn.mycrowdwisdom.com/acep/te-questions/ACE_1252.1_ECG_long_QT-1621894705940.jpg">
+									<div class="image_name ng-binding"></div>
+								</a><!-- end ngRepeat: media in question.medias -->
+							</div><!-- end ngIf: question.medias.length > 0 -->
+						</div>
+						<div class="choices midsize">
+							<!-- ngIf: settings.showAnswerStatistics && question.showAnswerStatistics --><div class="peerComparisonText ng-scope" ng-if="settings.showAnswerStatistics &amp;&amp; question.showAnswerStatistics" ng-show="question.type == 'MULTIPLE_RESPONSE' || question.type == 'MULTIPLE_ANSWER' || question.type == 'MULTIPLE_CHOICE' || question.type == 'TRUE_FALSE'">
+								<span translate="LABEL_PEER_COMPARISON" class="ng-scope">Peer Comparison</span>
+							</div><!-- end ngIf: settings.showAnswerStatistics && question.showAnswerStatistics -->
+							<ul ng-show="question.type == 'MULTIPLE_CHOICE' || question.type == 'MULTIPLE_RESPONSE' || question.type == 'MULTIPLE_ANSWER' || question.type == 'TRUE_FALSE'">
+								<!-- Multiple Choice Question Type -->
+								<!-- ngRepeat: answer in question.answers --><li class="paper-shadow in ng-scope correct" ng-repeat="answer in question.answers" ng-show="question.type == 'MULTIPLE_CHOICE' || question.type == 'TRUE_FALSE'" ng-class="{'active':question.selectedAnswer==answer.id, 'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer, 'disabled' : answer.disabled}" ng-init="answer.disabled = question.strikedOutAnswers.indexOf(answer.id) &gt;= 0">
+										<!-- ngIf: settings.showCorrectAnswer && answer.correctResponse && !question.showCorrectAnswer -->
+										<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+										<input type="radio" name="answer-set" class="choice ng-pristine ng-untouched ng-valid" id="4284090542" ng-value="answer.id" ng-model="question.selectedAnswer" ng-disabled="!isQuestionEditable(question)" value="4284090542"> <label for="4284090542" ng-bind-html="trustedAnswerHtml(answer)" ng-right-click="disableAnswer(question, answer)" class="ng-binding"><font size="3" face="arial">Haloperidol 5 mg IV</font></label>
+
+										<!-- ngIf: settings.allowStrikeOutAnswer --><div class="disable-toggle ng-scope" tooltip-placement="left" uib-tooltip="Cross Out Answer" ng-click="disableAnswer(question, answer)" ng-if="settings.allowStrikeOutAnswer" ng-hide="!isQuestionEditable(question)"><i class="fa fa-eye-slash"></i></div><!-- end ngIf: settings.allowStrikeOutAnswer -->
+
+										<!-- ngIf: settings.showAnswerStatistics && question.showAnswerStatistics --><div class="peer-percent ng-scope" ng-if="settings.showAnswerStatistics &amp;&amp; question.showAnswerStatistics">
+											<span class="ng-binding">81%</span>
+										</div><!-- end ngIf: settings.showAnswerStatistics && question.showAnswerStatistics -->
+
+								</li><!-- end ngRepeat: answer in question.answers --><li class="paper-shadow in ng-scope active incorrect" ng-repeat="answer in question.answers" ng-show="question.type == 'MULTIPLE_CHOICE' || question.type == 'TRUE_FALSE'" ng-class="{'active':question.selectedAnswer==answer.id, 'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer, 'disabled' : answer.disabled}" ng-init="answer.disabled = question.strikedOutAnswers.indexOf(answer.id) &gt;= 0">
+										<!-- ngIf: settings.showCorrectAnswer && answer.correctResponse && !question.showCorrectAnswer -->
+										<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+										<input type="radio" name="answer-set" class="choice ng-pristine ng-untouched ng-valid" id="4284090543" ng-value="answer.id" ng-model="question.selectedAnswer" ng-disabled="!isQuestionEditable(question)" value="4284090543"> <label for="4284090543" ng-bind-html="trustedAnswerHtml(answer)" ng-right-click="disableAnswer(question, answer)" class="ng-binding"><font size="3" face="arial">Diphenhydramine 25 mg PO</font></label>
+
+										<!-- ngIf: settings.allowStrikeOutAnswer --><div class="disable-toggle ng-scope" tooltip-placement="left" uib-tooltip="Cross Out Answer" ng-click="disableAnswer(question, answer)" ng-if="settings.allowStrikeOutAnswer" ng-hide="!isQuestionEditable(question)"><i class="fa fa-eye-slash"></i></div><!-- end ngIf: settings.allowStrikeOutAnswer -->
+
+										<!-- ngIf: settings.showAnswerStatistics && question.showAnswerStatistics --><div class="peer-percent ng-scope" ng-if="settings.showAnswerStatistics &amp;&amp; question.showAnswerStatistics">
+											<span class="ng-binding">5%</span>
+										</div><!-- end ngIf: settings.showAnswerStatistics && question.showAnswerStatistics -->
+
+								</li><!-- end ngRepeat: answer in question.answers --><li class="paper-shadow in ng-scope incorrect" ng-repeat="answer in question.answers" ng-show="question.type == 'MULTIPLE_CHOICE' || question.type == 'TRUE_FALSE'" ng-class="{'active':question.selectedAnswer==answer.id, 'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer, 'disabled' : answer.disabled}" ng-init="answer.disabled = question.strikedOutAnswers.indexOf(answer.id) &gt;= 0">
+										<!-- ngIf: settings.showCorrectAnswer && answer.correctResponse && !question.showCorrectAnswer -->
+										<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+										<input type="radio" name="answer-set" class="choice ng-pristine ng-untouched ng-valid" id="4284090544" ng-value="answer.id" ng-model="question.selectedAnswer" ng-disabled="!isQuestionEditable(question)" value="4284090544"> <label for="4284090544" ng-bind-html="trustedAnswerHtml(answer)" ng-right-click="disableAnswer(question, answer)" class="ng-binding"><font size="3" face="arial">Midazolam 5 mg IM</font></label>
+
+										<!-- ngIf: settings.allowStrikeOutAnswer --><div class="disable-toggle ng-scope" tooltip-placement="left" uib-tooltip="Cross Out Answer" ng-click="disableAnswer(question, answer)" ng-if="settings.allowStrikeOutAnswer" ng-hide="!isQuestionEditable(question)"><i class="fa fa-eye-slash"></i></div><!-- end ngIf: settings.allowStrikeOutAnswer -->
+
+										<!-- ngIf: settings.showAnswerStatistics && question.showAnswerStatistics --><div class="peer-percent ng-scope" ng-if="settings.showAnswerStatistics &amp;&amp; question.showAnswerStatistics">
+											<span class="ng-binding">2%</span>
+										</div><!-- end ngIf: settings.showAnswerStatistics && question.showAnswerStatistics -->
+
+								</li><!-- end ngRepeat: answer in question.answers --><li class="paper-shadow in ng-scope incorrect" ng-repeat="answer in question.answers" ng-show="question.type == 'MULTIPLE_CHOICE' || question.type == 'TRUE_FALSE'" ng-class="{'active':question.selectedAnswer==answer.id, 'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer, 'disabled' : answer.disabled}" ng-init="answer.disabled = question.strikedOutAnswers.indexOf(answer.id) &gt;= 0">
+										<!-- ngIf: settings.showCorrectAnswer && answer.correctResponse && !question.showCorrectAnswer -->
+										<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+										<input type="radio" name="answer-set" class="choice ng-pristine ng-untouched ng-valid" id="4284090545" ng-value="answer.id" ng-model="question.selectedAnswer" ng-disabled="!isQuestionEditable(question)" value="4284090545"> <label for="4284090545" ng-bind-html="trustedAnswerHtml(answer)" ng-right-click="disableAnswer(question, answer)" class="ng-binding"><font size="3" face="arial">Ketamine 4 mg/kg IM</font></label>
+
+										<!-- ngIf: settings.allowStrikeOutAnswer --><div class="disable-toggle ng-scope" tooltip-placement="left" uib-tooltip="Cross Out Answer" ng-click="disableAnswer(question, answer)" ng-if="settings.allowStrikeOutAnswer" ng-hide="!isQuestionEditable(question)"><i class="fa fa-eye-slash"></i></div><!-- end ngIf: settings.allowStrikeOutAnswer -->
+
+										<!-- ngIf: settings.showAnswerStatistics && question.showAnswerStatistics --><div class="peer-percent ng-scope" ng-if="settings.showAnswerStatistics &amp;&amp; question.showAnswerStatistics">
+											<span class="ng-binding">12%</span>
+										</div><!-- end ngIf: settings.showAnswerStatistics && question.showAnswerStatistics -->
+
+								</li><!-- end ngRepeat: answer in question.answers -->
+								<!-- Multiple Response Question Type -->
+								<!-- ngRepeat: answer in question.answers --><li class="paper-shadow in multiple-response ng-scope ng-hide correct" ng-repeat="answer in question.answers" ng-show="question.type == 'MULTIPLE_RESPONSE' || question.type == 'MULTIPLE_ANSWER'" ng-class="{'active':answer.selectedFlag, 'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer, 'disabled' : answer.disabled}">
+
+									<!-- ngIf: settings.showCorrectAnswer && answer.correctResponse && !question.showCorrectAnswer -->
+										<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+
+									<input type="checkbox" class="choice ng-pristine ng-untouched ng-valid" id="answer_4284090542" ng-init="answer.selectedFlag = question.selectedAnswers.indexOf(answer.id) &gt;= 0" ng-model="answer.selectedFlag" ng-disabled="!isQuestionEditable(question)"> <label for="answer_4284090542" ng-bind-html="trustedAnswerHtml(answer)" ng-right-click="disableAnswer(question, answer)" class="ng-binding"><font size="3" face="arial">Haloperidol 5 mg IV</font></label>
+
+									<!-- ngIf: settings.allowStrikeOutAnswer --><div class="disable-toggle ng-scope" tooltip-placement="left" uib-tooltip="Cross Out Answer" ng-click="disableAnswer(question, answer)" ng-if="settings.allowStrikeOutAnswer"><i class="fa fa-eye-slash"></i></div><!-- end ngIf: settings.allowStrikeOutAnswer -->
+
+									<!-- ngIf: settings.showAnswerStatistics && question.showAnswerStatistics --><div class="peer-percent ng-scope" ng-if="settings.showAnswerStatistics &amp;&amp; question.showAnswerStatistics">
+										<span class="ng-binding">81%</span>
+									</div><!-- end ngIf: settings.showAnswerStatistics && question.showAnswerStatistics -->
+								</li><!-- end ngRepeat: answer in question.answers --><li class="paper-shadow in multiple-response ng-scope ng-hide active incorrect" ng-repeat="answer in question.answers" ng-show="question.type == 'MULTIPLE_RESPONSE' || question.type == 'MULTIPLE_ANSWER'" ng-class="{'active':answer.selectedFlag, 'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer, 'disabled' : answer.disabled}">
+
+									<!-- ngIf: settings.showCorrectAnswer && answer.correctResponse && !question.showCorrectAnswer -->
+										<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+
+									<input type="checkbox" class="choice ng-pristine ng-untouched ng-valid" id="answer_4284090543" ng-init="answer.selectedFlag = question.selectedAnswers.indexOf(answer.id) &gt;= 0" ng-model="answer.selectedFlag" ng-disabled="!isQuestionEditable(question)"> <label for="answer_4284090543" ng-bind-html="trustedAnswerHtml(answer)" ng-right-click="disableAnswer(question, answer)" class="ng-binding"><font size="3" face="arial">Diphenhydramine 25 mg PO</font></label>
+
+									<!-- ngIf: settings.allowStrikeOutAnswer --><div class="disable-toggle ng-scope" tooltip-placement="left" uib-tooltip="Cross Out Answer" ng-click="disableAnswer(question, answer)" ng-if="settings.allowStrikeOutAnswer"><i class="fa fa-eye-slash"></i></div><!-- end ngIf: settings.allowStrikeOutAnswer -->
+
+									<!-- ngIf: settings.showAnswerStatistics && question.showAnswerStatistics --><div class="peer-percent ng-scope" ng-if="settings.showAnswerStatistics &amp;&amp; question.showAnswerStatistics">
+										<span class="ng-binding">5%</span>
+									</div><!-- end ngIf: settings.showAnswerStatistics && question.showAnswerStatistics -->
+								</li><!-- end ngRepeat: answer in question.answers --><li class="paper-shadow in multiple-response ng-scope ng-hide incorrect" ng-repeat="answer in question.answers" ng-show="question.type == 'MULTIPLE_RESPONSE' || question.type == 'MULTIPLE_ANSWER'" ng-class="{'active':answer.selectedFlag, 'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer, 'disabled' : answer.disabled}">
+
+									<!-- ngIf: settings.showCorrectAnswer && answer.correctResponse && !question.showCorrectAnswer -->
+										<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+
+									<input type="checkbox" class="choice ng-pristine ng-untouched ng-valid" id="answer_4284090544" ng-init="answer.selectedFlag = question.selectedAnswers.indexOf(answer.id) &gt;= 0" ng-model="answer.selectedFlag" ng-disabled="!isQuestionEditable(question)"> <label for="answer_4284090544" ng-bind-html="trustedAnswerHtml(answer)" ng-right-click="disableAnswer(question, answer)" class="ng-binding"><font size="3" face="arial">Midazolam 5 mg IM</font></label>
+
+									<!-- ngIf: settings.allowStrikeOutAnswer --><div class="disable-toggle ng-scope" tooltip-placement="left" uib-tooltip="Cross Out Answer" ng-click="disableAnswer(question, answer)" ng-if="settings.allowStrikeOutAnswer"><i class="fa fa-eye-slash"></i></div><!-- end ngIf: settings.allowStrikeOutAnswer -->
+
+									<!-- ngIf: settings.showAnswerStatistics && question.showAnswerStatistics --><div class="peer-percent ng-scope" ng-if="settings.showAnswerStatistics &amp;&amp; question.showAnswerStatistics">
+										<span class="ng-binding">2%</span>
+									</div><!-- end ngIf: settings.showAnswerStatistics && question.showAnswerStatistics -->
+								</li><!-- end ngRepeat: answer in question.answers --><li class="paper-shadow in multiple-response ng-scope ng-hide incorrect" ng-repeat="answer in question.answers" ng-show="question.type == 'MULTIPLE_RESPONSE' || question.type == 'MULTIPLE_ANSWER'" ng-class="{'active':answer.selectedFlag, 'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer, 'disabled' : answer.disabled}">
+
+									<!-- ngIf: settings.showCorrectAnswer && answer.correctResponse && !question.showCorrectAnswer -->
+										<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+
+									<input type="checkbox" class="choice ng-pristine ng-untouched ng-valid" id="answer_4284090545" ng-init="answer.selectedFlag = question.selectedAnswers.indexOf(answer.id) &gt;= 0" ng-model="answer.selectedFlag" ng-disabled="!isQuestionEditable(question)"> <label for="answer_4284090545" ng-bind-html="trustedAnswerHtml(answer)" ng-right-click="disableAnswer(question, answer)" class="ng-binding"><font size="3" face="arial">Ketamine 4 mg/kg IM</font></label>
+
+									<!-- ngIf: settings.allowStrikeOutAnswer --><div class="disable-toggle ng-scope" tooltip-placement="left" uib-tooltip="Cross Out Answer" ng-click="disableAnswer(question, answer)" ng-if="settings.allowStrikeOutAnswer"><i class="fa fa-eye-slash"></i></div><!-- end ngIf: settings.allowStrikeOutAnswer -->
+
+									<!-- ngIf: settings.showAnswerStatistics && question.showAnswerStatistics --><div class="peer-percent ng-scope" ng-if="settings.showAnswerStatistics &amp;&amp; question.showAnswerStatistics">
+										<span class="ng-binding">12%</span>
+									</div><!-- end ngIf: settings.showAnswerStatistics && question.showAnswerStatistics -->
+								</li><!-- end ngRepeat: answer in question.answers -->
+							</ul>
+						</div>
+						<input type="text" class="form-control ng-pristine ng-untouched ng-valid ng-hide" ng-model="question.textAnswer" ng-disabled="!isQuestionEditable(question)" ng-show="question.type == 'FILL_IN_BLANK' || question.type == 'NUMERIC_RANGE'">
+
+						<textarea autogrow="" min-height="200px" class="form-control ng-pristine ng-untouched ng-valid ng-hide" rows="10" ng-model="question.textAnswer" ng-disabled="!isQuestionEditable(question)" ng-show="question.type == 'ESSAY'" style="height: 198px;"></textarea>
+						<div ng-show="question.characterLimit &gt; 0" class="ng-hide">
+							<span class="ng-binding">Characters left: 0</span>
+						</div>
+
+						<div ng-show="question.type == 'FORM'" class="form-question-type ng-hide">
+							<!-- ngRepeat: field in question.fields -->
+						</div>
+
+						<!-- ngRepeat: upload in question.uploads -->
+
+						<div class="choices midsize ng-hide" ng-show="question.type == 'MATCH_THE_FOLLOWING'">
+							<div class="row">
+								<div class="col-sm-3 col-sm-push-9">
+									<ul>
+										<!-- ngRepeat: option in question.options -->
+									</ul>
+								</div>
+								<div class="col-sm-9 col-sm-pull-3">
+									<ul>
+										<!-- ngRepeat: answer in question.answers --><li class="paper-shadow in ng-scope correct" style="margin-bottom: 10px;" ng-repeat="answer in question.answers" ng-class="{'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer}">
+											<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+											<div style="padding: 10px">
+												<div ng-bind-html="trustedHtml(answer.text)" class="ng-binding"><font size="3" face="arial">Haloperidol 5 mg IV</font></div>
+												<select class="form-control ng-pristine ng-untouched ng-valid" ng-model="answer.selectedOptionId" ng-init="answer.selectedOptionId = answer.selectedOptionId?answer.selectedOptionId:0" convert-to-number="" ng-disabled="!isQuestionEditable(question)">
+													<option value="0">Select an option</option>
+													<!-- ngRepeat: option in question.options -->
+												</select>
+											</div>
+										</li><!-- end ngRepeat: answer in question.answers --><li class="paper-shadow in ng-scope incorrect" style="margin-bottom: 10px;" ng-repeat="answer in question.answers" ng-class="{'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer}">
+											<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+											<div style="padding: 10px">
+												<div ng-bind-html="trustedHtml(answer.text)" class="ng-binding"><font size="3" face="arial">Diphenhydramine 25 mg PO</font></div>
+												<select class="form-control ng-pristine ng-untouched ng-valid" ng-model="answer.selectedOptionId" ng-init="answer.selectedOptionId = answer.selectedOptionId?answer.selectedOptionId:0" convert-to-number="" ng-disabled="!isQuestionEditable(question)">
+													<option value="0">Select an option</option>
+													<!-- ngRepeat: option in question.options -->
+												</select>
+											</div>
+										</li><!-- end ngRepeat: answer in question.answers --><li class="paper-shadow in ng-scope incorrect" style="margin-bottom: 10px;" ng-repeat="answer in question.answers" ng-class="{'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer}">
+											<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+											<div style="padding: 10px">
+												<div ng-bind-html="trustedHtml(answer.text)" class="ng-binding"><font size="3" face="arial">Midazolam 5 mg IM</font></div>
+												<select class="form-control ng-pristine ng-untouched ng-valid" ng-model="answer.selectedOptionId" ng-init="answer.selectedOptionId = answer.selectedOptionId?answer.selectedOptionId:0" convert-to-number="" ng-disabled="!isQuestionEditable(question)">
+													<option value="0">Select an option</option>
+													<!-- ngRepeat: option in question.options -->
+												</select>
+											</div>
+										</li><!-- end ngRepeat: answer in question.answers --><li class="paper-shadow in ng-scope incorrect" style="margin-bottom: 10px;" ng-repeat="answer in question.answers" ng-class="{'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer}">
+											<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+											<div style="padding: 10px">
+												<div ng-bind-html="trustedHtml(answer.text)" class="ng-binding"><font size="3" face="arial">Ketamine 4 mg/kg IM</font></div>
+												<select class="form-control ng-pristine ng-untouched ng-valid" ng-model="answer.selectedOptionId" ng-init="answer.selectedOptionId = answer.selectedOptionId?answer.selectedOptionId:0" convert-to-number="" ng-disabled="!isQuestionEditable(question)">
+													<option value="0">Select an option</option>
+													<!-- ngRepeat: option in question.options -->
+												</select>
+											</div>
+										</li><!-- end ngRepeat: answer in question.answers -->
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="choices midsize ng-hide" ng-show="question.type == 'SEQUENCE'">
+							<ul>
+								<!-- ngRepeat: answer in question.answers --><li class="paper-shadow in ng-scope correct" ng-repeat="answer in question.answers" ng-class="{'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer}">
+									<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+									<div style="position: relative; padding: 10px;">
+										<select ng-model="answer.selectedSequenceNumber" convert-to-number="" ng-disabled="!isQuestionEditable(question)" class="ng-pristine ng-untouched ng-valid"><option value="? string:undefined ?"></option>
+											<!-- ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="1" class="ng-binding ng-scope">1</option><!-- end ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="2" class="ng-binding ng-scope">2</option><!-- end ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="3" class="ng-binding ng-scope">3</option><!-- end ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="4" class="ng-binding ng-scope">4</option><!-- end ngRepeat: i in question.answers -->
+										</select>
+										<div ng-bind-html="trustedHtml(answer.text)" style="display: inline;" class="ng-binding"><font size="3" face="arial">Haloperidol 5 mg IV</font></div>
+									</div>
+								</li><!-- end ngRepeat: answer in question.answers --><li class="paper-shadow in ng-scope incorrect" ng-repeat="answer in question.answers" ng-class="{'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer}">
+									<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+									<div style="position: relative; padding: 10px;">
+										<select ng-model="answer.selectedSequenceNumber" convert-to-number="" ng-disabled="!isQuestionEditable(question)" class="ng-pristine ng-untouched ng-valid"><option value="? string:undefined ?"></option>
+											<!-- ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="1" class="ng-binding ng-scope">1</option><!-- end ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="2" class="ng-binding ng-scope">2</option><!-- end ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="3" class="ng-binding ng-scope">3</option><!-- end ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="4" class="ng-binding ng-scope">4</option><!-- end ngRepeat: i in question.answers -->
+										</select>
+										<div ng-bind-html="trustedHtml(answer.text)" style="display: inline;" class="ng-binding"><font size="3" face="arial">Diphenhydramine 25 mg PO</font></div>
+									</div>
+								</li><!-- end ngRepeat: answer in question.answers --><li class="paper-shadow in ng-scope incorrect" ng-repeat="answer in question.answers" ng-class="{'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer}">
+									<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+									<div style="position: relative; padding: 10px;">
+										<select ng-model="answer.selectedSequenceNumber" convert-to-number="" ng-disabled="!isQuestionEditable(question)" class="ng-pristine ng-untouched ng-valid"><option value="? string:undefined ?"></option>
+											<!-- ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="1" class="ng-binding ng-scope">1</option><!-- end ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="2" class="ng-binding ng-scope">2</option><!-- end ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="3" class="ng-binding ng-scope">3</option><!-- end ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="4" class="ng-binding ng-scope">4</option><!-- end ngRepeat: i in question.answers -->
+										</select>
+										<div ng-bind-html="trustedHtml(answer.text)" style="display: inline;" class="ng-binding"><font size="3" face="arial">Midazolam 5 mg IM</font></div>
+									</div>
+								</li><!-- end ngRepeat: answer in question.answers --><li class="paper-shadow in ng-scope incorrect" ng-repeat="answer in question.answers" ng-class="{'correct' : question.remediation.correctAnswerIds.indexOf(answer.id) &gt;= 0 &amp;&amp; question.showCorrectAnswer, 'incorrect' : question.remediation.correctAnswerIds.indexOf(answer.id) == -1 &amp;&amp; question.showCorrectAnswer}">
+									<div class="result-marker" ng-show="question.showCorrectAnswer"></div>
+									<div style="position: relative; padding: 10px;">
+										<select ng-model="answer.selectedSequenceNumber" convert-to-number="" ng-disabled="!isQuestionEditable(question)" class="ng-pristine ng-untouched ng-valid"><option value="? string:undefined ?"></option>
+											<!-- ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="1" class="ng-binding ng-scope">1</option><!-- end ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="2" class="ng-binding ng-scope">2</option><!-- end ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="3" class="ng-binding ng-scope">3</option><!-- end ngRepeat: i in question.answers --><option ng-repeat="i in question.answers" value="4" class="ng-binding ng-scope">4</option><!-- end ngRepeat: i in question.answers -->
+										</select>
+										<div ng-bind-html="trustedHtml(answer.text)" style="display: inline;" class="ng-binding"><font size="3" face="arial">Ketamine 4 mg/kg IM</font></div>
+									</div>
+								</li><!-- end ngRepeat: answer in question.answers -->
+							</ul>
+						</div>
+
+						<div ng-show="question.type == 'IMAGE_HOTSPOT'" class="ng-hide">
+							You can drag/move <i class="fa fa-map-marker" aria-hidden="true"></i> image(s) to appropriate position to answer this question
+							<div id="hotspot-container" stop-event="touchend">
+								<img style="position: relative;" id="hotspot-image" stop-event="touchend">
+								<!-- ngRepeat: answer in question.answers --><span id="marker-4284090542" draggable="isQuestionEditable(question)" class="fa fa-map-marker draggable-icon ng-scope ng-isolate-scope" ng-draggable="dragHandler(answer)" ng-repeat="answer in question.answers" ng-style="{'color' : answer.hotspotMarkerColor}" uib-tooltip="&lt;font size=&quot;3&quot; face=&quot;arial&quot;&gt;Haloperidol 5 mg IV&lt;/font&gt;"></span><!-- end ngRepeat: answer in question.answers --><span id="marker-4284090543" draggable="isQuestionEditable(question)" class="fa fa-map-marker draggable-icon ng-scope ng-isolate-scope" ng-draggable="dragHandler(answer)" ng-repeat="answer in question.answers" ng-style="{'color' : answer.hotspotMarkerColor}" uib-tooltip="&lt;font size=&quot;3&quot; face=&quot;arial&quot;&gt;Diphenhydramine 25 mg PO&lt;/font&gt;"></span><!-- end ngRepeat: answer in question.answers --><span id="marker-4284090544" draggable="isQuestionEditable(question)" class="fa fa-map-marker draggable-icon ng-scope ng-isolate-scope" ng-draggable="dragHandler(answer)" ng-repeat="answer in question.answers" ng-style="{'color' : answer.hotspotMarkerColor}" uib-tooltip="&lt;font size=&quot;3&quot; face=&quot;arial&quot;&gt;Midazolam 5 mg IM&lt;/font&gt;"></span><!-- end ngRepeat: answer in question.answers --><span id="marker-4284090545" draggable="isQuestionEditable(question)" class="fa fa-map-marker draggable-icon ng-scope ng-isolate-scope" ng-draggable="dragHandler(answer)" ng-repeat="answer in question.answers" ng-style="{'color' : answer.hotspotMarkerColor}" uib-tooltip="&lt;font size=&quot;3&quot; face=&quot;arial&quot;&gt;Ketamine 4 mg/kg IM&lt;/font&gt;"></span><!-- end ngRepeat: answer in question.answers -->
+							</div>
+						</div>
+						<!-- ngIf: question.tags.length -->
+						<!-- ngIf: settings.allowInstructorComments -->
+						<div class="exam-submit-answer">
+							<!-- ngIf: settings.confidenceLevelEnabled -->
+							<!-- ngIf: settings.confidenceLevelEnabled -->
+							<!-- ngIf: question.remediation --><input type="submit" value="Submit Answer" class="exam-submit-button btn btn-primary ng-scope" ng-if="question.remediation" ng-click="showRemediation($index)" ng-disabled="!isAnswered(question)" ng-hide="settings.confidenceLevelEnabled"><!-- end ngIf: question.remediation -->
+						</div>
+					</div>
+
+					<div class="exam-reasoning" ng-show="question.remediationDisplay">
+						<div class="inner">
+							<div class="result ng-binding ng-hide" ng-show="question.remediation.correctResponse &amp;&amp; !question.remediation.partiallyCorrect &amp;&amp; !question.remediation.requireManualGrading">Correct</div>
+							<div class="result ng-binding ng-hide" ng-show="!question.remediation.correctResponse &amp;&amp; question.remediation.partiallyCorrect &amp;&amp; !question.remediation.requireManualGrading">That is partially correct!</div>
+							<div class="result ng-binding" ng-show="!question.remediation.correctResponse &amp;&amp; !question.remediation.partiallyCorrect &amp;&amp; !question.remediation.requireManualGrading">That is incorrect.</div>
+							<div class="result ng-binding ng-hide" ng-show="question.remediation.requireManualGrading">Will be graded manually</div>
+							<!-- ngIf: settings.showQuestionStatistics -->
+
+							<!-- ngIf: question.remediation.feedback || question.remediation.keyReferencePoints || question.remediation.reference || question.remediation.additionalFeedbacks --><div class="reasoning ng-scope" ng-if="question.remediation.feedback || question.remediation.keyReferencePoints || question.remediation.reference || question.remediation.additionalFeedbacks">
+							  <div class="ng-isolate-scope">
+  <ul class="nav nav-tabs" ng-class="{'nav-stacked': vertical, 'nav-justified': justified}" ng-transclude="">
+							    <!-- ngIf: question.remediation.feedback --><li ng-class="[{active: active, disabled: disabled}, classes]" class="uib-tab nav-item ng-isolate-scope active" index="0" heading="Reasoning" ng-if="question.remediation.feedback">
+  <a href="" ng-click="select()" class="nav-link ng-binding" uib-tab-heading-transclude="">Reasoning</a>
+</li><!-- end ngIf: question.remediation.feedback -->
+							    <!-- ngIf: question.remediation.keyReferencePoints --><li ng-class="[{active: active, disabled: disabled}, classes]" class="uib-tab nav-item ng-isolate-scope" index="1" heading="Related Text / Key Point" ng-if="question.remediation.keyReferencePoints">
+  <a href="" ng-click="select()" class="nav-link ng-binding" uib-tab-heading-transclude="">Related Text / Key Point</a>
+</li><!-- end ngIf: question.remediation.keyReferencePoints -->
+							    <!-- ngIf: question.remediation.reference --><li ng-class="[{active: active, disabled: disabled}, classes]" class="uib-tab nav-item ng-isolate-scope" index="2" heading="References" ng-if="question.remediation.reference">
+  <a href="" ng-click="select()" class="nav-link ng-binding" uib-tab-heading-transclude="">References</a>
+</li><!-- end ngIf: question.remediation.reference -->
+								  <!-- ngRepeat: feedback in question.remediation.additionalFeedbacks -->
+							  </ul>
+  <div class="tab-content">
+    <!-- ngRepeat: tab in tabset.tabs --><div class="tab-pane ng-scope active" ng-repeat="tab in tabset.tabs" ng-class="{active: tabset.active === tab.index}" uib-tab-content-transclude="tab">
+    
+									<div compile="question.remediation.feedback" class="feedbackTab ng-scope"><font size="3" face="arial" class="ng-scope"><b>Diphenhydramine is a first-generation antihistamine sometimes used in combination with antipsychotics to sedate agitated patients. </b>In high doses (&gt;1.0 g), diphenhydramine can cause prolongation of the QT interval and widening of the QRS complex due to sodium channel blockade. However, at normal doses, this is not generally a significant effect. <b>Side effects are often attributed to anticholinergic properties and include dry mouth, tachycardia, urinary retention, blurred vision, and hallucinations or delirium.</b></font></div>
+									<!-- ngRepeat: distractorFeedback in question.remediation.distractorFeedbacks --><!-- ngIf: question.remediation.distractorFeedbacks --><div ng-repeat="distractorFeedback in question.remediation.distractorFeedbacks" class="distractorFeedbacks ng-scope" ng-if="question.remediation.distractorFeedbacks">
+										<hr>
+										<div class="distractorTextBlock">
+											<i class="fa fa-quote-left" aria-hidden="true"></i>
+											<div compile="distractorFeedback.answerText" class="distractor"><font size="3" face="arial" class="ng-scope">Haloperidol 5 mg IV</font></div>
+											<i class="fa fa-quote-right" aria-hidden="true"></i>
+										</div>
+										<div class="distractorFeedbackBlock">
+											<i class="fa fa-lightbulb-o" aria-hidden="true"></i>
+											<div compile="distractorFeedback.feedback" class="distractorFeedback"><font size="3" face="arial" class="ng-scope">Agitated and violent patients who fail verbal de-escalation attempts may require chemical and physical restraints with the goal of minimizing harm to the patient and staff in the emergency department. Although time constraints and limited history in these patients often preclude chart review prior to administering medication, <b>chart review should be performed to guide the best therapy and avoid complications whenever possible. </b>This patient’s ECG demonstrates a long QT interval. Any of the medications listed could be used for chemical sedation, but <b>haloperidol has the highest risk of causing cardiac arrhythmias due to further prolongation of the QT interval</b> and is most likely to cause harm. 
+<p></p><b>
+Haloperidol’s association with QT prolongation, torsades de pointes, and sudden death is well described,</b> and the risk of these cardiac complications increases when it is administered at higher than recommended doses or in intravenous (IV) form. <b>Haloperidol is not approved by the FDA for IV administration,</b> and the prescribing information recommends electrocardiographic monitoring if IV formulations are used. Patients with a known long QT interval should preferentially receive a sedation agent with a more favorable cardiac side effect profile than haloperidol, and caution should be used if the patient takes other medications known to prolong the QT interval or has other QT-prolonging conditions. <b>Other antipsychotics known to increase the QT interval include thioridazine, mesoridazine, droperidol, ziprasidone, and quetiapine. 
+</b></font></div>
+										</div>
+									</div><!-- end ngIf: question.remediation.distractorFeedbacks --><!-- end ngRepeat: distractorFeedback in question.remediation.distractorFeedbacks --><!-- ngIf: question.remediation.distractorFeedbacks --><div ng-repeat="distractorFeedback in question.remediation.distractorFeedbacks" class="distractorFeedbacks ng-scope" ng-if="question.remediation.distractorFeedbacks">
+										<hr>
+										<div class="distractorTextBlock">
+											<i class="fa fa-quote-left" aria-hidden="true"></i>
+											<div compile="distractorFeedback.answerText" class="distractor"><font size="3" face="arial" class="ng-scope">Midazolam 5 mg IM</font></div>
+											<i class="fa fa-quote-right" aria-hidden="true"></i>
+										</div>
+										<div class="distractorFeedbackBlock">
+											<i class="fa fa-lightbulb-o" aria-hidden="true"></i>
+											<div compile="distractorFeedback.feedback" class="distractorFeedback"><font size="3" face="arial" class="ng-scope"><b>Midazolam is a benzodiazepine that is commonly used in combination with antipsychotics to sedate combative patients. Benzodiazepines do not prolong the QT interval</b> and are a safe option for sedating patients with long QT intervals. Patients should be monitored for <b>somnolence and respiratory depression</b> following administration.</font></div>
+										</div>
+									</div><!-- end ngIf: question.remediation.distractorFeedbacks --><!-- end ngRepeat: distractorFeedback in question.remediation.distractorFeedbacks --><!-- ngIf: question.remediation.distractorFeedbacks --><div ng-repeat="distractorFeedback in question.remediation.distractorFeedbacks" class="distractorFeedbacks ng-scope" ng-if="question.remediation.distractorFeedbacks">
+										<hr>
+										<div class="distractorTextBlock">
+											<i class="fa fa-quote-left" aria-hidden="true"></i>
+											<div compile="distractorFeedback.answerText" class="distractor"><font size="3" face="arial" class="ng-scope">Ketamine 4 mg/kg IM</font></div>
+											<i class="fa fa-quote-right" aria-hidden="true"></i>
+										</div>
+										<div class="distractorFeedbackBlock">
+											<i class="fa fa-lightbulb-o" aria-hidden="true"></i>
+											<div compile="distractorFeedback.feedback" class="distractorFeedback"><font size="3" face="arial" class="ng-scope"><b>Ketamine is a noncompetitive antagonist of the N-methyl-D-aspartate receptor widely used as a dissociative anesthetic for sedation of acutely agitated patients</b> in both prehospital and hospital settings. It has a good safety profile with only rare case reports of QT prolongation and is generally thought to be <b>safe in patients with long QT intervals</b> on ECG. <b>More notable side effects of this medication include hypertension and tachycardia, laryngospasm, and emergence reactions. Ketamine can also exacerbate psychotic symptoms transiently in patients with schizophrenia,</b> so careful consideration of the risks and benefits of this medication in patients with psychiatric disorders is recommended prior to use.</font></div>
+										</div>
+									</div><!-- end ngIf: question.remediation.distractorFeedbacks --><!-- end ngRepeat: distractorFeedback in question.remediation.distractorFeedbacks -->
+								</div><!-- end ngRepeat: tab in tabset.tabs --><div class="tab-pane ng-scope" ng-repeat="tab in tabset.tabs" ng-class="{active: tabset.active === tab.index}" uib-tab-content-transclude="tab">
+    
+									<div compile="question.remediation.keyReferencePoints" class="keyPointsTab ng-scope"><ul class="ng-scope"><li><font size="3" face="arial">Haloperidol is associated with prolongation of the QT interval and requires electrocardiographic monitoring if administered intravenously or at high doses.</font></li>
+<li><font size="3" face="arial">In patients with long QT intervals, safe chemical sedation options include ketamine, benzodiazepines, and diphenhydramine.</font></li>
+<li><font size="3" face="arial">The risk and benefits of each sedative agent should be considered for specific patients prior to administration. When possible, ECGs should be reviewed to guide the best choice of medication and performed after administration to monitor for complications. 
+</font></li></ul></div>
+							    </div><!-- end ngRepeat: tab in tabset.tabs --><div class="tab-pane ng-scope" ng-repeat="tab in tabset.tabs" ng-class="{active: tabset.active === tab.index}" uib-tab-content-transclude="tab">
+    
+									<div compile="question.remediation.reference" class="referenceTab ng-scope"><ul class="ng-scope"><li><font size="3" face="arial">Singh TSS, Elahi F, Cheney B. Ketamine-induced QTc interval prolongation<a href="https://pubmed.ncbi.nlm.nih.gov/28413297/" title="Ketamine-induced QTc interval prolongation." target="_blank">.</a> <i>J Anaesthesiol Clin Pharmacol</i>. 2017 Jan-Mar;33(1):136-138.</font></li>
+<li><font size="3" face="arial"><a href="https://www.accessdata.fda.gov/drugsatfda_docs/label/2017/015923s092lbl.pdf" title="Jansson Pharmaceuticals Companies information on haldol" target="_blank">Jansson Pharmaceuticals Companies information on haldol</a></font></li>
+<li><font size="3" face="arial">LoVecchio F, Levine M. Antipsychotics. In: Tintinalli JE, Ma OJ, Yealy DM, et al, eds. <i>Tintinalli’s Emergency Medicine: A Comprehensive Study Guide</i>. 9th ed. McGraw-Hill Education; 2020:1208-1211.</font></li>
+<li><font size="3" face="arial">Shah A, Yousuf T, Ziffra J, Zaidi A, Raghuvir R. Diphenhydramine and QT prolongation - A rare cardiac side effect of a drug used in common practice<a href="https://pubmed.ncbi.nlm.nih.gov/30546575/" title="Diphenhydramine and QT prolongation - A rare cardiac side effect of a drug used in common practice." target="_blank">.</a> <i>J Cardiol Cases</i>. 2015 Jul 3;12(4):126-129.</font></li>
+<li><font size="3" face="arial">Woosley RL, Heise CW, Romero KA. CredibleMeds QT drugs list<a href="www.Crediblemeds.org/druglist" title="CredibleMeds QT drugs list." target="_blank">.</a> AZCERT, Inc.</font></li>
+<li><font size="3" face="arial"><a href="https://rebelem.com/is-ketamine-contraindicated-in-patients-with-psychiatric-disorders/. " title="REBEL EM blog on ketamine contraindicated in patients with psychiatric disorders " target="_blank">REBEL EM blog on ketamine contraindicated in patients with psychiatric disorders</a></font></li>
+<li><font size="3" face="arial"><a href="https://rebelem.com/the-evolution-of-ketamine-for-severe-agitation/" title="REBEL EM blog on the evolution of ketamine for severe agitation " target="_blank">REBEL EM blog on the evolution of ketamine for severe agitation</a></font></li>
+<li><font size="3" face="arial">Green SM, Roback MG, Kennedy RM, Krauss B. Clinical practice guideline for emergency department ketamine dissociative sedation: 2011 update. <i>Ann Emerg Med</i>. 2011 May;57(5):449-461.</font></li>
+<li><font size="3" face="arial">Lebin JA, Akhavan AR, Hippe DS, Gittinger MH, Pasic J, McCoy AM, Vrablik MC. Psychiatric outcomes of patients with severe agitation following administration of prehospital ketamine. <i>Acad Emerg Med</i>. 2019 Aug;26(8):889-896.</font></li>
+<li><font size="3" face="arial"><a href="https://www.uptodate.com/contents/assessment-and-emergency-management-of-the-acutely-agitated-or-violent-adult" title="UpToDate article on assessment and emergency management of the acutely agitated or violent adult, available in full with subscription " target="_blank">UpToDate article on assessment and emergency management of the acutely agitated or violent adult, available in full with a subscription</a></font></li>
+<li><font size="3" face="arial"><a href="https://www.uptodate.com/contents/first-generation-antipsychotic-medications-pharmacology-administration-and-comparative-side-effects" title="UpToDate article on first generation antipsychotic medications, available in full with subscription" target="_blank">UpToDate article on first generation antipsychotic medications, available in full with a subscription</a></font></li></ul></div>
+							    </div><!-- end ngRepeat: tab in tabset.tabs -->
+  </div>
+</div>
+							</div><!-- end ngIf: question.remediation.feedback || question.remediation.keyReferencePoints || question.remediation.reference || question.remediation.additionalFeedbacks -->
+						</div>
+					</div>
+				</div><!-- end ngRepeat: question in te.questions -->
+			</form>
+		</div>
+	</div>
+
+	<section class="exam-toolbar">
+		<div class="exam-toolbar-inner">
+			<div class="tool exam-options">
+				<!-- ngIf: settings.helpTextHtml -->
+				<!-- ngIf: settings.allowQuestionNotes -->
+				<!-- ngIf: settings.allowQuestionInquiry -->
+				<!-- ngIf: settings.displayAnswerReview --><div id="favoriteQuestionToggle" class="favorite-question ng-scope" ng-click="toggleFavorite()" ng-class="{'active':te.questions[0].markForReview}" uib-tooltip="Click to add this question to the Marked list." tooltip-append-to-body="true" tooltip-placement="top" ng-if="settings.displayAnswerReview">
+					<i class="fa fa-bookmark"></i>
+				</div><!-- end ngIf: settings.displayAnswerReview -->
+				<div uib-popover-template="'textoptions'" popover-title="Display Options" popover-trigger="click outsideClick" uib-tooltip="Display Options" tooltip-append-to-body="true" tooltip-placement="top" popover-is-open="displayOptionPopover.isOpen" popover-placement="top" id="textOptionsDiv" title="Display Options">
+					<i ng-class="{'fa fa-gear': !displayOptionPopover.isOpen, 'fa fa-remove' : displayOptionPopover.isOpen}" class="fa fa-gear"></i>
+				</div>
+				<!-- ngIf: settings.allowQuestionComment --><div ng-if="settings.allowQuestionComment" popover-class="questionCommentPopover" uib-tooltip="I like it!" tooltip-append-to-body="true" tooltip-placement="top" uib-popover-template="'questionCommentsLike'" popover-title="I like it!" popover-trigger="click outsideClick" popover-is-open="te.displayLikeCommentPopover" popover-placement="top" id="likeCommentsDiv" title="I like it!" class="ng-scope">
+					<i class="fa fa-thumbs-up"></i>
+				</div><!-- end ngIf: settings.allowQuestionComment -->
+				<!-- ngIf: settings.allowQuestionComment --><div ng-if="settings.allowQuestionComment" popover-class="questionCommentPopover" uib-tooltip="I don't like it!" tooltip-append-to-body="true" tooltip-placement="top" uib-popover-template="'questionCommentsDislike'" popover-title="I don't like it!" popover-trigger="click outsideClick" popover-is-open="te.displayDislikeCommentPopover" popover-placement="top" id="dislikeCommentsDiv" title="I don't like it!" class="ng-scope">
+					<i class="fa fa-thumbs-down"></i>
+				</div><!-- end ngIf: settings.allowQuestionComment -->
+			</div>
+			<!-- ngIf: te.index > 0 && settings.previousButton && (te.questionIndex > 1 || te.questionIndex == null) --><a class="btn btn-primary pull-left prev-question ng-scope" ng-click="previousButton()" ng-if="te.index &gt; 0 &amp;&amp; settings.previousButton &amp;&amp; (te.questionIndex &gt; 1 || te.questionIndex == null)" ng-show="showNavButtons()" hotkey="{left: swipeRight}" ng-disabled="inProgress">
+				<i class="fa fa-arrow-left"></i>
+				<span class="ng-binding">Prev Question</span>
+			</a><!-- end ngIf: te.index > 0 && settings.previousButton && (te.questionIndex > 1 || te.questionIndex == null) -->
+			<a ng-click="nextButton()" class="btn btn-success pull-right next-question" hotkey="{right: swipeLeft}" ng-disabled="inProgress" ng-show="showNavButtons()">
+				<span class="ng-binding">Next Question</span>
+				<i class="fa fa-arrow-right"></i>
+			</a>
+		</div>
+	</section>
+</div><!-- end ngIf: te.questionResponsePage -->
+<div id="alert-message" class="ng-scope">
+	<!-- ngRepeat: alert in alerts -->
+</div>
+
+<script type="text/ng-template" id="textoptions" class="ng-scope">
+<div class="textoptions-content">
+<div class="option">
+	<div class="option-title">
+		{{'LABEL_TEXT_SIZE' | translate}}
+	</div>
+	<div class="font-sizer">
+		<li class="fa fa-minus action" ng-click="minusFontSize()"></li> <li class="fa fa-font"></li> <li class="fa fa-plus action" ng-click="plusFontSize()"></li>
+	</div>
+</div>
+<div class="option">
+	<div class="option-title">{{'LABEL_TEXT_STYLE' | translate}}</div>
+	<div class="radio fontstyle sans-serif">
+		<label> <input type="radio" name="fontstyle" id="sans-serif" value="Open Sans" ng-model="global.format.fontFamily"> {{'FONT_SANS_SERIF' | translate}}
+		</label>
+	</div>
+	<div class="radio fontstyle serif">
+		<label> <input type="radio" name="fontstyle" id="serif" value="Merriweather" ng-model="global.format.fontFamily"> {{'FONT_SERIF' | translate}}
+		</label>
+	</div>
+</div>
+</div>
+</script>
+
+<script type="text/ng-template" id="test-timer-message" class="ng-scope">
+	<div class="timer-popover">
+		{{translateText('MSG_ALLOCATED_TEST_TIME', {allocatedTestTimeInMinutes : settings.allocatedTestTimeInMinutes})}}
+		<i class="fa fa-times-circle-o" aria-hidden="true" ng-click="timerPopover.open = false"></i>
+	</div>
+</script>
+
+<script type="text/ng-template" id="questionCommentsLike" class="ng-scope">
+	<div class="textoptions-content">
+		<div class="option-title">
+			{{'LABEL_QUESTION_COMMENT' | translate}}
+		</div>
+		<div>
+			<textarea class="form-control questionCommentTextArea" ng-model="te.questionComment" rows="5"></textarea>
+		</div>
+		<div>
+			<button class="button btn-primary buffer-top-bottom" ng-click="saveQuestionCommentLike(te.displayLikeCommentPopover)">{{'BUTTON_SUBMIT' | translate}}</button>
+			<button class="button btn-default buffer-top-bottom" ng-click="te.displayLikeCommentPopover = false">{{'BUTTON_CANCEL' | translate}}</button>
+		</div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="questionCommentsDislike" class="ng-scope">
+	<div class="textoptions-content">
+		<div class="option-title">
+			{{'LABEL_QUESTION_COMMENT' | translate}}
+		</div>
+		<div>
+			<textarea class="form-control questionCommentTextArea" ng-model="te.questionComment" rows="5" id="questionDislikeComments"></textarea>
+		</div>
+		<div>
+			<button class="button btn-primary buffer-top-bottom" ng-click="saveQuestionCommentDislike(te.displayLikeCommentPopover)">{{'BUTTON_SUBMIT' | translate}}</button>
+			<button class="button btn-default buffer-top-bottom" ng-click="te.displayDislikeCommentPopover = false">{{'BUTTON_CANCEL' | translate}}</button>
+		</div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="notesModal.html" class="ng-scope">
+<div class="modal-header">
+	<button type="button" class="close" aria-label="Close" ng-click="cancel()"><span aria-hidden="true">&times;</span></button>
+	<h3 class="modal-title">{{'LABEL_QUESION_NOTES' | translate}}</h3>
+</div>
+<div class="modal-body">
+	<p>
+		{{'DESC_QUESTION_NOTES' | translate}}
+	</p>
+
+	<textarea class="form-control" rows="9" ng-model="notes" id="notes"></textarea>
+
+</div>
+<div class="modal-footer">
+	<button class="btn btn-primary" type="button" ng-click="ok()">{{'BUTTON_OK' | translate}}</button>
+	<button class="btn btn-warning" type="button" ng-click="cancel()">{{'BUTTON_CANCEL' | translate}}</button>
+</div>
+</script>
+
+<script type="text/ng-template" id="questionInquiryModal.html" class="ng-scope">
+	<div class="modal-header">
+		<button type="button" class="close" aria-label="Close" ng-click="cancel()"><span aria-hidden="true">&times;</span></button>
+		<h3 class="modal-title">{{'QUESTION_INQUIRY_TITLE' | translate}}</h3>
+	</div>
+	<div class="modal-body">
+		<p>{{'QUESTION_INQUIRY_DESC' | translate}}</p>
+		<text-angular ng-model="questionInquiry"></text-angular>
+	</div>
+	<div class="modal-footer">
+		<button class="btn btn-primary" type="button" ng-click="ok()">{{'QUESTION_INQUIRY_SEND' | translate}}</button>
+		<button class="btn btn-warning" type="button" ng-click="cancel()">{{'BUTTON_CANCEL' | translate}}</button>
+	</div>
+</script>
+
+<script type="text/ng-template" id="custom-app.html" class="ng-scope">
+	<div>
+		<a ng-click="closePopover()" style="position: absolute; top: -1.3em; right: -1.3em"><i class="fa fa-times-circle-o fa-3x" aria-hidden="true"></i></a>
+		<iframe ng-src="{{appUrl}}" frameborder="no"  style="{{appStyle}}"></iframe>
+	</div>
+</script>
+
+<script type="text/ng-template" id="highlight-app.html" class="ng-scope">
+	<a ng-click="closePopover(popoverId)" style="position: absolute; top: -1.3em; right: -1.3em"><i class="fa fa-times-circle-o fa-2x" aria-hidden="true"></i></a>
+	<div class="highlight-popover-content">
+		<div class="highlightPopoverTitle" ng-show="editComments || comments">{{'TITLE_HIGHLIGHT_NOTE' | translate}}</div>
+		<div ng-hide="editComments">
+			<pre ng-show="comments" class="highlightedComments">{{comments}}</pre>
+			<div ng-hide="archived" class="icons">
+				<button class="iconOnlyButton" ng-click="highlightText(popoverId)" ng-hide="saved"><i class="fa fa-pencil fa-2x" aria-hidden="true"></i></button>
+				<span ng-hide="saved">&nbsp;</span>
+				<button class="iconOnlyButton" ng-click="openComments(popoverId)"><i class="fa fa-commenting-o fa-2x" aria-hidden="true"></i></button>
+				<span ng-show="saved">&nbsp;</span>
+				<button class="iconOnlyButton" ng-click="deletePopover(popoverId)" ng-show="saved" ng-class="{'pull-right' : (comments)}"><i class="fa fa-trash fa-2x" aria-hidden="true"></i></button>
+			</div>
+			<div ng-show="archived && !completed">
+				<button ng-click="markAsCompleted()" class="btn btn-success"><i class="fa fa-check-circle-o" aria-hidden="true"></i> {{'BUTTON_HIGHLIGHT_COMPLETE' | translate }}</button>
+				{{createdOn | dateTime}}
+			</div>
+		</div>
+		<div ng-show="editComments" class="highlightNoteEdit">
+			<textarea rows="10" ng-model="comments" class="form-control highlightedComments" id="highlightedComments"></textarea>
+			<div class="highlightNoteEditButtons">
+				<button ng-click="saveComments()" class="btn btn-success"><i class="fa fa-floppy-o" aria-hidden="true"></i> {{'BUTTON_HIGHLIGHT_SAVE' | translate}}</button>
+				<button ng-click="deletePopover()" class="btn btn-default"><i class="fa fa-trash" aria-hidden="true"></i> {{'BUTTON_HIGHLIGHT_DELETE' | translate}}</button>
+				<button ng-click="closePopover()" class="btn btn-default"><i class="fa fa-times" aria-hidden="true"></i> {{'BUTTON_HIGHLIGHT_CLOSE' | translate}}</button>
+			</div>
+		</div>
+	</div>
+</script>
+
+<div id="highlightOverlay" class="highlightOverlay ng-scope">
+	<div class="highlightOverlayButtons">
+		<button class="iconOnlyButton" ng-click="highlightText()" ng-hide="saved"><i class="fa fa-pencil fa-2x" aria-hidden="true"></i></button>
+		<span>&nbsp;</span>
+		<button class="iconOnlyButton" ng-click="highlightTextAndOpenComment()"><i class="fa fa-commenting-o fa-2x" aria-hidden="true"></i></button>
+	</div>
+	<div style="text-align: center; margin-top: -11px; color: white;"><i class="fa fa-caret-down fa-2x" aria-hidden="true"></i></div>
+</div></div>
+<div class="cfp-hotkeys-container fade ng-scope" ng-class="{in: helpVisible}" style="display: none;"><div class="cfp-hotkeys"><!-- ngIf: !header --><h4 class="cfp-hotkeys-title ng-binding ng-scope" ng-if="!header">Keyboard Shortcuts:</h4><!-- end ngIf: !header --><!-- ngIf: header --><table><tbody><!-- ngRepeat: hotkey in hotkeys | filter:{ description: '!$$undefined$$' } --><tr ng-repeat="hotkey in hotkeys | filter:{ description: '!$$undefined$$' }" class="ng-scope"><td class="cfp-hotkeys-keys"><!-- ngRepeat: key in hotkey.format() track by $index --><span ng-repeat="key in hotkey.format() track by $index" class="cfp-hotkeys-key ng-binding ng-scope">?</span><!-- end ngRepeat: key in hotkey.format() track by $index --></td><td class="cfp-hotkeys-text ng-binding">Show / hide this help menu</td></tr><!-- end ngRepeat: hotkey in hotkeys | filter:{ description: '!$$undefined$$' } --></tbody></table><!-- ngIf: footer --><div class="cfp-hotkeys-close" ng-click="toggleCheatSheet()">×</div></div></div></div>
+</main>
+</div>
+</div>
+
+
+<script src="/resource/scripts/te6-all-min.js?v=30466069"></script>
+
+<script src="/resource/te6/angular/hotkeys.js?v=30466069"></script>
+
+<script src="/resource/te6/angular/smart-table.min.js?v=30466069"></script>
+
+<script src="/resource/te6/angular/ui-bootstrap.min.js?v=30466069"></script>
+
+<script src="https://resource.mycrowdwisdom.com/dropzone/2017-06-16/dropzone.js"></script>
+
+<script src="https://resource.mycrowdwisdom.com/text-editor/textAngular-rangy.min.js"></script>
+
+<script src="https://resource.mycrowdwisdom.com/text-editor/textAngular-sanitize.min.js"></script>
+
+<script src="https://resource.mycrowdwisdom.com/text-editor/textAngular.min.js"></script>
+
+<script src="/resource/te6/te6-app.js?v=30466069"></script>
+
+<script src="/resource/self-assessment/credit-claim.js?v=30466069"></script>
+
+<button id="doughub-capture-btn" style="position: fixed; bottom: 120px; right: 20px; z-index: 99999; padding: 6px 12px; background-color: rgb(37, 99, 235); color: white; border: medium; border-radius: 4px; font-family: sans-serif; font-weight: 600; font-size: 12px; cursor: pointer; box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px; transition: 0.2s; display: block;">Send to DougHub</button>

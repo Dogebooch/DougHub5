@@ -12,6 +12,7 @@ export interface BoardQuestionContent {
   answers: AnswerOption[];
   wasCorrect: boolean;
   explanationHtml: string;
+  educationalObjectiveHtml?: string; // MKSAP: Educational Objective, unified with Key Points
   keyPointsHtml?: string;
   referencesHtml?: string;
   peerPearlsHtml?: string;
@@ -67,6 +68,56 @@ function generateQuestionHash(vignetteHtml: string): string {
     .substring(0, 12);
   
   return `hash-${hash}`;
+}
+
+/**
+ * Removes MKSAP-specific UI noise elements from a Cheerio container.
+ */
+function cleanMksapGarbage($el: any, $: any): void {
+  // 1. Remove by selector
+  $el
+    .find(
+      ".next-question, .related-content, .learning-plan, .topic-outline, .bibliography, .related-content-card, .card-header, .social-share, .highlighter-toolbar, .stats, .header"
+    )
+    .remove();
+  $el.find("a.nav-link, button.nav-link, .btn, .nav").remove();
+  $el.find("svg").remove();
+  $el.find('img[src*="svg"], img[src*="icon"]').remove();
+
+  // 2. Remove by text content (common button/link labels)
+  const noisePhrases = [
+    "next question",
+    "learning plan",
+    "add to learning plan",
+    "topic outline",
+    "related content",
+    "multiple choice questions",
+    "add nephrology",
+    "add cardiovascular medicine",
+    "add gastroenterology",
+    "add hematology",
+    "add infectious disease",
+    "add oncology",
+    "add rheumatology",
+    "add neurology",
+    "add dermatology",
+    "add pulmonary",
+    "add endocrinology",
+  ];
+
+  $el.find("a, button, span, div, h1, h2, h3, h4, h5").each((_: any, subEl: any) => {
+    const $subEl = $(subEl);
+    const text = $subEl.text().trim().toLowerCase();
+    if (noisePhrases.some((phrase) => text.includes(phrase))) {
+      // If it's a small element or a card-like container with this text, remove it
+      if (text.length < 100 || $subEl.hasClass("card") || $subEl.hasClass("btn") || $subEl.hasClass("nav-link")) {
+        $subEl.remove();
+      }
+    }
+  });
+
+  // 3. Remove empty containers left behind
+  $el.find("div:empty, p:empty, span:empty").remove();
 }
 
 /**
@@ -387,6 +438,7 @@ function parsePeerPrep(
   // (detailed explanations for each answer) as siblings inside the first .tab-pane.
   // We need to get the ENTIRE first tab-pane content, not just .feedbackTab.
   let explanationHtml = "";
+  let educationalObjectiveHtml: string | undefined;
 
   // PeerPrep-specific: Look for the tab-pane containing .feedbackTab (the Reasoning tab)
   // This gets the entire tab content including distractorFeedbacks
@@ -397,6 +449,17 @@ function parsePeerPrep(
   });
   if (reasoningTabPane.length > 0) {
     explanationHtml = reasoningTabPane.first().html() || "";
+
+    // Extract Educational Objective from .feedbackTab (the intro paragraph before distractorFeedbacks)
+    // This is the first paragraph that summarizes the key learning point
+    const feedbackTabEl = reasoningTabPane.first().find(".feedbackTab");
+    if (feedbackTabEl.length > 0) {
+      // Get the text content, stripping HTML but preserving the educational summary
+      const objectiveText = feedbackTabEl.text().trim();
+      if (objectiveText && objectiveText.length > 20) {
+        educationalObjectiveHtml = objectiveText;
+      }
+    }
   }
 
   // Fallback to getSectionHtml for other site structures
@@ -579,6 +642,7 @@ function parsePeerPrep(
     answers: finalAnswers,
     wasCorrect,
     explanationHtml,
+    educationalObjectiveHtml,
     keyPointsHtml,
     referencesHtml,
     peerPearlsHtml,
@@ -644,7 +708,9 @@ function parseMKSAP(
 
   // 1. Vignette - inside section.q_info > div.stimulus
   // Capture all clinical content in order (paragraphs and tables/labs)
-  const stimulusEl = $("div.stimulus").first();
+  const stimulusEl = $("div.stimulus").first().clone();
+  cleanMksapGarbage(stimulusEl, $);
+
   const vignetteParagraphs: string[] = [];
 
   // Group consecutive lab/vital rows into a single table
@@ -818,12 +884,7 @@ function parseMKSAP(
   // 4. Explanation (Critique)
   const critiqueEl = $("div.critique").first().clone();
   critiqueEl.find("aside.keypoints").remove();
-  critiqueEl
-    .find(
-      ".next-question, .related-content, .learning-plan, .topic-outline, .bibliography"
-    )
-    .remove();
-  critiqueEl.find("a.nav-link, button.nav-link").remove();
+  cleanMksapGarbage(critiqueEl, $);
 
   let explanationHtml = critiqueEl.html() || "";
 
@@ -834,15 +895,20 @@ function parseMKSAP(
     expositionEl.find("h2").remove(); // Remove "Answer & Critique" header
     expositionEl.find(".response").remove(); // Remove "You answered X" status
     expositionEl.find(".source").remove(); // Remove "Question source" link
+    cleanMksapGarbage(expositionEl, $);
     explanationHtml = expositionEl.html() || "";
   }
 
-  // Educational Objective - Add to start of explanation if found
+  // Educational Objective - Extract separately for unified "Learning Takeaways" section
+  let educationalObjectiveHtml: string | undefined;
   const objectiveEl = $(".objective").first();
   if (objectiveEl.length) {
+    // Extract just the objective text without the "Educational Objective:" label prefix
     const objectiveText = objectiveEl.text().trim();
-    if (objectiveText && !explanationHtml.includes(objectiveText)) {
-      explanationHtml = `<p class="font-medium text-sm text-primary">${objectiveText}</p>${explanationHtml}`;
+    // The text typically starts with "Educational Objective: " - strip it for cleaner display
+    const cleanedText = objectiveText.replace(/^Educational Objective:\s*/i, "").trim();
+    if (cleanedText) {
+      educationalObjectiveHtml = cleanedText;
     }
   }
 
@@ -942,6 +1008,7 @@ function parseMKSAP(
     answers: finalAnswers,
     wasCorrect,
     explanationHtml,
+    educationalObjectiveHtml,
     keyPointsHtml,
     referencesHtml,
     images: images.filter(

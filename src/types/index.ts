@@ -331,6 +331,7 @@ export interface BoardQuestionContent {
   answers: BoardAnswer[];
   wasCorrect: boolean;
   explanationHtml: string;
+  educationalObjectiveHtml?: string; // MKSAP: Educational Objective, unified with Key Points
   keyPointsHtml?: string;
   referencesHtml?: string;
   peerPearlsHtml?: string;

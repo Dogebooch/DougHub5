@@ -278,11 +278,10 @@ table.lab-values caption p {
 }
 
 /* Hide broken MKSAP SVG icons - they reference symbols (#svg-lab, etc.) that don't exist
-   in our app, causing them to render as large empty placeholders (default SVG size ~300x150) */
-.prose table svg,
-.prose table .svg-icon,
-table.lab-values svg,
-table.lab-values .svg-icon,
+   in our app, causing them to render as large empty placeholders (default SVG size ~300x150).
+   We target all SVGs in prose sections because clinical figures from MKSAP use <img>. */
+.prose svg,
+.prose .svg-icon,
 .prose .reference-link svg {
   display: none !important;
 }

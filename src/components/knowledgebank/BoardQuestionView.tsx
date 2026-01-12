@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -10,6 +10,7 @@ import {
   Lightbulb,
   Sparkles,
   BookOpen,
+  FlaskConical,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,8 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { ReferenceRangesSheet } from "@/components/shared/ReferenceRangesSheet";
 
 interface BoardQuestionViewProps {
   content: BoardQuestionContent;
@@ -41,10 +44,30 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
   const [isKeyPointsOpen, setIsKeyPointsOpen] = useState(true);
   const [isPeerPearlsOpen, setIsPeerPearlsOpen] = useState(true);
   const [isReferencesOpen, setIsReferencesOpen] = useState(false);
+  const [isLabRefOpen, setIsLabRefOpen] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<{
     url: string;
     caption?: string;
   } | null>(null);
+
+  // Global key listener for Toggle Lab Reference (Shift + R)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key.toUpperCase() === "R") {
+        // Don't trigger if user is typing in an input or textarea
+        if (
+          document.activeElement?.tagName === "INPUT" ||
+          document.activeElement?.tagName === "TEXTAREA"
+        ) {
+          return;
+        }
+        setIsLabRefOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const getImagePath = (localPath: string) => {
     if (!localPath) return "";
@@ -508,6 +531,22 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
           <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => setIsLabRefOpen(true)}
+                >
+                  <FlaskConical className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                Lab Reference Values (Shift+R)
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <a
                   href={content.sourceUrl}
                   target="_blank"
@@ -702,7 +741,18 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 />
               </CollapsibleTrigger>
               <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
-                <div className="px-4 pb-6">
+                <div className="px-4 pb-6 space-y-4">
+                  {/* Educational Objective callout (MKSAP) - subtle inline before explanation */}
+                  {content.educationalObjectiveHtml && (
+                    <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-primary/5 border border-primary/15">
+                      <div className="shrink-0 mt-0.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      </div>
+                      <p className="text-sm font-medium text-primary leading-relaxed">
+                        {content.educationalObjectiveHtml}
+                      </p>
+                    </div>
+                  )}
                   <div className="rounded-xl bg-card border border-border/50 overflow-hidden">
                     <div
                       className="px-8 py-6 prose prose-sm max-w-none leading-relaxed prose-p:my-6 prose-p:text-card-foreground prose-p:leading-[1.8] prose-strong:text-primary prose-strong:font-bold prose-headings:text-card-foreground prose-headings:font-bold prose-li:text-card-foreground prose-li:my-2 prose-b:text-card-foreground prose-a:text-primary prose-ul:my-5 prose-ol:my-5 break-words"
@@ -858,10 +908,11 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
           )}
         </DialogContent>
       </Dialog>
+
+      <ReferenceRangesSheet
+        open={isLabRefOpen}
+        onOpenChange={setIsLabRefOpen}
+      />
     </Card>
   );
 };
-
-
-
-

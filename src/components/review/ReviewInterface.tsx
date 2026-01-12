@@ -15,7 +15,7 @@ import { Rating } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { ClozeDisplay, ClozeAnswer } from "@/lib/cloze-renderer";
 import { MistakesReviewModal } from "./MistakesReviewModal";
-import { ReferenceRangesSheet } from "./ReferenceRangesSheet";
+import { ReferenceRangesSheet } from "@/components/shared/ReferenceRangesSheet";
 import { getWindowApi } from "@/lib/safeWindowApi";
 
 const CONTINUE_LOCKOUT_MS = 400; // Prevent accidental double-taps
