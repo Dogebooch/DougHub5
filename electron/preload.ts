@@ -204,6 +204,14 @@ const api = {
       ipcRenderer.invoke("notebookBlocks:update", id, updates),
     delete: (id: string) => ipcRenderer.invoke("notebookBlocks:delete", id),
   },
+  notebookLinks: {
+    create: (link: unknown) => ipcRenderer.invoke("notebookLinks:create", link),
+    getBySourceBlock: (blockId: string) =>
+      ipcRenderer.invoke("notebookLinks:getBySourceBlock", blockId),
+    getByTargetBlock: (blockId: string) =>
+      ipcRenderer.invoke("notebookLinks:getByTargetBlock", blockId),
+    delete: (id: string) => ipcRenderer.invoke("notebookLinks:delete", id),
+  },
   smartViews: {
     getAll: () => ipcRenderer.invoke("smartViews:getAll"),
     getSystem: () => ipcRenderer.invoke("smartViews:getSystem"),

@@ -22,6 +22,8 @@ import type {
   WeakTopicSummary,
   CardBrowserItem,
   ReferenceRange,
+  NotebookLink,
+  NotebookLinkType,
 } from "./index";
 import type {
   AIProviderStatus,
@@ -263,6 +265,14 @@ export interface ElectronAPI {
       updates: Partial<NotebookBlock>
     ) => Promise<IpcResult<void>>;
     delete: (id: string) => Promise<IpcResult<void>>;
+  };
+  notebookLinks: {
+    create: (
+      link: Omit<NotebookLink, "id" | "createdAt">
+    ) => Promise<IpcResult<NotebookLink>>;
+    getBySourceBlock: (blockId: string) => Promise<IpcResult<NotebookLink[]>>;
+    getByTargetBlock: (blockId: string) => Promise<IpcResult<NotebookLink[]>>;
+    delete: (id: string) => Promise<IpcResult<boolean>>;
   };
   smartViews: {
     getAll: () => Promise<IpcResult<SmartView[]>>;

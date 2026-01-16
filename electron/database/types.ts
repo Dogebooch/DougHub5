@@ -26,6 +26,14 @@ export type SourceType =
   | "manual";
 export type SourceItemStatus = "inbox" | "processed" | "curated";
 
+// Notebook Links (v17)
+export type NotebookLinkType =
+  | "same_concept"
+  | "related_topic"
+  | "cross_specialty"
+  | "comparison"
+  | "builds_on";
+
 // ============================================================================
 // Public Database Interfaces
 // ============================================================================
@@ -154,6 +162,18 @@ export interface DbNotebookBlock {
   aiEvaluation?: NotebookBlockAiEvaluation;
   relevanceScore?: RelevanceScore;
   relevanceReason?: string;
+}
+
+export interface DbNotebookLink {
+  id: string;
+  sourceBlockId: string;
+  targetBlockId: string;
+  linkType: NotebookLinkType;
+  reason?: string;
+  anchorText?: string;
+  anchorStart?: number;
+  anchorEnd?: number;
+  createdAt: string;
 }
 
 export interface DbMedicalAcronym {
@@ -328,6 +348,18 @@ export interface NotebookBlockRow {
   aiEvaluation: string | null; // JSON string
   relevanceScore: string | null;
   relevanceReason: string | null;
+}
+
+export interface NotebookLinkRow {
+  id: string;
+  sourceBlockId: string;
+  targetBlockId: string;
+  linkType: string;
+  reason: string | null;
+  anchorText: string | null;
+  anchorStart: number | null;
+  anchorEnd: number | null;
+  createdAt: string;
 }
 
 export interface SmartViewRow {

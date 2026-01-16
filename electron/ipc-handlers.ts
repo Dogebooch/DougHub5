@@ -24,6 +24,7 @@ import {
   canonicalTopicQueries,
   notebookTopicPageQueries,
   notebookBlockQueries,
+  notebookLinkQueries,
   smartViewQueries,
   searchQueries,
   settingsQueries,
@@ -40,6 +41,7 @@ import {
   DbCanonicalTopic,
   DbNotebookTopicPage,
   DbNotebookBlock,
+  DbNotebookLink,
   DbSmartView,
   WeakTopicSummary,
   ExtractionStatus,
@@ -1717,6 +1719,61 @@ export function registerIpcHandlers(): void {
       try {
         notebookBlockQueries.delete(id);
         return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // Notebook Link Handlers (v3)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "notebookLinks:create",
+    async (
+      _,
+      link: Omit<DbNotebookLink, "id" | "createdAt">
+    ): Promise<IpcResult<DbNotebookLink>> => {
+      try {
+        const result = notebookLinkQueries.create(link);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "notebookLinks:getBySourceBlock",
+    async (_, blockId: string): Promise<IpcResult<DbNotebookLink[]>> => {
+      try {
+        const result = notebookLinkQueries.getBySourceBlock(blockId);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "notebookLinks:getByTargetBlock",
+    async (_, blockId: string): Promise<IpcResult<DbNotebookLink[]>> => {
+      try {
+        const result = notebookLinkQueries.getByTargetBlock(blockId);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "notebookLinks:delete",
+    async (_, id: string): Promise<IpcResult<boolean>> => {
+      try {
+        const result = notebookLinkQueries.delete(id);
+        return success(result);
       } catch (error) {
         return failure(error);
       }

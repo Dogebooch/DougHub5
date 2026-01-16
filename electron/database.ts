@@ -58,6 +58,10 @@ export {
   parseNotebookBlockRow,
 } from "./database/notebook-blocks";
 export {
+  notebookLinkQueries,
+  parseNotebookLinkRow,
+} from "./database/notebook-links";
+export {
   smartViewQueries,
   seedSystemSmartViews,
   parseSmartViewRow,

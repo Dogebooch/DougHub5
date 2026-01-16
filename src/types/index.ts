@@ -142,6 +142,25 @@ export interface NotebookBlock {
   cardCount: number; // v2: Number of cards generated from this block
 }
 
+export type NotebookLinkType =
+  | "same_concept"
+  | "related_topic"
+  | "cross_specialty"
+  | "comparison"
+  | "builds_on";
+
+export interface NotebookLink {
+  id: string;
+  sourceBlockId: string;
+  targetBlockId: string;
+  linkType: NotebookLinkType;
+  reason?: string;
+  anchorText?: string;
+  anchorStart?: number;
+  anchorEnd?: number;
+  createdAt: string;
+}
+
 export interface WeakTopicSummary {
   topicId: string; // canonicalTopicId
   topicName: string; // canonicalName
