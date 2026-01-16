@@ -30,7 +30,19 @@ export default function App() {
       }
     });
 
-    return () => cleanup();
+    // Listen for auto-backup notifications
+    const backupCleanup = window.api.backup.onAutoComplete((timestamp) => {
+      const date = new Date(timestamp);
+      toast.info("Database backed up", {
+        description: `Timestamp: ${date.toLocaleTimeString()}`,
+        duration: 3000,
+      });
+    });
+
+    return () => {
+      cleanup();
+      backupCleanup();
+    };
   }, [initialize]);
 
   if (isLoading) {

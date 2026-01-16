@@ -276,9 +276,12 @@ export interface ElectronAPI {
   };
   backup: {
     list: () => Promise<IpcResult<BackupInfo[]>>;
+    getLastTimestamp: () => Promise<IpcResult<string | null>>;
     create: () => Promise<IpcResult<string>>;
-    restore: (filename: string) => Promise<IpcResult<void>>;
+    selectFile: () => Promise<IpcResult<string | null>>;
+    restore: (filePath: string) => Promise<IpcResult<void>>;
     cleanup: (retentionDays?: number) => Promise<IpcResult<number>>;
+    onAutoComplete: (callback: (timestamp: string) => void) => () => void;
   };
   db: {
     status: () => Promise<IpcResult<DbStatus>>;

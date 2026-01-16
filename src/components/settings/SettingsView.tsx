@@ -60,6 +60,13 @@ export function SettingsView() {
   const updateSetting = useAppStore((state) => state.updateSetting);
   const [isPurging, setIsPurging] = useState(false);
   const [dbPath, setDbPath] = useState<string | null>(null);
+  const [lastBackup, setLastBackup] = useState<string | null>(null);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [pendingRestoreFile, setPendingRestoreFile] = useState<string | null>(
+    null
+  );
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [duplicateCards, setDuplicateCards] = useState<CardType[]>([]);
@@ -90,6 +97,23 @@ export function SettingsView() {
       }
     }
     loadDbPath();
+  }, []);
+
+  useEffect(() => {
+    async function loadLastBackup() {
+      if (window.api?.backup?.getLastTimestamp) {
+        const result = await window.api.backup.getLastTimestamp();
+        if (result.data) setLastBackup(result.data);
+      }
+    }
+    loadLastBackup();
+
+    // Also listen for auto-backups to update the UI
+    const cleanup = window.api.backup.onAutoComplete((timestamp) => {
+      setLastBackup(timestamp);
+    });
+
+    return () => cleanup();
   }, []);
 
   const handlePurgeArchive = useCallback(async () => {
@@ -132,6 +156,7 @@ export function SettingsView() {
   }, [toast]);
 
   const handleBackup = useCallback(async () => {
+    setIsBackingUp(true);
     try {
       const result = await window.api.backup.create();
       if (result.error) {
@@ -141,6 +166,8 @@ export function SettingsView() {
           variant: "destructive",
         });
       } else {
+        const timestamp = new Date().toISOString();
+        setLastBackup(timestamp);
         toast({
           title: "Backup Created",
           description: `Database backup saved successfully.`,
@@ -152,8 +179,72 @@ export function SettingsView() {
         description: String(error),
         variant: "destructive",
       });
+    } finally {
+      setIsBackingUp(false);
     }
   }, [toast]);
+
+  const handleSelectRestoreFile = useCallback(async () => {
+    try {
+      const fileResult = await window.api.backup.selectFile();
+      if (fileResult.error) {
+        toast({
+          title: "Selection Failed",
+          description: fileResult.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (fileResult.data) {
+        setPendingRestoreFile(fileResult.data);
+        setShowRestoreConfirm(true);
+      }
+    } catch (error) {
+      toast({
+        title: "Selection Failed",
+        description: String(error),
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+  const executeRestore = useCallback(async () => {
+    if (!pendingRestoreFile) return;
+
+    setIsRestoring(true);
+    setShowRestoreConfirm(false);
+
+    try {
+      const restoreResult = await window.api.backup.restore(pendingRestoreFile);
+
+      if (restoreResult.error) {
+        toast({
+          title: "Restore Failed",
+          description: restoreResult.error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Restore Successful",
+          description: "Data has been restored. Reloading app...",
+        });
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      }
+    } catch (error) {
+      toast({
+        title: "Restore Failed",
+        description: String(error),
+        variant: "destructive",
+      });
+    } finally {
+      setIsRestoring(false);
+      setPendingRestoreFile(null);
+    }
+  }, [pendingRestoreFile, toast]);
 
   const handleFetchOllamaModels = useCallback(async () => {
     if (!window.api?.ai?.getOllamaModels) {
@@ -682,21 +773,93 @@ export function SettingsView() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Manual Backup</p>
-                    <p className="text-sm text-foreground/80">
-                      Create a snapshot of your database now.
+                  <div className="space-y-1">
+                    <p className="font-medium">Data Backup</p>
+                    <p className="text-sm text-foreground/80 leading-snug">
+                      {lastBackup ? (
+                        <>
+                          Last backup:{" "}
+                          <span className="font-mono text-xs">
+                            {new Date(lastBackup).toLocaleString()}
+                          </span>
+                        </>
+                      ) : (
+                        "No backups found."
+                      )}
                     </p>
                   </div>
-                  <Button
-                    onClick={handleBackup}
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Run Backup
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleBackup}
+                      variant="outline"
+                      size="sm"
+                      disabled={isBackingUp}
+                      className="gap-2"
+                    >
+                      <Download
+                        className={`h-4 w-4 ${
+                          isBackingUp ? "animate-bounce" : ""
+                        }`}
+                      />
+                      {isBackingUp ? "Backing up..." : "Backup Now"}
+                    </Button>
+
+                    <Button
+                      onClick={handleSelectRestoreFile}
+                      variant="outline"
+                      size="sm"
+                      disabled={isRestoring}
+                      className="gap-2"
+                    >
+                      <RefreshCw
+                        className={`h-4 w-4 ${
+                          isRestoring ? "animate-spin" : ""
+                        }`}
+                      />
+                      {isRestoring ? "Restoring..." : "Restore"}
+                    </Button>
+
+                    <AlertDialog
+                      open={showRestoreConfirm}
+                      onOpenChange={setShowRestoreConfirm}
+                    >
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center gap-2 text-warning">
+                            <AlertTriangle className="h-5 w-5" />
+                            Restore from Backup?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will replace <strong>all current data</strong>{" "}
+                            with the contents of the chosen backup file:
+                            <div className="mt-2 p-2 bg-surface-base rounded border border-border text-xs font-mono break-all italic">
+                              {pendingRestoreFile}
+                            </div>
+                            <div className="mt-4 text-destructive font-semibold">
+                              This action is destructive and cannot be undone.
+                              DougHub will reload after restoration.
+                            </div>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel
+                            onClick={() => {
+                              setPendingRestoreFile(null);
+                              setShowRestoreConfirm(false);
+                            }}
+                          >
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={executeRestore}
+                            className="bg-destructive hover:bg-destructive/90 text-white"
+                          >
+                            Restore & Reload
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -962,7 +1125,8 @@ export function SettingsView() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>
-                    Progress: {reparseProgress.current} / {reparseProgress.total}
+                    Progress: {reparseProgress.current} /{" "}
+                    {reparseProgress.total}
                   </span>
                   <span className="text-muted-foreground">
                     {reparseProgress.total > 0
@@ -1047,7 +1211,8 @@ export function SettingsView() {
                 <Progress
                   value={
                     extractionProgress.total > 0
-                      ? (extractionProgress.current / extractionProgress.total) *
+                      ? (extractionProgress.current /
+                          extractionProgress.total) *
                         100
                       : 0
                   }

@@ -1183,7 +1183,64 @@
           "41"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add image paste and drag-drop handlers to QuickCaptureModal",
+            "description": "Implement clipboard paste detection for images and drag-drop zone UI with preview thumbnail in QuickCaptureModal component before save.",
+            "dependencies": [],
+            "details": "QuickCaptureModal.tsx already has basic paste/drop handlers (lines 68-109) that detect images and call handleImageFile. The component displays preview thumbnail (lines 337-352) and saves via window.api.files.saveImage (lines 175-188). This subtask focuses on ensuring these handlers work correctly: verify paste event captures image/png, image/jpeg types from clipboardData.items, verify drag-drop zone activates with isDragging overlay (lines 288-296), verify preview displays before save with clear button, and ensure proper error handling for oversized files (>10MB).",
+            "status": "pending",
+            "testStrategy": "Paste screenshot from clipboard, verify preview appears with correct image. Drag image file over modal, verify drop zone overlay activates. Drop image, verify preview renders. Test file size validation with >10MB image.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Verify IPC handler saves images to userData/images/ directory",
+            "description": "Confirm existing files:saveImage IPC handler correctly writes image Buffer to app.getPath('userData')/images/{uuid}.{ext} and returns relative mediaPath.",
+            "dependencies": [],
+            "details": "The IPC handler files:saveImage already exists at ipc-handlers.ts:2130-2169. It extracts base64 from data URL, creates userData/images/ directory if needed (lines 2148-2151), generates UUID filename with correct extension based on mimeType (lines 2143-2144), writes Buffer to disk (line 2163), and returns normalized path with forward slashes (line 2161). This subtask verifies the handler works correctly: test image persistence to correct directory, verify UUID generation produces unique filenames, confirm path normalization for cross-platform DB compatibility (forward slashes), test all supported mime types (png, jpeg, gif, webp), and verify error handling for invalid base64 data.",
+            "status": "pending",
+            "testStrategy": "Save image from QuickCaptureModal, check userData/images/ directory contains file with UUID name and correct extension. Verify returned mediaPath uses forward slashes. Test with different image types. Verify error handling with malformed data.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Display images in SourceItemRow and KnowledgeBankView",
+            "description": "Add image rendering for SourceItem.mediaPath in SourceItemRow component and KnowledgeBankView, showing thumbnail preview when mediaPath is present.",
+            "dependencies": [
+              2
+            ],
+            "details": "SourceItemRow.tsx (lines 1-228) currently shows icon based on sourceType (lines 56-74) including Image icon for sourceType='image' (lines 63-64), but does not render the actual image from mediaPath. Add conditional rendering: if sourceItem.mediaPath exists, display <img> thumbnail (max 48px height) in the icon area or adjacent to title, using src constructed from userData path + mediaPath. For KnowledgeBankView, ensure image preview appears in the list view. Handle image loading errors gracefully with fallback icon. Consider lazy loading for performance with many images.",
+            "status": "pending",
+            "testStrategy": "Create SourceItem with mediaPath via QuickCaptureModal. Navigate to Knowledge Bank, verify image thumbnail displays in SourceItemRow. Click to open SourceItemViewerDialog, verify full-size image displays. Test with missing image file to verify fallback behavior.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Display images in NotebookBlock component",
+            "description": "Add image rendering for NotebookBlock.mediaPath in NotebookBlock component, showing images above or below block content text.",
+            "dependencies": [
+              2
+            ],
+            "details": "NotebookBlock.tsx (lines 1-229) currently renders only text content (lines 190-195). When block.mediaPath exists, render <img> element with src constructed from userData path + block.mediaPath. Position image strategically: above text content for context, or below based on UI design. Use responsive sizing (max-width: 100%, max-height: 400px) and rounded borders to match card styling (className from line 143-147). Ensure selection trigger for card generation (lines 198-218) still works properly when image is present. Handle image load errors with placeholder.",
+            "status": "pending",
+            "testStrategy": "Add SourceItem with image to Notebook as NotebookBlock. Navigate to Notebook view, verify image displays in block. Verify text selection for card generation still works. Test with missing image file to verify error handling.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Display images on card front/back during review session",
+            "description": "Add image rendering in ReviewInterface component to show images on card front and back sides when Card.mediaPath exists.",
+            "dependencies": [
+              2
+            ],
+            "details": "ReviewInterface.tsx shows current card with front/back content using ClozeDisplay component (imported line 16). When currentCard.mediaPath exists, render <img> element on the appropriate card face. For cloze cards, image should appear above the cloze text. Position: centered with max-width 100%, max-height 300px for review context. Use similar styling as NotebookBlock images. Ensure image doesn't interfere with answer reveal flow (answerVisible state, line 33) or grading buttons. Card type in CardBrowserView shows front/back at lines 411 and 419. Images should be visible during both question (front) and answer (back) phases. Handle errors gracefully with fallback.",
+            "status": "pending",
+            "testStrategy": "Generate card from NotebookBlock with image. Start review session, verify image appears on card front. Reveal answer, verify image persists (or shows back image if different). Complete review, verify next card. Test error handling with missing image file.",
+            "parentId": "undefined"
+          }
+        ]
       },
       {
         "id": "114",
@@ -1193,8 +1250,9 @@
         "testStrategy": "Trigger auto-backup, verify toast appears. Click Backup Now, verify new backup created. Restore from backup, verify data loads correctly.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-01-13T17:36:53.323Z"
       },
       {
         "id": "115",
@@ -1385,7 +1443,54 @@
           "38"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add API key authentication to HTTP capture server",
+            "description": "Enhance the existing capture-server.ts to support optional API key authentication for security. Store API key in settings table and validate on POST /api/capture requests.",
+            "dependencies": [],
+            "details": "The HTTP server already exists in electron/capture-server.ts with POST /api/capture endpoint. Need to:\n1. Add optional X-API-Key header validation in /api/capture handler\n2. Generate UUID-based API key and store in settings table as 'capture:apiKey'\n3. Add setting 'capture:enabled' (boolean, default true) to enable/disable server\n4. Move PORT to settings as 'capture:port' (default 23847)\n5. Modify startCaptureServer() to check capture:enabled setting before starting\n6. Add getCaptureServerStatus() function returning { enabled, port, hasApiKey }\n7. Add regenerateApiKey() function that generates new UUID and stores it\n\nFiles to modify:\n- electron/capture-server.ts: Add apiKey parameter to startCaptureServer(), validate header\n- electron/main.ts: Load settings and pass to startCaptureServer()\n- electron/database/settings.ts: No changes needed (already supports key-value storage)\n\nSecurity: Reject requests without valid API key if one is set. Always bind to 127.0.0.1 only (already implemented).",
+            "status": "pending",
+            "testStrategy": "Test with curl: 1) Start server, POST without API key (should work if not set), 2) Generate API key via settings, POST without header (should fail 401), 3) POST with correct X-API-Key header (should succeed), 4) POST with wrong key (should fail 401), 5) Disable capture:enabled setting, verify server doesn't start on app restart.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Expose capture server settings and controls via IPC",
+            "description": "Add IPC handlers for renderer to get server status, update settings (enable/disable, port, API key), and expose in preload.ts for UI access.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add IPC handlers in electron/ipc-handlers.ts:\n1. capture:getStatus - Returns { enabled: boolean, port: number, apiKey: string | null, isRunning: boolean }\n2. capture:updateSettings - Updates capture:enabled, capture:port in settings table\n3. capture:regenerateApiKey - Generates new UUID, stores as capture:apiKey, returns new key\n4. capture:restartServer - Stops and restarts server with new settings (requires app restart for now)\n\nAdd to electron/preload.ts:\n```typescript\ncapture: {\n  getStatus: () => ipcRenderer.invoke('capture:getStatus'),\n  updateSettings: (settings: { enabled?: boolean, port?: number }) => \n    ipcRenderer.invoke('capture:updateSettings', settings),\n  regenerateApiKey: () => ipcRenderer.invoke('capture:regenerateApiKey'),\n}\n```\n\nAdd TypeScript definitions in src/types/electron.d.ts (or wherever IPC types are defined).\n\nNote: Server restart requires app restart for MVP. Full hot-reload can be deferred.",
+            "status": "pending",
+            "testStrategy": "From DevTools console: 1) Call window.api.capture.getStatus(), verify returns current settings, 2) Call regenerateApiKey(), verify returns new UUID, 3) Call updateSettings({ enabled: false }), verify setting saved in DB, 4) Restart app, verify server not running when disabled.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Build Capture Server settings UI in SettingsView",
+            "description": "Add 'Browser Integration' card to SettingsView.tsx with enable/disable toggle, port display, API key display with copy button, and regenerate API key button.",
+            "dependencies": [
+              2
+            ],
+            "details": "Add new Card to src/components/settings/SettingsView.tsx under a new 'Browser Integration' section:\n\n**UI Components:**\n1. Switch: Enable/Disable HTTP capture server (calls capture:updateSettings)\n2. Read-only Input: Port number with label 'Server Port' (default: 23847)\n3. Read-only Input: API Key with [Copy] button (uses navigator.clipboard.writeText)\n4. Button: 'Regenerate API Key' with confirmation dialog (calls capture:regenerateApiKey)\n5. Alert box: 'Restart app to apply changes' shown when settings modified\n6. Status indicator: Green dot + 'Running' or Gray dot + 'Stopped'\n\n**State management:**\n- Load settings on mount with useEffect calling window.api.capture.getStatus()\n- Track dirty state to show 'restart required' message\n- Show toast on successful API key copy and regeneration\n\n**Layout:**\nPlace after 'AI Provider' section, before 'Database' section. Use same Card/CardHeader/CardContent pattern as existing settings cards.\n\n**Copy functionality:**\nUse theme colors for status indicator (bg-success/bg-muted from index.css per CLAUDE.md).",
+            "status": "pending",
+            "testStrategy": "Manual UI testing: 1) Navigate to Settings, verify 'Browser Integration' card visible, 2) Toggle enable/disable, verify setting saved and restart alert shown, 3) Click Copy API key, verify copied to clipboard and toast shown, 4) Click Regenerate, confirm dialog, verify new key displayed, 5) Restart app with capture disabled, verify status shows 'Stopped'.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Create Tampermonkey script template for qbank capture",
+            "description": "Write documented Tampermonkey userscript template that extracts question HTML from PeerPrep/MKSAP pages and POSTs to localhost:23847/api/capture with proper payload format.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create docs/tampermonkey-capture-template.js with:\n\n**Script metadata:**\n```javascript\n// ==UserScript==\n// @name         DougHub Qbank Capture\n// @namespace    http://tampermonkey.net/\n// @version      1.0\n// @description  Capture medical board questions to DougHub\n// @match        https://www.peerprep.com/*\n// @match        https://mksap19.acponline.org/*\n// @grant        GM_xmlhttpRequest\n// @connect      127.0.0.1\n// ==/UserScript==\n```\n\n**Functionality:**\n1. Detect site (PeerPrep vs MKSAP) from hostname\n2. Add floating 'Send to DougHub' button to page (position: fixed, bottom-right)\n3. On click: Extract pageHTML, bodyText, images array, url, siteName\n4. POST to http://127.0.0.1:23847/api/capture with X-API-Key header\n5. Show inline notification: 'Captured to DougHub!' (green) or error message (red)\n6. Match existing CapturePayload interface from electron/capture-server.ts\n\n**Payload format:**\n```typescript\n{\n  timestamp: new Date().toISOString(),\n  url: window.location.href,\n  hostname: window.location.hostname,\n  siteName: 'ACEP PeerPrep' | 'MKSAP 19',\n  pageHTML: document.body.innerHTML,\n  bodyText: document.body.innerText.substring(0, 5000),\n  images: [] // Extract from existing user script if applicable\n}\n```\n\n**Comments:** Add TODO placeholders for:\n- API_KEY constant (user must fill in)\n- Site-specific extraction logic (varies by qbank)\n- Image extraction (optional for MVP)\n\nSave to docs/ folder for user reference. User will customize based on their existing script.",
+            "status": "pending",
+            "testStrategy": "Test with Tampermonkey: 1) Install script in Chrome/Firefox, 2) Navigate to PeerPrep question page, 3) Click 'Send to DougHub' button, 4) Verify POST request sent with API key header, 5) Check DougHub inbox for new SourceItem, 6) Verify toast notification appears, 7) Test with invalid API key, verify error shown in browser.",
+            "parentId": "undefined"
+          }
+        ]
       },
       {
         "id": "117",
@@ -1613,9 +1718,47 @@
         "testStrategy": "Run migration, verify 4 columns added. Create block with userInsight, verify persistence. Create block with aiEvaluation JSON, verify JSON round-trip. Create block with relevanceScore='high' and relevanceReason='Targets your weak area', verify persistence. Query existing blocks, verify null handling for all fields.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": [],
-        "updatedAt": "2026-01-09T00:00:00.000Z"
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define TypeScript types for AI evaluation schema",
+            "description": "Create TypeScript type definitions for ExamTrapType, NotebookBlockAiEvaluation, and RelevanceScore in src/types/index.ts",
+            "dependencies": [],
+            "details": "Add the following type definitions to src/types/index.ts:\n\n1. ExamTrapType union type with 6 variants: 'qualifier-misread', 'negation-blindness', 'age-population-skip', 'absolute-terms', 'best-vs-correct', 'timeline-confusion'\n\n2. NotebookBlockAiEvaluation interface with fields:\n   - gaps: string[] (identified knowledge gaps)\n   - examTrapType?: ExamTrapType (only for incorrect items)\n   - confusionTags?: string[] (e.g. medication confusion pairs)\n   - feedbackText: string (AI response to user insight)\n   - evaluatedAt: string (ISO timestamp)\n\n3. RelevanceScore type as union: 'high' | 'medium' | 'low' | 'unknown'\n\n4. Update NotebookBlock interface to include:\n   - userInsight?: string\n   - aiEvaluation?: NotebookBlockAiEvaluation\n   - relevanceScore?: RelevanceScore\n   - relevanceReason?: string\n\nThese types will be imported by database layer and React components.",
+            "status": "done",
+            "testStrategy": "Verify TypeScript compilation passes. Import types in a test file to ensure they're properly exported. Check that NotebookBlock interface extends correctly without breaking existing code.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-16T16:19:52.895Z"
+          },
+          {
+            "id": 2,
+            "title": "Create database migration v17 and update DbNotebookBlock interface",
+            "description": "Add migration file to create 4 new columns on notebook_blocks table and update DbNotebookBlock/NotebookBlockRow interfaces in electron/database/types.ts",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Create electron/database/migrations/v17.ts following v15 migration pattern:\n   - ALTER TABLE notebook_blocks ADD COLUMN userInsight TEXT\n   - ALTER TABLE notebook_blocks ADD COLUMN aiEvaluation TEXT (will store JSON string)\n   - ALTER TABLE notebook_blocks ADD COLUMN relevanceScore TEXT\n   - ALTER TABLE notebook_blocks ADD COLUMN relevanceReason TEXT\n   - All columns nullable for backward compatibility\n   - setSchemaVersion(17) at end\n\n2. Update electron/database/types.ts:\n   - Add 4 new optional fields to DbNotebookBlock interface\n   - Add 4 new nullable fields to NotebookBlockRow interface\n   - Import NotebookBlockAiEvaluation type from src/types\n\n3. Register migration in electron/database/migrations/index.ts by adding v17 to the migrations array.\n\n4. Update parseNotebookBlockRow in electron/database/notebook-blocks.ts to handle new fields (parse aiEvaluation JSON if present, convert null to undefined).",
+            "status": "done",
+            "testStrategy": "Run app to trigger migration. Verify schema_version=17. Query notebook_blocks table to confirm 4 new columns exist. Create test block with all new fields populated, verify JSON round-trip for aiEvaluation. Query existing blocks to verify null handling doesn't break.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-16T16:26:32.529Z"
+          },
+          {
+            "id": 3,
+            "title": "Update IPC layer to expose new NotebookBlock fields",
+            "description": "Ensure notebook block IPC handlers and preload API properly return and accept the new schema fields (userInsight, aiEvaluation, relevanceScore, relevanceReason)",
+            "dependencies": [
+              2
+            ],
+            "details": "Review and update as needed:\n\n1. electron/ipc-handlers.ts:\n   - Verify notebookBlocks:getByPage handler returns full DbNotebookBlock (already using notebookBlockQueries.getByPage)\n   - Verify notebookBlocks:getById handler returns full DbNotebookBlock\n   - Verify notebookBlocks:create accepts all fields from DbNotebookBlock interface\n   - Verify notebookBlocks:update accepts partial updates including new fields\n\n2. electron/preload.ts:\n   - Verify notebookBlocks API object exposes correct methods\n   - No type changes needed (using 'unknown' parameter types)\n\n3. src/types/electron.d.ts:\n   - Verify window.api.notebookBlocks method signatures match actual handlers\n   - Update if return types need to reflect new fields\n\nNo code changes should be needed if handlers already use the DbNotebookBlock interface. This subtask is verification + any necessary type alignment.",
+            "status": "done",
+            "testStrategy": "Use React DevTools to inspect NotebookBlock objects returned from IPC calls. Verify new fields are present (even if null/undefined). Test creating a block with userInsight populated via IPC, verify persistence. Test updating relevanceScore on existing block, verify change persists.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-16T16:33:18.152Z"
+          }
+        ],
+        "updatedAt": "2026-01-16T16:33:18.152Z"
       },
       {
         "id": "121",
@@ -1787,15 +1930,533 @@
           "117"
         ],
         "status": "pending",
-        "subtasks": [],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Database migration v16: Add 7 schema columns for AI data logging",
+            "description": "Create migration v16 adding nullable columns: source_items (correctness, notes, testedConcepts), cards (targetedConfusion, relevanceScore, relevanceReason), review_logs (confidenceRating)",
+            "dependencies": [],
+            "details": "Create electron/database/migrations/v16.ts following the pattern from v15.ts. Add ALTER TABLE statements for: 1) source_items.correctness TEXT NULL, 2) source_items.notes TEXT NULL, 3) source_items.testedConcepts TEXT NULL (JSON array), 4) cards.targetedConfusion TEXT NULL, 5) cards.relevanceScore TEXT NULL ('high'|'medium'|'low'|'unknown'), 6) cards.relevanceReason TEXT NULL, 7) review_logs.confidenceRating TEXT NULL ('forgot'|'struggled'|'knew_it'). Update migrations/index.ts to import and call migrateToV16. Use database.transaction() and setSchemaVersion(16). All fields nullable with no defaults.",
+            "status": "pending",
+            "testStrategy": "Run app and verify migration executes. Query schema with PRAGMA table_info() for each table. Insert test records with new fields and verify persistence. Verify existing data unaffected (all new fields NULL).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Update TypeScript interfaces for 7 new database fields",
+            "description": "Extend DbSourceItem, DbCard, DbReviewLog, SourceItemRow, CardRow, ReviewLogRow interfaces in electron/database/types.ts to include new nullable fields with proper types",
+            "dependencies": [
+              1
+            ],
+            "details": "In electron/database/types.ts, add to DbSourceItem: correctness?: 'correct' | 'incorrect' | null, notes?: string, testedConcepts?: string[] (stored as JSON in DB). Add to DbCard: targetedConfusion?: string, relevanceScore?: 'high' | 'medium' | 'low' | 'unknown', relevanceReason?: string. Add to DbReviewLog: confidenceRating?: 'forgot' | 'struggled' | 'knew_it'. Mirror these in the corresponding Row interfaces (SourceItemRow, CardRow, ReviewLogRow) where JSON fields like testedConcepts become 'string' type in Row interfaces. Follow existing pattern where public interfaces have parsed types, Row interfaces have raw SQLite types.",
+            "status": "pending",
+            "testStrategy": "Verify TypeScript compilation passes. Verify types properly inferred in database query files. Test that parseSourceItemRow, parseCardRow, parseReviewLogRow handle new fields (JSON.parse for testedConcepts).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Add Correct/Incorrect toggle UI in QuickCaptureModal for qbank items",
+            "description": "Add correctness field toggle (Correct/Incorrect/Skip) in QuickCaptureModal when detectedType === 'qbank', persisting value to source_items.correctness on save",
+            "dependencies": [
+              2
+            ],
+            "details": "In src/components/modals/QuickCaptureModal.tsx, add state: const [correctness, setCorrectness] = useState<'correct' | 'incorrect' | null>(null). Below the title Input (around line 313), conditionally render when detectedType === 'qbank': a label 'Did you answer correctly?' and three toggle buttons (Correct/Incorrect/Skip) using Button variant='outline' with active state styling. Update handleSave() to include correctness in sourceItem object when detectedType === 'qbank'. Reset correctness to null in handleCancel and after successful save. Use theme colors (bg-success, bg-destructive, bg-muted) for visual feedback.",
+            "status": "pending",
+            "testStrategy": "Paste qbank URL in QuickCaptureModal, verify toggle appears. Select Correct, save, verify source_items.correctness='correct'. Select Incorrect, save, verify correctness='incorrect'. Select Skip or don't interact, verify correctness=null. Test non-qbank content, verify toggle hidden.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Add notes textarea in SourceItemViewerDialog for annotations",
+            "description": "Add editable notes textarea to SourceItemViewerDialog allowing users to add informal annotations, with auto-save debouncing and persistence to source_items.notes",
+            "dependencies": [
+              2
+            ],
+            "details": "In src/components/knowledgebank/SourceItemViewerDialog.tsx, after the main content area (around line 87), add a collapsible section 'Notes' with a Textarea component. Add local state for notes value and debounced save (400ms). On mount, load item.notes into state. Create IPC call window.api.sourceItems.update() to persist notes field. Show 'Saving...' indicator during save. Use muted background styling to distinguish notes from main content. Add placeholder text 'Add informal annotations (e.g., \"I thought X because Y\")'. Make section collapsible with Collapsible component from shadcn/ui.",
+            "status": "pending",
+            "testStrategy": "Open SourceItemViewerDialog, type in notes field, wait 400ms, verify IPC update call made. Refresh view, verify notes persisted. Test rapid typing, verify debouncing works (only one save after typing stops). Test empty notes, verify saves null/empty string correctly.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Add confidence rating buttons in Learning/Review interface",
+            "description": "Add optional 3-button confidence rating UI (Forgot/Struggled/Knew It) after answer reveal in card review flow, persisting to review_logs.confidenceRating",
+            "dependencies": [
+              2
+            ],
+            "details": "Locate card review component (likely in src/components/review/ or referenced from AppLayout.tsx). After user reveals answer and before/alongside FSRS rating buttons (Again/Hard/Good/Easy), add optional confidence rating prompt: 'How confident were you?' with three buttons: 'Forgot' (destructive variant), 'Struggled' (warning variant), 'Knew It' (success variant). Add state for confidenceRating. When user submits review (via existing FSRS buttons), include confidenceRating in review log creation. Default to null if user skips confidence rating. Style as secondary action (smaller, less prominent than FSRS buttons). Update reviewLogQueries.create() to accept and store confidenceRating field.",
+            "status": "pending",
+            "testStrategy": "Start card review, reveal answer, verify confidence buttons appear. Click 'Forgot' then rate card, verify review_logs.confidenceRating='forgot'. Click 'Knew It' then rate, verify 'knew_it'. Skip confidence rating, verify confidenceRating=null. Verify FSRS scheduling unaffected by confidence rating.",
+            "parentId": "undefined"
+          }
+        ],
         "updatedAt": "2026-01-08T22:00:00.000Z"
+      },
+      {
+        "id": "126",
+        "title": "v16 Migration: Create notebook_links Table",
+        "description": "Create the notebook_links table to enable cross-topic block linking. This is a prerequisite for Workflows 3, 6 Enhancement, 8, 9, and 10.",
+        "details": "DATABASE MIGRATION v16:\n\nCreate the notebook_links table for block-to-block references (AI-detected and manual backlinks).\n\nSCHEMA:\n```sql\nCREATE TABLE notebook_links (\n  id TEXT PRIMARY KEY,\n  sourceBlockId TEXT NOT NULL REFERENCES notebook_blocks(id),\n  targetBlockId TEXT NOT NULL REFERENCES notebook_blocks(id),\n  linkType TEXT NOT NULL,                 -- same_concept|related_topic|cross_specialty|comparison|builds_on\n  reason TEXT,                            -- AI or user explanation\n  anchorText TEXT,                        -- The phrase that triggered the link\n  anchorStart INTEGER,                    -- Character position in source block\n  anchorEnd INTEGER,\n  createdAt TEXT NOT NULL,\n  UNIQUE(sourceBlockId, targetBlockId)\n);\n```\n\nINDEXES:\n```sql\nCREATE INDEX idx_notebook_links_source ON notebook_links(sourceBlockId);\nCREATE INDEX idx_notebook_links_target ON notebook_links(targetBlockId);\n```\n\nTYPESCRIPT INTERFACE (add to electron/database/types.ts):\n```typescript\ninterface DbNotebookLink {\n  id: string;\n  sourceBlockId: string;\n  targetBlockId: string;\n  linkType: 'same_concept' | 'related_topic' | 'cross_specialty' | 'comparison' | 'builds_on';\n  reason?: string;\n  anchorText?: string;\n  anchorStart?: number;\n  anchorEnd?: number;\n  createdAt: string;\n}\n```\n\nIPC HANDLERS TO ADD:\n- notebookLinks:create - Create a new link\n- notebookLinks:getBySourceBlock - Get all links FROM a block\n- notebookLinks:getByTargetBlock - Get all links TO a block\n- notebookLinks:delete - Delete a link by ID\n- notebookLinks:search - Search blocks by content (for link modal)\n\nDATABASE QUERIES (add to electron/database/notebook-links.ts):\n```typescript\nexport const notebookLinkQueries = {\n  create: (link: DbNotebookLink) => db.run(`INSERT INTO notebook_links ...`),\n  getBySourceBlock: (blockId: string) => db.all(`SELECT * FROM notebook_links WHERE sourceBlockId = ?`, blockId),\n  getByTargetBlock: (blockId: string) => db.all(`SELECT * FROM notebook_links WHERE targetBlockId = ?`, blockId),\n  delete: (id: string) => db.run(`DELETE FROM notebook_links WHERE id = ?`, id),\n};\n```\n\nMIGRATION FILE: electron/database/migrations/v16.ts\n\nEDGE CASES:\n- ON DELETE CASCADE: When a notebook_block is deleted, delete all links referencing it\n- Self-links: Prevent sourceBlockId === targetBlockId at insert time\n- Duplicate links: UNIQUE constraint handles this, return existing link ID on conflict",
+        "testStrategy": "Run migration, verify table created with correct schema. Test CRUD operations via IPC. Test unique constraint prevents duplicate links. Test cascade delete removes links when block deleted. Test indexes exist.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-12T21:00:00.000Z"
+      },
+      {
+        "id": "127",
+        "title": "Workflow 2 FIX: Prominent 'What did you learn?' Insight UI",
+        "description": "Fix the critical learning gap in Add to Notebook workflow. The insight field (user's own words about what they learned) is the ENTIRE POINT of the notebook layer but is currently missing or de-emphasized.",
+        "details": "WORKFLOW 2 FIX - THE LEARNING HAPPENS HERE:\n\nThis is where learning happens. The insight field is not optional metadata - it's the entire point. Users must articulate what they learned in their own words. Without this step, DougHub is just a content collector, not a learning tool.\n\nSCREEN MOCKUP:\n```\n+-----------------------------------------------------------------------------+\n|  ADD TO NOTEBOOK                                                    [X]     |\n|                                                                             |\n|  +-----------------------------------------------------------------------+  |\n|  | SOURCE PREVIEW (collapsed by default, expandable)                     |  |\n|  | \"CKD G3 - Leading Cause of Death\" (QBank - Correct)          [Expand] |  |\n|  +-----------------------------------------------------------------------+  |\n|                                                                             |\n|  Topic: [Chronic Kidney Disease v]     [+ Create New Topic]                |\n|                                                                             |\n|  =========================================================================  |\n|                                                                             |\n|   WHAT DID YOU LEARN?                                                      |\n|   Write it in your own words. This becomes your notebook entry.            |\n|                                                                             |\n|  +---------------------------------------------------------------------+   |\n|  |                                                                     |   |\n|  | CKD patients are 4-5x more likely to die of CVD than progress to   |   |\n|  | ESKD. Both CKD and albuminuria are independent CV risk factors.    |   |\n|  |                                                                     |   |\n|  | Key takeaway: Manage CV risk aggressively in CKD - statins, BP     |   |\n|  | control, smoking cessation. Don't just focus on slowing GFR        |   |\n|  | decline.                                                            |   |\n|  |                                                                     |   |\n|  +---------------------------------------------------------------------+   |\n|   Min 20 characters                                          [142 chars]   |\n|                                                                             |\n|  =========================================================================  |\n|                                                                             |\n|  Already in this topic:                                                    |\n|  - CKD Staging and GFR (your insight: \"G3a vs G3b distinction...\")        |\n|  - ACEi in CKD (your insight: \"Renoprotective independent of BP...\")      |\n|                                                                             |\n|  Tags: [Cardiology] [Management] [Cross-Topic]  [+ Add]                    |\n|                                                                             |\n|                    [ Save Draft ]              [ Save to Notebook ]        |\n|                                                                             |\n+-----------------------------------------------------------------------------+\n```\n\nDESIGN REQUIREMENTS:\n1. Insight field is PROMINENT - largest element, visually emphasized with border/background\n2. Source is collapsed by default - reference material, not the focus\n3. Minimum 20 character count ENFORCED - prevents empty/lazy entries\n4. Character count shown in real-time\n5. \"In your own words\" instruction - explicit to process, not copy\n6. Existing blocks show YOUR insights - reinforces learning focus\n7. Save Draft option for partial work\n8. CANNOT save with empty insight - button disabled until valid\n\nFLOW:\n1. User arrives from Quick Capture or Inbox\n2. Source preview collapsed (click to expand and review)\n3. AI suggests topic based on source tags/domain\n4. User selects topic OR creates new topic\n5. **THE KEY STEP**: User writes their insight - what they learned, in their own words\n6. Tags inherited from source, user can modify\n7. User clicks [Save to Notebook]\n\nDATABASE OPERATIONS:\n```typescript\n// On [Save to Notebook] - transaction\nasync function addToNotebook(sourceItem: DbSourceItem, topicId: string, userInsight: string) {\n  // 1. Get or create topic page\n  let page = await window.api.getNotebookTopicPageByTopic(topicId);\n  if (!page) {\n    page = await window.api.createNotebookTopicPage({\n      id: crypto.randomUUID(),\n      canonicalTopicId: topicId,\n      cardIds: [],\n      createdAt: new Date().toISOString(),\n      updatedAt: new Date().toISOString(),\n    });\n  }\n\n  // 2. Get next position\n  const blocks = await window.api.getNotebookBlocksByPage(page.id);\n  const nextPosition = blocks.length;\n\n  // 3. Create block\n  await window.api.createNotebookBlock({\n    id: crypto.randomUUID(),\n    notebookTopicPageId: page.id,\n    sourceItemId: sourceItem.id,\n    content: userInsight,  // User's learning - the KEY field\n    position: nextPosition,\n    cardCount: 0,\n  });\n\n  // 4. Update source status\n  await window.api.updateSourceItemStatus(sourceItem.id, 'processed');\n}\n```\n\nEDGE CASES:\n\nTopic doesn't exist:\n- Show [+ Create New Topic] inline form\n- Minimal fields: name, domain\n- Create immediately, continue with block\n\nBlock already exists for this source in this topic:\n- Check: notebookBlockQueries.getBySourceAndPage(sourceId, pageId)\n- If found: \"You already have a block from this source in [Topic]\"\n- Options: [View Existing] | [Add Anyway] | [Choose Different Topic]\n\nNo source (direct entry creation):\n- Valid for clinical pearls entered directly\n- Create source_item with sourceType='manual' first, then link",
+        "testStrategy": "Verify insight textarea is prominently displayed with visual emphasis. Test 20 char minimum enforced - save button disabled until met. Test character counter updates in real-time. Test source preview collapse/expand. Test existing blocks shown with insight snippets. Test Save Draft vs Save to Notebook. Test cannot save with empty insight. Test topic creation inline. Test duplicate block warning.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create collapsible source preview panel component",
+            "description": "Build a collapsible panel to display source item details in a condensed format, collapsed by default with expand/collapse functionality.",
+            "dependencies": [],
+            "details": "Create a new component SourcePreviewPanel.tsx in src/components/notebook/ that accepts a SourceItem prop. Use Radix UI Collapsible component (already available at src/components/ui/collapsible.tsx). Display source title, type badge, and raw content preview when collapsed. Show full rawContent and metadata when expanded. Include ChevronDown/ChevronUp icon for visual affordance. Style with border and subtle background to distinguish from main content area.",
+            "status": "pending",
+            "testStrategy": "Test panel renders collapsed by default. Test clicking trigger expands/collapses content. Test displays correct source title and type. Test shows full content when expanded. Test visual distinction from surrounding content.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Build prominent insight textarea with validation and character counter",
+            "description": "Create a large, visually prominent textarea for user insights with real-time character counting and 20-character minimum validation.",
+            "dependencies": [],
+            "details": "Build InsightTextarea component using shadcn Textarea (src/components/ui/textarea.tsx) with custom styling for visual prominence (larger min-height ~150px, distinct border/background using theme variables like border-primary or bg-accent). Add label 'WHAT DID YOU LEARN?' with subtitle 'Write it in your own words. This becomes your notebook entry.' Display real-time character count in bottom-right (e.g., '[142 chars]' or 'Min 20 characters' when under threshold). Implement onChange handler to track character count and validation state. Return validation state and value to parent component.",
+            "status": "pending",
+            "testStrategy": "Test textarea renders with prominent styling. Test character counter updates in real-time as user types. Test shows 'Min 20 characters' when count < 20. Test shows actual count when >= 20. Test validation state correctly reflects 20-char minimum. Test uses theme color variables for themeable styling.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement topic selector with inline create functionality",
+            "description": "Build topic selection UI that suggests existing topics and allows inline creation of new topics without modal dialogs.",
+            "dependencies": [],
+            "details": "Create TopicSelector component using existing Combobox pattern from AddToNotebookDialog.tsx (lines 156-246) as reference. Use window.api.canonicalTopics.suggestMatches for search, with 300ms debounce. Display suggestions with canonical name and aliases. Show '+ Create New Topic' option when input doesn't match existing topics. On selection, return topic ID to parent. On create, call window.api.canonicalTopics.createOrGet with user input, return new topic ID. Include loading states for async operations. Style consistently with existing patterns.",
+            "status": "pending",
+            "testStrategy": "Test search debounces properly (300ms). Test shows existing topic suggestions. Test shows aliases in suggestions. Test '+ Create New Topic' appears when no exact match. Test selecting existing topic returns correct ID. Test creating new topic calls API and returns new ID. Test loading states display during async operations.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Display existing blocks for selected topic with insight previews",
+            "description": "Show a list of existing notebook blocks for the currently selected topic, displaying user insights to reinforce learning focus.",
+            "dependencies": [
+              3
+            ],
+            "details": "Create ExistingBlocksList component that accepts topicId prop. When topicId changes, fetch associated notebook topic page using window.api.notebookTopicPages.getByTopic, then fetch blocks using window.api.notebookBlocks.getByPage. Display blocks in a compact list showing insight content snippet (first 100 chars with ellipsis). Include source title reference for context. Show 'Already in this topic:' heading. Handle empty state ('No blocks yet in this topic'). Update list whenever topicId changes using useEffect.",
+            "status": "pending",
+            "testStrategy": "Test fetches correct notebook page when topic selected. Test fetches blocks for that page. Test displays insight content snippets correctly. Test shows source title references. Test truncates long insights with ellipsis. Test shows empty state when no blocks exist. Test updates when topic selection changes.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Integrate all components with dual save buttons and database transaction",
+            "description": "Replace AddToNotebookDialog with new redesigned workflow, implementing Save Draft and Save to Notebook buttons with proper database operations.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create new component AddToNotebookWorkflow.tsx that integrates SourcePreviewPanel, InsightTextarea, TopicSelector, and ExistingBlocksList. Accept sourceItem and open/onOpenChange props like current dialog. Implement two buttons: 'Save Draft' (saves source with status='processed') and 'Save to Notebook' (creates block with full transaction). Save to Notebook validates insight length, gets/creates notebook page, fetches existing blocks for position, creates block with window.api.notebookBlocks.create, updates source status to 'curated'. Include duplicate detection using notebookBlockQueries.getBySourceId (check if source already has blocks). Show confirmation dialog if duplicate found with options: View Existing, Add Anyway, Choose Different Topic. Disable Save to Notebook button until insight >= 20 chars and topic selected. Replace AddToNotebookDialog imports in InboxView.tsx and SourceItemRow.tsx with new component.",
+            "status": "pending",
+            "testStrategy": "Test Save to Notebook button disabled when insight < 20 chars. Test button disabled when no topic selected. Test button enabled when both conditions met. Test Save Draft updates source status to 'processed'. Test Save to Notebook creates block with correct fields. Test transaction creates/gets page correctly. Test position calculated from existing blocks. Test source status updated to 'curated'. Test duplicate detection shows confirmation dialog. Test dialog options (View/Add Anyway/Choose Different) work correctly. Test component integrates properly in InboxView and SourceItemRow.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-01-12T21:00:00.000Z"
+      },
+      {
+        "id": "128",
+        "title": "Workflow 1: Quick Capture Completion",
+        "description": "Complete the Quick Capture workflow with AI analysis for auto-tagging, duplicate detection, and the 'Add to Notebook Now' direct path.",
+        "details": "WORKFLOW 1: QUICK CAPTURE COMPLETION\n\nSCREEN MOCKUP:\n```\n+-----------------------------------------------------------------------------+\n|  CAPTURE                                                            [X]     |\n|                                                                             |\n|  +---------------------------------------------------------------------+   |\n|  | [Paste or type content here...]                                     |   |\n|  |                                                                     |   |\n|  |                                                                     |   |\n|  +---------------------------------------------------------------------+   |\n|                                                                             |\n|  -------------------------------------------------------------------------  |\n|                                                                             |\n|  Title: [CKD G3 - Leading Cause of Death              ] [pencil]           |\n|                                                                             |\n|  Type:  [QBank v]     Result: (*) Correct  ( ) Incorrect                   |\n|                                                                             |\n|  Domain: [Nephrology v]                                                    |\n|                                                                             |\n|  Tags: [Cardiology] [Management] [Cross-Topic]  [+ Add]                    |\n|                                                                             |\n|  ! Similar item exists: \"CKD G3 - CV Risk\" [View]                          |\n|                                                                             |\n|  -------------------------------------------------------------------------  |\n|                                                                             |\n|           [ Save to Inbox ]              [ Add to Notebook Now -> ]        |\n|                                                                             |\n+-----------------------------------------------------------------------------+\n```\n\nFLOW:\n1. User opens capture (Ctrl+Shift+C or FAB button)\n2. User pastes content\n3. AI analyzes content (see AI Prompt below)\n4. Form auto-fills with AI suggestions\n5. Check for duplicates (search source_items by title similarity)\n6. User confirms/edits fields\n7. User clicks:\n   - [Save to Inbox] -> INSERT source_items, status='inbox', done\n   - [Add to Notebook Now ->] -> Go to Workflow 2 with this source\n\nAI PROMPT - CAPTURE ANALYSIS:\n```\nSYSTEM: Analyze medical content for tagging and organization.\n\nINPUT:\n{raw_content}\n\nOUTPUT JSON:\n{\n  \"title\": \"Short title (<10 words)\",\n  \"sourceType\": \"qbank|article|pdf|image|quickcapture|manual\",\n  \"domain\": \"Nephrology\",\n  \"secondaryDomains\": [\"Cardiology\"],\n  \"tags\": [\"Management\", \"Boards-HY\"],\n  \"extractedFacts\": [\"CKD 4-5x more likely CVD death than ESKD\", \"...\"],\n  \"suggestedTopic\": \"Chronic Kidney Disease\"\n}\n\nDETECTION RULES:\n- Contains \"A) B) C) D)\" AND \"Explanation\" -> sourceType = \"qbank\"\n- URL from UpToDate, PubMed -> sourceType = \"article\"\n- User-written, no citations -> sourceType = \"manual\"\n- Otherwise -> sourceType = \"quickcapture\"\n```\n\nDATABASE OPERATIONS:\n```typescript\n// On [Save to Inbox] - uses sourceItemQueries.create()\nawait window.api.createSourceItem({\n  id: crypto.randomUUID(),\n  sourceType: aiResult.sourceType,\n  sourceName: 'Quick Capture',\n  title: aiResult.title,\n  rawContent: content,\n  canonicalTopicIds: [],\n  tags: [...aiResult.secondaryDomains, ...aiResult.tags],\n  metadata: {\n    summary: aiResult.extractedFacts?.join('; '),\n    subject: aiResult.domain\n  },\n  status: 'inbox',\n  createdAt: new Date().toISOString(),\n});\n```\n\nDUPLICATE DETECTION:\n- After AI analysis or manual title entry, search: sourceItemQueries.search(title_keywords)\n- If similar found (fuzzy match on title), show warning banner\n- \"Similar item exists: [Title]\" with [View] button\n- User can still save (might be different angle on same topic)\n\nEDGE CASES:\n\nAI fails or times out:\n- Show form with defaults: sourceType='quickcapture', title=first 50 chars, domain='General', tags=[]\n- Never block capture. User can fill manually.\n- Show subtle warning: \"AI analysis unavailable. Please fill fields manually.\"\n\nDuplicate detected:\n- Search: sourceItemQueries.search(keywords)\n- If found, show warning with [View Existing] option\n- User can still save (might be different angle on same topic)\n\nImage/PDF pasted:\n- Store base64 in tempImageData, sourceType='image' or 'pdf'\n- AI cannot analyze -> manual tagging required\n- Show: \"Image captured. Please add title and tags.\"\n\n[Add to Notebook Now] BUTTON:\n- Saves source item first (status='inbox')\n- Then navigates to AddToNotebook modal with sourceItem pre-loaded\n- Enables single-step capture-to-notebook flow",
+        "testStrategy": "Test AI analysis populates form fields correctly. Test AI timeout/failure shows defaults and warning. Test duplicate detection shows warning with View button. Test Save to Inbox creates source_item with correct fields. Test Add to Notebook Now saves then navigates to Workflow 2. Test image/PDF paste shows manual entry prompt. Test Correct/Incorrect toggle for qbank items.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement AI Analysis Service for Quick Capture",
+            "description": "Create AI analysis endpoint in ai-service.ts to auto-tag quick capture content with sourceType, domain, tags, and extracted facts",
+            "dependencies": [],
+            "details": "Add new function analyzeCaptureContent() to electron/ai-service.ts that accepts raw content and returns structured JSON with: title (short, <10 words), sourceType (qbank|article|pdf|image|quickcapture|manual), domain (medical specialty), secondaryDomains array, tags array (Management, Boards-HY, etc.), extractedFacts array, suggestedTopic. Use prompt template with detection rules: contains 'A) B) C) D)' AND 'Explanation' -> qbank; URL from UpToDate/PubMed -> article; user-written without citations -> manual; otherwise -> quickcapture. Implement content hashing for AI result cache (TTL 5 min) to avoid redundant API calls. Handle timeout/failure gracefully with null return.",
+            "status": "pending",
+            "testStrategy": "Test with qbank question content returns sourceType='qbank' with correct domain/tags. Test with plain text returns sourceType='quickcapture'. Test with article URL returns sourceType='article'. Test cache hit returns instantly. Test AI timeout returns null without throwing. Test extracted facts array populated for medical content.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Add AI Analysis Integration to QuickCaptureModal Component",
+            "description": "Integrate AI analysis call into QuickCaptureModal.tsx to auto-populate form fields after content paste with loading state and fallback handling",
+            "dependencies": [
+              1
+            ],
+            "details": "In src/components/modals/QuickCaptureModal.tsx, add state for aiAnalysisResult, isAnalyzing, and aiError. Create useEffect hook that triggers 500ms after content change (debounced). Call window.api.ai.analyzeCaptureContent(content) and populate: title, detectedType from aiResult.sourceType, suggested domain (display as Badge), suggested tags (display as removable Badges with [x] button). Add loading spinner badge during analysis. On timeout/failure, show subtle warning banner: 'AI analysis unavailable. Please fill fields manually.' and allow user to proceed with defaults (sourceType='quickcapture', title=first 50 chars, domain='General', tags=[]). Never block capture. Add Domain dropdown (Select) and Tags multi-select (Combobox) below title input, pre-filled from AI but user-editable.",
+            "status": "pending",
+            "testStrategy": "Test content paste triggers AI analysis after 500ms debounce. Test loading spinner shows during analysis. Test form fields auto-populate from AI response. Test AI failure shows warning but allows manual entry. Test domain dropdown shows AI-suggested domain pre-selected. Test tags are displayed as removable badges. Test clearing content clears AI suggestions. Test image content skips AI analysis.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement Duplicate Detection via Title Search",
+            "description": "Add duplicate detection in QuickCaptureModal that searches existing source_items by title similarity and shows warning banner with View button",
+            "dependencies": [
+              2
+            ],
+            "details": "In QuickCaptureModal.tsx, add useEffect hook that triggers 600ms after title changes (debounced, longer than AI). Extract keywords from title (split by whitespace, remove stop words like 'the', 'a', 'of'). Call window.api.sourceItems.search(titleKeywords) using existing searchQueries.search() with filter='inbox'. If results found with similarity score >0.7 (use simple Levenshtein or token overlap), set duplicateWarning state. Show warning banner (Alert component with variant='warning') below form: 'Similar item exists: [First matching title]' with [View Existing] button. Button opens SourceItemViewerDialog with matching item. User can still save (might be different angle). Add IPC handler 'source-items:search' in ipc-handlers.ts that wraps searchQueries.search() and returns IpcResult.",
+            "status": "pending",
+            "testStrategy": "Test title entry triggers search after 600ms. Test exact title match shows duplicate warning. Test similar title (80% match) shows warning. Test dissimilar title shows no warning. Test View Existing button opens correct source item. Test warning doesn't block save action. Test search returns within <200ms. Test no results shows no warning. Test multiple similar items shows first match only.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Complete Save to Inbox Path with AI-Enhanced Metadata",
+            "description": "Update handleSave() in QuickCaptureModal to save source_item with AI-analyzed fields including domain, tags, and metadata summary",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "In QuickCaptureModal.tsx handleSave(), construct sourceItem object using: id from crypto.randomUUID(), sourceType from aiAnalysisResult?.sourceType || sourceMap[detectedType], sourceName='Quick Capture', title from title input (user-editable, fallback to AI suggestion), rawContent from content textarea, canonicalTopicIds=[] (empty, curated later), tags from user-selected tags (merge AI suggestions + user additions), questionId undefined (not qbank yet), metadata object with summary from aiAnalysisResult?.extractedFacts.join('; ') and subject from aiAnalysisResult?.domain, status='inbox', createdAt/updatedAt timestamps. Call window.api.sourceItems.create(sourceItem). On success, refresh counts via useAppStore.refreshCounts(), show toast 'Saved to inbox - Process when you're rested', reset form state, close modal.",
+            "status": "pending",
+            "testStrategy": "Test Save to Inbox creates source_item with correct fields. Test AI-suggested domain stored in metadata.subject. Test AI-suggested tags saved to tags array. Test extractedFacts joined into metadata.summary. Test manual title overrides AI suggestion. Test status='inbox' set correctly. Test createdAt timestamp is ISO string. Test counts refresh after save. Test toast notification shows. Test modal closes and form resets. Test save works even without AI analysis (uses defaults).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement Add to Notebook Now Navigation Path",
+            "description": "Add 'Add to Notebook Now' button that saves source_item to inbox then navigates to AddToNotebookDialog with pre-loaded item for immediate processing",
+            "dependencies": [
+              4
+            ],
+            "details": "In QuickCaptureModal.tsx DialogFooter, add new Button with variant='default', icon=<PlayCircle>, text='Add to Notebook Now ->' positioned after 'Save to Inbox'. Replace existing disabled 'Process Now' button. On click, call handleAddToNotebookNow() which: 1) Saves source_item using same logic as handleSave() (extract to shared function saveCaptureItem()), 2) On successful save, call useAppStore.setSelectedSourceItems([savedItem.id]), 3) Call useAppStore.openAddToNotebookDialog(), 4) Close QuickCaptureModal via onClose(). Update AddToNotebookDialog.tsx to check useAppStore.selectedSourceItems on open and pre-populate if items exist. This enables single-step capture-to-notebook flow. Button disabled if content empty or AI analysis still running.",
+            "status": "pending",
+            "testStrategy": "Test Add to Notebook Now button visible and enabled after content entry. Test button disabled while AI analyzing. Test click saves source_item to database with status='inbox'. Test AddToNotebookDialog opens after save completes. Test AddToNotebookDialog pre-populates with saved item. Test QuickCaptureModal closes after navigation. Test error during save shows toast and doesn't navigate. Test single-step flow from capture to notebook. Test button tooltip explains workflow.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-01-12T21:00:00.000Z"
+      },
+      {
+        "id": "129",
+        "title": "Workflow 4: Browse Inbox - Archive Status and Polish",
+        "description": "Complete the Browse Inbox workflow by fixing Archive to use status change instead of delete, and adding minor polish.",
+        "details": "WORKFLOW 4: BROWSE INBOX COMPLETION\n\nSCREEN MOCKUP:\n```\n+-----------------------------------------------------------------------------+\n|  INBOX (23 items)                                                          |\n|                                                                             |\n|  [Search...]                    [Sort: Newest v]  [Filter: All Types v]    |\n|                                                                             |\n|  -------------------------------------------------------------------------  |\n|                                                                             |\n|  [ ] CKD G3 - CV Mortality                [Nephro] QBank check   2 hrs ago |\n|  [ ] Afib Rate Control vs Rhythm          [Cardio] QBank x       3 hrs ago |\n|  [ ] COPD Exacerbation Management         [Pulm]   QBank check   Yesterday |\n|  [ ] Diabetic Ketoacidosis Workup         [Endo]   QBank x       Yesterday |\n|  [ ] UpToDate: Heart Failure Guidelines   [Cardio] Article       2 days    |\n|  ...                                                                        |\n|                                                                             |\n|  -------------------------------------------------------------------------  |\n|                                                                             |\n|  With selected: [Add to Notebook] [Archive] [Delete]                       |\n|                                                                             |\n+-----------------------------------------------------------------------------+\n```\n\nCURRENT STATE:\n- List view works\n- Search works\n- Delete works\n\nMISSING/BROKEN:\n1. Archive uses DELETE instead of status='curated'\n2. Filter by sourceType not implemented\n3. Sort options not implemented\n4. Batch selection not implemented\n\nFLOW:\n1. User opens Inbox from sidebar\n2. Load items: sourceItemQueries.getByStatus('inbox')\n3. User can:\n   - Click item -> View source detail modal\n   - Select + [Add to Notebook] -> Workflow 2\n   - Select + [Archive] -> status = 'curated' (NOT delete)\n   - Select + [Delete] -> DELETE with confirmation\n4. Filters: by sourceType, domain (from metadata.subject)\n5. Sort: by createdAt (newest/oldest)\n\nDATABASE OPERATIONS:\n```typescript\n// List inbox\nconst items = await window.api.getSourceItemsByStatus('inbox');\n\n// Archive (mark as curated) - FIX THIS\nawait window.api.updateSourceItemStatus(id, 'curated');\n\n// Delete\nawait window.api.deleteSourceItem(id);\n```\n\nFILTERS TO ADD:\n- sourceType: qbank, article, pdf, image, quickcapture, manual, all\n- domain: from metadata.subject field, dynamically populated\n\nSORT OPTIONS:\n- Newest first (default)\n- Oldest first\n- By domain (alphabetical)\n- By type\n\nBATCH OPERATIONS:\n- Checkbox selection on each row\n- \"Select All\" checkbox in header\n- Batch actions: Add to Notebook (opens for first selected), Archive, Delete\n- Archive batch: no confirmation needed\n- Delete batch: \"Delete X items? This cannot be undone.\"\n\nEDGE CASES:\n\nEmpty inbox:\n- Show: \"Inbox empty! Capture some content to get started.\" [Capture]\n\nBatch actions on many items:\n- Archive: Update all, no confirmation needed\n- Delete: Confirm \"Delete X items? This cannot be undone.\"",
+        "testStrategy": "Test Archive changes status to 'curated' not delete. Test archived items no longer appear in inbox. Test filter by sourceType works. Test sort by newest/oldest works. Test batch selection with Select All. Test batch archive updates all without confirmation. Test batch delete shows confirmation. Test empty inbox shows capture prompt.",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-12T21:00:00.000Z"
+      },
+      {
+        "id": "130",
+        "title": "Workflow 5: Browse Notebook - Filters and Cross-Block Search",
+        "description": "Complete the Browse Notebook workflow with filters (Cross-Topic, Boards-HY, No Cards) and cross-block content search.",
+        "details": "WORKFLOW 5: BROWSE NOTEBOOK COMPLETION\n\nSCREEN MOCKUP:\n```\n+-----------------------------------------------------------------------------+\n|  NOTEBOOK                                                [Search...]       |\n|                                                                             |\n|  +--------------+ +----------------------------------------------------+   |\n|  | DOMAINS      | |  Chronic Kidney Disease                   12 blocks|   |\n|  |              | |                                                    |   |\n|  | v Nephrology | |  +----------------------------------------------+ |   |\n|  |   - CKD (12) | |  | CKD - CV Mortality Risk            2hrs ago  | |   |\n|  |   - AKI (5)  | |  | [Cardio] [Mgmt] [Cross-Topic]                | |   |\n|  |   - GN (3)   | |  | \"CKD patients 4-5x more likely to die...\"    | |   |\n|  |              | |  | Links: 3  Source: 1  Cards: 0                | |   |\n|  | > Cardiology | |  +----------------------------------------------+ |   |\n|  | > Pulmonology| |                                                    |   |\n|  | > GI         | |  +----------------------------------------------+ |   |\n|  | > Endocrine  | |  | CKD Staging and GFR                2 days ago| |   |\n|  | ...          | |  | [Dx] [Boards-HY]                             | |   |\n|  |              | |  | \"Stage G3a: 45-59, G3b: 30-44...\"            | |   |\n|  | ------------ | |  | Links: 2  Source: 2  Cards: 1                | |   |\n|  | FILTERS:     | |  +----------------------------------------------+ |   |\n|  | [ ] Cross-Top| |                                                    |   |\n|  | [ ] Boards-HY| |  [+ Add Block]                                    |   |\n|  | [ ] No Cards | |                                                    |   |\n|  +--------------+ +----------------------------------------------------+   |\n|                                                                             |\n+-----------------------------------------------------------------------------+\n```\n\nCURRENT STATE:\n- Domain tree sidebar works\n- Topic selection works\n- Block list works\n\nMISSING:\n1. Cross-block search (search all blocks by content)\n2. Filters in sidebar: Cross-Topic, Boards-HY, No Cards\n3. Block counts in domain tree\n\nFLOW:\n1. User opens Notebook from sidebar\n2. Left sidebar: domains with nested topics\n   - Expand domain -> show topics with block counts\n3. Click topic -> load blocks for that topic's page\n4. Click block card -> Workflow 6 (Block Detail)\n5. Filters affect block list\n6. Search searches across ALL blocks (content field)\n\nDATABASE QUERIES:\n```typescript\n// Get domain tree with counts\nconst topics = await window.api.getAllCanonicalTopics();\n// Group by domain, count blocks per topic\n\n// Get blocks for topic\nconst page = await window.api.getNotebookTopicPageByTopic(topicId);\nconst blocks = await window.api.getNotebookBlocksByPage(page.id);\n\n// For each block, fetch source info\nfor (const block of blocks) {\n  block.source = await window.api.getSourceItem(block.sourceItemId);\n}\n\n// NEW: Search all blocks by content\nconst searchResults = await window.api.searchNotebookBlocks(query);\n// Returns blocks with topic name, content excerpt, match highlights\n```\n\nFILTERS (sidebar checkboxes):\n\n[ ] Cross-Topic:\n- Show only blocks where source has multiple canonicalTopicIds\n- OR blocks tagged with 'Cross-Topic'\n\n[ ] Boards-HY:\n- Show only blocks tagged with 'Boards-HY' or 'High-Yield'\n\n[ ] No Cards:\n- Show only blocks where cardCount = 0\n- Helps identify content not yet converted to cards\n\nSEARCH:\n- Search box in header searches ALL notebook blocks\n- Searches block.content field\n- Returns results grouped by topic\n- Click result -> navigate to that topic and highlight block\n\nIPC TO ADD:\n```typescript\n// Search notebook blocks by content\nwindow.api.searchNotebookBlocks(query: string): Promise<Array<{\n  block: DbNotebookBlock;\n  topicName: string;\n  excerpt: string;  // Content snippet with match\n}>>\n```\n\nUI UPDATES:\n- Add search input in notebook header\n- Add filter checkboxes in sidebar below domain tree\n- Add block count badges next to each topic in tree\n- Search results appear in main area, replacing topic view temporarily",
+        "testStrategy": "Test cross-block search finds blocks by content. Test search results show topic name and excerpt. Test clicking search result navigates to topic. Test Cross-Topic filter shows multi-topic blocks. Test Boards-HY filter shows tagged blocks. Test No Cards filter shows blocks with cardCount=0. Test block counts appear in domain tree. Test filters can be combined.",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-12T21:00:00.000Z"
+      },
+      {
+        "id": "131",
+        "title": "Workflow 7: Edit Block",
+        "description": "Implement the Edit Block workflow to allow users to refine their insights over time, with stale card warnings.",
+        "details": "WORKFLOW 7: EDIT BLOCK\n\nSCREEN MOCKUP:\n```\n+-----------------------------------------------------------------------------+\n|  <- Back                                              [Cancel] [Save]       |\n|                                                                             |\n|  EDITING: CKD - CV Mortality Risk                                          |\n|                                                                             |\n|  -------------------------------------------------------------------------  |\n|                                                                             |\n|  Content (your insight):                                                   |\n|  +---------------------------------------------------------------------+   |\n|  | CKD patients are 4-5x more likely to die of CVD than progress to   |   |\n|  | ESKD. Both CKD and albuminuria are independent CV risk factors.    |   |\n|  | Key management: treat CV risk factors (statins, BP control).       |   |\n|  |                                                                     |   |\n|  | UPDATE: Also important to control phosphorus in later stages.      |   |\n|  +---------------------------------------------------------------------+   |\n|                                                                             |\n|  ! This block has 2 cards. Editing may make them stale.                    |\n|     [View Cards]                                                           |\n|                                                                             |\n+-----------------------------------------------------------------------------+\n```\n\nFLOW:\n1. User clicks [Edit] on block detail view\n2. Content field becomes editable textarea\n3. User modifies content (their insight)\n4. If block has cards (cardCount > 0), show warning banner\n5. User clicks [Save]\n6. Update block content in database\n7. Return to block detail view\n\nVALIDATION:\n- Same 20 character minimum as Workflow 2\n- Cannot save empty content\n- Show character count\n\nDATABASE OPERATIONS:\n```typescript\n// Update block content\nawait window.api.updateNotebookBlock(blockId, {\n  content: newContent,\n});\n```\n\nIPC TO ADD (if not exists):\n```typescript\n// electron.d.ts\nupdateNotebookBlock(blockId: string, updates: Partial<DbNotebookBlock>): Promise<void>;\n```\n\nSTALE CARD WARNING:\n- Check block.cardCount before rendering\n- If cardCount > 0:\n  - Show yellow warning banner: \"This block has X cards. Editing may make them stale.\"\n  - Include [View Cards] button to see affected cards\n  - Cards are NOT auto-updated (user decides if regeneration needed)\n\nFUTURE ENHANCEMENT (not in this task):\n- Re-run backlink detection if content changed significantly\n- Track content history for undo\n\nEDGE CASES:\n\nNo changes made:\n- [Save] with identical content -> no database update, just close\n\nUnsaved changes + navigate away:\n- Show confirmation: \"Discard unsaved changes?\" [Discard] [Keep Editing]\n\nBlock deleted while editing:\n- Rare race condition\n- Show error: \"This block no longer exists.\" [Close]",
+        "testStrategy": "Test edit mode opens with current content. Test 20 char minimum enforced. Test stale card warning shows when cardCount > 0. Test View Cards button navigates to affected cards. Test Save updates database. Test Cancel discards changes. Test no-change save doesn't write to DB. Test unsaved changes confirmation on navigate away.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-12T21:00:00.000Z"
+      },
+      {
+        "id": "132",
+        "title": "Workflow 8: Add Source to Another Topic",
+        "description": "Implement cross-topic knowledge workflow: same source can create blocks in multiple topics with different insights per topic.",
+        "details": "WORKFLOW 8: ADD SOURCE TO ANOTHER TOPIC\n\nThis is the KEY workflow for cross-topic knowledge. When a source touches multiple domains (e.g., \"CKD causes CVD\"), the user should add it to both Nephrology AND Cardiology.\n\nSCREEN MOCKUP:\n```\n+-----------------------------------------------------------------------------+\n|  ADD TO ANOTHER TOPIC                                               [X]     |\n|                                                                             |\n|  Source: \"CKD G3 - Leading Cause of Death\" (QBank)                         |\n|                                                                             |\n|  Already in:                                                                |\n|  - Chronic Kidney Disease (Nephrology) - \"CKD patients are 4-5x...\"        |\n|                                                                             |\n|  -------------------------------------------------------------------------  |\n|                                                                             |\n|  Add to: [Cardiovascular Disease v]     [+ Create New Topic]               |\n|                                                                             |\n|  What's the Cardiology angle? (write a different insight)                  |\n|  +---------------------------------------------------------------------+   |\n|  | CV disease is the leading cause of death in CKD patients, NOT       |   |\n|  | progression to dialysis. Statins and BP control are essential.      |   |\n|  | Consider CKD as a coronary risk equivalent.                         |   |\n|  +---------------------------------------------------------------------+   |\n|                                                                             |\n|  [ ] Link these blocks (show connection in both topics)                    |\n|                                                                             |\n|                                              [ Add to Topic ]              |\n|                                                                             |\n+-----------------------------------------------------------------------------+\n```\n\nFLOW:\n1. User clicks [+ Add to Another Topic] on:\n   - Source item in Knowledge Bank\n   - Existing block in Notebook (shows \"Already in: X\")\n\n2. Show source info and existing blocks from this source\n\n3. User selects different topic (same topic disabled/hidden)\n\n4. User writes NEW insight for this topic's perspective\n   - Nephrology angle: \"CKD patients die of CVD, manage CV risk\"\n   - Cardiology angle: \"CKD is a coronary risk equivalent, screen for it\"\n   - Minimum 20 characters enforced\n\n5. Optional: Check \"Link these blocks\" to create notebook_link with type='cross_specialty'\n\n6. Creates new block in new topic, same sourceItemId\n\nDATABASE OPERATIONS:\n```typescript\nasync function addSourceToAnotherTopic(\n  sourceItem: DbSourceItem,\n  newTopicId: string,\n  newInsight: string,\n  linkToExisting: boolean,\n  existingBlockId?: string\n) {\n  // 1. Get or create topic page\n  let page = await window.api.getNotebookTopicPageByTopic(newTopicId);\n  if (!page) {\n    page = await window.api.createNotebookTopicPage({\n      id: crypto.randomUUID(),\n      canonicalTopicId: newTopicId,\n      cardIds: [],\n      createdAt: new Date().toISOString(),\n      updatedAt: new Date().toISOString(),\n    });\n  }\n\n  // 2. Get next position\n  const blocks = await window.api.getNotebookBlocksByPage(page.id);\n  const nextPosition = blocks.length;\n\n  // 3. Create new block (same source, different topic, different insight)\n  const newBlockId = crypto.randomUUID();\n  await window.api.createNotebookBlock({\n    id: newBlockId,\n    notebookTopicPageId: page.id,\n    sourceItemId: sourceItem.id,  // SAME source\n    content: newInsight,           // DIFFERENT insight\n    position: nextPosition,\n    cardCount: 0,\n  });\n\n  // 4. Optionally create link between blocks\n  if (linkToExisting && existingBlockId) {\n    await window.api.createNotebookLink({\n      id: crypto.randomUUID(),\n      sourceBlockId: existingBlockId,\n      targetBlockId: newBlockId,\n      linkType: 'cross_specialty',\n      reason: 'Same source, different topic perspective',\n      createdAt: new Date().toISOString(),\n    });\n  }\n\n  // 5. Update source status if still inbox\n  if (sourceItem.status === 'inbox') {\n    await window.api.updateSourceItemStatus(sourceItem.id, 'processed');\n  }\n}\n```\n\nIPC TO ADD:\n```typescript\n// Get all blocks for a source item (to show \"Already in:\")\nwindow.api.getNotebookBlocksBySource(sourceId: string): Promise<Array<{\n  block: DbNotebookBlock;\n  topicName: string;\n}>>\n```\n\nEDGE CASES:\n\nBlock already exists in target topic:\n- Check: notebookBlockQueries.getBySourceAndPage(sourceId, pageId)\n- If found: \"You already have this source in [Topic]. View it?\"\n- Options: [View Existing] | [Create Anyway] | [Choose Different Topic]\n\nUser wants to copy insight instead of writing new:\n- Offer [Copy from existing] button next to textarea\n- Pre-fills textarea with existing insight, user can modify\n\nNo existing blocks (source from inbox):\n- Hide \"Already in:\" section\n- Hide \"Link these blocks\" checkbox (no block to link to)\n\nTopic dropdown excludes already-used topics:\n- Filter out topics where this source already has a block",
+        "testStrategy": "Test modal shows source info and existing blocks. Test topic dropdown excludes already-used topics. Test NEW insight required (20 char min). Test Copy from existing pre-fills textarea. Test creates block with same sourceItemId but different topicPageId. Test Link checkbox creates notebook_link. Test duplicate block warning when target topic already has this source. Test source status updated to processed if was inbox.",
+        "priority": "high",
+        "dependencies": [
+          "126"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add IPC handler for getNotebookBlocksBySource",
+            "description": "Create database query and IPC handler to fetch all notebook blocks associated with a source item, including topic page information for display in the 'Already in:' section.",
+            "dependencies": [],
+            "details": "Add query to notebook-blocks.ts: getBySourceId returning array of blocks with joined topic info. Add IPC handler in ipc-handlers.ts. Add method to electron.d.ts: notebookBlocks.getBySource(sourceId: string) => Promise<IpcResult<Array<{ block: NotebookBlock; topicName: string; pageId: string }>>>. Use JOIN with notebook_topic_pages and canonical_topics tables to get topic names.",
+            "status": "pending",
+            "testStrategy": "Test query returns all blocks for a source across multiple topics. Test includes topic names and pageIds. Test empty array when source has no blocks. Test SQL JOIN correctly retrieves canonical topic names.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Create AddSourceToTopicModal component structure",
+            "description": "Build React modal component with Dialog, source info display, 'Already in:' list, topic selector dropdown, insight textarea, and link checkbox matching the mockup design.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create src/components/notebook/AddSourceToTopicModal.tsx using shadcn Dialog, Popover, Command, Textarea, Checkbox. Display source title and type at top. Conditionally render 'Already in:' section showing existing blocks with topic names (only if blocks exist). Include topic selector using Command/Popover pattern from AddToNotebookDialog.tsx. Add textarea for new insight (min 20 chars). Add 'Link these blocks' checkbox that only shows when existing blocks present. Style with theme variables.",
+            "status": "pending",
+            "testStrategy": "Test modal renders with source info. Test 'Already in:' section shows/hides based on existing blocks. Test topic dropdown populated from API. Test textarea validation (20 char min). Test checkbox visibility based on existing blocks. Test theme colors used correctly.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement topic filtering to exclude already-used topics",
+            "description": "Filter topic suggestions dropdown to exclude topics where the source already has blocks, preventing duplicate blocks in same topic.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "In AddSourceToTopicModal, fetch existing blocks via notebookBlocks.getBySource(sourceId). Extract used pageIds and topicIds. When calling canonicalTopics.suggestMatches(), filter results to exclude topics already containing this source. Show helpful message if user tries selecting used topic. Consider edge case: source in inbox with no existing blocks (show all topics).",
+            "status": "pending",
+            "testStrategy": "Test topic dropdown excludes topics with existing blocks. Test all topics shown for inbox sources with no blocks. Test filter updates when blocks added. Test edge case: source has blocks in all topics. Test suggestion API called with correct parameters.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Add 'Copy from existing' button for insight textarea",
+            "description": "Implement button to pre-fill insight textarea with content from existing blocks, allowing users to modify instead of rewriting from scratch.",
+            "dependencies": [
+              2
+            ],
+            "details": "Add 'Copy from existing' button next to textarea label. On click, show dropdown/popover listing existing blocks with truncated content preview and topic names. When user selects a block, copy its content to textarea (allowing edits). Use Command component for searchable list if multiple blocks exist. Button only visible when existing blocks present.",
+            "status": "pending",
+            "testStrategy": "Test button appears only when existing blocks present. Test dropdown shows all existing blocks with topic context. Test selecting block copies content to textarea. Test textarea remains editable after copy. Test works with single and multiple existing blocks.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement addSourceToAnotherTopic database operation and IPC",
+            "description": "Create database transaction to add block to new topic, optionally create cross_specialty notebook link, update source status, and wire up IPC handler.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Add IPC handler: notebookBlocks.addToAnotherTopic(sourceId, topicId, insight, linkToBlockId?) in ipc-handlers.ts. Use database transaction: 1) Get/create topic page via notebookTopicPageQueries, 2) Get next position from existing blocks, 3) Create new block with same sourceItemId but different pageId and content, 4) If linkToBlockId provided, create notebook_link record (requires notebook_links table from T126), 5) Update source status from 'inbox' to 'processed' if needed. Return created block. Add to electron.d.ts.",
+            "status": "pending",
+            "testStrategy": "Test creates block in correct topic page. Test position calculated correctly. Test same sourceItemId preserved. Test link created when requested (depends on T126). Test source status updated from inbox to processed. Test transaction rollback on error. Test duplicate detection: block already exists in target topic.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-01-12T21:00:00.000Z"
+      },
+      {
+        "id": "133",
+        "title": "Workflow 9: Add Manual Link",
+        "description": "Create explicit connections between blocks across topics with search, link type selection, and optional anchor text.",
+        "details": "WORKFLOW 9: ADD MANUAL LINK\n\nCreate explicit connections between blocks across topics.\n\nSCREEN MOCKUP:\n```\n+-----------------------------------------------------------------------------+\n|  + ADD LINK                                                         [X]     |\n|                                                                             |\n|  Linking from: \"CKD - CV Mortality Risk\" (Nephrology)                      |\n|                                                                             |\n|  -------------------------------------------------------------------------  |\n|                                                                             |\n|  Search blocks: [statin                    ]                               |\n|                                                                             |\n|  +------------------------------------------------------------------------+ |\n|  | (*) Statin Therapy - When to Start                        [Cardio]    | |\n|  |     \"High-intensity statins for all diabetics...\"                     | |\n|  |                                                                        | |\n|  | ( ) Statin Side Effects                                   [Pharm]     | |\n|  |     \"Myopathy risk factors include...\"                                | |\n|  |                                                                        | |\n|  | ( ) CKD and Dyslipidemia                                  [Nephro]    | |\n|  |     \"LDL targets in CKD differ from general population...\"            | |\n|  +------------------------------------------------------------------------+ |\n|                                                                             |\n|  Link type: [Related Topic v]                                              |\n|                                                                             |\n|  Optional anchor text (highlight in your block):                           |\n|  Selected: \"statins\"                                                       |\n|                                                                             |\n|                                                        [Create Link]       |\n|                                                                             |\n+-----------------------------------------------------------------------------+\n```\n\nFLOW:\n1. User clicks [+ Add Link] in block detail sidebar\n2. Search modal opens with source block info shown\n3. User searches by keyword, filters by topic/domain\n4. User selects target block (radio button)\n5. User selects link type from dropdown:\n   - same_concept: Same idea, different words\n   - related_topic: Connected but distinct concepts\n   - cross_specialty: Same content, different specialty perspective\n   - comparison: Compare/contrast these concepts\n   - builds_on: This block extends/depends on that one\n6. Optional: User highlights text in current block for anchor\n   - Show current block content with text selection enabled\n   - Selected text becomes anchorText\n7. Creates notebook_link record\n\nDATABASE OPERATIONS:\n```typescript\n// Search for blocks\nconst results = await window.api.searchNotebookBlocks(searchTerm);\n// Returns blocks with topic name, excerpt\n\n// Create link\nawait window.api.createNotebookLink({\n  id: crypto.randomUUID(),\n  sourceBlockId: currentBlockId,\n  targetBlockId: selectedBlockId,\n  linkType: selectedLinkType,\n  reason: 'Manual link',\n  anchorText: selectedText || null,\n  anchorStart: selectionStart || null,\n  anchorEnd: selectionEnd || null,\n  createdAt: new Date().toISOString(),\n});\n```\n\nSEARCH RESULTS:\n- Search block.content field\n- Show topic name badge\n- Show content excerpt (first 100 chars)\n- Exclude current block from results\n- Show max 10 results, with \"Load more\" if needed\n\nLINK TYPE DESCRIPTIONS (show as tooltip or help text):\n- same_concept: \"Same idea expressed differently\"\n- related_topic: \"Connected concepts worth reviewing together\"\n- cross_specialty: \"Same topic from different specialty's perspective\"\n- comparison: \"Compare or contrast these concepts\"\n- builds_on: \"Understanding this requires understanding that first\"\n\nANCHOR TEXT SELECTION:\n- Show source block content in readonly textarea\n- User can select/highlight a phrase\n- Selected text stored as anchorText with start/end positions\n- Used later for hover-highlight in links sidebar\n\nEDGE CASES:\n\nLink already exists:\n- Check before creating: getNotebookLinkByBlocks(sourceId, targetId)\n- If exists: \"Already linked. Update anchor text?\" [Update] [Cancel]\n- Update only changes anchorText fields, preserves linkType\n\nSelf-link:\n- Filter current block from search results entirely\n\nCircular links:\n- A→B and B→A are both valid (bidirectional relationship)\n- Show both in respective sidebars\n- No special handling needed\n\nNo search results:\n- Show: \"No blocks found matching '[query]'. Try different keywords.\"",
+        "testStrategy": "Test search finds blocks by content. Test search excludes current block. Test radio selection enables Create Link button. Test all 5 link types can be selected. Test anchor text selection captures text and positions. Test link created with correct fields. Test duplicate link shows update option. Test created link appears in sidebar immediately.",
+        "priority": "high",
+        "dependencies": [
+          "126"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-12T21:00:00.000Z"
+      },
+      {
+        "id": "134",
+        "title": "Workflow 10: Remove Link",
+        "description": "Delete notebook links with confirmation, handling bidirectional links independently.",
+        "details": "WORKFLOW 10: REMOVE LINK\n\nSCREEN MOCKUP:\n```\nIn block detail sidebar, each link shows [x] button:\n\n+-------------------------+\n| REFERENCES              |\n|                         |\n| -> CKD Staging     [x]  |\n|    \"CKD patients\"       |\n|                         |\n| -> Statin Therapy  [x]  |\n|    \"statins\"            |\n+-------------------------+\n```\n\nFLOW:\n1. User clicks [x] on link in sidebar\n2. Show confirmation dialog: \"Remove link to [Topic: Block Title]?\" [Remove] [Cancel]\n3. On confirm: DELETE FROM notebook_links WHERE id = ?\n4. Sidebar refreshes to show updated links\n\nDATABASE OPERATIONS:\n```typescript\n// On confirm\nawait window.api.deleteNotebookLink(linkId);\n\n// Refresh sidebar\nconst linksFrom = await window.api.getNotebookLinksFromBlock(blockId);\nconst linksTo = await window.api.getNotebookLinksToBlock(blockId);\n```\n\nCONFIRMATION DIALOG:\n- Title: \"Remove Link?\"\n- Message: \"Remove link to [Target Topic]: '[Target Block Title excerpt]'?\"\n- Buttons: [Cancel] [Remove] (Remove is destructive/red)\n- No \"Don't ask again\" option - always confirm\n\nEDGE CASES:\n\nBidirectional links:\n- Removing A→B does NOT remove B→A\n- Each direction is independent\n- If user wants to remove both, they must delete each separately\n- Show both directions in sidebar with own [x] buttons\n\nLink to deleted block:\n- If target block was deleted, link should have been cascade-deleted\n- But if not (data integrity issue), show: \"Target block no longer exists\" and allow removal\n\nRace condition - link already deleted:\n- If DELETE returns 0 rows affected, show subtle toast: \"Link already removed\"\n- Still refresh sidebar\n\nUI REFRESH:\n- After deletion, immediately update sidebar without full page reload\n- Use optimistic UI: remove from list immediately, rollback if delete fails",
+        "testStrategy": "Test [x] button shows on each link. Test confirmation dialog appears with correct target info. Test Remove deletes link from database. Test Cancel closes dialog without deletion. Test sidebar refreshes after removal. Test A→B removal doesn't affect B→A. Test optimistic UI removes link immediately. Test error handling for already-deleted links.",
+        "priority": "high",
+        "dependencies": [
+          "126",
+          "133"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-12T21:00:00.000Z"
+      },
+      {
+        "id": "135",
+        "title": "Workflow 6 Enhancement: Links Sidebar with Hover-Highlight",
+        "description": "Add a links sidebar to Block Detail View showing references (outgoing) and linked-from (incoming) with hover-highlight of anchor text.",
+        "details": "WORKFLOW 6 ENHANCEMENT: LINKS SIDEBAR\n\nSCREEN MOCKUP (Default - Sidebar Collapsed):\n```\n+-----------------------------------------------------------------------------+\n|  <- Back to CKD                                         [Edit] [...]       |\n|                                                                             |\n|  CKD - CV Mortality Risk                                                   |\n|  [Nephrology] [Cardiology] [Management] [Cross-Topic]                      |\n|                                                                     +-----+|\n|  ===================================================================|Lnk 3||\n|                                                                     |  >  ||\n|  CKD patients are 4-5x more likely to die of CVD than progress     |     ||\n|  to ESKD. Both CKD and albuminuria are independent CV risk         |     ||\n|  factors. Key management: treat CV risk factors (statins, BP       |     ||\n|  control).                                                          |     ||\n|                                                                     |     ||\n|  ===================================================================|     ||\n|                                                                     +-----+|\n|  SOURCE                                                     [View Full]   |\n|  QBank: CKD G3 - Leading Cause of Death  (check) Correct                   |\n|                                                                             |\n|  CARDS: None                                          [Generate Card]     |\n|                                                                             |\n+-----------------------------------------------------------------------------+\n```\n\nSCREEN MOCKUP (Sidebar Expanded):\n```\n+-----------------------------------------------------------------------------+\n|  <- Back to CKD                                               [Edit] [...]  |\n|                                                                             |\n|  +---------------------------------------------+-------------------------+  |\n|  |                                             | REFERENCES              |  |\n|  |  CKD - CV Mortality Risk                    |                         |  |\n|  |  [Nephro] [Cardio] [Mgmt] [Cross]          | -> CKD Staging          |  |\n|  |                                             |    \"CKD patients\"       |  |\n|  |  =========================================  |                         |  |\n|  |                                             | -> Statin Therapy       |  |\n|  |  CKD patients are 4-5x more likely to die  |    \"statins\"            |  |\n|  |  of CVD than progress to ESKD. Both CKD    |                         |  |\n|  |  and albuminuria are independent CV risk   | -> HTN in CKD           |  |\n|  |  factors. Key management: treat CV risk    |    \"BP control\"         |  |\n|  |  factors (statins, BP control).            |                         |  |\n|  |                                             | --------------------    |  |\n|  |  =========================================  |                         |  |\n|  |                                             | LINKED FROM             |  |\n|  |  SOURCE                          [View]    | <- Diabetic Nephro      |  |\n|  |  QBank: CKD G3...  (check)                 |                         |  |\n|  |                                             | [+ Add Link]            |  |\n|  |  CARDS: None          [Generate Card]      |                         |  |\n|  |                                             |                         |  |\n|  +---------------------------------------------+-------------------------+  |\n|                                                                             |\n+-----------------------------------------------------------------------------+\n```\n\nINTERACTIONS:\n- Hover \"-> CKD Staging\" -> \"CKD patients\" highlights in content\n- Click \"-> CKD Staging\" -> Navigate to that block\n- Sidebar collapsed by default, click link count badge to expand\n- Click outside sidebar or [<] to collapse\n\nSIDEBAR SECTIONS:\n\n1. REFERENCES (outgoing links):\n- Links FROM this block TO other blocks\n- Format: \"-> [Topic Name]\" with anchor text below\n- Each has [x] button for removal (Workflow 10)\n\n2. LINKED FROM (incoming links):\n- Links FROM other blocks TO this block\n- Format: \"<- [Topic Name]\"\n- No [x] button (delete from source block)\n\n3. [+ Add Link] button:\n- Opens Workflow 9 modal\n\nDATABASE QUERIES:\n```typescript\n// Get block with source\nconst block = await window.api.getNotebookBlock(blockId);\nconst source = await window.api.getSourceItem(block.sourceItemId);\nconst topic = await window.api.getCanonicalTopic(page.canonicalTopicId);\n\n// Get cards for this block\nconst cards = await window.api.getCardsBySourceBlock(blockId);\n\n// Get links (requires v16 migration)\nconst linksTo = await window.api.getNotebookLinksFromBlock(blockId);\nconst linkedFrom = await window.api.getNotebookLinksToBlock(blockId);\n```\n\nHOVER-HIGHLIGHT IMPLEMENTATION:\n- Each link stores anchorText, anchorStart, anchorEnd\n- On hover over link in sidebar:\n  - Find text span in content matching anchorStart:anchorEnd\n  - Apply highlight CSS class (yellow background)\n- On mouse leave: remove highlight\n- If anchorText but no positions: search for text and highlight first match\n\nLINK BADGE (collapsed state):\n- Show total link count: linksTo.length + linkedFrom.length\n- Badge color: neutral if 0, accent if >0\n- Click badge to expand sidebar\n\nNAVIGATION:\n- Click link row -> navigate to target block's topic page\n- Scroll to and highlight target block\n- Add to browser history for back button",
+        "testStrategy": "Test sidebar shows link count badge. Test clicking badge expands sidebar. Test REFERENCES shows outgoing links with anchor text. Test LINKED FROM shows incoming links. Test hover highlights anchor text in content. Test click navigates to target block. Test [x] button triggers Workflow 10 removal. Test [+ Add Link] opens Workflow 9. Test sidebar collapses on outside click. Test empty state when no links.",
+        "priority": "high",
+        "dependencies": [
+          "126",
+          "133",
+          "134"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create collapsible sidebar structure with link count badge",
+            "description": "Implement collapsible sidebar UI component in TopicPageView showing link count badge when collapsed, expanding to show links panel on click.",
+            "dependencies": [],
+            "details": "Add state management for sidebar open/closed in TopicPageView.tsx. Create sidebar container component with fixed positioning on right side. Implement badge showing total link count (linksTo.length + linkedFrom.length) with accent color when count > 0, neutral when 0. Badge click handler toggles sidebar expansion. Include collapse button [<] in expanded state. Use shadcn/ui components (Sheet or custom div with animations) following existing patterns in NotebookBlock.tsx. Position sidebar to not overlap block content area.",
+            "status": "pending",
+            "testStrategy": "Test sidebar renders collapsed by default. Test badge shows correct count (0 initially). Test clicking badge expands sidebar. Test [<] button collapses sidebar. Test clicking outside sidebar collapses it. Test sidebar doesn't overlap content. Test badge color changes based on link count.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement REFERENCES section for outgoing links",
+            "description": "Display outgoing links from current block to other blocks, showing target topic name and anchor text with delete button.",
+            "dependencies": [
+              1
+            ],
+            "details": "In expanded sidebar, create REFERENCES section header. Query notebook_links table via window.api.getNotebookLinksFromBlock(blockId) to fetch outgoing links. For each link, display format: '-> [Topic Name]' with anchor text below in smaller muted text. Fetch target block and topic names via window.api.getNotebookBlock() and window.api.getCanonicalTopic(). Add [x] button for each link that triggers Workflow 10 removal (onClick handler only, actual deletion in subtask 5). Use lucide-react icons (ArrowRight for ->). Handle loading states and empty state ('No references').",
+            "status": "pending",
+            "testStrategy": "Test REFERENCES section renders with correct header. Test outgoing links display with correct topic names. Test anchor text shows below each link. Test [x] button appears on each link. Test loading state shows spinner. Test empty state message when no links. Test link data fetched from correct IPC calls.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement LINKED FROM section for incoming links",
+            "description": "Display incoming links to current block from other blocks, showing source topic names without delete buttons.",
+            "dependencies": [
+              1
+            ],
+            "details": "In expanded sidebar below REFERENCES section, add horizontal divider then LINKED FROM section header. Query notebook_links table via window.api.getNotebookLinksToBlock(blockId) to fetch incoming links. For each link, display format: '<- [Topic Name]' without anchor text (since text is in source block, not current block). Fetch source block and topic names. No [x] button (must delete from source block). Use lucide-react ArrowLeft icon for <-. Add [+ Add Link] button at bottom that opens Workflow 9 modal (placeholder onClick for now). Handle loading and empty states.",
+            "status": "pending",
+            "testStrategy": "Test LINKED FROM section renders below REFERENCES with divider. Test incoming links display with correct topic names. Test no [x] button on incoming links. Test [+ Add Link] button renders. Test empty state message when no incoming links. Test section separated from REFERENCES visually.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement hover-highlight of anchor text in block content",
+            "description": "Highlight anchor text spans in block content when hovering over links in sidebar using anchorStart/anchorEnd positions.",
+            "dependencies": [
+              2
+            ],
+            "details": "For each link in REFERENCES section with anchorText/anchorStart/anchorEnd data, add onMouseEnter and onMouseLeave handlers. On hover, identify the text span in NotebookBlock content div (contentRef) matching positions anchorStart:anchorEnd. Apply highlight CSS class (bg-yellow-200 dark:bg-yellow-900/30) to create span wrapper around target text. Use document.createRange() and Range API to wrap text. On mouse leave, remove highlight wrapper and restore original text. Fallback: if positions missing but anchorText exists, search for first text match and highlight. Store highlight cleanup function in ref to prevent memory leaks. Test with multiple simultaneous hovers.",
+            "status": "pending",
+            "testStrategy": "Test hovering link highlights correct text in content. Test highlighting uses correct positions (anchorStart:anchorEnd). Test highlight removes on mouse leave. Test fallback search works when positions missing. Test multiple rapid hovers don't break highlighting. Test highlight styling visible in light/dark themes. Test no highlight when anchorText not found.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement navigation on link click to target block",
+            "description": "Navigate to target block's topic page when clicking a link, scrolling to and highlighting the target block with browser history support.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Add onClick handler to each link row in both REFERENCES and LINKED FROM sections. On click, extract targetBlockId from link data. Call useAppStore.setCurrentView('notebook', targetPageId) to navigate to target topic page. After navigation, use scrollIntoView() to scroll to target block element (requires block elements to have id='block-{blockId}'). Add temporary highlight animation to target block (bg-accent flash for 2s). Update NotebookBlock.tsx to add id attribute to block container. Use router or native browser history.pushState() to enable back button navigation. Handle case where target page/block not found with error toast.",
+            "status": "pending",
+            "testStrategy": "Test clicking outgoing link navigates to target page. Test clicking incoming link navigates to source page. Test page scrolls to target block after navigation. Test target block highlights temporarily. Test back button returns to previous page. Test navigation with missing target shows error. Test browser history updated correctly.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-01-12T21:00:00.000Z"
+      },
+      {
+        "id": "136",
+        "title": "Workflow 13: Edit Card - Add Reset Progress Button",
+        "description": "Add the Reset Progress button to the Edit Card screen to allow users to reset FSRS scheduling data.",
+        "details": "WORKFLOW 13: EDIT CARD - RESET PROGRESS\n\nSCREEN MOCKUP:\n```\n+-----------------------------------------------------------------------------+\n|  EDIT CARD                                                          [X]     |\n|                                                                             |\n|  From block: \"CKD - CV Mortality Risk\"                                     |\n|                                                                             |\n|  -------------------------------------------------------------------------  |\n|                                                                             |\n|  FRONT:                                                                    |\n|  +---------------------------------------------------------------------+   |\n|  | A patient with CKD stage G3 is more likely to _____ than progress  |   |\n|  | to ESKD requiring dialysis.                                         |   |\n|  +---------------------------------------------------------------------+   |\n|                                                                             |\n|  BACK:                                                                     |\n|  +---------------------------------------------------------------------+   |\n|  | Die of cardiovascular disease (4-5x more likely)                    |   |\n|  |                                                                     |   |\n|  | -> Manage CV risk factors: statins, BP control                     |   |\n|  +---------------------------------------------------------------------+   |\n|                                                                             |\n|  Type: [Cloze v]        Status: [Active v]                                |\n|                                                                             |\n|  -------------------------------------------------------------------------  |\n|                                                                             |\n|       [Reset Progress]                              [Cancel] [Save]        |\n|                                                                             |\n+-----------------------------------------------------------------------------+\n```\n\nRESET PROGRESS BUTTON:\n- Located in footer, left side (destructive action, separate from Save)\n- Styled as outline/ghost button with warning color\n- Requires confirmation before executing\n\nCONFIRMATION DIALOG:\n```\n+----------------------------------------+\n|  Reset Card Progress?                  |\n|                                        |\n|  This will:                            |\n|  - Reset the card to \"New\" state      |\n|  - Clear all scheduling data           |\n|  - Card will appear in next review     |\n|                                        |\n|  Review history will be preserved.     |\n|                                        |\n|       [Cancel]        [Reset]          |\n+----------------------------------------+\n```\n\nDATABASE OPERATIONS:\n```typescript\n// Normal save (keep FSRS progress)\nawait window.api.updateCard(cardId, {\n  front: newFront,\n  back: newBack,\n  cardType: newType,\n});\n\n// Reset progress\nawait window.api.updateCard(cardId, {\n  stability: 0,\n  difficulty: 0,\n  dueDate: new Date().toISOString(),  // Due immediately\n  state: 0,  // New\n  reps: 0,\n  lapses: 0,\n  elapsedDays: 0,\n  scheduledDays: 0,\n  lastReview: null,\n});\n```\n\nWHEN TO SHOW RESET BUTTON:\n- Only show if card has been reviewed at least once (reps > 0)\n- For new cards (reps === 0), hide the button (nothing to reset)\n\nPOST-RESET BEHAVIOR:\n- Show success toast: \"Card progress reset. It will appear in your next review.\"\n- Stay on edit screen (don't close modal)\n- Update any visible stats on the screen\n\nREVIEW HISTORY PRESERVATION:\n- Do NOT delete review_logs entries\n- Historical data preserved for analytics\n- Only FSRS scheduling fields reset\n\nEDGE CASES:\n\nCard not yet reviewed:\n- Hide Reset Progress button entirely\n- Or show disabled with tooltip: \"No progress to reset\"\n\nReset + Save in same session:\n- Reset is independent of Save\n- Reset executes immediately on confirmation\n- User can then edit content and Save, or Cancel\n\nReset then Cancel:\n- Reset already executed - cannot be undone\n- Cancel only discards content changes, not the reset",
+        "testStrategy": "Test Reset Progress button visible for reviewed cards (reps > 0). Test button hidden for new cards (reps === 0). Test confirmation dialog appears on click. Test Cancel closes dialog without reset. Test Reset clears all FSRS fields. Test dueDate set to now. Test state set to 0 (New). Test review_logs preserved after reset. Test success toast shown. Test card appears in next review session.",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2026-01-12T21:00:00.000Z"
+      },
+      {
+        "id": "137",
+        "title": "Workflow 3: AI Backlink Detection (Async)",
+        "description": "Implement async AI backlink detection that runs after notebook block creation to find and suggest related blocks.",
+        "details": "WORKFLOW 3: AI BACKLINK DETECTION (ASYNC)\n\nStatus: Requires notebook_links table (v16 migration)\n\nWHEN IT RUNS:\n- After notebook block created (Workflow 2)\n- After notebook block edited with significant content change (Workflow 7)\n- Runs asynchronously - NEVER blocks the save operation\n\nTRIGGER POINTS:\n```typescript\n// In addToNotebook (Workflow 2), after block created:\nawait window.api.createNotebookBlock({ ... });\n// Trigger async - don't await\nwindow.api.queueBacklinkDetection(newBlockId);\n\n// In updateBlock (Workflow 7), if content changed significantly:\nif (levenshteinRatio(oldContent, newContent) > 0.3) {\n  window.api.queueBacklinkDetection(blockId);\n}\n```\n\nAI PROMPT - BACKLINK DETECTION:\n```\nSYSTEM: Find related notebook blocks and identify anchor phrases.\n\nNEW BLOCK:\nContent: {content}\nTopic: {topicName}\nTags: {tags}\n\nEXISTING BLOCKS (candidates):\n[\n  { \"id\": \"abc123\", \"topicName\": \"CKD Staging\", \"excerpt\": \"GFR cutoffs...\" },\n  { \"id\": \"def456\", \"topicName\": \"Statin Therapy\", \"excerpt\": \"When to start...\" },\n  ...\n]\n\nOUTPUT JSON:\n{\n  \"relatedBlocks\": [\n    {\n      \"blockId\": \"abc123\",\n      \"reason\": \"Same disease context\",\n      \"linkType\": \"same_concept\",\n      \"anchorText\": \"CKD patients\",\n      \"anchorStart\": 0,\n      \"anchorEnd\": 12\n    }\n  ]\n}\n\nRULES:\n- Max 5 related blocks\n- Only genuinely related content (high confidence)\n- anchorText must be exact substring of content\n- Prefer specific phrases over generic terms\n- linkType must be one of: same_concept, related_topic, cross_specialty, comparison, builds_on\n```\n\nBACKEND PROCESSING:\n```typescript\n// In main process - background job queue\nasync function processBacklinkDetection(blockId: string) {\n  const block = await db.getNotebookBlock(blockId);\n  const page = await db.getNotebookTopicPage(block.notebookTopicPageId);\n  const topic = await db.getCanonicalTopic(page.canonicalTopicId);\n  \n  // Get candidate blocks (limit to prevent huge context)\n  const candidates = await db.getRecentNotebookBlocks(100); // Last 100 blocks\n  const candidatesExcludingSelf = candidates.filter(c => c.id !== blockId);\n  \n  // Call AI\n  const aiResult = await callAI(buildBacklinkPrompt(block, topic, candidatesExcludingSelf));\n  \n  // Create links\n  for (const rel of aiResult.relatedBlocks) {\n    await db.run(`\n      INSERT INTO notebook_links (\n        id, sourceBlockId, targetBlockId, linkType, reason,\n        anchorText, anchorStart, anchorEnd, createdAt\n      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)\n      ON CONFLICT(sourceBlockId, targetBlockId) DO UPDATE SET\n        reason = excluded.reason,\n        anchorText = excluded.anchorText,\n        anchorStart = excluded.anchorStart,\n        anchorEnd = excluded.anchorEnd\n    `, [uuid(), blockId, rel.blockId, rel.linkType, rel.reason,\n        rel.anchorText, rel.anchorStart, rel.anchorEnd, new Date().toISOString()]);\n  }\n  \n  // Notify renderer that links updated\n  mainWindow.webContents.send('backlinks-updated', { blockId });\n}\n```\n\nUI NOTIFICATION:\n- While processing: subtle indicator in links sidebar (spinner icon)\n- When complete: refresh links sidebar, show count badge update\n- If AI found links: subtle toast \"Found X related blocks\"\n- No blocking UI - user can continue working\n\nCANDIDATE SELECTION:\n- Don't send ALL blocks to AI (context limits)\n- Strategy: Recent 100 blocks across all topics\n- Future enhancement: Use embeddings for semantic similarity pre-filter\n\nEDGE CASES:\n\nAI timeout/failure:\n- Log error, don't retry immediately\n- No user-facing error (async background task)\n- Retry on next app launch or manual trigger\n\nDuplicate detection run:\n- If block edited multiple times quickly, debounce\n- Only run once per block per 30 seconds\n\nNo related blocks found:\n- Valid result - not everything is related\n- Don't create any links, don't notify user\n\nBlock deleted before processing:\n- Check block exists before processing\n- If deleted, skip silently",
+        "testStrategy": "Test backlink detection triggered after block creation. Test runs asynchronously (doesn't block save). Test AI prompt includes block content and candidates. Test links created with correct fields. Test ON CONFLICT updates existing links. Test UI notified via IPC when complete. Test links sidebar refreshes. Test debounce prevents rapid re-runs. Test graceful handling of AI timeout. Test deleted block handled gracefully.",
+        "priority": "medium",
+        "dependencies": [
+          "126",
+          "127"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create v16 migration for notebook_links table",
+            "description": "Add notebook_links table schema in new v16 migration file to store bidirectional links between notebook blocks with anchor text positions.",
+            "dependencies": [],
+            "details": "Create electron/database/migrations/v16.ts following the pattern from v15.ts. The table should include: id (TEXT PRIMARY KEY), sourceBlockId (TEXT NOT NULL), targetBlockId (TEXT NOT NULL), linkType (TEXT NOT NULL - values: same_concept, related_topic, cross_specialty, comparison, builds_on), reason (TEXT NOT NULL), anchorText (TEXT), anchorStart (INTEGER), anchorEnd (INTEGER), createdAt (TEXT NOT NULL), isManual (INTEGER DEFAULT 0). Add UNIQUE constraint on (sourceBlockId, targetBlockId). Add foreign keys to notebook_blocks with ON DELETE CASCADE. Create indices on sourceBlockId and targetBlockId. Update electron/database/migrations/index.ts to import and call migrateToV16. Update electron/database/client.ts to run v16 if currentVersion < 16.",
+            "status": "pending",
+            "testStrategy": "Test migration creates table with correct schema. Test UNIQUE constraint prevents duplicate links. Test foreign keys cascade deletes. Test indices are created. Test migration runs on app startup when schema version is 15.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement background job queue for backlink detection",
+            "description": "Create async job queue system in main process to handle backlink detection without blocking notebook operations.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create electron/services/backlink-queue.ts with: 1) In-memory Map to track queued jobs (blockId -> timestamp), 2) 30-second debounce per blockId to prevent duplicate runs, 3) queueBacklinkDetection(blockId) function that adds job to queue and triggers processing, 4) processBacklinkDetection(blockId) async function that: fetches block + page + topic, gets recent 100 blocks (excluding self) via notebookBlockQueries, calls AI service with backlink detection prompt, creates/updates links in notebook_links table using INSERT ON CONFLICT, sends 'backlinks-updated' IPC event to renderer. Handle edge cases: block deleted before processing (check exists), AI timeout/failure (log only, no retry), duplicate detection (debounce). Export queue functions for use in ipc-handlers.",
+            "status": "pending",
+            "testStrategy": "Test debounce prevents multiple runs within 30 seconds. Test queue processes jobs asynchronously. Test block deletion before processing is handled gracefully. Test AI failure doesn't crash queue. Test 'backlinks-updated' IPC sent after completion.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Add AI backlink detection prompt to ai-service.ts",
+            "description": "Implement detectBacklinks function in ai-service.ts that calls AI with structured prompt to find related blocks and suggest anchor text.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add detectBacklinks(block, topic, candidateBlocks) function to electron/ai-service.ts following the pattern from existing functions like findRelatedNotes. Build prompt with: NEW BLOCK (content, topicName, tags), EXISTING BLOCKS array (id, topicName, excerpt - first 200 chars). Request JSON output with relatedBlocks array containing: blockId, reason, linkType (enum), anchorText (exact substring), anchorStart, anchorEnd. Rules: max 5 related blocks, high confidence only, anchorText must be exact substring of content, prefer specific phrases over generic terms. Use aiCache for caching with key based on block content + candidate IDs. Handle AI timeout (return empty results), invalid JSON (log error, return empty), missing required fields (skip that link). Export type BacklinkDetectionResult with relatedBlocks array.",
+            "status": "pending",
+            "testStrategy": "Test prompt includes block content and candidates. Test max 5 results enforced. Test anchorText validation (must be substring). Test linkType enum validation. Test cache hit returns cached result. Test AI timeout returns empty array. Test invalid JSON handled gracefully.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Add IPC handlers and trigger points for backlink detection",
+            "description": "Wire up IPC handler for queueBacklinkDetection and add trigger calls in createNotebookBlock and updateNotebookBlock handlers.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "In electron/ipc-handlers.ts: 1) Add ipcMain.handle('notebook:queueBacklinkDetection', async (_, blockId) => { queueBacklinkDetection(blockId); return { data: null, error: null }; }). 2) In existing 'notebook:createBlock' handler, after block created successfully, add non-awaited call: queueBacklinkDetection(newBlock.id). 3) In existing 'notebook:updateBlock' handler (if exists, otherwise create in subtask), after update succeeds, calculate content change using simple comparison (e.g., oldContent !== newContent), if changed call queueBacklinkDetection(blockId). In electron/preload.ts: Add notebook.queueBacklinkDetection: (blockId: string) => ipcRenderer.invoke('notebook:queueBacklinkDetection', blockId). In src/types/electron.d.ts: Add queueBacklinkDetection to notebook interface. Note: Don't await the queue call - it must be fire-and-forget.",
+            "status": "pending",
+            "testStrategy": "Test queueBacklinkDetection IPC exists. Test createBlock triggers detection without blocking save. Test updateBlock triggers detection on content change. Test no detection on no-op update. Test preload exposes queueBacklinkDetection. Test TypeScript types updated.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement notebook_links database queries and IPC for UI refresh",
+            "description": "Create notebook-links.ts queries module and IPC handler for getBlockLinks, plus IPC listener in renderer for backlinks-updated events.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create electron/database/notebook-links.ts with: 1) notebookLinkQueries.getBySourceBlock(blockId) - returns links where sourceBlockId matches, JOIN with notebook_blocks and notebook_topic_pages to get target block content + topic name, 2) notebookLinkQueries.getByTargetBlock(blockId) - reverse lookup (backlinks), 3) notebookLinkQueries.insert(link) - create new link, 4) notebookLinkQueries.delete(id) - remove link. Export from electron/database.ts. In electron/ipc-handlers.ts: Add 'notebook:getBlockLinks' handler that calls getBySourceBlock and getByTargetBlock, returns { outgoing, incoming }. In electron/preload.ts: Add notebook.getBlockLinks(blockId) and notebook.onBacklinksUpdated(callback) with cleanup. In src/types/electron.d.ts: Add NotebookLink type and interfaces. Update src/stores/useAppStore.ts to add refreshBlockLinks action (optional - depends on UI implementation in later tasks).",
+            "status": "pending",
+            "testStrategy": "Test getBySourceBlock returns correct links. Test getByTargetBlock returns incoming links. Test link insertion with all fields. Test link deletion. Test IPC handler returns outgoing + incoming. Test onBacklinksUpdated listener receives events. Test cleanup removes listener.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-01-12T21:00:00.000Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-12T20:17:04.668Z",
-      "taskCount": 30,
-      "completedCount": 21,
+      "lastModified": "2026-01-16T16:33:18.152Z",
+      "taskCount": 42,
+      "completedCount": 23,
       "tags": [
         "master"
       ]

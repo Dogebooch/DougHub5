@@ -109,11 +109,33 @@ export interface NotebookTopicPage {
   updatedAt: string;
 }
 
+export type ExamTrapType =
+  | "qualifier-misread" // 'most common' vs 'most common abnormality'
+  | "negation-blindness" // 'NOT associated with'
+  | "age-population-skip" // Missing 'in children' or 'in pregnant women'
+  | "absolute-terms" // 'always', 'never', 'only'
+  | "best-vs-correct" // Multiple correct, one is 'best'
+  | "timeline-confusion"; // 'initial' vs 'definitive'
+
+export type RelevanceScore = "high" | "medium" | "low" | "unknown";
+
+export interface NotebookBlockAiEvaluation {
+  gaps: string[]; // Identified knowledge gaps
+  examTrapType?: ExamTrapType; // Only set for incorrect answers
+  confusionTags?: string[]; // e.g., ['Methotrexate vs Methylnaltrexone']
+  feedbackText: string; // AI's response to user's insight
+  evaluatedAt: string; // ISO timestamp
+}
+
 export interface NotebookBlock {
   id: string;
   notebookTopicPageId: string;
   sourceItemId: string;
   content: string;
+  userInsight?: string;
+  aiEvaluation?: NotebookBlockAiEvaluation;
+  relevanceScore?: RelevanceScore;
+  relevanceReason?: string;
   annotations?: string;
   mediaPath?: string;
   position: number;

@@ -1,5 +1,6 @@
 import { getDatabase } from "./db-connection";
 import type { DbNotebookBlock, NotebookBlockRow } from "./types";
+import type { RelevanceScore } from "../../src/types/index";
 
 export const notebookBlockQueries = {
   getByPage(pageId: string): DbNotebookBlock[] {
@@ -39,13 +40,25 @@ export const notebookBlockQueries = {
 
   insert(block: DbNotebookBlock): void {
     const stmt = getDatabase().prepare(`
-      INSERT INTO notebook_blocks (id, notebookTopicPageId, sourceItemId, content, annotations, mediaPath, position)
-      VALUES (@id, @notebookTopicPageId, @sourceItemId, @content, @annotations, @mediaPath, @position)
+      INSERT INTO notebook_blocks (
+        id, notebookTopicPageId, sourceItemId, content, annotations, mediaPath, position,
+        userInsight, aiEvaluation, relevanceScore, relevanceReason
+      )
+      VALUES (
+        @id, @notebookTopicPageId, @sourceItemId, @content, @annotations, @mediaPath, @position,
+        @userInsight, @aiEvaluation, @relevanceScore, @relevanceReason
+      )
     `);
     stmt.run({
       ...block,
       annotations: block.annotations || null,
       mediaPath: block.mediaPath || null,
+      userInsight: block.userInsight || null,
+      aiEvaluation: block.aiEvaluation
+        ? JSON.stringify(block.aiEvaluation)
+        : null,
+      relevanceScore: block.relevanceScore || null,
+      relevanceReason: block.relevanceReason || null,
     });
   },
 
@@ -66,13 +79,23 @@ export const notebookBlockQueries = {
         content = @content,
         annotations = @annotations,
         mediaPath = @mediaPath,
-        position = @position
+        position = @position,
+        userInsight = @userInsight,
+        aiEvaluation = @aiEvaluation,
+        relevanceScore = @relevanceScore,
+        relevanceReason = @relevanceReason
       WHERE id = @id
     `);
     updateStmt.run({
       ...merged,
       annotations: merged.annotations || null,
       mediaPath: merged.mediaPath || null,
+      userInsight: merged.userInsight || null,
+      aiEvaluation: merged.aiEvaluation
+        ? JSON.stringify(merged.aiEvaluation)
+        : null,
+      relevanceScore: merged.relevanceScore || null,
+      relevanceReason: merged.relevanceReason || null,
     });
   },
 
@@ -85,6 +108,18 @@ export const notebookBlockQueries = {
 };
 
 export function parseNotebookBlockRow(row: NotebookBlockRow): DbNotebookBlock {
+  let aiEvaluation;
+  if (row.aiEvaluation) {
+    try {
+      aiEvaluation = JSON.parse(row.aiEvaluation);
+    } catch (e) {
+      console.error(
+        `[Database] Failed to parse aiEvaluation for block ${row.id}:`,
+        e
+      );
+    }
+  }
+
   return {
     id: row.id,
     notebookTopicPageId: row.notebookTopicPageId,
@@ -94,5 +129,9 @@ export function parseNotebookBlockRow(row: NotebookBlockRow): DbNotebookBlock {
     mediaPath: row.mediaPath || undefined,
     position: row.position,
     cardCount: row.cardCount || 0,
+    userInsight: row.userInsight || undefined,
+    aiEvaluation,
+    relevanceScore: (row.relevanceScore as RelevanceScore) || "unknown",
+    relevanceReason: row.relevanceReason || undefined,
   };
 }

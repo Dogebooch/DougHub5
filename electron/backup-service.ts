@@ -132,3 +132,15 @@ export function cleanupOldBackups(retentionDays: number = 7): number {
   
   return deleted;
 }
+
+/**
+ * Get the timestamp of the most recent backup.
+ * @returns ISO string or null if no backups exist
+ */
+export function getLastBackupTimestamp(): string | null {
+  const backups = listBackups();
+  if (backups.length === 0) {
+    return null;
+  }
+  return backups[0].timestamp.toISOString();
+}

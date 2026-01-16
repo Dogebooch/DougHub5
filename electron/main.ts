@@ -14,9 +14,14 @@ import {
   closeDatabase,
   sourceItemQueries,
   settingsQueries,
+  getDbPath,
 } from "./database";
 import { registerIpcHandlers, processCapture } from "./ipc-handlers";
-import { ensureBackupsDir, cleanupOldBackups } from "./backup-service";
+import {
+  ensureBackupsDir,
+  cleanupOldBackups,
+  createBackup,
+} from "./backup-service";
 import {
   startCaptureServer,
   stopCaptureServer,
@@ -60,6 +65,26 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   : RENDERER_DIST;
 
 let win: BrowserWindow | null;
+
+let autoBackupInterval: NodeJS.Timeout | null = null;
+
+function startAutoBackup() {
+  if (autoBackupInterval) clearInterval(autoBackupInterval);
+
+  autoBackupInterval = setInterval(() => {
+    try {
+      const dbPath = getDbPath();
+      if (dbPath && win && !win.isDestroyed()) {
+        console.log("[Auto-Backup] Creating scheduled backup...");
+        createBackup(dbPath);
+        const timestamp = new Date().toISOString();
+        win.webContents.send("backup:auto-complete", timestamp);
+      }
+    } catch (error) {
+      console.error("[Auto-Backup] Failed scheduled backup:", error);
+    }
+  }, 30000); // 30 seconds
+}
 
 function createWindow() {
   const displays = screen.getAllDisplays();
@@ -135,6 +160,8 @@ function createWindow() {
     },
   });
 
+  startAutoBackup();
+
   // Persist window state changes with debounce
   let saveTimeout: NodeJS.Timeout | null = null;
   const saveBounds = () => {
@@ -152,6 +179,10 @@ function createWindow() {
 
   win.on("closed", () => {
     if (saveTimeout) clearTimeout(saveTimeout);
+    if (autoBackupInterval) {
+      clearInterval(autoBackupInterval);
+      autoBackupInterval = null;
+    }
     win = null;
   });
 

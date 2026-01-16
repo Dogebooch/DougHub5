@@ -5,6 +5,11 @@
  * Separated from database.ts for better maintainability and AI comprehension.
  */
 
+import {
+  NotebookBlockAiEvaluation,
+  RelevanceScore,
+} from "../../src/types/index";
+
 // ============================================================================
 // Enums and String Literal Types
 // ============================================================================
@@ -144,6 +149,11 @@ export interface DbNotebookBlock {
   mediaPath?: string;
   position: number;
   cardCount: number;
+  // New AI evaluation fields (v16)
+  userInsight?: string;
+  aiEvaluation?: NotebookBlockAiEvaluation;
+  relevanceScore?: RelevanceScore;
+  relevanceReason?: string;
 }
 
 export interface DbMedicalAcronym {
@@ -313,6 +323,11 @@ export interface NotebookBlockRow {
   mediaPath: string | null;
   position: number;
   cardCount: number;
+  // New AI evaluation fields (v16)
+  userInsight: string | null;
+  aiEvaluation: string | null; // JSON string
+  relevanceScore: string | null;
+  relevanceReason: string | null;
 }
 
 export interface SmartViewRow {

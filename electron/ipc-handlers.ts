@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, app, Notification } from "electron";
+import { ipcMain, BrowserWindow, app, Notification, dialog } from "electron";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
@@ -29,6 +29,8 @@ import {
   settingsQueries,
   getDatabaseStatus,
   getDbPath,
+  initDatabase,
+  closeDatabase,
   DbCard,
   DbNote,
   DbReviewLog,
@@ -62,6 +64,7 @@ import {
   listBackups,
   cleanupOldBackups,
   getBackupsDir,
+  getLastBackupTimestamp,
   BackupInfo,
 } from "./backup-service";
 import {
@@ -302,7 +305,10 @@ export async function processCapture(
                   metadata: extracted,
                 });
               } else {
-                notifyAIExtraction({ sourceItemId: existing.id, status: "completed" });
+                notifyAIExtraction({
+                  sourceItemId: existing.id,
+                  status: "completed",
+                });
               }
             })
             .catch((err) => {
@@ -310,7 +316,10 @@ export async function processCapture(
                 "[Capture] ⚠️ AI extraction failed for existing item:",
                 err
               );
-              notifyAIExtraction({ sourceItemId: existing.id, status: "failed" });
+              notifyAIExtraction({
+                sourceItemId: existing.id,
+                status: "failed",
+              });
             });
         }
       } else {
@@ -1775,6 +1784,18 @@ export function registerIpcHandlers(): void {
     }
   });
 
+  ipcMain.handle(
+    "backup:getLastTimestamp",
+    async (): Promise<IpcResult<string | null>> => {
+      try {
+        const timestamp = getLastBackupTimestamp();
+        return success(timestamp);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
   ipcMain.handle("backup:create", async (): Promise<IpcResult<string>> => {
     try {
       const dbPath = getDbPath();
@@ -1790,17 +1811,59 @@ export function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(
+    "backup:selectFile",
+    async (): Promise<IpcResult<string | null>> => {
+      try {
+        const result = await dialog.showOpenDialog({
+          title: "Select Backup to Restore",
+          filters: [{ name: "DougHub Database", extensions: ["db"] }],
+          properties: ["openFile"],
+        });
+
+        if (result.canceled || result.filePaths.length === 0) {
+          return success(null);
+        }
+
+        return success(result.filePaths[0]);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
     "backup:restore",
-    async (_, filename: string): Promise<IpcResult<void>> => {
+    async (_, filePath: string): Promise<IpcResult<void>> => {
       try {
         const dbPath = getDbPath();
         if (!dbPath) {
           throw new Error("Database not initialized");
         }
-        const backupPath = path.join(getBackupsDir(), filename);
-        restoreBackup(backupPath, dbPath);
+
+        // Determine if it's a filename or absolute path
+        const absolutePath = path.isAbsolute(filePath)
+          ? filePath
+          : path.join(getBackupsDir(), filePath);
+
+        if (!fs.existsSync(absolutePath)) {
+          throw new Error(`Backup file not found: ${absolutePath}`);
+        }
+
+        console.log(`[Backup] Starting restore from: ${absolutePath}`);
+
+        // 1. Close DB connection safely
+        closeDatabase();
+
+        // 2. Perform restoration (copying files)
+        restoreBackup(absolutePath, dbPath);
+
+        // 3. Re-initialize connection
+        initDatabase(dbPath);
+
+        console.log(`[Backup] Restore complete. DB re-initialized.`);
         return success(undefined);
       } catch (error) {
+        console.error(`[Backup] Restore failed:`, error);
         return failure(error);
       }
     }

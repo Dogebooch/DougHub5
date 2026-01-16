@@ -214,11 +214,22 @@ const api = {
   },
   backup: {
     list: () => ipcRenderer.invoke("backup:list"),
+    getLastTimestamp: () => ipcRenderer.invoke("backup:getLastTimestamp"),
     create: () => ipcRenderer.invoke("backup:create"),
-    restore: (filename: string) =>
-      ipcRenderer.invoke("backup:restore", filename),
+    selectFile: () => ipcRenderer.invoke("backup:selectFile"),
+    restore: (filePath: string) =>
+      ipcRenderer.invoke("backup:restore", filePath),
     cleanup: (retentionDays?: number) =>
       ipcRenderer.invoke("backup:cleanup", retentionDays),
+    onAutoComplete: (callback: (timestamp: string) => void) => {
+      const subscription = (
+        _event: Electron.IpcRendererEvent,
+        timestamp: string
+      ) => callback(timestamp);
+      ipcRenderer.on("backup:auto-complete", subscription);
+      return () =>
+        ipcRenderer.removeListener("backup:auto-complete", subscription);
+    },
   },
   db: {
     status: () => ipcRenderer.invoke("db:status"),
