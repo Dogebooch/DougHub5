@@ -5,8 +5,8 @@ import { SourceItem } from '@/types';
 import { SourceItemRow } from './SourceItemRow';
 import { StatusGroup } from './StatusGroup';
 import { BatchActions } from './BatchActions';
-import { AddToNotebookDialog } from './AddToNotebookDialog';
-import { Badge } from '@/components/ui/badge';
+import { AddToNotebookWorkflow } from "../notebook/AddToNotebookWorkflow";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -28,6 +28,8 @@ export const KnowledgeBankView = () => {
   const [items, setItems] = useState<SourceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sourceTypeFilter, setSourceTypeFilter] = useState<string | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [targetItem, setTargetItem] = useState<SourceItem | null>(null);
   const [expandedGroups, setExpandedGroups] = useState({
     inbox: true,
     processed: false,
@@ -57,7 +59,7 @@ export const KnowledgeBankView = () => {
 
   // Dialog state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [targetItemIds, setTargetItemIds] = useState<string[]>([]);
+  const [targetItem, setTargetItem] = useState<SourceItem | null>(null);
 
   const fetchItems = useCallback(async () => {
     setIsLoading(true);
@@ -137,8 +139,8 @@ export const KnowledgeBankView = () => {
     }
   };
 
-  const openAddDialog = (ids: string[]) => {
-    setTargetItemIds(ids);
+  const openAddDialog = (item: SourceItem) => {
+    setTargetItem(item);
     setIsAddDialogOpen(true);
   };
 
@@ -248,7 +250,7 @@ export const KnowledgeBankView = () => {
                 isSelected={selectedInboxItems.has(sItem.id)}
                 isHighlighted={selectedItemId === sItem.id}
                 onToggleSelect={(id) => toggleInboxSelection(id)}
-                onAddToNotebook={(it) => openAddDialog([it.id])}
+                onAddToNotebook={(it) => openAddDialog(it)}
                 onOpen={(it) => console.log("Open:", it.id)}
                 onDelete={(it) => handleDelete(it.id)}
               />
@@ -276,7 +278,7 @@ export const KnowledgeBankView = () => {
                 isSelected={selectedInboxItems.has(sItem.id)}
                 isHighlighted={selectedItemId === sItem.id}
                 onToggleSelect={(id) => toggleInboxSelection(id)}
-                onAddToNotebook={(it) => openAddDialog([it.id])}
+                onAddToNotebook={(it) => openAddDialog(it)}
                 onOpen={(it) => console.log("Open:", it.id)}
                 onDelete={(it) => handleDelete(it.id)}
               />
@@ -304,7 +306,7 @@ export const KnowledgeBankView = () => {
                 isSelected={selectedInboxItems.has(sItem.id)}
                 isHighlighted={selectedItemId === sItem.id}
                 onToggleSelect={(id) => toggleInboxSelection(id)}
-                onAddToNotebook={(it) => openAddDialog([it.id])}
+                onAddToNotebook={(it) => openAddDialog(it)}
                 onViewInNotebook={handleViewInNotebook}
                 onOpen={(it) => console.log("Open:", it.id)}
                 onDelete={(it) => handleDelete(it.id)}
@@ -319,16 +321,15 @@ export const KnowledgeBankView = () => {
       </div>
 
       {/* Dialogs & Batch Actions */}
-      <AddToNotebookDialog
+      <AddToNotebookWorkflow
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
-        itemIds={targetItemIds}
+        sourceItem={targetItem}
         onSuccess={handleAddSuccess}
       />
 
       <BatchActions
         selectedCount={selectedInboxItems.size}
-        onAddToNotebook={() => openAddDialog(Array.from(selectedInboxItems))}
         onDelete={handleBatchDelete}
         onClearSelection={clearInboxSelection}
       />

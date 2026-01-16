@@ -22,7 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SourceItemRow } from "./SourceItemRow";
 import { BatchActions } from "./BatchActions";
-import { AddToNotebookDialog } from "./AddToNotebookDialog";
+import { AddToNotebookWorkflow } from "../notebook/AddToNotebookWorkflow";
 import { SourceItemViewerDialog } from "./SourceItemViewerDialog";
 import { SourceItem, SourceType } from "@/types";
 import { useAppStore } from "@/stores/useAppStore";
@@ -44,7 +44,7 @@ export function InboxView() {
 
   // Dialog state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [targetItemIds, setTargetItemIds] = useState<string[]>([]);
+  const [targetItem, setTargetItem] = useState<SourceItem | null>(null);
   const [viewingItem, setViewingItem] = useState<SourceItem | null>(null);
 
   const refreshCounts = useAppStore((state) => state.refreshCounts);
@@ -94,7 +94,10 @@ export function InboxView() {
 
   // Listen for AI extraction status updates
   useEffect(() => {
-    if (typeof window !== "undefined" && window.api?.sourceItems?.onAIExtraction) {
+    if (
+      typeof window !== "undefined" &&
+      window.api?.sourceItems?.onAIExtraction
+    ) {
       const unsubscribe = window.api.sourceItems.onAIExtraction((payload) => {
         const { sourceItemId, status, metadata } = payload;
 
@@ -240,12 +243,7 @@ export function InboxView() {
   };
 
   const handleAddToNotebook = (item: SourceItem) => {
-    setTargetItemIds([item.id]);
-    setIsAddDialogOpen(true);
-  };
-
-  const handleBatchAddToNotebook = () => {
-    setTargetItemIds(Array.from(selectedInboxItems));
+    setTargetItem(item);
     setIsAddDialogOpen(true);
   };
 
@@ -468,7 +466,6 @@ export function InboxView() {
 
       <BatchActions
         selectedCount={selectedInboxItems.size}
-        onAddToNotebook={handleBatchAddToNotebook}
         onDelete={handleBatchDelete}
         onClearSelection={clearInboxSelection}
       />
@@ -479,10 +476,10 @@ export function InboxView() {
         onClose={() => setViewingItem(null)}
       />
 
-      <AddToNotebookDialog
+      <AddToNotebookWorkflow
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
-        itemIds={targetItemIds}
+        sourceItem={targetItem}
         onSuccess={onAddSuccess}
       />
     </div>

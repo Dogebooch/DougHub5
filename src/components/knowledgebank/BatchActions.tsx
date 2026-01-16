@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, X, PlusCircle, Loader2 } from 'lucide-react';
+import { Trash2, X, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,19 +10,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 interface BatchActionsProps {
   selectedCount: number;
-  onAddToNotebook: () => void;
   onDelete: () => Promise<void>;
   onClearSelection: () => void;
 }
 
 export function BatchActions({
   selectedCount,
-  onAddToNotebook,
   onDelete,
   onClearSelection,
 }: BatchActionsProps) {
@@ -60,15 +58,6 @@ export function BatchActions({
           >
             <X className="h-4 w-4 mr-2" />
             Clear
-          </Button>
-
-          <Button
-            size="sm"
-            onClick={onAddToNotebook}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full h-9 px-4"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add to Notebook
           </Button>
 
           <AlertDialog>

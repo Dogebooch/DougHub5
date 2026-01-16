@@ -100,10 +100,6 @@ interface AppActions {
   removeFromInboxSelection: (ids: string[]) => void;
   selectAllInbox: (ids: string[]) => void;
   clearInboxSelection: () => void;
-  batchAddToNotebook: (
-    itemIds: string[],
-    topicId: string
-  ) => Promise<{ success: boolean; error?: string }>;
   batchDeleteInbox: (
     itemIds: string[]
   ) => Promise<{ success: boolean; error?: string }>;
@@ -683,51 +679,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   clearInboxSelection: () => {
     set({ selectedInboxItems: new Set() });
-  },
-
-  batchAddToNotebook: async (itemIds: string[], topicId: string) => {
-    try {
-      if (typeof window !== "undefined" && window.api) {
-        // Execute batch updates with individual error tracking
-        const results = await Promise.allSettled(
-          itemIds.map((id) =>
-            window.api.sourceItems.update(id, {
-              status: "processed",
-              canonicalTopicIds: [topicId],
-              updatedAt: new Date().toISOString(),
-            })
-          )
-        );
-
-        // Log individual failures
-        const failures = results.filter((r) => r.status === "rejected");
-        if (failures.length > 0) {
-          console.error(
-            `[Store] batchAddToNotebook: ${failures.length}/${itemIds.length} items failed`,
-            failures
-          );
-        }
-
-        // Refresh counts and clear selection
-        await get().refreshCounts();
-        get().clearInboxSelection();
-
-        const successCount = results.filter(
-          (r) => r.status === "fulfilled"
-        ).length;
-        return {
-          success: successCount > 0,
-          error:
-            failures.length > 0
-              ? `${failures.length} items failed to update`
-              : undefined,
-        };
-      }
-      return { success: false, error: "window.api not available" };
-    } catch (error) {
-      console.error("[Store] batchAddToNotebook error:", error);
-      return { success: false, error: String(error) };
-    }
   },
 
   batchDeleteInbox: async (itemIds: string[]) => {
