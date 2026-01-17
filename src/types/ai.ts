@@ -165,3 +165,25 @@ export interface ElaboratedFeedback {
   /** Related clinical concepts to distinguish from this one */
   relatedConcepts: string[];
 }
+
+// ============================================================================
+// Quick Capture Analysis
+// ============================================================================
+
+/** AI analysis result for quick capture content */
+export interface CaptureAnalysisResult {
+  /** Short title (<10 words) */
+  title: string;
+  /** Detected source type */
+  sourceType: 'qbank' | 'article' | 'pdf' | 'image' | 'quickcapture' | 'manual';
+  /** Primary medical domain/specialty */
+  domain: string;
+  /** Secondary domains for cross-topic relevance */
+  secondaryDomains: string[];
+  /** Suggested tags for organization */
+  tags: string[];
+  /** Key facts extracted from content */
+  extractedFacts: string[];
+  /** Suggested canonical topic name */
+  suggestedTopic: string;
+}

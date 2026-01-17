@@ -23,6 +23,7 @@ import type {
   SemanticMatch,
   CardSuggestion,
   ElaboratedFeedback,
+  CaptureAnalysisResult,
 } from "../src/types/ai";
 import { type DbNote, settingsQueries } from "./database";
 import OpenAI from "openai";
@@ -145,11 +146,20 @@ export interface AITaskConfig {
 export const AI_TASK_CONFIGS: Record<string, AITaskConfig> = {
   "question-summary": {
     name: "Question Summary Extraction",
-    description: "Extract summary, subject, and questionType from board questions",
+    description:
+      "Extract summary, subject, and questionType from board questions",
     temperature: 0.2, // Low for consistent classification
     maxTokens: 150, // JSON output is compact
     timeoutMs: 10000, // 10s - quick extraction
     cacheTTLMs: 300000, // 5 min cache
+  },
+  "capture-analysis": {
+    name: "Quick Capture Analysis",
+    description: "Analyze pasted content to auto-populate metadata",
+    temperature: 0.3,
+    maxTokens: 500,
+    timeoutMs: 10000,
+    cacheTTLMs: 300000,
   },
   "concept-extraction": {
     name: "Concept Extraction",
@@ -190,14 +200,16 @@ export const AI_TASK_CONFIGS: Record<string, AITaskConfig> = {
  * Falls back to sensible defaults if task not found.
  */
 export function getTaskConfig(taskName: string): AITaskConfig {
-  return AI_TASK_CONFIGS[taskName] || {
-    name: taskName,
-    description: "Unknown task",
-    temperature: 0.3,
-    maxTokens: 500,
-    timeoutMs: 15000,
-    cacheTTLMs: 300000,
-  };
+  return (
+    AI_TASK_CONFIGS[taskName] || {
+      name: taskName,
+      description: "Unknown task",
+      temperature: 0.3,
+      maxTokens: 500,
+      timeoutMs: 15000,
+      cacheTTLMs: 300000,
+    }
+  );
 }
 
 // ============================================================================
@@ -391,13 +403,20 @@ export async function getAvailableOllamaModels(): Promise<string[]> {
 
         res.on("end", () => {
           try {
-            const parsed: { models?: Array<{ name: string }> } = JSON.parse(data);
+            const parsed: { models?: Array<{ name: string }> } =
+              JSON.parse(data);
             const models = parsed.models || [];
             const modelNames = models.map((m) => m.name);
-            console.log(`[AI Service] Found ${modelNames.length} Ollama models:`, modelNames);
+            console.log(
+              `[AI Service] Found ${modelNames.length} Ollama models:`,
+              modelNames
+            );
             resolve(modelNames);
           } catch (error) {
-            console.error("[AI Service] Failed to parse Ollama models response:", error);
+            console.error(
+              "[AI Service] Failed to parse Ollama models response:",
+              error
+            );
             resolve([]);
           }
         });
@@ -433,7 +452,9 @@ export async function getAvailableOllamaModels(): Promise<string[]> {
  */
 export async function detectProvider(): Promise<AIProviderType> {
   // Check user settings first
-  const settingsProvider = settingsQueries.get("aiProvider") as AIProviderType | null;
+  const settingsProvider = settingsQueries.get(
+    "aiProvider"
+  ) as AIProviderType | null;
   if (settingsProvider) {
     return settingsProvider;
   }
@@ -997,6 +1018,80 @@ function parseAIResponse<T>(text: string): T {
     console.error("[AI Service] Cleaned text:", cleaned);
     console.error("[AI Service] Parse error:", errorMsg);
     throw new Error(`Failed to parse AI response: ${errorMsg}`);
+  }
+}
+
+// ============================================================================
+// Quick Capture Analysis
+// ============================================================================
+
+/**
+ * Analyze quick capture content to auto-populate form fields.
+ * Returns null on timeout/failure (never blocks capture).
+ */
+export async function analyzeCaptureContent(
+  content: string
+): Promise<CaptureAnalysisResult | null> {
+  // Check cache first
+  const cacheKey = aiCache.key("capture-analysis", content);
+  const cached = aiCache.get<CaptureAnalysisResult>(cacheKey);
+  if (cached) {
+    console.log("[AI Service] Capture analysis cache hit");
+    return cached;
+  }
+
+  // Skip analysis for very short content
+  if (!content || content.length < 50) return null;
+
+  try {
+    const config = await getProviderConfig();
+    const taskConfig = getTaskConfig("capture-analysis");
+    const client = await getClient();
+
+    const response = await client.chat.completions.create({
+      model: config.model,
+      messages: [
+        {
+          role: "system",
+          content: `You are a medical education content analyzer. Analyze the provided content and return a JSON object.
+DETECTION RULES for sourceType:
+- Contains answer choices like "A)", "B)", "C)", "D)" AND contains "Explanation" or "Rationale" → "qbank"
+- Contains URLs from UpToDate, PubMed, NEJM, or medical journals → "article"  
+- Short, user-written note without citations or formal structure → "manual"
+- Otherwise → "quickcapture"
+OUTPUT FORMAT (JSON only, no markdown):
+{
+  "title": "Short descriptive title under 10 words",
+  "sourceType": "qbank|article|manual|quickcapture",
+  "domain": "Primary medical specialty (e.g., Nephrology, Cardiology)",
+  "secondaryDomains": ["Related specialties"],
+  "tags": ["Relevant tags like Management, Diagnosis, Boards-HY"],
+  "extractedFacts": ["Key clinical facts from the content"],
+  "suggestedTopic": "Canonical topic name for notebook organization"
+}`,
+        },
+        {
+          role: "user",
+          content: content.slice(0, 4000), // Limit to avoid token overflow
+        },
+      ],
+      temperature: taskConfig.temperature,
+      max_tokens: taskConfig.maxTokens,
+      response_format: { type: "json_object" },
+    });
+
+    const resultText = response.choices[0]?.message?.content;
+    if (!resultText) return null;
+
+    const result = parseAIResponse<CaptureAnalysisResult>(resultText);
+
+    // Cache for configured TTL
+    aiCache.set(cacheKey, result, taskConfig.cacheTTLMs);
+
+    return result;
+  } catch (error) {
+    console.error("[AI] Capture analysis failed:", error);
+    return null; // Never throw - allow manual entry
   }
 }
 

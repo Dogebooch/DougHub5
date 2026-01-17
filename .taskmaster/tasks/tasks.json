@@ -2146,7 +2146,7 @@
         "testStrategy": "Test AI analysis populates form fields correctly. Test AI timeout/failure shows defaults and warning. Test duplicate detection shows warning with View button. Test Save to Inbox creates source_item with correct fields. Test Add to Notebook Now saves then navigates to Workflow 2. Test image/PDF paste shows manual entry prompt. Test Correct/Incorrect toggle for qbank items.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -2208,7 +2208,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-01-12T21:00:00.000Z"
+        "updatedAt": "2026-01-16T21:28:24.612Z"
       },
       {
         "id": "129",
@@ -2518,7 +2518,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-16T20:50:14.830Z",
+      "lastModified": "2026-01-16T21:28:24.613Z",
       "taskCount": 42,
       "completedCount": 25,
       "tags": [

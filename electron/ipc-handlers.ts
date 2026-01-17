@@ -72,6 +72,7 @@ import {
 import {
   getProviderStatus,
   extractConcepts,
+  analyzeCaptureContent,
   validateCard,
   detectMedicalList,
   convertToVignette,
@@ -82,6 +83,7 @@ import {
   aiCache,
   type AIProviderStatus,
   type ConceptExtractionResult,
+  type CaptureAnalysisResult,
   type ValidationResult,
   type MedicalListDetection,
   type VignetteConversion,
@@ -1988,6 +1990,21 @@ export function registerIpcHandlers(): void {
 
         const result = await extractConcepts(content);
         aiCache.set(cacheKey, result);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "ai:analyzeCaptureContent",
+    async (
+      _,
+      content: string
+    ): Promise<IpcResult<CaptureAnalysisResult | null>> => {
+      try {
+        const result = await analyzeCaptureContent(content);
         return success(result);
       } catch (error) {
         return failure(error);

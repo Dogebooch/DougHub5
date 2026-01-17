@@ -247,6 +247,8 @@ const api = {
     getProviderStatus: () => ipcRenderer.invoke("ai:getProviderStatus"),
     extractConcepts: (content: string) =>
       ipcRenderer.invoke("ai:extractConcepts", content),
+    analyzeCaptureContent: (content: string) =>
+      ipcRenderer.invoke("ai:analyzeCaptureContent", content),
     validateCard: (front: string, back: string, cardType: "qa" | "cloze") =>
       ipcRenderer.invoke("ai:validateCard", front, back, cardType),
     detectMedicalList: (content: string) =>

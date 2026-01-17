@@ -17,8 +17,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { X, Upload, ImageIcon, Keyboard, PlayCircle } from "lucide-react";
+import {
+  X,
+  Upload,
+  ImageIcon,
+  Keyboard,
+  PlayCircle,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import type { SourceItem, SourceType } from "@/types";
+import type { CaptureAnalysisResult } from "@/types/ai";
 import { useAppStore } from "@/stores/useAppStore";
 import { TITLE_MAX_LENGTH } from "@/constants";
 import { detectContentType, type ContentType } from "@/lib/content-detector";
@@ -40,6 +49,22 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
   const [imageData, setImageData] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+
+  // AI Analysis state
+  const [aiAnalysis, setAiAnalysis] = useState<CaptureAnalysisResult | null>(
+    null,
+  );
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiError, setAiError] = useState(false);
+  const [userTags, setUserTags] = useState<string[]>([]);
+  const [userDomain, setUserDomain] = useState<string>("");
+
+  // Duplicate detection state
+  const [duplicateMatch, setDuplicateMatch] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,7 +105,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
         }
       }
     },
-    [handleImageFile]
+    [handleImageFile],
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -105,7 +130,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
         handleImageFile(file);
       }
     },
-    [handleImageFile]
+    [handleImageFile],
   );
 
   const handleBrowseClick = () => {
@@ -154,6 +179,139 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     return () => clearTimeout(timer);
   }, [content, contentType, isTitleManual]);
 
+  // AI Analysis - debounced, triggers 500ms after content changes
+  useEffect(() => {
+    // Skip analysis for images or short content
+    if (contentType === "image" || content.length < 50) {
+      setAiAnalysis(null);
+      setAiError(false);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsAnalyzing(true);
+    setAiError(false);
+
+    const timer = setTimeout(async () => {
+      try {
+        const result = await window.api.ai.analyzeCaptureContent(content);
+        if (isCancelled) return;
+
+        if (result.data) {
+          setAiAnalysis(result.data);
+          // Auto-fill title if not manually edited
+          if (!isTitleManual && result.data.title) {
+            setTitle(result.data.title);
+          }
+          // Set domain and tags from AI
+          setUserDomain(result.data.domain || "");
+          setUserTags([...result.data.secondaryDomains, ...result.data.tags]);
+        } else {
+          setAiAnalysis(null);
+          setAiError(true);
+        }
+      } catch (error) {
+        if (isCancelled) return;
+        console.error("[QuickCapture] AI analysis failed:", error);
+        setAiAnalysis(null);
+        setAiError(true);
+      } finally {
+        if (!isCancelled) {
+          setIsAnalyzing(false);
+        }
+      }
+    }, 500);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [content, contentType, isTitleManual]);
+
+  // Duplicate detection - debounced, triggers 600ms after title changes
+  useEffect(() => {
+    // Skip if no title or very short
+    if (!title || title.length < 5) {
+      setDuplicateMatch(null);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsCheckingDuplicate(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        // Extract keywords from title (remove common stop words)
+        const stopWords = [
+          "the",
+          "a",
+          "an",
+          "of",
+          "in",
+          "to",
+          "for",
+          "with",
+          "on",
+          "is",
+          "are",
+        ];
+        const keywords = title
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((word) => word.length > 2 && !stopWords.includes(word))
+          .slice(0, 5) // Limit to first 5 keywords
+          .join(" ");
+
+        if (!keywords) {
+          if (!isCancelled) setDuplicateMatch(null);
+          return;
+        }
+
+        const result = await window.api.search.query(keywords, "inbox");
+        if (isCancelled) return;
+
+        if (result.data && result.data.results.length > 0) {
+          // Find a result that's similar
+          const match = result.data.results.find((item) => {
+            const existingTitle = item.title.toLowerCase();
+            const currentTitle = title.toLowerCase();
+
+            // Check if titles share significant overlap
+            const existingWords = new Set(existingTitle.split(/\s+/));
+            const currentWords = currentTitle.split(/\s+/);
+            const matchCount = currentWords.filter((w) =>
+              existingWords.has(w),
+            ).length;
+
+            return matchCount >= Math.min(3, currentWords.length * 0.5);
+          });
+
+          if (match) {
+            setDuplicateMatch({ id: match.id, title: match.title });
+          } else {
+            setDuplicateMatch(null);
+          }
+        } else {
+          setDuplicateMatch(null);
+        }
+      } catch (error) {
+        console.error("[QuickCapture] Duplicate check failed:", error);
+        if (!isCancelled) setDuplicateMatch(null);
+      } finally {
+        if (!isCancelled) setIsCheckingDuplicate(false);
+      }
+    }, 600);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [title]);
+
+  const removeTag = (tagToRemove: string) => {
+    setUserTags((prev) => prev.filter((tag) => tag !== tagToRemove));
+  };
+
   const handleSave = async () => {
     const trimmedContent = content.trim();
     if (contentType === "text" && !trimmedContent) {
@@ -174,7 +332,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
             imageData.match(/^data:([^;]+);/)?.[1] || "image/png";
           const saveResult = await window.api.files.saveImage(
             imageData,
-            mimeType
+            mimeType,
           );
 
           if (saveResult.error) {
@@ -193,22 +351,43 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
           title.trim() ||
           (contentType === "image" ? "Image Capture" : "Untitled Capture");
 
-        const sourceMap: Record<ContentType, SourceType> = {
+        // Determine source type: prefer AI analysis, then honor qbank detection, then fallback
+        const sourceTypeMap: Record<ContentType, SourceType> = {
           text: "quickcapture",
           image: "image",
-          url: "quickcapture", // v2: Quick capture always goes to inbox/quickcapture
-          qbank: "quickcapture", // v2: Quick capture always goes to inbox/quickcapture
+          url: "article", // URLs are typically articles
+          qbank: "qbank", // Honor qbank detection
         };
+
+        const finalSourceType: SourceType =
+          aiAnalysis?.sourceType || sourceTypeMap[detectedType];
+
+        // Build metadata from AI analysis
+        const metadata: SourceItem["metadata"] = {};
+
+        // Add subject (domain) from AI or user selection
+        if (userDomain) {
+          metadata.subject = userDomain;
+        }
+
+        // Add summary from extracted facts (limit to first 3)
+        if (
+          aiAnalysis?.extractedFacts &&
+          aiAnalysis.extractedFacts.length > 0
+        ) {
+          metadata.summary = aiAnalysis.extractedFacts.slice(0, 3).join("; ");
+        }
 
         const sourceItem: SourceItem = {
           id: crypto.randomUUID(),
-          sourceType: sourceMap[detectedType],
+          sourceType: finalSourceType,
           sourceName: "Quick Capture",
           title: titleToSave,
           rawContent: trimmedContent || "Image capture",
           mediaPath,
           canonicalTopicIds: [],
-          tags: [],
+          tags: userTags, // Use AI-suggested + user-modified tags
+          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
           status: "inbox",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -233,6 +412,12 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
       setIsTitleManual(false);
       setImageData(null);
       setContentType("text");
+      setAiAnalysis(null);
+      setAiError(false);
+      setDuplicateMatch(null);
+      setIsCheckingDuplicate(false);
+      setUserTags([]);
+      setUserDomain("");
       onClose();
     } catch (error) {
       toast.error("Failed to save quick capture");
@@ -248,6 +433,12 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     setIsTitleManual(false);
     setImageData(null);
     setContentType("text");
+    setAiAnalysis(null);
+    setAiError(false);
+    setDuplicateMatch(null);
+    setIsCheckingDuplicate(false);
+    setUserTags([]);
+    setUserDomain("");
     onClose();
   }, [onClose]);
 
@@ -313,23 +504,91 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
             />
             {((contentType === "text" && content.trim()) ||
               (contentType === "image" && imageData)) && (
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-[11px] uppercase tracking-wider font-bold",
-                    detectedType === "url" &&
-                      "bg-info/10 text-info border-info/20",
-                    detectedType === "qbank" &&
-                      "bg-warning/10 text-warning border-warning/20",
-                    detectedType === "image" &&
-                      "bg-success/10 text-success border-success/20",
-                    detectedType === "text" &&
-                      "bg-muted text-muted-foreground border-border"
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Content type badge */}
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-[11px] uppercase tracking-wider font-bold",
+                      detectedType === "url" &&
+                        "bg-info/10 text-info border-info/20",
+                      detectedType === "qbank" &&
+                        "bg-warning/10 text-warning border-warning/20",
+                      (aiAnalysis?.sourceType === "qbank" ||
+                        detectedType === "qbank") &&
+                        "bg-warning/10 text-warning border-warning/20",
+                      detectedType === "image" &&
+                        "bg-success/10 text-success border-success/20",
+                      detectedType === "text" &&
+                        "bg-muted text-muted-foreground border-border",
+                    )}
+                  >
+                    {aiAnalysis?.sourceType || detectedType}
+                  </Badge>
+
+                  {/* Analyzing indicator */}
+                  {isAnalyzing && (
+                    <Badge variant="outline" className="text-[11px] gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Analyzing...
+                    </Badge>
                   )}
-                >
-                  {detectedType}
-                </Badge>
+
+                  {/* Domain badge (from AI) */}
+                  {!isAnalyzing && userDomain && (
+                    <Badge variant="secondary" className="text-[11px]">
+                      {userDomain}
+                    </Badge>
+                  )}
+
+                  {/* Tag badges (removable) */}
+                  {!isAnalyzing &&
+                    userTags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="text-[11px] gap-1 pr-1 hover:bg-destructive/10 cursor-pointer group"
+                        onClick={() => removeTag(tag)}
+                      >
+                        {tag}
+                        <X className="h-3 w-3 opacity-50 group-hover:opacity-100" />
+                      </Badge>
+                    ))}
+                </div>
+
+                {/* AI error warning */}
+                {aiError && !isAnalyzing && content.length >= 50 && (
+                  <div className="flex items-center gap-2 text-xs text-warning bg-warning/10 px-3 py-2 rounded-md">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>
+                      AI analysis unavailable. Please fill fields manually.
+                    </span>
+                  </div>
+                )}
+
+                {/* Duplicate detection warning */}
+                {duplicateMatch && !isCheckingDuplicate && (
+                  <div className="flex items-center justify-between gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-500/10 px-3 py-2 rounded-md border border-amber-500/20">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      <span>
+                        Similar item exists:{" "}
+                        <strong>"{duplicateMatch.title}"</strong>
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-500/20"
+                      onClick={() => {
+                        setDuplicateMatch(null);
+                      }}
+                    >
+                      Dismiss
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>

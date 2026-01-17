@@ -32,6 +32,7 @@ import type {
   MedicalListDetection,
   VignetteConversion,
   SemanticMatch,
+  CaptureAnalysisResult,
   CardSuggestion,
   ElaboratedFeedback,
 } from "./ai";
@@ -302,6 +303,9 @@ export interface ElectronAPI {
     extractConcepts: (
       content: string
     ) => Promise<IpcResult<ConceptExtractionResult>>;
+    analyzeCaptureContent: (
+      content: string
+    ) => Promise<IpcResult<CaptureAnalysisResult | null>>;
     validateCard: (
       front: string,
       back: string,
