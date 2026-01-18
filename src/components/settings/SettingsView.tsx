@@ -51,6 +51,7 @@ import {
   CheckCircle2,
   XCircle,
   RefreshCw,
+  Globe,
 } from "lucide-react";
 import { Card as CardType } from "@/types";
 
@@ -64,7 +65,7 @@ export function SettingsView() {
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [pendingRestoreFile, setPendingRestoreFile] = useState<string | null>(
-    null
+    null,
   );
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
@@ -87,6 +88,10 @@ export function SettingsView() {
     succeeded: number;
     failed: number;
     skipped: number;
+  } | null>(null);
+  const [captureStatus, setCaptureStatus] = useState<{
+    isRunning: boolean;
+    port: number;
   } | null>(null);
 
   useEffect(() => {
@@ -114,6 +119,16 @@ export function SettingsView() {
     });
 
     return () => cleanup();
+  }, []);
+
+  useEffect(() => {
+    async function loadCaptureStatus() {
+      if (window.api?.capture?.getStatus) {
+        const result = await window.api.capture.getStatus();
+        if (result.data) setCaptureStatus(result.data);
+      }
+    }
+    loadCaptureStatus();
   }, []);
 
   const handlePurgeArchive = useCallback(async () => {
@@ -368,7 +383,7 @@ export function SettingsView() {
       const unsubscribe = window.api.sourceItems.onReextractProgress(
         (progress) => {
           setExtractionProgress(progress);
-        }
+        },
       );
 
       try {
@@ -417,7 +432,7 @@ export function SettingsView() {
         setExtractionProgress(null);
       }
     },
-    [toast]
+    [toast],
   );
 
   const handleReparseQuestions = useCallback(
@@ -447,12 +462,12 @@ export function SettingsView() {
       const unsubscribe = window.api.sourceItems.onReparseProgress(
         (progress) => {
           setReparseProgress(progress);
-        }
+        },
       );
 
       try {
         const result = await window.api.sourceItems.reparseAllFromRaw(
-          siteName ? { siteName } : undefined
+          siteName ? { siteName } : undefined,
         );
 
         if (result.error) {
@@ -488,7 +503,7 @@ export function SettingsView() {
         setReparseProgress(null);
       }
     },
-    [toast]
+    [toast],
   );
 
   return (
@@ -703,6 +718,45 @@ export function SettingsView() {
                   </div>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Browser Integration */}
+          <Card className="border-border bg-surface-elevated/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                Browser Integration
+              </CardTitle>
+              <CardDescription className="text-foreground/80">
+                Capture content from browser extensions via Tampermonkey
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {captureStatus ? (
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium">Capture Server</p>
+                    <p className="text-xs text-foreground/80">
+                      localhost:{captureStatus.port}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        captureStatus.isRunning
+                          ? "bg-success"
+                          : "bg-muted-foreground"
+                      }`}
+                    />
+                    <span className="text-sm">
+                      {captureStatus.isRunning ? "Running" : "Stopped"}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-foreground/80">Loading...</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1132,7 +1186,7 @@ export function SettingsView() {
                     {reparseProgress.total > 0
                       ? Math.round(
                           (reparseProgress.current / reparseProgress.total) *
-                            100
+                            100,
                         )
                       : 0}
                     %

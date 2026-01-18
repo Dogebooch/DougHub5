@@ -39,7 +39,7 @@ const api = {
     schedule: (
       cardId: string,
       rating: number,
-      responseTimeMs?: number | null
+      responseTimeMs?: number | null,
     ) => ipcRenderer.invoke("reviews:schedule", cardId, rating, responseTimeMs),
   },
   quickCaptures: {
@@ -84,7 +84,7 @@ const api = {
         succeeded: number;
         failed: number;
         skipped: number;
-      }) => void
+      }) => void,
     ) => {
       const handler = (
         _event: Electron.IpcRendererEvent,
@@ -94,13 +94,13 @@ const api = {
           succeeded: number;
           failed: number;
           skipped: number;
-        }
+        },
       ) => callback(progress);
       ipcRenderer.on("sourceItems:reparseFromRaw:progress", handler);
       return () =>
         ipcRenderer.removeListener(
           "sourceItems:reparseFromRaw:progress",
-          handler
+          handler,
         );
     },
     reextractMetadata: (options?: { ids?: string[]; overwrite?: boolean }) =>
@@ -113,7 +113,7 @@ const api = {
         failed: number;
         currentItem?: string;
         status?: "running" | "cancelled" | "restoring" | "complete";
-      }) => void
+      }) => void,
     ) => {
       const handler = (
         _event: Electron.IpcRendererEvent,
@@ -124,13 +124,13 @@ const api = {
           failed: number;
           currentItem?: string;
           status?: "running" | "cancelled" | "restoring" | "complete";
-        }
+        },
       ) => callback(progress);
       ipcRenderer.on("sourceItems:reextractMetadata:progress", handler);
       return () =>
         ipcRenderer.removeListener(
           "sourceItems:reextractMetadata:progress",
-          handler
+          handler,
         );
     },
     cancelReextract: () => ipcRenderer.invoke("sourceItems:cancelReextract"),
@@ -149,7 +149,7 @@ const api = {
           subject?: string;
           questionType?: string;
         };
-      }) => void
+      }) => void,
     ) => {
       const handler = (
         _event: Electron.IpcRendererEvent,
@@ -161,7 +161,7 @@ const api = {
             subject?: string;
             questionType?: string;
           };
-        }
+        },
       ) => callback(payload);
       ipcRenderer.on("sourceItems:aiExtraction", handler);
       return () =>
@@ -232,7 +232,7 @@ const api = {
     onAutoComplete: (callback: (timestamp: string) => void) => {
       const subscription = (
         _event: Electron.IpcRendererEvent,
-        timestamp: string
+        timestamp: string,
       ) => callback(timestamp);
       ipcRenderer.on("backup:auto-complete", subscription);
       return () =>
@@ -258,45 +258,45 @@ const api = {
     generateCards: (
       blockContent: string,
       topicContext: string,
-      userIntent?: string
+      userIntent?: string,
     ) =>
       ipcRenderer.invoke(
         "ai:generateCards",
         blockContent,
         topicContext,
-        userIntent
+        userIntent,
       ),
     generateElaboratedFeedback: (
       card: { front: string; back: string; cardType: string },
       topicContext: string,
-      responseTimeMs: number | null
+      responseTimeMs: number | null,
     ) =>
       ipcRenderer.invoke(
         "ai:generateElaboratedFeedback",
         card,
         topicContext,
-        responseTimeMs
+        responseTimeMs,
       ),
     suggestTags: (content: string) =>
       ipcRenderer.invoke("ai:suggestTags", content),
     findRelatedNotes: (
       content: string,
       minSimilarity?: number,
-      maxResults?: number
+      maxResults?: number,
     ) =>
       ipcRenderer.invoke(
         "ai:findRelatedNotes",
         content,
         minSimilarity,
-        maxResults
+        maxResults,
       ),
     clearCache: () => ipcRenderer.invoke("ai:clearCache"),
     onOllamaStatus: (
-      callback: (payload: { status: string; message: string }) => void
+      callback: (payload: { status: string; message: string }) => void,
     ) => {
       const subscription = (
         _event: Electron.IpcRendererEvent,
-        payload: { status: string; message: string }
+        payload: { status: string; message: string },
       ) => callback(payload);
       ipcRenderer.on("ai:ollamaStatus", subscription);
       return () => ipcRenderer.removeListener("ai:ollamaStatus", subscription);
@@ -316,6 +316,8 @@ const api = {
     getAll: () => ipcRenderer.invoke("settings:getAll"),
   },
   capture: {
+    getStatus: (): Promise<IpcResult<{ isRunning: boolean; port: number }>> =>
+      ipcRenderer.invoke("capture:getStatus"),
     process: (payload: unknown) =>
       ipcRenderer.invoke("capture:process", payload),
     onReceived: (callback: (payload: unknown) => void) => {

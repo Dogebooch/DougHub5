@@ -1442,7 +1442,7 @@
         "dependencies": [
           "38"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1490,7 +1490,8 @@
             "testStrategy": "Test with Tampermonkey: 1) Install script in Chrome/Firefox, 2) Navigate to PeerPrep question page, 3) Click 'Send to DougHub' button, 4) Verify POST request sent with API key header, 5) Check DougHub inbox for new SourceItem, 6) Verify toast notification appears, 7) Test with invalid API key, verify error shown in browser.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-01-18T17:38:45.984Z"
       },
       {
         "id": "117",
@@ -2589,9 +2590,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-18T17:20:25.912Z",
+      "lastModified": "2026-01-18T17:38:45.985Z",
       "taskCount": 42,
-      "completedCount": 27,
+      "completedCount": 28,
       "tags": [
         "master"
       ]

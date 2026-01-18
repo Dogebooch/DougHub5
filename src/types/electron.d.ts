@@ -97,11 +97,11 @@ export interface ElectronAPI {
     create: (card: CardWithFSRS) => Promise<IpcResult<CardWithFSRS>>;
     update: (
       id: string,
-      updates: Partial<CardWithFSRS>
+      updates: Partial<CardWithFSRS>,
     ) => Promise<IpcResult<void>>;
     remove: (id: string) => Promise<IpcResult<void>>;
     getTopicMetadata: (
-      pageId: string
+      pageId: string,
     ) => Promise<IpcResult<{ name: string; cardCount: number } | null>>;
     getWeakTopicSummaries: () => Promise<IpcResult<WeakTopicSummary[]>>;
     getBrowserList: (
@@ -115,13 +115,13 @@ export interface ElectronAPI {
       sort?: {
         field: "dueDate" | "createdAt" | "difficulty" | "lastReview";
         direction: "asc" | "desc";
-      }
+      },
     ) => Promise<IpcResult<CardBrowserItem[]>>;
     getBySiblings: (
-      sourceBlockId: string
+      sourceBlockId: string,
     ) => Promise<IpcResult<CardBrowserItem[]>>;
     getBySiblings: (
-      sourceBlockId: string
+      sourceBlockId: string,
     ) => Promise<IpcResult<CardBrowserItem[]>>;
     findDuplicateFrontBack: () => Promise<IpcResult<Card[]>>;
   };
@@ -138,18 +138,18 @@ export interface ElectronAPI {
     schedule: (
       cardId: string,
       rating: RatingValue,
-      responseTimeMs?: number | null
+      responseTimeMs?: number | null,
     ) => Promise<IpcResult<ScheduleResult>>;
   };
   quickCaptures: {
     getAll: () => Promise<IpcResult<QuickCapture[]>>;
     getByStatus: (
-      status: ExtractionStatus
+      status: ExtractionStatus,
     ) => Promise<IpcResult<QuickCapture[]>>;
     create: (capture: QuickCapture) => Promise<IpcResult<QuickCapture>>;
     update: (
       id: string,
-      updates: Partial<QuickCapture>
+      updates: Partial<QuickCapture>,
     ) => Promise<IpcResult<void>>;
     remove: (id: string) => Promise<IpcResult<void>>;
   };
@@ -166,13 +166,13 @@ export interface ElectronAPI {
     create: (item: SourceItem) => Promise<IpcResult<SourceItem>>;
     update: (
       id: string,
-      updates: Partial<SourceItem>
+      updates: Partial<SourceItem>,
     ) => Promise<IpcResult<void>>;
     delete: (id: string) => Promise<IpcResult<void>>;
     getRawPage: (sourceItemId: string) => Promise<IpcResult<string | null>>;
     purgeRawPages: () => Promise<IpcResult<void>>;
     reparseFromRaw: (
-      sourceItemId: string
+      sourceItemId: string,
     ) => Promise<
       IpcResult<{ success: boolean; message: string; updated?: boolean }>
     >;
@@ -193,7 +193,7 @@ export interface ElectronAPI {
         succeeded: number;
         failed: number;
         skipped: number;
-      }) => void
+      }) => void,
     ) => () => void;
     reextractMetadata: (options?: {
       ids?: string[];
@@ -215,7 +215,7 @@ export interface ElectronAPI {
         failed: number;
         currentItem?: string;
         status?: "running" | "cancelled" | "restoring" | "complete";
-      }) => void
+      }) => void,
     ) => () => void;
     cancelReextract: () => Promise<IpcResult<void>>;
     onNew: (callback: (item: SourceItem) => void) => () => void;
@@ -228,7 +228,7 @@ export interface ElectronAPI {
           subject?: string;
           questionType?: string;
         };
-      }) => void
+      }) => void,
     ) => () => void;
   };
   canonicalTopics: {
@@ -238,7 +238,7 @@ export interface ElectronAPI {
     resolveAlias: (name: string) => Promise<IpcResult<CanonicalTopic | null>>;
     createOrGet: (
       name: string,
-      domain?: string
+      domain?: string,
     ) => Promise<IpcResult<CanonicalTopic>>;
     addAlias: (topicId: string, alias: string) => Promise<IpcResult<void>>;
     suggestMatches: (input: string) => Promise<IpcResult<CanonicalTopic[]>>;
@@ -250,7 +250,7 @@ export interface ElectronAPI {
     create: (page: NotebookTopicPage) => Promise<IpcResult<NotebookTopicPage>>;
     update: (
       id: string,
-      updates: Partial<NotebookTopicPage>
+      updates: Partial<NotebookTopicPage>,
     ) => Promise<IpcResult<void>>;
     delete: (id: string) => Promise<IpcResult<void>>;
   };
@@ -258,18 +258,18 @@ export interface ElectronAPI {
     getByPage: (pageId: string) => Promise<IpcResult<NotebookBlock[]>>;
     getById: (id: string) => Promise<IpcResult<NotebookBlock | null>>;
     getBySourceId: (
-      sourceId: string
+      sourceId: string,
     ) => Promise<IpcResult<NotebookBlock | null>>;
     create: (block: NotebookBlock) => Promise<IpcResult<NotebookBlock>>;
     update: (
       id: string,
-      updates: Partial<NotebookBlock>
+      updates: Partial<NotebookBlock>,
     ) => Promise<IpcResult<void>>;
     delete: (id: string) => Promise<IpcResult<void>>;
   };
   notebookLinks: {
     create: (
-      link: Omit<NotebookLink, "id" | "createdAt">
+      link: Omit<NotebookLink, "id" | "createdAt">,
     ) => Promise<IpcResult<NotebookLink>>;
     getBySourceBlock: (blockId: string) => Promise<IpcResult<NotebookLink[]>>;
     getByTargetBlock: (blockId: string) => Promise<IpcResult<NotebookLink[]>>;
@@ -282,7 +282,7 @@ export interface ElectronAPI {
   search: {
     query: (
       query: string,
-      filter?: SearchFilter
+      filter?: SearchFilter,
     ) => Promise<IpcResult<SearchResult>>;
   };
   backup: {
@@ -301,57 +301,58 @@ export interface ElectronAPI {
   ai: {
     getProviderStatus: () => Promise<IpcResult<AIProviderStatus>>;
     extractConcepts: (
-      content: string
+      content: string,
     ) => Promise<IpcResult<ConceptExtractionResult>>;
     analyzeCaptureContent: (
-      content: string
+      content: string,
     ) => Promise<IpcResult<CaptureAnalysisResult | null>>;
     validateCard: (
       front: string,
       back: string,
-      cardType: "qa" | "cloze"
+      cardType: "qa" | "cloze",
     ) => Promise<IpcResult<ValidationResult>>;
     detectMedicalList: (
-      content: string
+      content: string,
     ) => Promise<IpcResult<MedicalListDetection>>;
     convertToVignette: (
       listItem: string,
-      context: string
+      context: string,
     ) => Promise<IpcResult<VignetteConversion>>;
     generateCards: (
       blockContent: string,
       topicContext: string,
-      userIntent?: string
+      userIntent?: string,
     ) => Promise<IpcResult<CardSuggestion[]>>;
     generateElaboratedFeedback: (
       card: { front: string; back: string; cardType: string },
       topicContext: string,
-      responseTimeMs: number | null
+      responseTimeMs: number | null,
     ) => Promise<IpcResult<ElaboratedFeedback>>;
     suggestTags: (content: string) => Promise<IpcResult<string[]>>;
     findRelatedNotes: (
       content: string,
       minSimilarity?: number,
-      maxResults?: number
+      maxResults?: number,
     ) => Promise<IpcResult<SemanticMatch[]>>;
     clearCache: () => Promise<IpcResult<void>>;
     onOllamaStatus: (
       callback: (payload: {
         status: "starting" | "started" | "failed" | "already-running";
         message: string;
-      }) => void
+      }) => void,
     ) => () => void;
     getOllamaModels: () => Promise<IpcResult<string[]>>;
   };
   files: {
     saveImage: (
       data: string,
-      mimeType: string
+      mimeType: string,
     ) => Promise<IpcResult<{ path: string }>>;
   };
   capture: {
+    getStatus: () => Promise<IpcResult<{ isRunning: boolean; port: number }>>;
     process: (
-      payload: CapturePayload
+      payload: CapturePayload,
     ) => Promise<IpcResult<{ id: string; isUpdate: boolean }>>;
     onReceived: (callback: (payload: CapturePayload) => void) => () => void;
   };

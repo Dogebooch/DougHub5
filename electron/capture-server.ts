@@ -108,3 +108,16 @@ export function stopCaptureServer() {
     server = null;
   }
 }
+
+/**
+ * Returns whether the server is currently running.
+ */
+export function isCaptureServerRunning(): boolean {
+  return server !== null;
+}
+/**
+ * Returns the port the server is configured to use.
+ */
+export function getCaptureServerPort(): number {
+  return PORT;
+}

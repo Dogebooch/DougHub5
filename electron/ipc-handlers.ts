@@ -12,7 +12,11 @@ import {
   BoardQuestionContent,
 } from "./parsers/board-question-parser";
 import { downloadBoardQuestionImages } from "./services/image-service";
-import { CapturePayload } from "./capture-server";
+import {
+  CapturePayload,
+  isCaptureServerRunning,
+  getCaptureServerPort,
+} from "./capture-server";
 import { notifyAIExtraction } from "./ipc-utils";
 import {
   cardQueries,
@@ -435,7 +439,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -447,14 +451,14 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
     "cards:getTopicMetadata",
     async (
       _,
-      pageId: string
+      pageId: string,
     ): Promise<IpcResult<{ name: string; cardCount: number } | null>> => {
       try {
         const metadata = cardQueries.getTopicMetadata(pageId);
@@ -462,7 +466,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -474,7 +478,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -482,7 +486,7 @@ export function registerIpcHandlers(): void {
     async (
       _event,
       filters?: CardBrowserFilters,
-      sort?: CardBrowserSort
+      sort?: CardBrowserSort,
     ): Promise<IpcResult<DbCard[]>> => {
       try {
         const items = cardQueries.getBrowserList(filters, sort);
@@ -490,7 +494,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -502,7 +506,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -512,7 +516,7 @@ export function registerIpcHandlers(): void {
         // v2 constraint: Cards must be linked to a notebook topic page and block
         if (!card.notebookTopicPageId || !card.sourceBlockId) {
           return failure(
-            "DougHub v2 rule: Cards can only be created from Notebook Topic Page blocks. Both notebookTopicPageId and sourceBlockId must be present."
+            "DougHub v2 rule: Cards can only be created from Notebook Topic Page blocks. Both notebookTopicPageId and sourceBlockId must be present.",
           );
         }
 
@@ -522,7 +526,7 @@ export function registerIpcHandlers(): void {
 
         if (frontTrimmed && backTrimmed && frontTrimmed === backTrimmed) {
           return failure(
-            "Card validation failed: front and back cannot be identical. For clinical vignettes, put the scenario in 'front' and the diagnosis/answer in 'back'."
+            "Card validation failed: front and back cannot be identical. For clinical vignettes, put the scenario in 'front' and the diagnosis/answer in 'back'.",
           );
         }
 
@@ -542,7 +546,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -550,7 +554,7 @@ export function registerIpcHandlers(): void {
     async (
       _,
       id: string,
-      updates: Partial<DbCard>
+      updates: Partial<DbCard>,
     ): Promise<IpcResult<void>> => {
       try {
         cardQueries.update(id, updates);
@@ -558,7 +562,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -570,7 +574,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -582,7 +586,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -607,7 +611,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -619,7 +623,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -627,7 +631,7 @@ export function registerIpcHandlers(): void {
     async (
       _,
       id: string,
-      updates: Partial<DbNote>
+      updates: Partial<DbNote>,
     ): Promise<IpcResult<void>> => {
       try {
         noteQueries.update(id, updates);
@@ -635,7 +639,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -647,7 +651,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -663,7 +667,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -676,7 +680,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -693,7 +697,7 @@ export function registerIpcHandlers(): void {
       _,
       cardId: string,
       rating: Rating,
-      responseTimeMs?: number | null
+      responseTimeMs?: number | null,
     ): Promise<
       IpcResult<{
         card: DbCard;
@@ -706,13 +710,13 @@ export function registerIpcHandlers(): void {
           cardId,
           rating,
           new Date(),
-          responseTimeMs
+          responseTimeMs,
         );
         return success(result);
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   /**
@@ -723,7 +727,7 @@ export function registerIpcHandlers(): void {
     "reviews:getIntervals",
     async (
       _,
-      cardId: string
+      cardId: string,
     ): Promise<
       IpcResult<{ again: string; hard: string; good: string; easy: string }>
     > => {
@@ -738,7 +742,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -754,14 +758,14 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
     "quickCaptures:getByStatus",
     async (
       _,
-      status: ExtractionStatus
+      status: ExtractionStatus,
     ): Promise<IpcResult<DbQuickCapture[]>> => {
       try {
         const captures = quickCaptureQueries.getByStatus(status);
@@ -769,7 +773,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -781,7 +785,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -789,7 +793,7 @@ export function registerIpcHandlers(): void {
     async (
       _,
       id: string,
-      updates: Partial<DbQuickCapture>
+      updates: Partial<DbQuickCapture>,
     ): Promise<IpcResult<void>> => {
       try {
         quickCaptureQueries.update(id, updates);
@@ -797,7 +801,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -809,7 +813,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -825,7 +829,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -842,7 +846,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -854,7 +858,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -866,7 +870,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -882,7 +886,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -894,7 +898,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -906,7 +910,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -918,13 +922,13 @@ export function registerIpcHandlers(): void {
           console.log(
             `[IPC] Extracting metadata for QBank question: ${item.title.substring(
               0,
-              50
-            )}...`
+              50,
+            )}...`,
           );
           try {
             const extracted = await extractQuestionSummary(
               item.rawContent,
-              item.sourceType
+              item.sourceType,
             );
             if (extracted) {
               item.metadata = {
@@ -932,18 +936,18 @@ export function registerIpcHandlers(): void {
                 extractedAt: new Date().toISOString(),
               };
               console.log(
-                `[IPC] ✅ Metadata extracted: "${extracted.summary}"`
+                `[IPC] ✅ Metadata extracted: "${extracted.summary}"`,
               );
             } else {
               console.log(
-                "[IPC] ⚠️  No metadata extracted - will use fallback display"
+                "[IPC] ⚠️  No metadata extracted - will use fallback display",
               );
             }
           } catch (extractError) {
             // Extraction failed - continue without metadata
             console.warn(
               "[IPC] ❌ Failed to extract question summary:",
-              extractError
+              extractError,
             );
           }
         }
@@ -955,7 +959,7 @@ export function registerIpcHandlers(): void {
         console.error("[IPC] ❌ Failed to create SourceItem:", error);
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -963,7 +967,7 @@ export function registerIpcHandlers(): void {
     async (
       _,
       id: string,
-      updates: Partial<DbSourceItem>
+      updates: Partial<DbSourceItem>,
     ): Promise<IpcResult<void>> => {
       try {
         sourceItemQueries.update(id, updates);
@@ -971,7 +975,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -983,7 +987,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -995,7 +999,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   /**
@@ -1008,7 +1012,7 @@ export function registerIpcHandlers(): void {
     "sourceItems:reparseFromRaw",
     async (
       _,
-      sourceItemId: string
+      sourceItemId: string,
     ): Promise<
       IpcResult<{ success: boolean; message: string; updated?: boolean }>
     > => {
@@ -1055,7 +1059,7 @@ export function registerIpcHandlers(): void {
         try {
           if (item.rawContent) {
             existingContent = JSON.parse(
-              item.rawContent
+              item.rawContent,
             ) as BoardQuestionContent;
           }
         } catch (e) {
@@ -1067,7 +1071,7 @@ export function registerIpcHandlers(): void {
           rawHtml,
           siteName,
           item.sourceUrl || "",
-          item.createdAt
+          item.createdAt,
         );
 
         // 6. Preserve important data from existing content
@@ -1080,7 +1084,7 @@ export function registerIpcHandlers(): void {
             newContent.images = newContent.images.map((newImg) => {
               // Try to find matching existing image by URL
               const existingImg = existingContent!.images.find(
-                (e) => e.url === newImg.url
+                (e) => e.url === newImg.url,
               );
               if (existingImg?.localPath) {
                 return { ...newImg, localPath: existingImg.localPath };
@@ -1098,7 +1102,7 @@ export function registerIpcHandlers(): void {
         });
 
         console.log(
-          `[Reparse] Successfully re-parsed source item ${sourceItemId} (${siteName})`
+          `[Reparse] Successfully re-parsed source item ${sourceItemId} (${siteName})`,
         );
         return success({
           success: true,
@@ -1109,7 +1113,7 @@ export function registerIpcHandlers(): void {
         console.error("[Reparse] Error:", error);
         return failure(error);
       }
-    }
+    },
   );
 
   /**
@@ -1120,7 +1124,7 @@ export function registerIpcHandlers(): void {
     "sourceItems:reparseAllFromRaw",
     async (
       event,
-      options?: { siteName?: "MKSAP 19" | "ACEP PeerPrep" }
+      options?: { siteName?: "MKSAP 19" | "ACEP PeerPrep" },
     ): Promise<
       IpcResult<{
         processed: number;
@@ -1184,7 +1188,7 @@ export function registerIpcHandlers(): void {
             try {
               if (item.rawContent) {
                 existingContent = JSON.parse(
-                  item.rawContent
+                  item.rawContent,
                 ) as BoardQuestionContent;
               }
             } catch (e) {
@@ -1196,7 +1200,7 @@ export function registerIpcHandlers(): void {
               rawHtml,
               siteName,
               item.sourceUrl || "",
-              item.createdAt
+              item.createdAt,
             );
 
             // Preserve data
@@ -1205,7 +1209,7 @@ export function registerIpcHandlers(): void {
               if (existingContent.images?.length > 0) {
                 newContent.images = newContent.images.map((newImg) => {
                   const existingImg = existingContent!.images.find(
-                    (e) => e.url === newImg.url
+                    (e) => e.url === newImg.url,
                   );
                   return existingImg?.localPath
                     ? { ...newImg, localPath: existingImg.localPath }
@@ -1241,7 +1245,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1253,7 +1257,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // Track cancellation state for long-running operations
@@ -1269,7 +1273,7 @@ export function registerIpcHandlers(): void {
       reextractCancelled = true;
       console.log("[IPC] Metadata re-extraction cancellation requested");
       return success(undefined);
-    }
+    },
   );
 
   /**
@@ -1282,7 +1286,7 @@ export function registerIpcHandlers(): void {
     "sourceItems:reextractMetadata",
     async (
       event,
-      options?: { ids?: string[]; overwrite?: boolean }
+      options?: { ids?: string[]; overwrite?: boolean },
     ): Promise<
       IpcResult<{
         processed: number;
@@ -1342,7 +1346,7 @@ export function registerIpcHandlers(): void {
         }
 
         console.log(
-          `[IPC] Starting bulk metadata extraction for ${items.length} items (overwrite=${overwrite})`
+          `[IPC] Starting bulk metadata extraction for ${items.length} items (overwrite=${overwrite})`,
         );
 
         // Send initial progress
@@ -1361,7 +1365,7 @@ export function registerIpcHandlers(): void {
           // Check for cancellation
           if (reextractCancelled) {
             console.log(
-              `[IPC] Re-extraction cancelled at ${i}/${items.length}`
+              `[IPC] Re-extraction cancelled at ${i}/${items.length}`,
             );
             sendProgress({
               current: i,
@@ -1376,7 +1380,7 @@ export function registerIpcHandlers(): void {
               console.log(`[IPC] Restoring backup: ${reextractBackupFile}`);
               const backupPath = path.join(
                 getBackupsDir(),
-                reextractBackupFile
+                reextractBackupFile,
               );
               restoreBackup(backupPath, dbPath);
               console.log("[IPC] Backup restored successfully");
@@ -1395,7 +1399,7 @@ export function registerIpcHandlers(): void {
           try {
             const extracted = await extractQuestionSummary(
               item.rawContent,
-              item.sourceType
+              item.sourceType,
             );
             if (extracted) {
               sourceItemQueries.update(item.id, {
@@ -1408,21 +1412,21 @@ export function registerIpcHandlers(): void {
               console.log(
                 `[IPC] ✅ [${i + 1}/${items.length}] Extracted: "${
                   extracted.summary
-                }"`
+                }"`,
               );
             } else {
               failed++;
               console.log(
                 `[IPC] ⚠️ [${i + 1}/${items.length}] No extraction result for ${
                   item.id
-                }`
+                }`,
               );
             }
           } catch (err) {
             failed++;
             console.warn(
               `[IPC] ❌ [${i + 1}/${items.length}] Failed for ${item.id}:`,
-              err
+              err,
             );
           }
 
@@ -1438,7 +1442,7 @@ export function registerIpcHandlers(): void {
         }
 
         console.log(
-          `[IPC] Bulk extraction complete: ${succeeded} succeeded, ${failed} failed`
+          `[IPC] Bulk extraction complete: ${succeeded} succeeded, ${failed} failed`,
         );
         sendProgress({
           current: items.length,
@@ -1451,7 +1455,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   /**
@@ -1461,7 +1465,7 @@ export function registerIpcHandlers(): void {
     "capture:process",
     async (
       _,
-      payload: CapturePayload
+      payload: CapturePayload,
     ): Promise<IpcResult<{ id: string; isUpdate: boolean }>> => {
       try {
         const result = await processCapture(payload);
@@ -1469,8 +1473,23 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
+
+  // ===== CAPTURE SERVER STATUS =====
+  ipcMain.handle("capture:getStatus", () => {
+    try {
+      return {
+        data: {
+          isRunning: isCaptureServerRunning(),
+          port: getCaptureServerPort(),
+        },
+        error: null,
+      };
+    } catch (error) {
+      return { data: null, error: String(error) };
+    }
+  });
 
   // --------------------------------------------------------------------------
   // Canonical Topic Handlers (v3)
@@ -1485,7 +1504,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1497,7 +1516,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1509,7 +1528,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1521,7 +1540,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1529,7 +1548,7 @@ export function registerIpcHandlers(): void {
     async (
       _,
       name: string,
-      domain?: string
+      domain?: string,
     ): Promise<IpcResult<DbCanonicalTopic>> => {
       try {
         const topic = createOrGetTopic(name, domain);
@@ -1537,7 +1556,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1549,7 +1568,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1561,7 +1580,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1573,7 +1592,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -1589,7 +1608,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1601,14 +1620,14 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
     "notebookPages:create",
     async (
       _,
-      page: DbNotebookTopicPage
+      page: DbNotebookTopicPage,
     ): Promise<IpcResult<DbNotebookTopicPage>> => {
       try {
         notebookTopicPageQueries.insert(page);
@@ -1616,7 +1635,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1624,7 +1643,7 @@ export function registerIpcHandlers(): void {
     async (
       _,
       id: string,
-      updates: Partial<DbNotebookTopicPage>
+      updates: Partial<DbNotebookTopicPage>,
     ): Promise<IpcResult<void>> => {
       try {
         notebookTopicPageQueries.update(id, updates);
@@ -1632,7 +1651,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1644,7 +1663,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -1660,7 +1679,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1672,7 +1691,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1684,7 +1703,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1696,7 +1715,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1704,7 +1723,7 @@ export function registerIpcHandlers(): void {
     async (
       _,
       id: string,
-      updates: Partial<DbNotebookBlock>
+      updates: Partial<DbNotebookBlock>,
     ): Promise<IpcResult<void>> => {
       try {
         notebookBlockQueries.update(id, updates);
@@ -1712,7 +1731,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1724,7 +1743,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -1735,7 +1754,7 @@ export function registerIpcHandlers(): void {
     "notebookLinks:create",
     async (
       _,
-      link: Omit<DbNotebookLink, "id" | "createdAt">
+      link: Omit<DbNotebookLink, "id" | "createdAt">,
     ): Promise<IpcResult<DbNotebookLink>> => {
       try {
         const result = notebookLinkQueries.create(link);
@@ -1743,7 +1762,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1755,7 +1774,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1767,7 +1786,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1779,7 +1798,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -1795,7 +1814,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1807,7 +1826,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -1819,7 +1838,7 @@ export function registerIpcHandlers(): void {
     async (
       _,
       query: string,
-      filter?: SearchFilter
+      filter?: SearchFilter,
     ): Promise<IpcResult<SearchResult>> => {
       try {
         const result = searchQueries.search(query, filter || "all");
@@ -1827,7 +1846,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -1852,7 +1871,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle("backup:create", async (): Promise<IpcResult<string>> => {
@@ -1887,7 +1906,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1925,7 +1944,7 @@ export function registerIpcHandlers(): void {
         console.error(`[Backup] Restore failed:`, error);
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1937,7 +1956,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -1974,7 +1993,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1994,14 +2013,14 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
     "ai:analyzeCaptureContent",
     async (
       _,
-      content: string
+      content: string,
     ): Promise<IpcResult<CaptureAnalysisResult | null>> => {
       try {
         const result = await analyzeCaptureContent(content);
@@ -2009,7 +2028,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2018,7 +2037,7 @@ export function registerIpcHandlers(): void {
       _,
       front: string,
       back: string,
-      cardType: "qa" | "cloze"
+      cardType: "qa" | "cloze",
     ): Promise<IpcResult<ValidationResult>> => {
       try {
         const cacheKey = aiCache.key("validateCard", front, back, cardType);
@@ -2033,7 +2052,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2052,7 +2071,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2060,7 +2079,7 @@ export function registerIpcHandlers(): void {
     async (
       _,
       listItem: string,
-      context: string
+      context: string,
     ): Promise<IpcResult<VignetteConversion>> => {
       try {
         const cacheKey = aiCache.key("convertToVignette", listItem, context);
@@ -2076,7 +2095,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2085,19 +2104,19 @@ export function registerIpcHandlers(): void {
       _,
       blockContent: string,
       topicContext: string,
-      userIntent?: string
+      userIntent?: string,
     ): Promise<IpcResult<CardSuggestion[]>> => {
       try {
         const cards = await generateCardFromBlock(
           blockContent,
           topicContext,
-          userIntent
+          userIntent,
         );
         return success(cards);
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2106,19 +2125,19 @@ export function registerIpcHandlers(): void {
       _,
       card: { front: string; back: string; cardType: string },
       topicContext: string,
-      responseTimeMs: number | null
+      responseTimeMs: number | null,
     ): Promise<IpcResult<ElaboratedFeedback>> => {
       try {
         const result = await generateElaboratedFeedback(
           card,
           topicContext,
-          responseTimeMs
+          responseTimeMs,
         );
         return success(result);
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2138,7 +2157,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2147,7 +2166,7 @@ export function registerIpcHandlers(): void {
       _,
       content: string,
       minSimilarity?: number,
-      maxResults?: number
+      maxResults?: number,
     ): Promise<IpcResult<Array<{ noteId: string; similarity: number }>>> => {
       try {
         // Get all notes for comparison
@@ -2156,13 +2175,13 @@ export function registerIpcHandlers(): void {
           content,
           notes,
           minSimilarity,
-          maxResults
+          maxResults,
         );
         return success(matches);
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle("ai:clearCache", async (): Promise<IpcResult<void>> => {
@@ -2188,7 +2207,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2213,7 +2232,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2221,7 +2240,7 @@ export function registerIpcHandlers(): void {
     async (
       _,
       key: string,
-      defaultValue: unknown
+      defaultValue: unknown,
     ): Promise<IpcResult<unknown>> => {
       try {
         const value = settingsQueries.getParsed(key, defaultValue);
@@ -2229,7 +2248,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2240,7 +2259,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -2256,7 +2275,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
@@ -2267,7 +2286,7 @@ export function registerIpcHandlers(): void {
     "files:saveImage",
     async (
       _,
-      { data, mimeType }: { data: string; mimeType: string }
+      { data, mimeType }: { data: string; mimeType: string },
     ): Promise<IpcResult<{ path: string }>> => {
       try {
         const mimeMap: Record<string, string> = {
@@ -2303,7 +2322,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle("app:reload", async (): Promise<IpcResult<void>> => {
@@ -2327,7 +2346,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   // ============================================================================
@@ -2342,7 +2361,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2353,7 +2372,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2364,7 +2383,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -2375,7 +2394,7 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         return failure(error);
       }
-    }
+    },
   );
 
   console.log("[IPC] All handlers registered");
