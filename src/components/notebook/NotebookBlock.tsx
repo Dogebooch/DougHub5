@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Layers, 
-  Link as LinkIcon, 
+import {
+  Layers,
+  Link as LinkIcon,
   Sparkles,
-  ExternalLink
-} from 'lucide-react';
-import { NotebookBlock } from '@/types';
+  ExternalLink,
+  Pencil,
+} from "lucide-react";
+import { NotebookBlock } from "@/types";
 import { useAppStore } from "@/stores/useAppStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,11 +16,13 @@ interface NotebookBlockProps {
   block: NotebookBlock;
   onRefresh: () => void;
   onGenerateCard: (text: string) => void;
+  onEdit: (block: NotebookBlock) => void;
 }
 
 export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
   block,
   onGenerateCard,
+  onEdit,
 }) => {
   const { setCurrentView } = useAppStore();
   const [sourceTitle, setSourceTitle] = useState<string | null>(null);
@@ -143,7 +146,7 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
     <div
       className={cn(
         "group relative rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-200",
-        (block.cardCount ?? 0) > 0 && "border-l-2 border-l-primary/40"
+        (block.cardCount ?? 0) > 0 && "border-l-2 border-l-primary/40",
       )}
     >
       {/* Header Row */}
@@ -160,7 +163,7 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
               "text-[11px] px-1.5 py-0.5 h-5 font-semibold border-none transition-colors",
               (block.cardCount ?? 0) > 0
                 ? "bg-primary/20 text-primary"
-                : "bg-primary/10 text-card-muted"
+                : "bg-primary/10 text-card-muted",
             )}
             title={
               (block.cardCount ?? 0) > 0
@@ -184,6 +187,17 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
             </button>
           )}
         </div>
+
+        {/* Edit Button - appears on hover */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onEdit(block)}
+          className="h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+        >
+          <Pencil className="w-3.5 h-3.5 mr-1" />
+          Edit
+        </Button>
       </div>
 
       {/* Content */}

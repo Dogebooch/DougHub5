@@ -8,6 +8,7 @@ interface InsightTextareaProps {
   onChange: (value: string) => void;
   onValidChange?: (isValid: boolean) => void;
   minLength?: number;
+  placeholder?: string;
 }
 
 const MIN_CHAR_DEFAULT = 20;
@@ -22,6 +23,7 @@ export function InsightTextarea({
   onChange,
   onValidChange,
   minLength = MIN_CHAR_DEFAULT,
+  placeholder = "e.g., CKD patients are more likely to die from CVD than progress to ESKD. Key takeaway: manage CV risk aggressively...",
 }: InsightTextareaProps) {
   const charCount = value.length;
   const isValid = charCount >= minLength;
@@ -36,7 +38,7 @@ export function InsightTextarea({
   return (
     <div className="rounded-lg border-2 border-primary/50 bg-accent/30 p-4 shadow-sm">
       {/* Header */}
-      <Label 
+      <Label
         htmlFor="insight-textarea"
         className="text-base font-semibold tracking-wide text-foreground"
       >
@@ -51,7 +53,7 @@ export function InsightTextarea({
         id="insight-textarea"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="e.g., CKD patients are more likely to die from CVD than progress to ESKD. Key takeaway: manage CV risk aggressively..."
+        placeholder={placeholder}
         className="min-h-[150px] resize-y text-base bg-background/50 border-input"
         aria-describedby={helperTextId}
       />
@@ -62,7 +64,7 @@ export function InsightTextarea({
           id={helperTextId}
           className={cn(
             "text-xs font-medium transition-colors duration-200",
-            isValid ? "text-muted-foreground" : "text-warning"
+            isValid ? "text-muted-foreground" : "text-warning",
           )}
           role="status"
           aria-live="polite"
@@ -71,7 +73,8 @@ export function InsightTextarea({
             `${charCount} chars`
           ) : (
             <>
-              Min {minLength} characters <span className="opacity-70">[{charCount}]</span>
+              Min {minLength} characters{" "}
+              <span className="opacity-70">[{charCount}]</span>
             </>
           )}
         </span>

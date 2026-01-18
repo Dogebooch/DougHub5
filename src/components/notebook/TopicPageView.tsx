@@ -9,6 +9,7 @@ import {
 import { NotebookBlockComponent } from "./NotebookBlock";
 import { AddBlockModal } from "./AddBlockModal";
 import { CardGenerationModal } from "./CardGenerationModal";
+import { BlockEditModal } from "./BlockEditModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +43,10 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
   const [selectedText, setSelectedText] = useState("");
   const [activeBlock, setActiveBlock] = useState<NotebookBlock | null>(null);
 
+  // Edit Modal State
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingBlock, setEditingBlock] = useState<NotebookBlock | null>(null);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -71,7 +76,7 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
     } catch (err) {
       console.error("Error fetching topic page:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to load topic page"
+        err instanceof Error ? err.message : "Failed to load topic page",
       );
     } finally {
       setLoading(false);
@@ -88,8 +93,60 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
     setGenModalOpen(true);
   };
 
+  const handleBlockEdit = (block: NotebookBlock) => {
+    setEditingBlock(block);
+    setEditModalOpen(true);
+  };
+
+  const handleBlockSave = async (blockId: string, newContent: string) => {
+    // Find the original block to compare
+    const originalBlock = blocks.find((b) => b.id === blockId);
+
+    // Skip API call if content unchanged (shouldn't happen due to UI guards, but belt-and-suspenders)
+    if (originalBlock && originalBlock.content === newContent) {
+      return;
+    }
+
+    try {
+      const result = await window.api.notebookBlocks.update(blockId, {
+        content: newContent,
+      });
+
+      if (result.error) {
+        toast({
+          title: "Save Failed",
+          description: result.error,
+          variant: "destructive",
+        });
+        throw new Error(result.error); // Propagate to keep modal open
+      }
+
+      // Optimistic update - update local state immediately
+      setBlocks((prev) =>
+        prev.map((b) => (b.id === blockId ? { ...b, content: newContent } : b)),
+      );
+
+      toast({
+        title: "Block Updated",
+        description: "Your changes have been saved.",
+      });
+
+      // Background refresh to sync any other changes (like updatedAt)
+      fetchData();
+    } catch (error) {
+      // Error already toasted above, just rethrow to keep modal open
+      throw error;
+    }
+  };
+
   type GeneratedCardData = {
-    format: "qa" | "cloze" | "overlapping-cloze" | "vignette" | "image-occlusion" | "procedural";
+    format:
+      | "qa"
+      | "cloze"
+      | "overlapping-cloze"
+      | "vignette"
+      | "image-occlusion"
+      | "procedural";
     front: string;
     back: string;
   };
@@ -244,6 +301,7 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
                 onGenerateCard={(text) =>
                   handleGenerateCardTrigger(text, block)
                 }
+                onEdit={handleBlockEdit}
               />
             ))}
           </div>
@@ -300,6 +358,14 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
           onCreateCard={handleCreateCard}
         />
       )}
+
+      <BlockEditModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        block={editingBlock}
+        topicName={topic?.canonicalName || ""}
+        onSave={handleBlockSave}
+      />
     </div>
   );
 };

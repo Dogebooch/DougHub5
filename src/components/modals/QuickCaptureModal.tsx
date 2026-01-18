@@ -10,12 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import {
   X,
@@ -32,6 +26,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import { TITLE_MAX_LENGTH } from "@/constants";
 import { detectContentType, type ContentType } from "@/lib/content-detector";
 import { cn } from "@/lib/utils";
+import { AddToNotebookWorkflow } from "@/components/notebook/AddToNotebookWorkflow";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -65,6 +60,11 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     title: string;
   } | null>(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+
+  // Add to Notebook flow state
+  const [savedItemForNotebook, setSavedItemForNotebook] =
+    useState<SourceItem | null>(null);
+  const [showAddToNotebook, setShowAddToNotebook] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -312,122 +312,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     setUserTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
-  const handleSave = async () => {
-    const trimmedContent = content.trim();
-    if (contentType === "text" && !trimmedContent) {
-      return;
-    }
-    if (contentType === "image" && !imageData) {
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      if (typeof window !== "undefined" && window.api) {
-        let mediaPath: string | undefined = undefined;
-
-        // If it's an image, save it to disk first
-        if (contentType === "image" && imageData) {
-          const mimeType =
-            imageData.match(/^data:([^;]+);/)?.[1] || "image/png";
-          const saveResult = await window.api.files.saveImage(
-            imageData,
-            mimeType,
-          );
-
-          if (saveResult.error) {
-            toast.error(`Failed to save image file: ${saveResult.error}`);
-            setIsSaving(false);
-            return;
-          }
-
-          if (saveResult.data) {
-            mediaPath = saveResult.data.path;
-          }
-        }
-
-        // Generate title from first TITLE_MAX_LENGTH characters or use placeholder for image
-        const titleToSave =
-          title.trim() ||
-          (contentType === "image" ? "Image Capture" : "Untitled Capture");
-
-        // Determine source type: prefer AI analysis, then honor qbank detection, then fallback
-        const sourceTypeMap: Record<ContentType, SourceType> = {
-          text: "quickcapture",
-          image: "image",
-          url: "article", // URLs are typically articles
-          qbank: "qbank", // Honor qbank detection
-        };
-
-        const finalSourceType: SourceType =
-          aiAnalysis?.sourceType || sourceTypeMap[detectedType];
-
-        // Build metadata from AI analysis
-        const metadata: SourceItem["metadata"] = {};
-
-        // Add subject (domain) from AI or user selection
-        if (userDomain) {
-          metadata.subject = userDomain;
-        }
-
-        // Add summary from extracted facts (limit to first 3)
-        if (
-          aiAnalysis?.extractedFacts &&
-          aiAnalysis.extractedFacts.length > 0
-        ) {
-          metadata.summary = aiAnalysis.extractedFacts.slice(0, 3).join("; ");
-        }
-
-        const sourceItem: SourceItem = {
-          id: crypto.randomUUID(),
-          sourceType: finalSourceType,
-          sourceName: "Quick Capture",
-          title: titleToSave,
-          rawContent: trimmedContent || "Image capture",
-          mediaPath,
-          canonicalTopicIds: [],
-          tags: userTags, // Use AI-suggested + user-modified tags
-          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-          status: "inbox",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        const result = await window.api.sourceItems.create(sourceItem);
-        if (result.error) {
-          toast.error(`Failed to save: ${result.error}`);
-          return;
-        }
-
-        // Refresh counts in store
-        await refreshCounts();
-      }
-
-      toast("Saved to inbox", {
-        description: "Process when you're rested",
-        duration: 2000,
-      });
-      setContent("");
-      setTitle("");
-      setIsTitleManual(false);
-      setImageData(null);
-      setContentType("text");
-      setAiAnalysis(null);
-      setAiError(false);
-      setDuplicateMatch(null);
-      setIsCheckingDuplicate(false);
-      setUserTags([]);
-      setUserDomain("");
-      onClose();
-    } catch (error) {
-      toast.error("Failed to save quick capture");
-      console.error("[QuickCapture] Save error:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCancel = useCallback(() => {
+  const resetFormState = () => {
     setContent("");
     setTitle("");
     setIsTitleManual(false);
@@ -439,6 +324,128 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     setIsCheckingDuplicate(false);
     setUserTags([]);
     setUserDomain("");
+  };
+
+  /**
+   * Shared save logic that creates the source item and returns it.
+   * Used by both "Save to Inbox" and "Add to Notebook Now".
+   */
+  const saveSourceItem = async (): Promise<SourceItem | null> => {
+    const trimmedContent = content.trim();
+    if (contentType === "text" && !trimmedContent) {
+      return null;
+    }
+    if (contentType === "image" && !imageData) {
+      return null;
+    }
+    try {
+      if (typeof window !== "undefined" && window.api) {
+        let mediaPath: string | undefined = undefined;
+        // If it's an image, save it to disk first
+        if (contentType === "image" && imageData) {
+          const mimeType =
+            imageData.match(/^data:([^;]+);/)?.[1] || "image/png";
+          const saveResult = await window.api.files.saveImage(
+            imageData,
+            mimeType,
+          );
+          if (saveResult.error) {
+            toast.error(`Failed to save image file: ${saveResult.error}`);
+            return null;
+          }
+          if (saveResult.data) {
+            mediaPath = saveResult.data.path;
+          }
+        }
+        const titleToSave =
+          title.trim() ||
+          (contentType === "image" ? "Image Capture" : "Untitled Capture");
+        const sourceTypeMap: Record<ContentType, SourceType> = {
+          text: "quickcapture",
+          image: "image",
+          url: "article",
+          qbank: "qbank",
+        };
+        const finalSourceType: SourceType =
+          aiAnalysis?.sourceType || sourceTypeMap[detectedType];
+        const metadata: SourceItem["metadata"] = {};
+        if (userDomain) {
+          metadata.subject = userDomain;
+        }
+        if (
+          aiAnalysis?.extractedFacts &&
+          aiAnalysis.extractedFacts.length > 0
+        ) {
+          metadata.summary = aiAnalysis.extractedFacts.slice(0, 3).join("; ");
+        }
+        const sourceItem: SourceItem = {
+          id: crypto.randomUUID(),
+          sourceType: finalSourceType,
+          sourceName: "Quick Capture",
+          title: titleToSave,
+          rawContent: trimmedContent || "Image capture",
+          mediaPath,
+          canonicalTopicIds: [],
+          tags: userTags,
+          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+          status: "inbox",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        const result = await window.api.sourceItems.create(sourceItem);
+        if (result.error) {
+          toast.error(`Failed to save: ${result.error}`);
+          return null;
+        }
+        await refreshCounts();
+        return sourceItem;
+      }
+      return null;
+    } catch (error) {
+      toast.error("Failed to save quick capture");
+      console.error("[QuickCapture] Save error:", error);
+      return null;
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const savedItem = await saveSourceItem();
+      if (savedItem) {
+        toast("Saved to inbox", {
+          description: "Process when you're rested",
+          duration: 2000,
+        });
+        resetFormState();
+        onClose();
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAddToNotebookNow = async () => {
+    setIsSaving(true);
+    try {
+      const savedItem = await saveSourceItem();
+      if (savedItem) {
+        // Store the saved item and open AddToNotebookWorkflow
+        setSavedItemForNotebook(savedItem);
+        resetFormState();
+        onClose();
+        // Show AddToNotebookWorkflow after a brief delay to allow modal transition
+        setTimeout(() => {
+          setShowAddToNotebook(true);
+        }, 100);
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = useCallback(() => {
+    resetFormState();
     onClose();
   }, [onClose]);
 
@@ -469,242 +476,253 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
   }, [isOpen, contentType]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
-      <DialogContent
-        className="sm:max-w-[600px] overflow-hidden"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        {isDragging && (
-          <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary flex flex-col items-center justify-center backdrop-blur-[2px] pointer-events-none animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-background/80 p-6 rounded-full shadow-xl flex flex-col items-center gap-2">
-              <Upload className="h-10 w-10 text-primary animate-bounce" />
-              <p className="text-lg font-semibold text-primary">
-                Drop image here
-              </p>
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
+        <DialogContent
+          className="sm:max-w-[600px] overflow-hidden"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {isDragging && (
+            <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary flex flex-col items-center justify-center backdrop-blur-[2px] pointer-events-none animate-in fade-in zoom-in-95 duration-200">
+              <div className="bg-background/80 p-6 rounded-full shadow-xl flex flex-col items-center gap-2">
+                <Upload className="h-10 w-10 text-primary animate-bounce" />
+                <p className="text-lg font-semibold text-primary">
+                  Drop image here
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <DialogHeader>
-          <DialogTitle>Quick Capture</DialogTitle>
-        </DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Quick Capture</DialogTitle>
+          </DialogHeader>
 
-        <div className="py-4 min-h-[240px] flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Input
-              placeholder="Source Title..."
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                setIsTitleManual(true);
-              }}
-              className="font-semibold"
-            />
-            {((contentType === "text" && content.trim()) ||
-              (contentType === "image" && imageData)) && (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Content type badge */}
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-[11px] uppercase tracking-wider font-bold",
-                      detectedType === "url" &&
-                        "bg-info/10 text-info border-info/20",
-                      detectedType === "qbank" &&
-                        "bg-warning/10 text-warning border-warning/20",
-                      (aiAnalysis?.sourceType === "qbank" ||
-                        detectedType === "qbank") &&
-                        "bg-warning/10 text-warning border-warning/20",
-                      detectedType === "image" &&
-                        "bg-success/10 text-success border-success/20",
-                      detectedType === "text" &&
-                        "bg-muted text-muted-foreground border-border",
-                    )}
-                  >
-                    {aiAnalysis?.sourceType || detectedType}
-                  </Badge>
-
-                  {/* Analyzing indicator */}
-                  {isAnalyzing && (
-                    <Badge variant="outline" className="text-[11px] gap-1">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Analyzing...
+          <div className="py-4 min-h-[240px] flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Input
+                placeholder="Source Title..."
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setIsTitleManual(true);
+                }}
+                className="font-semibold"
+              />
+              {((contentType === "text" && content.trim()) ||
+                (contentType === "image" && imageData)) && (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Content type badge */}
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[11px] uppercase tracking-wider font-bold",
+                        detectedType === "url" &&
+                          "bg-info/10 text-info border-info/20",
+                        detectedType === "qbank" &&
+                          "bg-warning/10 text-warning border-warning/20",
+                        (aiAnalysis?.sourceType === "qbank" ||
+                          detectedType === "qbank") &&
+                          "bg-warning/10 text-warning border-warning/20",
+                        detectedType === "image" &&
+                          "bg-success/10 text-success border-success/20",
+                        detectedType === "text" &&
+                          "bg-muted text-muted-foreground border-border",
+                      )}
+                    >
+                      {aiAnalysis?.sourceType || detectedType}
                     </Badge>
-                  )}
 
-                  {/* Domain badge (from AI) */}
-                  {!isAnalyzing && userDomain && (
-                    <Badge variant="secondary" className="text-[11px]">
-                      {userDomain}
-                    </Badge>
-                  )}
-
-                  {/* Tag badges (removable) */}
-                  {!isAnalyzing &&
-                    userTags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="outline"
-                        className="text-[11px] gap-1 pr-1 hover:bg-destructive/10 cursor-pointer group"
-                        onClick={() => removeTag(tag)}
-                      >
-                        {tag}
-                        <X className="h-3 w-3 opacity-50 group-hover:opacity-100" />
+                    {/* Analyzing indicator */}
+                    {isAnalyzing && (
+                      <Badge variant="outline" className="text-[11px] gap-1">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Analyzing...
                       </Badge>
-                    ))}
-                </div>
+                    )}
 
-                {/* AI error warning */}
-                {aiError && !isAnalyzing && content.length >= 50 && (
-                  <div className="flex items-center gap-2 text-xs text-warning bg-warning/10 px-3 py-2 rounded-md">
-                    <AlertCircle className="h-4 w-4" />
-                    <span>
-                      AI analysis unavailable. Please fill fields manually.
-                    </span>
+                    {/* Domain badge (from AI) */}
+                    {!isAnalyzing && userDomain && (
+                      <Badge variant="secondary" className="text-[11px]">
+                        {userDomain}
+                      </Badge>
+                    )}
+
+                    {/* Tag badges (removable) */}
+                    {!isAnalyzing &&
+                      userTags.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="outline"
+                          className="text-[11px] gap-1 pr-1 hover:bg-destructive/10 cursor-pointer group"
+                          onClick={() => removeTag(tag)}
+                        >
+                          {tag}
+                          <X className="h-3 w-3 opacity-50 group-hover:opacity-100" />
+                        </Badge>
+                      ))}
                   </div>
-                )}
 
-                {/* Duplicate detection warning */}
-                {duplicateMatch && !isCheckingDuplicate && (
-                  <div className="flex items-center justify-between gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-500/10 px-3 py-2 rounded-md border border-amber-500/20">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 shrink-0" />
+                  {/* AI error warning */}
+                  {aiError && !isAnalyzing && content.length >= 50 && (
+                    <div className="flex items-center gap-2 text-xs text-warning bg-warning/10 px-3 py-2 rounded-md">
+                      <AlertCircle className="h-4 w-4" />
                       <span>
-                        Similar item exists:{" "}
-                        <strong>"{duplicateMatch.title}"</strong>
+                        AI analysis unavailable. Please fill fields manually.
                       </span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-500/20"
-                      onClick={() => {
-                        setDuplicateMatch(null);
-                      }}
-                    >
-                      Dismiss
-                    </Button>
-                  </div>
-                )}
+                  )}
+
+                  {/* Duplicate detection warning */}
+                  {duplicateMatch && !isCheckingDuplicate && (
+                    <div className="flex items-center justify-between gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-500/10 px-3 py-2 rounded-md border border-amber-500/20">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        <span>
+                          Similar item exists:{" "}
+                          <strong>"{duplicateMatch.title}"</strong>
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-500/20"
+                        onClick={() => {
+                          setDuplicateMatch(null);
+                        }}
+                      >
+                        Dismiss
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {contentType === "image" && imageData ? (
+              <div className="relative group border rounded-md overflow-hidden bg-muted flex items-center justify-center flex-1 animate-in fade-in duration-300">
+                <img
+                  src={imageData}
+                  alt="Preview"
+                  className="max-h-[300px] w-full object-contain"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-full h-8 w-8 shadow-md"
+                  onClick={clearImage}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col gap-2 animate-in fade-in duration-300">
+                <Textarea
+                  ref={textareaRef}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  onPaste={handlePaste}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
+                      handleSave();
+                    }
+                  }}
+                  placeholder="Paste text or image..."
+                  className="flex-1 min-h-[200px] resize-none border-2 border-border/80 focus:border-primary/50 transition-colors"
+                />
+                <div className="flex items-center justify-end gap-1 text-[11px] text-muted-foreground select-none">
+                  <Keyboard className="h-3 w-3" />
+                  <span>
+                    <kbd className="px-1 py-0.5 rounded bg-muted/50 text-[11px] font-mono">
+                      Ctrl
+                    </kbd>{" "}
+                    +{" "}
+                    <kbd className="px-1 py-0.5 rounded bg-muted/50 text-[11px] font-mono">
+                      Enter
+                    </kbd>{" "}
+                    to save
+                  </span>
+                </div>
               </div>
             )}
           </div>
 
-          {contentType === "image" && imageData ? (
-            <div className="relative group border rounded-md overflow-hidden bg-muted flex items-center justify-center flex-1 animate-in fade-in duration-300">
-              <img
-                src={imageData}
-                alt="Preview"
-                className="max-h-[300px] w-full object-contain"
+          <DialogFooter className="gap-2">
+            <div className="flex items-center gap-2 mr-auto">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
               />
               <Button
-                variant="destructive"
-                size="icon"
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-full h-8 w-8 shadow-md"
-                onClick={clearImage}
+                variant="ghost"
+                size="sm"
+                onClick={handleBrowseClick}
+                disabled={isSaving || contentType === "image"}
+                className="h-8 px-3 text-muted-foreground hover:text-primary transition-colors"
               >
-                <X className="h-4 w-4" />
+                <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
+                Browse image
               </Button>
             </div>
-          ) : (
-            <div className="flex-1 flex flex-col gap-2 animate-in fade-in duration-300">
-              <Textarea
-                ref={textareaRef}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                onPaste={handlePaste}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                    handleSave();
-                  }
-                }}
-                placeholder="Paste text or image..."
-                className="flex-1 min-h-[200px] resize-none border-2 border-border/80 focus:border-primary/50 transition-colors"
-              />
-              <div className="flex items-center justify-end gap-1 text-[11px] text-muted-foreground select-none">
-                <Keyboard className="h-3 w-3" />
-                <span>
-                  <kbd className="px-1 py-0.5 rounded bg-muted/50 text-[11px] font-mono">
-                    Ctrl
-                  </kbd>{" "}
-                  +{" "}
-                  <kbd className="px-1 py-0.5 rounded bg-muted/50 text-[11px] font-mono">
-                    Enter
-                  </kbd>{" "}
-                  to save
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <DialogFooter className="gap-2">
-          <div className="flex items-center gap-2 mr-auto">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              className="hidden"
-            />
             <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBrowseClick}
-              disabled={isSaving || contentType === "image"}
-              className="h-8 px-3 text-muted-foreground hover:text-primary transition-colors"
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isSaving}
             >
-              <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
-              Browse image
+              Cancel
             </Button>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isSaving}
-          >
-            Cancel
-          </Button>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled
-                    className="gap-2"
-                  >
-                    <PlayCircle className="h-4 w-4" />
-                    Process Now
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Coming soon</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+            <Button
+              type="button"
+              onClick={handleAddToNotebookNow}
+              disabled={
+                isSaving ||
+                isAnalyzing ||
+                (contentType === "text" ? !content.trim() : !imageData)
+              }
+              className="gap-2"
+            >
+              <PlayCircle className="h-4 w-4" />
+              Add to Notebook Now
+            </Button>
 
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={
-              isSaving ||
-              (contentType === "text" ? !content.trim() : !imageData)
-            }
-            className="shadow-sm"
-          >
-            Save to Inbox
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={
+                isSaving ||
+                (contentType === "text" ? !content.trim() : !imageData)
+              }
+              className="shadow-sm"
+            >
+              Save to Inbox
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add to Notebook workflow - opens after quick capture saves */}
+      <AddToNotebookWorkflow
+        open={showAddToNotebook}
+        onOpenChange={(open) => {
+          setShowAddToNotebook(open);
+          if (!open) {
+            setSavedItemForNotebook(null);
+          }
+        }}
+        sourceItem={savedItemForNotebook}
+        onSuccess={() => {
+          setSavedItemForNotebook(null);
+          setShowAddToNotebook(false);
+        }}
+      />
+    </>
   );
 }

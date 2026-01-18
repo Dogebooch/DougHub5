@@ -2146,7 +2146,7 @@
         "testStrategy": "Test AI analysis populates form fields correctly. Test AI timeout/failure shows defaults and warning. Test duplicate detection shows warning with View button. Test Save to Inbox creates source_item with correct fields. Test Add to Notebook Now saves then navigates to Workflow 2. Test image/PDF paste shows manual entry prompt. Test Correct/Incorrect toggle for qbank items.",
         "priority": "high",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2154,9 +2154,10 @@
             "description": "Create AI analysis endpoint in ai-service.ts to auto-tag quick capture content with sourceType, domain, tags, and extracted facts",
             "dependencies": [],
             "details": "Add new function analyzeCaptureContent() to electron/ai-service.ts that accepts raw content and returns structured JSON with: title (short, <10 words), sourceType (qbank|article|pdf|image|quickcapture|manual), domain (medical specialty), secondaryDomains array, tags array (Management, Boards-HY, etc.), extractedFacts array, suggestedTopic. Use prompt template with detection rules: contains 'A) B) C) D)' AND 'Explanation' -> qbank; URL from UpToDate/PubMed -> article; user-written without citations -> manual; otherwise -> quickcapture. Implement content hashing for AI result cache (TTL 5 min) to avoid redundant API calls. Handle timeout/failure gracefully with null return.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test with qbank question content returns sourceType='qbank' with correct domain/tags. Test with plain text returns sourceType='quickcapture'. Test with article URL returns sourceType='article'. Test cache hit returns instantly. Test AI timeout returns null without throwing. Test extracted facts array populated for medical content.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-17T01:31:41.335Z"
           },
           {
             "id": 2,
@@ -2166,9 +2167,10 @@
               1
             ],
             "details": "In src/components/modals/QuickCaptureModal.tsx, add state for aiAnalysisResult, isAnalyzing, and aiError. Create useEffect hook that triggers 500ms after content change (debounced). Call window.api.ai.analyzeCaptureContent(content) and populate: title, detectedType from aiResult.sourceType, suggested domain (display as Badge), suggested tags (display as removable Badges with [x] button). Add loading spinner badge during analysis. On timeout/failure, show subtle warning banner: 'AI analysis unavailable. Please fill fields manually.' and allow user to proceed with defaults (sourceType='quickcapture', title=first 50 chars, domain='General', tags=[]). Never block capture. Add Domain dropdown (Select) and Tags multi-select (Combobox) below title input, pre-filled from AI but user-editable.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test content paste triggers AI analysis after 500ms debounce. Test loading spinner shows during analysis. Test form fields auto-populate from AI response. Test AI failure shows warning but allows manual entry. Test domain dropdown shows AI-suggested domain pre-selected. Test tags are displayed as removable badges. Test clearing content clears AI suggestions. Test image content skips AI analysis.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-17T01:31:41.345Z"
           },
           {
             "id": 3,
@@ -2178,9 +2180,10 @@
               2
             ],
             "details": "In QuickCaptureModal.tsx, add useEffect hook that triggers 600ms after title changes (debounced, longer than AI). Extract keywords from title (split by whitespace, remove stop words like 'the', 'a', 'of'). Call window.api.sourceItems.search(titleKeywords) using existing searchQueries.search() with filter='inbox'. If results found with similarity score >0.7 (use simple Levenshtein or token overlap), set duplicateWarning state. Show warning banner (Alert component with variant='warning') below form: 'Similar item exists: [First matching title]' with [View Existing] button. Button opens SourceItemViewerDialog with matching item. User can still save (might be different angle). Add IPC handler 'source-items:search' in ipc-handlers.ts that wraps searchQueries.search() and returns IpcResult.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test title entry triggers search after 600ms. Test exact title match shows duplicate warning. Test similar title (80% match) shows warning. Test dissimilar title shows no warning. Test View Existing button opens correct source item. Test warning doesn't block save action. Test search returns within <200ms. Test no results shows no warning. Test multiple similar items shows first match only.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-17T01:31:41.353Z"
           },
           {
             "id": 4,
@@ -2191,9 +2194,10 @@
               3
             ],
             "details": "In QuickCaptureModal.tsx handleSave(), construct sourceItem object using: id from crypto.randomUUID(), sourceType from aiAnalysisResult?.sourceType || sourceMap[detectedType], sourceName='Quick Capture', title from title input (user-editable, fallback to AI suggestion), rawContent from content textarea, canonicalTopicIds=[] (empty, curated later), tags from user-selected tags (merge AI suggestions + user additions), questionId undefined (not qbank yet), metadata object with summary from aiAnalysisResult?.extractedFacts.join('; ') and subject from aiAnalysisResult?.domain, status='inbox', createdAt/updatedAt timestamps. Call window.api.sourceItems.create(sourceItem). On success, refresh counts via useAppStore.refreshCounts(), show toast 'Saved to inbox - Process when you're rested', reset form state, close modal.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test Save to Inbox creates source_item with correct fields. Test AI-suggested domain stored in metadata.subject. Test AI-suggested tags saved to tags array. Test extractedFacts joined into metadata.summary. Test manual title overrides AI suggestion. Test status='inbox' set correctly. Test createdAt timestamp is ISO string. Test counts refresh after save. Test toast notification shows. Test modal closes and form resets. Test save works even without AI analysis (uses defaults).",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-17T01:31:41.362Z"
           },
           {
             "id": 5,
@@ -2203,12 +2207,13 @@
               4
             ],
             "details": "In QuickCaptureModal.tsx DialogFooter, add new Button with variant='default', icon=<PlayCircle>, text='Add to Notebook Now ->' positioned after 'Save to Inbox'. Replace existing disabled 'Process Now' button. On click, call handleAddToNotebookNow() which: 1) Saves source_item using same logic as handleSave() (extract to shared function saveCaptureItem()), 2) On successful save, call useAppStore.setSelectedSourceItems([savedItem.id]), 3) Call useAppStore.openAddToNotebookDialog(), 4) Close QuickCaptureModal via onClose(). Update AddToNotebookDialog.tsx to check useAppStore.selectedSourceItems on open and pre-populate if items exist. This enables single-step capture-to-notebook flow. Button disabled if content empty or AI analysis still running.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test Add to Notebook Now button visible and enabled after content entry. Test button disabled while AI analyzing. Test click saves source_item to database with status='inbox'. Test AddToNotebookDialog opens after save completes. Test AddToNotebookDialog pre-populates with saved item. Test QuickCaptureModal closes after navigation. Test error during save shows toast and doesn't navigate. Test single-step flow from capture to notebook. Test button tooltip explains workflow.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-17T01:31:41.370Z"
           }
         ],
-        "updatedAt": "2026-01-16T21:28:24.612Z"
+        "updatedAt": "2026-01-17T01:31:41.370Z"
       },
       {
         "id": "129",
@@ -2242,9 +2247,75 @@
         "testStrategy": "Test edit mode opens with current content. Test 20 char minimum enforced. Test stale card warning shows when cardCount > 0. Test View Cards button navigates to affected cards. Test Save updates database. Test Cancel discards changes. Test no-change save doesn't write to DB. Test unsaved changes confirmation on navigate away.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": [],
-        "updatedAt": "2026-01-12T21:00:00.000Z"
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add Edit button to NotebookBlockComponent with hover reveal",
+            "description": "Add an Edit button to the NotebookBlock component header that reveals on hover, similar to the card count badge pattern already in use.",
+            "dependencies": [],
+            "details": "In NotebookBlockComponent (src/components/notebook/NotebookBlock.tsx), add an Edit button in the header row next to the existing badges. Use Lucide's Pencil icon. Button should be subtle with opacity transition on group-hover (similar to existing patterns). Position it in the header alongside Block position and card count badge. Use Button with size='sm' and variant='ghost'. On click, trigger a callback prop `onEdit` passed from parent TopicPageView.",
+            "status": "done",
+            "testStrategy": "Verify Edit button appears on hover in block header. Test click triggers edit mode. Ensure button styling matches existing UI patterns with smooth hover transitions.",
+            "updatedAt": "2026-01-18T16:38:49.329Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Create BlockEditModal component with InsightTextarea",
+            "description": "Create a new modal component for editing block content using the existing InsightTextarea pattern with 20 character minimum validation.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create src/components/notebook/BlockEditModal.tsx using Dialog components (similar to CardEditModal pattern). Props: open, onOpenChange, block (NotebookBlock), onSave. Use InsightTextarea component with minLength=20 for content editing. Show character count and validation. Include Cancel and Save buttons in DialogFooter. Save button disabled when content is invalid or unchanged. Track original content to detect changes. Header should show 'EDITING: {topic name} - Block {position + 1}'. Use state for edited content and validation status.",
+            "status": "done",
+            "testStrategy": "Test modal opens with current block content. Test InsightTextarea enforces 20 char minimum. Test Save button disabled when invalid or no changes. Test Cancel closes modal. Test character count displays correctly.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-18T17:02:08.565Z"
+          },
+          {
+            "id": 3,
+            "title": "Add stale card warning banner when cardCount > 0",
+            "description": "Implement a warning banner in BlockEditModal that alerts users when editing blocks that have existing cards, with a View Cards button.",
+            "dependencies": [
+              2
+            ],
+            "details": "In BlockEditModal, check if block.cardCount > 0. If true, display a warning banner below the InsightTextarea using Alert component with variant='warning'. Message: 'This block has {cardCount} {card|cards}. Editing may make them stale.' Include a View Cards button that calls useAppStore's setCurrentView to navigate to Card Browser filtered by this block's cards. Banner should use theme colors (bg-warning/10, text-warning-foreground, border-warning/30). Position between textarea and footer buttons.",
+            "status": "done",
+            "testStrategy": "Test warning banner shows when cardCount > 0. Test correct card count displayed with proper pluralization. Test View Cards button navigates to filtered card view. Test banner hidden when cardCount is 0.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-18T17:06:05.453Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement unsaved changes confirmation dialog",
+            "description": "Add a confirmation dialog that prevents accidental data loss when user tries to close modal with unsaved changes.",
+            "dependencies": [
+              2
+            ],
+            "details": "Track whether content has changed (compare current value to original block.content). Override DialogContent's onOpenChange to intercept close attempts. If hasUnsavedChanges is true and user tries to close (via X, Escape, or Cancel button), show confirmation dialog using AlertDialog component: 'Discard unsaved changes?' with [Keep Editing] and [Discard] buttons. Only allow close if no changes or user confirms discard. Cancel button should trigger this confirmation, while Save button bypasses it (saves then closes).",
+            "status": "done",
+            "testStrategy": "Test confirmation shows when closing with unsaved changes. Test Keep Editing cancels close. Test Discard closes without saving. Test confirmation skipped when no changes made. Test Escape key triggers confirmation.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-18T17:16:19.297Z"
+          },
+          {
+            "id": 5,
+            "title": "Wire up save to database with optimistic UI update",
+            "description": "Connect the Save button to the existing notebookBlocks.update IPC handler and implement optimistic UI updates in TopicPageView.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "In BlockEditModal handleSave: call await window.api.notebookBlocks.update(block.id, { content: newContent }). Handle IpcResult error case with toast notification. On success, call onSave callback to trigger parent refresh. In TopicPageView, manage edit modal state (editingBlock, editModalOpen). Pass handleBlockEdit callback to NotebookBlockComponent. On successful save, optimistically update local blocks state before re-fetching to avoid UI flicker. Use toast from sonner for success/error feedback. No database write if content unchanged (skip API call).",
+            "status": "done",
+            "testStrategy": "Test Save updates database via IPC. Test success toast shows. Test blocks list refreshes with new content. Test error handling shows error toast. Test no API call when content unchanged. Test optimistic update prevents flicker.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-18T17:20:25.912Z"
+          }
+        ],
+        "updatedAt": "2026-01-18T17:20:25.912Z"
       },
       {
         "id": "132",
@@ -2518,9 +2589,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-16T21:28:24.613Z",
+      "lastModified": "2026-01-18T17:20:25.912Z",
       "taskCount": 42,
-      "completedCount": 25,
+      "completedCount": 27,
       "tags": [
         "master"
       ]
