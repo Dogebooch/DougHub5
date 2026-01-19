@@ -1449,7 +1449,7 @@ export function CardBrowserView() {
                 cards.some(
                   (c) =>
                     c.dueDate &&
-                    c.dueDate <= new Date().toISOString().split("T")[0]
+                    c.dueDate <= new Date().toISOString().split("T")[0],
                 ) && (
                   <span className="ml-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
                 )}
@@ -1777,6 +1777,7 @@ export function CardBrowserView() {
           initialFront={editingCard.front}
           initialBack={editingCard.back}
           initialTags={editingCard.tags || []}
+          initialReps={editingCard.reps}
           onSave={fetchCards}
         />
       )}
@@ -1873,7 +1874,7 @@ export function CardBrowserView() {
                           onClick={() => {
                             // Try to find the card in the currently filtered list
                             let cardIndex = filteredCards.findIndex(
-                              (c) => c.id === card.id
+                              (c) => c.id === card.id,
                             );
 
                             // If not found in current tab, switch to "All Cards"
@@ -1882,7 +1883,7 @@ export function CardBrowserView() {
                               // We need to wait for the next render for filteredCards to update
                               // OR we can find it in the 'cards' array which represents the 'all' tab
                               cardIndex = cards.findIndex(
-                                (c) => c.id === card.id
+                                (c) => c.id === card.id,
                               );
                             }
 
@@ -1918,8 +1919,8 @@ export function CardBrowserView() {
                               {card.state === 0
                                 ? "New"
                                 : card.state === 4
-                                ? "Suspended"
-                                : "Studied"}
+                                  ? "Suspended"
+                                  : "Studied"}
                             </Badge>
                             {card.isLeech && (
                               <Badge

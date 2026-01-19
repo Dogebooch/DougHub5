@@ -115,7 +115,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
         "group flex items-center gap-4 py-2 px-4 transition-colors hover:bg-black/5 text-card-foreground min-w-0 overflow-hidden relative cursor-pointer outline-none focus-visible:bg-black/5",
         isSelected && "bg-primary/10",
         isHighlighted &&
-          "bg-warning/10 border-l-4 border-l-warning animate-pulse-subtle"
+          "bg-warning/10 border-l-4 border-l-warning animate-pulse-subtle",
       )}
     >
       <div
@@ -132,11 +132,33 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
         />
         <div
           className={cn(
-            "w-9 h-10 rounded-lg bg-black/5 flex flex-col items-center justify-center shrink-0",
-            sourceLabel && "pt-1 px-0.5"
+            "w-9 h-10 rounded-lg bg-black/5 flex flex-col items-center justify-center shrink-0 overflow-hidden",
+            sourceLabel && "pt-1 px-0.5",
           )}
         >
-          {getIcon()}
+          {sourceItem.mediaPath ? (
+            <img
+              src={`app-media://${sourceItem.mediaPath.replace(/\\/g, "/")}`}
+              alt=""
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to icon on error
+                e.currentTarget.style.display = "none";
+                const parent = e.currentTarget.parentElement;
+                if (parent) {
+                  const iconPlaceholder =
+                    parent.querySelector(".icon-placeholder");
+                  if (iconPlaceholder)
+                    iconPlaceholder.classList.remove("hidden");
+                }
+              }}
+            />
+          ) : null}
+          <div
+            className={cn("icon-placeholder", sourceItem.mediaPath && "hidden")}
+          >
+            {getIcon()}
+          </div>
           {sourceLabel && (
             <span className="text-[8px] font-bold text-card-muted/80 tracking-tighter uppercase leading-[1.1] w-full text-center mt-0.5 break-words">
               {sourceLabel}

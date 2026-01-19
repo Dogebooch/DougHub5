@@ -213,6 +213,20 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
           </Button>
         </div>
 
+        {/* Image display if present */}
+        {block.mediaPath && (
+          <div className="mb-4 rounded-lg overflow-hidden border bg-muted/30 max-w-fit mx-auto">
+            <img
+              src={`app-media://${block.mediaPath.replace(/\\/g, "/")}`}
+              alt=""
+              className="max-w-full max-h-[400px] object-contain block"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          </div>
+        )}
+
         {/* Content */}
         <div
           ref={contentRef}

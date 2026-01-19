@@ -77,7 +77,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
 
   const handleImageFile = useCallback((file: File) => {
     if (file.size > MAX_FILE_SIZE) {
-      toast.error("Image too large. Please use an image smaller than 10MB.");
+      toast.error("Image too large (max 10MB)");
       return;
     }
 

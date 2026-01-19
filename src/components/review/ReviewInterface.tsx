@@ -124,6 +124,35 @@ export function ReviewInterface() {
     cardCount: number;
   } | null>(null);
 
+  const [cardImagePath, setCardImagePath] = useState<string | null>(null);
+
+  // Fetch block media path if present (T113)
+  useEffect(() => {
+    let active = true;
+    if (currentCard?.sourceBlockId) {
+      const api = getWindowApi();
+      if (!api) return;
+
+      api.notebookBlocks
+        .getById(currentCard.sourceBlockId)
+        .then((res) => {
+          if (active && res.data?.mediaPath) {
+            setCardImagePath(res.data.mediaPath);
+          } else {
+            setCardImagePath(null);
+          }
+        })
+        .catch(() => {
+          if (active) setCardImagePath(null);
+        });
+    } else {
+      setCardImagePath(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [currentCard?.sourceBlockId]);
+
   // Fetch specialized topic metadata (v2)
   useEffect(() => {
     let active = true;
@@ -526,6 +555,18 @@ export function ReviewInterface() {
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
         <div className="text-center space-y-6">
+          {/* Card Image Display (T113) */}
+          {cardImagePath && (
+            <div className="mx-auto mb-4 rounded-xl overflow-hidden border bg-muted/20 shadow-sm max-w-fit">
+              <img
+                src={`app-media://${cardImagePath.replace(/\\/g, "/")}`}
+                alt="Card context"
+                className="max-w-full max-h-[300px] object-contain block"
+                onError={() => setCardImagePath(null)}
+              />
+            </div>
+          )}
+
           {/* Front - Use cloze renderer for cloze and list-cloze types */}
           {currentCard.cardType === "cloze" ||
           currentCard.cardType === "list-cloze" ? (
