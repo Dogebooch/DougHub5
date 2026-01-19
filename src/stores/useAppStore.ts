@@ -7,6 +7,7 @@ import {
   RatingValue,
   ScheduleResult,
   AppView,
+  AppViewOptions,
   AppSettings,
 } from "@/types";
 import { seedSampleData } from "@/lib/seedData";
@@ -30,10 +31,7 @@ interface AppState {
   isLoading: boolean;
   currentView: AppView;
   selectedItemId: string | null;
-  viewOptions?: {
-    filter?: string;
-    topicId?: string;
-  };
+  viewOptions?: AppViewOptions;
   inboxCount: number;
   queueCount: number;
   smartViewCounts: Record<string, number>;
@@ -44,30 +42,30 @@ interface AppState {
 
 interface AppActions {
   addCard: (
-    card: CardWithFSRS
+    card: CardWithFSRS,
   ) => Promise<{ success: boolean; error?: string }>;
   updateCard: (
-    card: CardWithFSRS
+    card: CardWithFSRS,
   ) => Promise<{ success: boolean; error?: string }>;
   deleteCard: (id: string) => Promise<{ success: boolean; error?: string }>;
   addNote: (note: Note) => Promise<{ success: boolean; error?: string }>;
   updateNote: (note: Note) => Promise<{ success: boolean; error?: string }>;
   deleteNote: (id: string) => Promise<{ success: boolean; error?: string }>;
   deleteNotebookPage: (
-    id: string
+    id: string,
   ) => Promise<{ success: boolean; error?: string }>;
   getCardsDueToday: () => CardWithFSRS[];
   scheduleCardReview: (
     cardId: string,
     rating: RatingValue,
-    responseTimeMs?: number | null
+    responseTimeMs?: number | null,
   ) => Promise<{ success: boolean; data?: ScheduleResult; error?: string }>;
   setHydrated: () => void;
   seedSampleData: () => void;
   setCurrentView: (
     view: AppView,
     itemId?: string | null,
-    options?: AppState["viewOptions"]
+    options?: AppState["viewOptions"],
   ) => void;
   initialize: () => Promise<void>;
   refreshCounts: () => Promise<void>;
@@ -84,13 +82,13 @@ interface AppActions {
     sort?: {
       field: "dueDate" | "createdAt" | "difficulty" | "lastReview";
       direction: "asc" | "desc";
-    }
+    },
   ) => Promise<CardBrowserItem[]>;
 
   // Settings Actions
   updateSetting: <K extends keyof AppSettings>(
     key: K,
-    value: AppSettings[K]
+    value: AppSettings[K],
   ) => Promise<void>;
   loadSettings: () => Promise<void>;
 
@@ -101,7 +99,7 @@ interface AppActions {
   selectAllInbox: (ids: string[]) => void;
   clearInboxSelection: () => void;
   batchDeleteInbox: (
-    itemIds: string[]
+    itemIds: string[],
   ) => Promise<{ success: boolean; error?: string }>;
   purgeRawPages: () => Promise<{ success: boolean; error?: string }>;
 }
@@ -136,7 +134,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       if (statusResult.error) {
         console.error(
           "[Store] Failed to refresh smart view counts:",
-          statusResult.error
+          statusResult.error,
         );
         return;
       }
@@ -199,7 +197,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         if (result?.error) {
           console.error(
             `[Store] Failed to update setting ${key}:`,
-            result.error
+            result.error,
           );
           return;
         }
@@ -324,12 +322,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           notesResult.data?.length ?? 0,
           "notes, and",
           inboxCount,
-          "inbox items"
+          "inbox items",
         );
       } else {
         // Fallback for non-Electron environment (dev/testing)
         console.warn(
-          "[Store] window.api not available, using in-memory sample data"
+          "[Store] window.api not available, using in-memory sample data",
         );
         get().seedSampleData();
         set({ isLoading: false });
@@ -450,7 +448,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     sort?: {
       field: "dueDate" | "createdAt" | "difficulty" | "lastReview";
       direction: "asc" | "desc";
-    }
+    },
   ) => {
     const api = getWindowApi();
     if (!api) {
@@ -547,14 +545,16 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   scheduleCardReview: async (
     cardId: string,
     rating: RatingValue,
-    responseTimeMs?: number | null
+    responseTimeMs?: number | null,
+    confidenceRating?: string | null,
   ) => {
     try {
       if (typeof window !== "undefined" && window.api) {
         const result = await window.api.reviews.schedule(
           cardId,
           rating,
-          responseTimeMs
+          responseTimeMs,
+          confidenceRating,
         );
         if (result.error) {
           console.error("[Store] Failed to schedule review:", result.error);
@@ -564,7 +564,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         // Update local state with the new card data
         set((state) => ({
           cards: state.cards.map((c) =>
-            c.id === cardId ? result.data!.card : c
+            c.id === cardId ? result.data!.card : c,
           ),
         }));
 
@@ -624,7 +624,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         if (result.error) {
           console.error(
             "[Store] Failed to delete notebook page:",
-            result.error
+            result.error,
           );
           return { success: false, error: result.error };
         }
@@ -686,7 +686,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       if (typeof window !== "undefined" && window.api) {
         // Execute batch deletions with individual error tracking
         const results = await Promise.allSettled(
-          itemIds.map((id) => window.api.sourceItems.delete(id))
+          itemIds.map((id) => window.api.sourceItems.delete(id)),
         );
 
         // Log individual failures
@@ -694,7 +694,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         if (failures.length > 0) {
           console.error(
             `[Store] batchDeleteInbox: ${failures.length}/${itemIds.length} items failed`,
-            failures
+            failures,
           );
         }
 
@@ -703,7 +703,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         get().clearInboxSelection();
 
         const successCount = results.filter(
-          (r) => r.status === "fulfilled"
+          (r) => r.status === "fulfilled",
         ).length;
         return {
           success: successCount > 0,

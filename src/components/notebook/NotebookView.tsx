@@ -12,11 +12,14 @@ import { TopicPageView } from "./TopicPageView";
  * Implements a list/detail pattern for Topic Pages.
  */
 export const NotebookView = () => {
-  const { selectedItemId, setCurrentView } = useAppStore();
+  const { selectedItemId, viewOptions, setCurrentView } = useAppStore();
   const [pages, setPages] = useState<NotebookTopicPage[]>([]);
   const [topics, setTopics] = useState<Map<string, CanonicalTopic>>(new Map());
   const [selectedPageId, setSelectedPageId] = useState<string | null>(
-    selectedItemId || null
+    selectedItemId || null,
+  );
+  const [targetBlockId, setTargetBlockId] = useState<string | null>(
+    viewOptions?.blockId || null,
   );
   const [isLoading, setIsLoading] = useState(true);
 
@@ -24,10 +27,13 @@ export const NotebookView = () => {
   useEffect(() => {
     if (selectedItemId && selectedItemId !== selectedPageId) {
       setSelectedPageId(selectedItemId);
+      if (viewOptions?.blockId) {
+        setTargetBlockId(viewOptions.blockId);
+      }
       // Clear the deep link after it's been handled to prevent recursion/stale state
       setCurrentView("notebook", null);
     }
-  }, [selectedItemId, selectedPageId, setCurrentView]);
+  }, [selectedItemId, selectedPageId, viewOptions, setCurrentView]);
 
   // Load data - extracted to useCallback for child components
   const fetchData = useCallback(async () => {
@@ -49,7 +55,7 @@ export const NotebookView = () => {
           if (page.canonicalTopicId && !topicMap.has(page.canonicalTopicId)) {
             try {
               const topicResult = await window.api.canonicalTopics.getById(
-                page.canonicalTopicId
+                page.canonicalTopicId,
               );
               if (topicResult.data) {
                 topicMap.set(page.canonicalTopicId, topicResult.data);
@@ -57,11 +63,11 @@ export const NotebookView = () => {
             } catch (err) {
               console.error(
                 `Failed to fetch topic ${page.canonicalTopicId}:`,
-                err
+                err,
               );
             }
           }
-        })
+        }),
       );
 
       setTopics(topicMap);
@@ -88,7 +94,7 @@ export const NotebookView = () => {
       }
       fetchData();
     },
-    [selectedPageId, fetchData]
+    [selectedPageId, fetchData],
   );
 
   // Loading State
@@ -159,7 +165,12 @@ export const NotebookView = () => {
       {/* Main Content: Topic Page View */}
       <div className="flex-1 h-full bg-background">
         {selectedPageId ? (
-          <TopicPageView pageId={selectedPageId} onRefresh={fetchData} />
+          <TopicPageView
+            pageId={selectedPageId}
+            onRefresh={fetchData}
+            targetBlockId={targetBlockId}
+            onTargetBlockHandled={() => setTargetBlockId(null)}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8">
             <BookOpen className="w-12 h-12 mb-4 opacity-20" />

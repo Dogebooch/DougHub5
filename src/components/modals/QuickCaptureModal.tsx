@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   X,
+  Check,
   Upload,
   ImageIcon,
   Keyboard,
@@ -27,6 +28,7 @@ import { TITLE_MAX_LENGTH } from "@/constants";
 import { detectContentType, type ContentType } from "@/lib/content-detector";
 import { cn } from "@/lib/utils";
 import { AddToNotebookWorkflow } from "@/components/notebook/AddToNotebookWorkflow";
+import { Label } from "@/components/ui/label";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -44,6 +46,9 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
   const [imageData, setImageData] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [correctness, setCorrectness] = useState<
+    "correct" | "incorrect" | null
+  >(null);
 
   // AI Analysis state
   const [aiAnalysis, setAiAnalysis] = useState<CaptureAnalysisResult | null>(
@@ -324,6 +329,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     setIsCheckingDuplicate(false);
     setUserTags([]);
     setUserDomain("");
+    setCorrectness(null);
   };
 
   /**
@@ -391,6 +397,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
           status: "inbox",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          correctness: finalSourceType === "qbank" ? correctness : null,
         };
         const result = await window.api.sourceItems.create(sourceItem);
         if (result.error) {
@@ -510,6 +517,68 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
                 }}
                 className="font-semibold"
               />
+
+              {/* Correctness Toggle (v18) */}
+              {(detectedType === "qbank" ||
+                aiAnalysis?.sourceType === "qbank") && (
+                <div className="space-y-2 py-1 animate-in fade-in duration-300">
+                  <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Did you answer correctly?
+                  </Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={
+                        correctness === "correct" ? "default" : "outline"
+                      }
+                      size="sm"
+                      className={cn(
+                        "flex-1 h-8",
+                        correctness === "correct" &&
+                          "bg-success hover:bg-success/90 text-success-foreground border-success",
+                      )}
+                      onClick={() =>
+                        setCorrectness(
+                          correctness === "correct" ? null : "correct",
+                        )
+                      }
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      Correct
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={
+                        correctness === "incorrect" ? "default" : "outline"
+                      }
+                      size="sm"
+                      className={cn(
+                        "flex-1 h-8",
+                        correctness === "incorrect" &&
+                          "bg-destructive hover:bg-destructive/90 text-destructive-foreground border-destructive",
+                      )}
+                      onClick={() =>
+                        setCorrectness(
+                          correctness === "incorrect" ? null : "incorrect",
+                        )
+                      }
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Incorrect
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={correctness === null ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-8 px-3"
+                      onClick={() => setCorrectness(null)}
+                    >
+                      Skip
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {((contentType === "text" && content.trim()) ||
                 (contentType === "image" && imageData)) && (
                 <div className="flex flex-col gap-2">

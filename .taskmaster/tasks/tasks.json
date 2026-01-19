@@ -1686,14 +1686,14 @@
           "118",
           "125"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
             "title": "Board Relevance Panel Component",
             "description": "Create BoardRelevancePanel.tsx component that shows practice Q cross-reference data for selected topic and computes relevanceScore",
             "dependencies": [],
-            "details": "Create src/components/notebook/BoardRelevancePanel.tsx. Props: topicId (string), topicTags (string[]), sourceContent (string), onRelevanceComputed (score: RelevanceScore, reason: string) => void. Query: getBoardRelevanceForTopic(topicTags) IPC handler that returns { questionsAttempted: number, correctCount: number, testedConcepts: { concept: string, count: number }[], missedConcepts: { concept: string, sourceItemId: string }[] }.\n\nDISPLAY:\n- Header: '📊 Board Relevance'\n- Stats: 'X Qs attempted | Y% accuracy'\n- 'Tested:' list with concepts + count\n- 'You missed:' list with concept names (amber highlight)\n- Relevance indicator with score badge + reason\n\nRELEVANCE SCORING LOGIC (call onRelevanceComputed when computed):\n| Condition | Score | Reason |\n|-----------|-------|--------|\n| sourceContent matches missedConcepts | high | 'Targets your weak area' |\n| sourceContent matches testedConcepts | medium | 'Board-tested topic' |\n| questionsAttempted === 0 | unknown | 'No practice Q data' |\n| Topic has Qs but no concept match | low | 'Not tested in your Qs' |\n\nMATCHING LOGIC: Simple keyword match - check if any concept string appears in sourceContent (case-insensitive). Check missedConcepts first (higher priority).\n\nUI: Use Collapsible from shadcn/ui, default open. Badge colors: high=green, medium=blue, low=gray, unknown=yellow. Only render if topic selected. Styling: Card with muted background, amber accent for mistakes section.",
+            "details": "Create src/components/notebook/BoardRelevancePanel.tsx. Props: topicId (string), topicTags (string[]), sourceContent (string), onRelevanceComputed (score: RelevanceScore, reason: string) => void. Query: getBoardRelevanceForTopic(topicTags) IPC handler that returns { questionsAttempted: number, correctCount: number, testedConcepts: { concept: string, count: number }[], missedConcepts: { concept: string, sourceItemId: string }[] }.\n\nDISPLAY:\n- Header: '📊 Board Relevance'\n- Stats: 'X Qs attempted | Y% accuracy'\n- 'Tested:' list with concepts + count\n- 'You missed:' list with concept names (amber highlight)\n- Relevance indicator with score badge + reason\n\nRELEVANCE SCORING LOGIC (call onRelevanceComputed when computed):\n| Condition | Score | Reason |\n|-----------|-------|--------|\n| sourceContent matches missedConcepts | high | 'Targets your weak area' |\n| sourceContent matches testedConcepts | medium | 'Board-tested topic' |\n| questionsAttempted === 0 | unknown | 'No practice Q data' |\n| Topic has Qs but no concept match | low | 'Not tested in your Qs' |\n\nMATCHING LOGIC: Simple keyword match - check if any concept string appears in sourceContent (case-insensitive). Check missedConcepts first (higher priority).\n\nUI: Use Collapsible from shadcn/ui, default open. Badge colors: high=green, medium=blue, low=gray, unknown=yellow. Only render if topic selected. Styling: Card with muted background, amber accent for mistakes section.\n<info added on 2026-01-19T02:07:37.030Z>\nI'll analyze the codebase to understand the current implementation and provide specific guidance for the Board Relevance Panel component.Based on my codebase analysis, here's the specific implementation guidance for the Board Relevance Panel:\n\nIMPLEMENTATION CLARIFICATIONS:\n\n1. TOPIC SELECTION & QUERY:\n   - Only render when topicId prop is truthy\n   - Query using topic's CanonicalTopic.aliases array (fetch via window.api.canonicalTopics.getById(topicId))\n   - IPC handler signature: insights:getBoardRelevanceForTopic({ topicTags: string[] })\n   - Database query filters: WHERE sourceType='qbank' AND tags overlap with topicTags\n\n2. CORRECTNESS FIELD:\n   - Use SourceItem.correctness field (added in v18 migration electron/database/migrations/v18.ts:10)\n   - Type: \"correct\" | \"incorrect\" | null (electron/database/types.ts:142)\n   - Never parse title; correctness is explicitly set in QuickCaptureModal (src/components/modals/QuickCaptureModal.tsx:400)\n\n3. COMPONENT STRUCTURE:\n   - Props: topicId, topicTags (from CanonicalTopic.aliases), sourceContent, onRelevanceComputed callback\n   - Use shadcn/ui Collapsible component (import from @/components/ui/collapsible per CardWorthinessPanel.tsx:4-6)\n   - Default open state\n   - Render guard: if (!topicId) return null\n\n4. STYLING WITH THEME VARIABLES:\n   - Badge colors: bg-success (high), bg-info (medium), bg-muted (low), bg-warning (unknown)\n   - Mistake highlights: text-warning (amber)\n   - Card wrapper: bg-surface-elevated (per src/index.css:11 elevation system)\n   - NEVER use hardcoded Tailwind colors (bg-red-500, bg-blue-500, etc.)\n\n5. DATA FLOW:\n   - Fetch CanonicalTopic → extract aliases array → pass to IPC handler\n   - IPC returns { questionsAttempted, correctCount, testedConcepts, missedConcepts }\n   - Compute relevanceScore using matching logic (check sourceContent against missedConcepts first, then testedConcepts)\n   - Call onRelevanceComputed(score, reason) immediately after computation\n\n6. DATABASE SCHEMA REFERENCE:\n   - SourceItem.correctness (v18): electron/database/types.ts:142\n   - CanonicalTopic.aliases (v3): electron/database/types.ts:150\n   - Query pattern: SELECT * FROM source_items WHERE sourceType='qbank' AND json_each(tags) IN (topicTags)\n</info added on 2026-01-19T02:07:37.030Z>",
             "status": "pending",
             "testStrategy": "Select topic with qbank items where source matches missed concept, verify score=high. Select topic with qbank items where source matches tested concept, verify score=medium. Select topic with qbank items but no concept match, verify score=low. Select topic with no qbank items, verify score=unknown. Verify onRelevanceComputed callback fires with correct score/reason.",
             "parentId": "undefined"
@@ -1709,7 +1709,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-01-08T20:00:00.000Z"
+        "updatedAt": "2026-01-19T02:25:47.500Z"
       },
       {
         "id": "120",
@@ -1771,9 +1771,9 @@
         "dependencies": [
           "120"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-01-08T20:00:00.000Z"
+        "updatedAt": "2026-01-18T21:53:18.689Z"
       },
       {
         "id": "122",
@@ -1786,9 +1786,9 @@
           "119",
           "121"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-01-08T20:00:00.000Z"
+        "updatedAt": "2026-01-19T02:26:20.455Z"
       },
       {
         "id": "123",
@@ -1801,9 +1801,9 @@
           "120",
           "122"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-01-08T20:00:00.000Z"
+        "updatedAt": "2026-01-19T02:42:18.194Z"
       },
       {
         "id": "124",
@@ -1930,7 +1930,7 @@
           "118",
           "117"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1991,7 +1991,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-01-08T22:00:00.000Z"
+        "updatedAt": "2026-01-19T01:52:07.709Z"
       },
       {
         "id": "126",
@@ -2328,7 +2328,7 @@
         "dependencies": [
           "126"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2392,7 +2392,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-01-12T21:00:00.000Z"
+        "updatedAt": "2026-01-18T21:22:39.202Z"
       },
       {
         "id": "133",
@@ -2404,24 +2404,24 @@
         "dependencies": [
           "126"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-01-12T21:00:00.000Z"
+        "updatedAt": "2026-01-18T21:22:35.590Z"
       },
       {
         "id": "134",
         "title": "Workflow 10: Remove Link",
         "description": "Delete notebook links with confirmation, handling bidirectional links independently.",
-        "details": "WORKFLOW 10: REMOVE LINK\n\nSCREEN MOCKUP:\n```\nIn block detail sidebar, each link shows [x] button:\n\n+-------------------------+\n| REFERENCES              |\n|                         |\n| -> CKD Staging     [x]  |\n|    \"CKD patients\"       |\n|                         |\n| -> Statin Therapy  [x]  |\n|    \"statins\"            |\n+-------------------------+\n```\n\nFLOW:\n1. User clicks [x] on link in sidebar\n2. Show confirmation dialog: \"Remove link to [Topic: Block Title]?\" [Remove] [Cancel]\n3. On confirm: DELETE FROM notebook_links WHERE id = ?\n4. Sidebar refreshes to show updated links\n\nDATABASE OPERATIONS:\n```typescript\n// On confirm\nawait window.api.deleteNotebookLink(linkId);\n\n// Refresh sidebar\nconst linksFrom = await window.api.getNotebookLinksFromBlock(blockId);\nconst linksTo = await window.api.getNotebookLinksToBlock(blockId);\n```\n\nCONFIRMATION DIALOG:\n- Title: \"Remove Link?\"\n- Message: \"Remove link to [Target Topic]: '[Target Block Title excerpt]'?\"\n- Buttons: [Cancel] [Remove] (Remove is destructive/red)\n- No \"Don't ask again\" option - always confirm\n\nEDGE CASES:\n\nBidirectional links:\n- Removing A→B does NOT remove B→A\n- Each direction is independent\n- If user wants to remove both, they must delete each separately\n- Show both directions in sidebar with own [x] buttons\n\nLink to deleted block:\n- If target block was deleted, link should have been cascade-deleted\n- But if not (data integrity issue), show: \"Target block no longer exists\" and allow removal\n\nRace condition - link already deleted:\n- If DELETE returns 0 rows affected, show subtle toast: \"Link already removed\"\n- Still refresh sidebar\n\nUI REFRESH:\n- After deletion, immediately update sidebar without full page reload\n- Use optimistic UI: remove from list immediately, rollback if delete fails",
-        "testStrategy": "Test [x] button shows on each link. Test confirmation dialog appears with correct target info. Test Remove deletes link from database. Test Cancel closes dialog without deletion. Test sidebar refreshes after removal. Test A→B removal doesn't affect B→A. Test optimistic UI removes link immediately. Test error handling for already-deleted links.",
+        "details": "WORKFLOW 10: REMOVE LINK\n\nSCREEN MOCKUP:\n```\nIn block detail sidebar, each link shows [x] button on hover:\n\n+-------------------------+\n| REFERENCES              |\n|                         |\n| -> CKD Staging     [x]  |  <- [x] appears on hover\n|    \"CKD patients\"       |\n|                         |\n| -> Statin Therapy  [x]  |\n|    \"statins\"            |\n+-------------------------+\n```\n\nFLOW:\n1. User hovers link row, [x] button fades in\n2. User clicks [x] on link in sidebar\n3. Show confirmation dialog with anchor context\n4. On confirm: DELETE FROM notebook_links WHERE id = ?\n5. Sidebar refreshes to show updated links\n\nDATABASE OPERATIONS:\n```typescript\n// On confirm\nawait window.api.notebookLinks.delete(linkId);\n\n// Refresh sidebar\nconst linksFrom = await window.api.notebookLinks.getBySourceBlock(blockId);\nconst linksTo = await window.api.notebookLinks.getByTargetBlock(blockId);\n```\n\nUI/UX POLISH REQUIREMENTS:\n\n1. [X] BUTTON VISIBILITY:\n- Show on hover only: `opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity`\n- Focusable for keyboard navigation (tabindex)\n- On touch devices, always visible (no hover state)\n- Size: h-4 w-4, ghost variant, muted color until hover\n\n2. CONFIRMATION DIALOG (use AlertDialog):\n- Title: \"Remove Link?\"\n- Message: \"Remove link to [Target Topic]: '[Block excerpt (50 chars)]'?\"\n- If anchorText exists, show below: \"Anchor: '[anchorText]'\" in muted text\n- Buttons: [Cancel] (outline) [Remove] (bg-destructive text-destructive-foreground)\n- Use theme variables, never hardcoded colors per CLAUDE.md\n\n3. LOADING STATE:\n- Disable Remove button during API call\n- Show Loader2 spinner inside Remove button\n- Keep dialog open until success/failure confirmed\n\n4. TOAST FEEDBACK:\n- Success: toast({ description: 'Link removed' }) - 2s duration\n- Already deleted: toast({ description: 'Link already removed' }) - info variant\n- Error: toast({ title: 'Error', description: 'Failed to remove link', variant: 'destructive' })\n\n5. KEYBOARD ACCESSIBILITY:\n- [x] button focusable with visible focus ring\n- Enter/Space triggers confirmation dialog\n- Escape closes dialog (AlertDialog handles this)\n- Tab order: link rows → [x] buttons → [+ Add Link]\n\n6. LINKED FROM SECTION:\n- No [x] button (links must be deleted from source block)\n- Add Tooltip on hover: \"Delete this link from the source block\"\n- Subtle visual distinction (slightly muted compared to REFERENCES)\n\nOPTIMISTIC UI:\n- On confirm click, immediately remove link from local state\n- Make API call in background\n- If API fails, rollback (re-add to list) and show error toast\n- If API succeeds, state already correct\n\nEDGE CASES:\n\nBidirectional links:\n- Removing A→B does NOT remove B→A\n- Each direction is independent\n- Show both directions in sidebar with own [x] buttons\n\nLink to deleted block:\n- If target block was deleted, link should have been cascade-deleted\n- But if not (data integrity issue), show: \"Target block no longer exists\" and allow removal\n\nRace condition - link already deleted:\n- If DELETE returns 0 rows affected, show info toast: \"Link already removed\"\n- Still update sidebar (already removed from optimistic UI)",
+        "testStrategy": "Test [x] button appears on hover only. Test [x] button always visible on touch devices. Test keyboard focus shows [x] button. Test confirmation dialog shows target topic and block excerpt. Test anchor text shown in dialog when present. Test Remove button uses destructive theme colors. Test loading spinner during delete. Test dialog stays open during API call. Test success toast shown on delete. Test already-deleted shows info toast. Test error shows destructive toast. Test optimistic UI removes immediately. Test rollback on API failure. Test A→B removal doesn't affect B→A. Test LINKED FROM has tooltip explaining no delete. Test Tab key navigates through links and buttons.",
         "priority": "high",
         "dependencies": [
           "126",
           "133"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-01-12T21:00:00.000Z"
+        "updatedAt": "2026-01-18T21:22:35.801Z"
       },
       {
         "id": "135",
@@ -2435,7 +2435,7 @@
           "133",
           "134"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2497,7 +2497,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-01-12T21:00:00.000Z"
+        "updatedAt": "2026-01-18T21:36:23.466Z"
       },
       {
         "id": "136",
@@ -2590,9 +2590,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-18T17:38:45.985Z",
+      "lastModified": "2026-01-19T02:42:18.195Z",
       "taskCount": 42,
-      "completedCount": 28,
+      "completedCount": 37,
       "tags": [
         "master"
       ]

@@ -28,7 +28,7 @@ function mapSourceToQuickCapture(item: DbSourceItem): DbQuickCapture {
 export const sourceItemQueries = {
   getAll(): DbSourceItem[] {
     const stmt = getDatabase().prepare(
-      "SELECT * FROM source_items ORDER BY createdAt DESC"
+      "SELECT * FROM source_items ORDER BY createdAt DESC",
     );
     const rows = stmt.all() as SourceItemRow[];
     return rows.map(parseSourceItemRow);
@@ -36,7 +36,7 @@ export const sourceItemQueries = {
 
   getByStatus(status: SourceItemStatus): DbSourceItem[] {
     const stmt = getDatabase().prepare(
-      "SELECT * FROM source_items WHERE status = ? ORDER BY createdAt DESC"
+      "SELECT * FROM source_items WHERE status = ? ORDER BY createdAt DESC",
     );
     const rows = stmt.all(status) as SourceItemRow[];
     return rows.map(parseSourceItemRow);
@@ -44,7 +44,7 @@ export const sourceItemQueries = {
 
   getByType(type: SourceType): DbSourceItem[] {
     const stmt = getDatabase().prepare(
-      "SELECT * FROM source_items WHERE sourceType = ? ORDER BY createdAt DESC"
+      "SELECT * FROM source_items WHERE sourceType = ? ORDER BY createdAt DESC",
     );
     const rows = stmt.all(type) as SourceItemRow[];
     return rows.map(parseSourceItemRow);
@@ -52,7 +52,7 @@ export const sourceItemQueries = {
 
   getById(id: string): DbSourceItem | null {
     const stmt = getDatabase().prepare(
-      "SELECT * FROM source_items WHERE id = ?"
+      "SELECT * FROM source_items WHERE id = ?",
     );
     const row = stmt.get(id) as SourceItemRow | undefined;
     return row ? parseSourceItemRow(row) : null;
@@ -60,7 +60,7 @@ export const sourceItemQueries = {
 
   getByUrl(url: string): DbSourceItem | null {
     const stmt = getDatabase().prepare(
-      "SELECT * FROM source_items WHERE sourceUrl = ?"
+      "SELECT * FROM source_items WHERE sourceUrl = ?",
     );
     const row = stmt.get(url) as SourceItemRow | undefined;
     return row ? parseSourceItemRow(row) : null;
@@ -68,7 +68,7 @@ export const sourceItemQueries = {
 
   getByQuestionId(questionId: string): DbSourceItem | null {
     const stmt = getDatabase().prepare(
-      "SELECT * FROM source_items WHERE sourceType = 'qbank' AND questionId = ?"
+      "SELECT * FROM source_items WHERE sourceType = 'qbank' AND questionId = ?",
     );
     const row = stmt.get(questionId) as SourceItemRow | undefined;
     return row ? parseSourceItemRow(row) : null;
@@ -79,11 +79,13 @@ export const sourceItemQueries = {
       INSERT INTO source_items (
         id, sourceType, sourceName, sourceUrl, title, rawContent,
         mediaPath, transcription, canonicalTopicIds, tags, questionId,
-        metadata, status, createdAt, processedAt, updatedAt
+        metadata, status, createdAt, processedAt, updatedAt,
+        correctness, notes, testedConcepts
       ) VALUES (
         @id, @sourceType, @sourceName, @sourceUrl, @title, @rawContent,
         @mediaPath, @transcription, @canonicalTopicIds, @tags, @questionId,
-        @metadata, @status, @createdAt, @processedAt, @updatedAt
+        @metadata, @status, @createdAt, @processedAt, @updatedAt,
+        @correctness, @notes, @testedConcepts
       )
     `);
     stmt.run({
@@ -103,6 +105,11 @@ export const sourceItemQueries = {
       updatedAt: item.updatedAt || null,
       canonicalTopicIds: JSON.stringify(item.canonicalTopicIds),
       tags: JSON.stringify(item.tags),
+      correctness: item.correctness || null,
+      notes: item.notes || null,
+      testedConcepts: item.testedConcepts
+        ? JSON.stringify(item.testedConcepts)
+        : null,
     });
   },
 
@@ -119,7 +126,7 @@ export const sourceItemQueries = {
 
   getRawPage(sourceItemId: string): string | null {
     const stmt = getDatabase().prepare(
-      "SELECT htmlPayload FROM source_raw_pages WHERE sourceItemId = ?"
+      "SELECT htmlPayload FROM source_raw_pages WHERE sourceItemId = ?",
     );
     const row = stmt.get(sourceItemId) as { htmlPayload: Buffer } | undefined;
     return row ? decompressBuffer(row.htmlPayload) : null;
@@ -153,7 +160,10 @@ export const sourceItemQueries = {
         status = @status,
         createdAt = @createdAt,
         processedAt = @processedAt,
-        updatedAt = @updatedAt
+        updatedAt = @updatedAt,
+        correctness = @correctness,
+        notes = @notes,
+        testedConcepts = @testedConcepts
       WHERE id = @id
     `);
     stmt.run({
@@ -173,12 +183,17 @@ export const sourceItemQueries = {
       updatedAt: merged.updatedAt || null,
       canonicalTopicIds: JSON.stringify(merged.canonicalTopicIds),
       tags: JSON.stringify(merged.tags),
+      correctness: merged.correctness || null,
+      notes: merged.notes || null,
+      testedConcepts: merged.testedConcepts
+        ? JSON.stringify(merged.testedConcepts)
+        : null,
     });
   },
 
   delete(id: string): void {
     const stmt = getDatabase().prepare(
-      "DELETE FROM source_items WHERE id = @id"
+      "DELETE FROM source_items WHERE id = @id",
     );
     stmt.run({ id });
   },
@@ -268,6 +283,12 @@ export function parseSourceItemRow(row: SourceItemRow): DbSourceItem {
     createdAt: row.createdAt,
     processedAt: row.processedAt || undefined,
     updatedAt: row.updatedAt || undefined,
+    // Data Logging Framework (v18)
+    correctness: (row.correctness as "correct" | "incorrect" | null) || null,
+    notes: row.notes || undefined,
+    testedConcepts: row.testedConcepts
+      ? JSON.parse(row.testedConcepts)
+      : undefined,
   };
 }
 
@@ -275,5 +296,93 @@ export function parseQuickCaptureRow(row: QuickCaptureRow): DbQuickCapture {
   return {
     ...row,
     extractionStatus: row.extractionStatus as ExtractionStatus,
+  };
+}
+
+export function getBoardRelevanceForTopic(topicTags: string[]): {
+  questionsAttempted: number;
+  correctCount: number;
+  accuracy: number;
+  testedConcepts: { concept: string; count: number }[];
+  missedConcepts: { concept: string; sourceItemId: string }[];
+} {
+  const db = getDatabase();
+
+  if (topicTags.length === 0) {
+    return {
+      questionsAttempted: 0,
+      correctCount: 0,
+      accuracy: 0,
+      testedConcepts: [],
+      missedConcepts: [],
+    };
+  }
+
+  // Build tag matching condition - check if any source tag matches any topic tag
+  // Using JSON to handle the tags array stored as JSON string
+  const rows = db
+    .prepare(
+      `
+    SELECT id, correctness, testedConcepts, tags
+    FROM source_items 
+    WHERE sourceType = 'qbank'
+  `,
+    )
+    .all() as {
+    id: string;
+    correctness: string | null;
+    testedConcepts: string | null;
+    tags: string;
+  }[];
+
+  // Filter to items where tags overlap with topicTags
+  const matchingItems = rows.filter((row) => {
+    const itemTags: string[] = JSON.parse(row.tags || "[]");
+    return itemTags.some((tag) =>
+      topicTags.some(
+        (topicTag) =>
+          tag.toLowerCase().includes(topicTag.toLowerCase()) ||
+          topicTag.toLowerCase().includes(tag.toLowerCase()),
+      ),
+    );
+  });
+
+  const questionsAttempted = matchingItems.length;
+  const correctCount = matchingItems.filter(
+    (r) => r.correctness === "correct",
+  ).length;
+  const accuracy =
+    questionsAttempted > 0
+      ? Math.round((correctCount / questionsAttempted) * 100)
+      : 0;
+
+  // Aggregate testedConcepts
+  const conceptCounts = new Map<string, number>();
+  const missedConcepts: { concept: string; sourceItemId: string }[] = [];
+
+  matchingItems.forEach((item) => {
+    const concepts: string[] = item.testedConcepts
+      ? JSON.parse(item.testedConcepts)
+      : [];
+    concepts.forEach((concept) => {
+      conceptCounts.set(concept, (conceptCounts.get(concept) || 0) + 1);
+
+      // Track missed concepts (from incorrect answers)
+      if (item.correctness === "incorrect") {
+        missedConcepts.push({ concept, sourceItemId: item.id });
+      }
+    });
+  });
+
+  const testedConcepts = Array.from(conceptCounts.entries())
+    .map(([concept, count]) => ({ concept, count }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    questionsAttempted,
+    correctCount,
+    accuracy,
+    testedConcepts,
+    missedConcepts,
   };
 }

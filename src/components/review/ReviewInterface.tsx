@@ -15,6 +15,7 @@ import { Rating } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { ClozeDisplay, ClozeAnswer } from "@/lib/cloze-renderer";
 import { MistakesReviewModal } from "./MistakesReviewModal";
+import { WeakPointsPanel } from "./WeakPointsPanel";
 import { ReferenceRangesSheet } from "@/components/shared/ReferenceRangesSheet";
 import { getWindowApi } from "@/lib/safeWindowApi";
 
@@ -43,6 +44,11 @@ export function ReviewInterface() {
     { cardId: string; responseTimeMs: number | null }[]
   >([]);
 
+  // Confidence rating (v18)
+  const [confidenceRating, setConfidenceRating] = useState<
+    "forgot" | "struggled" | "knew_it" | null
+  >(null);
+
   // Reference Ranges Sheet
   const [showReferenceRanges, setShowReferenceRanges] = useState(false);
 
@@ -55,7 +61,7 @@ export function ReviewInterface() {
 
   // Time tracking for response time and timeout (Task 5.2)
   const [responseStartTime, setResponseStartTime] = useState<number | null>(
-    null
+    null,
   );
   const [isPaused, setIsPaused] = useState(false);
   const [showManualGradeSelector, setShowManualGradeSelector] = useState(false);
@@ -184,7 +190,7 @@ export function ReviewInterface() {
   const submitReview = useCallback(
     async (
       rating: (typeof Rating)[keyof typeof Rating],
-      responseTimeMs?: number | null
+      responseTimeMs?: number | null,
     ): Promise<boolean> => {
       if (!currentCard || isSubmitting) return false;
 
@@ -193,7 +199,8 @@ export function ReviewInterface() {
         const result = await scheduleCardReview(
           currentCard.id,
           rating,
-          responseTimeMs
+          responseTimeMs,
+          confidenceRating,
         );
 
         if (!result.success) {
@@ -208,12 +215,13 @@ export function ReviewInterface() {
 
         if (isMounted.current) {
           setReviewedCount((prev) => prev + 1);
+          setConfidenceRating(null); // Reset for next card
 
           // Handle learning cards: if rated Again, re-add to end of queue
           if (rating === Rating.Again && result.data) {
             // Track mistake (T117.1)
             setMistakeCardIds((prev) =>
-              prev.includes(currentCard.id) ? prev : [...prev, currentCard.id]
+              prev.includes(currentCard.id) ? prev : [...prev, currentCard.id],
             );
             setMistakeCards((prev) => [
               ...prev,
@@ -275,7 +283,7 @@ export function ReviewInterface() {
       setCurrentView,
       toast,
       mistakeCardIds.length,
-    ]
+    ],
   );
 
   const executeRating = useCallback(
@@ -299,7 +307,7 @@ export function ReviewInterface() {
         }
       }, 1000);
     },
-    [isSubmitting, showingFeedback, submitReview]
+    [isSubmitting, showingFeedback, submitReview],
   );
 
   const handleContinue = useCallback(async () => {
@@ -333,7 +341,7 @@ export function ReviewInterface() {
       if (isSubmitting || showingFeedback) return;
       await executeRating(rating, null);
     },
-    [executeRating, isSubmitting, showingFeedback]
+    [executeRating, isSubmitting, showingFeedback],
   );
 
   // Keyboard shortcuts
@@ -426,14 +434,38 @@ export function ReviewInterface() {
 
   if (sessionComplete && !showMistakesModal) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-semibold text-foreground">
-            Session complete!
-          </h1>
-          <p className="text-muted-foreground">
-            Learned {reviewedCount} card{reviewedCount !== 1 ? "s" : ""}.
-            Redirecting to Inbox...
+      <div className="flex flex-col items-center justify-center min-h-[60vh] py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="text-center space-y-4 mb-8">
+          <div className="bg-primary/10 rounded-full p-4 w-fit mx-auto">
+            <CheckCircle2 className="h-12 w-12 text-primary" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-4xl font-bold text-foreground">
+              Session Complete!
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              You reviewed {reviewedCount} card{reviewedCount !== 1 ? "s" : ""}.
+            </p>
+          </div>
+        </div>
+
+        <WeakPointsPanel />
+
+        <div className="mt-8 flex flex-col items-center gap-4">
+          <Button
+            size="lg"
+            className="px-8 font-semibold"
+            onClick={() => {
+              if (redirectTimeoutRef.current) {
+                clearTimeout(redirectTimeoutRef.current);
+              }
+              setCurrentView("inbox");
+            }}
+          >
+            Back to Inbox
+          </Button>
+          <p className="text-xs text-muted-foreground animate-pulse">
+            Redirecting in a few seconds...
           </p>
         </div>
       </div>
@@ -483,11 +515,11 @@ export function ReviewInterface() {
           isUrgentDifficulty
             ? "ring-2 ring-destructive/50"
             : isHighDifficulty
-            ? "ring-2 ring-warning/40"
-            : "",
+              ? "ring-2 ring-warning/40"
+              : "",
           isHighDifficulty &&
             answerVisible &&
-            "motion-safe:animate-pulse-subtle"
+            "motion-safe:animate-pulse-subtle",
         )}
       >
         {/* Subtle accent line */}
@@ -536,7 +568,7 @@ export function ReviewInterface() {
                 "flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider",
                 isUrgentDifficulty
                   ? "bg-destructive/10 text-destructive border border-destructive/20"
-                  : "bg-warning/10 text-warning border border-warning/20"
+                  : "bg-warning/10 text-warning border border-warning/20",
               )}
             >
               <AlertTriangle className="h-3 w-3" />
@@ -646,6 +678,76 @@ export function ReviewInterface() {
           </Button>
         ) : (
           <div className="flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
+            {/* Confidence Rating (v18 Data Logging) */}
+            {!isSubmitting && !showingFeedback && (
+              <div className="space-y-4 w-full max-w-sm">
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">
+                    How confident were you?
+                  </p>
+                  <div className="flex justify-center gap-3">
+                    <Button
+                      variant={
+                        confidenceRating === "forgot" ? "default" : "outline"
+                      }
+                      size="sm"
+                      className={cn(
+                        "h-8 px-3 text-[11px] font-semibold transition-all",
+                        confidenceRating === "forgot"
+                          ? "bg-destructive text-destructive-foreground border-destructive"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                      onClick={() =>
+                        setConfidenceRating(
+                          confidenceRating === "forgot" ? null : "forgot",
+                        )
+                      }
+                    >
+                      😵 Forgot
+                    </Button>
+                    <Button
+                      variant={
+                        confidenceRating === "struggled" ? "default" : "outline"
+                      }
+                      size="sm"
+                      className={cn(
+                        "h-8 px-3 text-[11px] font-semibold transition-all",
+                        confidenceRating === "struggled"
+                          ? "bg-warning text-warning-foreground border-warning"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                      onClick={() =>
+                        setConfidenceRating(
+                          confidenceRating === "struggled" ? null : "struggled",
+                        )
+                      }
+                    >
+                      😅 Struggled
+                    </Button>
+                    <Button
+                      variant={
+                        confidenceRating === "knew_it" ? "default" : "outline"
+                      }
+                      size="sm"
+                      className={cn(
+                        "h-8 px-3 text-[11px] font-semibold transition-all",
+                        confidenceRating === "knew_it"
+                          ? "bg-success text-success-foreground border-success"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                      onClick={() =>
+                        setConfidenceRating(
+                          confidenceRating === "knew_it" ? null : "knew_it",
+                        )
+                      }
+                    >
+                      😎 Knew It
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {!isPaused && (
               <Button
                 size="lg"

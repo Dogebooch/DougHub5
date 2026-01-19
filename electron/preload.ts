@@ -40,7 +40,15 @@ const api = {
       cardId: string,
       rating: number,
       responseTimeMs?: number | null,
-    ) => ipcRenderer.invoke("reviews:schedule", cardId, rating, responseTimeMs),
+      confidenceRating?: string | null,
+    ) =>
+      ipcRenderer.invoke(
+        "reviews:schedule",
+        cardId,
+        rating,
+        responseTimeMs,
+        confidenceRating,
+      ),
   },
   quickCaptures: {
     getAll: () => ipcRenderer.invoke("quickCaptures:getAll"),
@@ -198,11 +206,21 @@ const api = {
     getById: (id: string) => ipcRenderer.invoke("notebookBlocks:getById", id),
     getBySourceId: (sourceId: string) =>
       ipcRenderer.invoke("notebookBlocks:getBySourceId", sourceId),
+    getBySource: (sourceId: string) =>
+      ipcRenderer.invoke("notebookBlocks:getBySource", sourceId),
     create: (block: unknown) =>
       ipcRenderer.invoke("notebookBlocks:create", block),
+    addToAnotherTopic: (payload: unknown) =>
+      ipcRenderer.invoke("notebookBlocks:addToAnotherTopic", payload),
     update: (id: string, updates: unknown) =>
       ipcRenderer.invoke("notebookBlocks:update", id, updates),
     delete: (id: string) => ipcRenderer.invoke("notebookBlocks:delete", id),
+    searchByContent: (query: string, excludeBlockId?: string, limit?: number) =>
+      ipcRenderer.invoke("notebookBlocks:searchByContent", {
+        query,
+        excludeBlockId,
+        limit,
+      }),
   },
   notebookLinks: {
     create: (link: unknown) => ipcRenderer.invoke("notebookLinks:create", link),
@@ -247,6 +265,13 @@ const api = {
     getProviderStatus: () => ipcRenderer.invoke("ai:getProviderStatus"),
     extractConcepts: (content: string) =>
       ipcRenderer.invoke("ai:extractConcepts", content),
+    evaluateInsight: (input: {
+      userInsight: string;
+      sourceContent: string;
+      isIncorrect: boolean;
+      topicContext?: string;
+      blockId?: string;
+    }) => ipcRenderer.invoke("ai:evaluateInsight", input),
     analyzeCaptureContent: (content: string) =>
       ipcRenderer.invoke("ai:analyzeCaptureContent", content),
     validateCard: (front: string, back: string, cardType: "qa" | "cloze") =>
@@ -302,6 +327,13 @@ const api = {
       return () => ipcRenderer.removeListener("ai:ollamaStatus", subscription);
     },
     getOllamaModels: () => ipcRenderer.invoke("ai:getOllamaModels"),
+  },
+  insights: {
+    getBoardRelevance: (topicTags: string[]) =>
+      ipcRenderer.invoke("insights:getBoardRelevance", topicTags),
+    getExamTrapBreakdown: () =>
+      ipcRenderer.invoke("insights:getExamTrapBreakdown"),
+    getConfusionPairs: () => ipcRenderer.invoke("insights:getConfusionPairs"),
   },
   files: {
     saveImage: (data: string, mimeType: string) =>

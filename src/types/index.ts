@@ -26,6 +26,10 @@ export interface Card {
   notebookTopicPageId: string | null;
   sourceBlockId: string | null;
   aiTitle: string | null;
+  // Data Logging Framework (v18)
+  targetedConfusion?: string;
+  relevanceScore?: "high" | "medium" | "low" | "unknown";
+  relevanceReason?: string;
 }
 
 export interface Note {
@@ -52,6 +56,7 @@ export interface ReviewLog {
   responseTimeModifier?: number | null; // 0.85-1.15x modifier
   userAnswer?: string | null;
   userExplanation?: string | null;
+  confidenceRating?: "forgot" | "struggled" | "knew_it";
 }
 
 // Quick capture for emergency capture
@@ -89,6 +94,10 @@ export interface SourceItem {
   createdAt: string;
   processedAt?: string;
   updatedAt?: string;
+  // Data Logging Framework (v18)
+  correctness?: "correct" | "incorrect" | null;
+  notes?: string;
+  testedConcepts?: string[]; // JSON array of testable concepts
 }
 
 // v2 Architecture - Notebook Layer
@@ -115,7 +124,8 @@ export type ExamTrapType =
   | "age-population-skip" // Missing 'in children' or 'in pregnant women'
   | "absolute-terms" // 'always', 'never', 'only'
   | "best-vs-correct" // Multiple correct, one is 'best'
-  | "timeline-confusion"; // 'initial' vs 'definitive'
+  | "timeline-confusion" // 'initial' vs 'definitive'
+  | null;
 
 export type RelevanceScore = "high" | "medium" | "low" | "unknown";
 
@@ -185,6 +195,12 @@ export type AppView =
   | "stats"
   | "knowledgebank"
   | "cards";
+
+export interface AppViewOptions {
+  filter?: string;
+  topicId?: string;
+  blockId?: string;
+}
 
 export interface SmartViewFilter {
   status?: string[];

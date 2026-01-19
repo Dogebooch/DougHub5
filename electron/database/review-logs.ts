@@ -4,7 +4,7 @@ import type { DbReviewLog, ReviewLogRow } from "./types";
 export const reviewLogQueries = {
   getAll(): DbReviewLog[] {
     const stmt = getDatabase().prepare(
-      "SELECT * FROM review_logs ORDER BY createdAt DESC"
+      "SELECT * FROM review_logs ORDER BY createdAt DESC",
     );
     const rows = stmt.all() as ReviewLogRow[];
     return rows.map(parseReviewLogRow);
@@ -15,14 +15,17 @@ export const reviewLogQueries = {
       INSERT INTO review_logs (
         id, cardId, rating, state, scheduledDays, elapsedDays, review, createdAt,
         responseTimeMs, partialCreditScore, responseTimeModifier,
-        userAnswer, userExplanation
+        userAnswer, userExplanation, confidenceRating
       ) VALUES (
         @id, @cardId, @rating, @state, @scheduledDays, @elapsedDays, @review, @createdAt,
         @responseTimeMs, @partialCreditScore, @responseTimeModifier,
-        @userAnswer, @userExplanation
+        @userAnswer, @userExplanation, @confidenceRating
       )
     `);
-    stmt.run(log);
+    stmt.run({
+      ...log,
+      confidenceRating: log.confidenceRating || null,
+    });
   },
 };
 
@@ -34,5 +37,8 @@ export function parseReviewLogRow(row: ReviewLogRow): DbReviewLog {
     responseTimeModifier: row.responseTimeModifier,
     userAnswer: row.userAnswer,
     userExplanation: row.userExplanation,
+    // Data Logging Framework (v18)
+    confidenceRating:
+      (row.confidenceRating as "forgot" | "struggled" | "knew_it") || undefined,
   };
 }

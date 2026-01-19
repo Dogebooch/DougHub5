@@ -4,6 +4,8 @@ export type {
   ExtractionStatus,
   SourceType,
   SourceItemStatus,
+  CorrectnessType,
+  ConfidenceRating,
   DbCard,
   DbNote,
   DbReviewLog,
@@ -41,6 +43,7 @@ export { reviewLogQueries, parseReviewLogRow } from "./database/review-logs";
 export {
   sourceItemQueries,
   quickCaptureQueries,
+  getBoardRelevanceForTopic,
   parseSourceItemRow,
   parseQuickCaptureRow,
 } from "./database/source-items";

@@ -6,6 +6,7 @@ import {
   getDatabase,
   DbCard,
   DbReviewLog,
+  ConfidenceRating,
 } from "./database";
 import { randomUUID } from "crypto";
 
@@ -113,7 +114,8 @@ export function scheduleReview(
   cardId: string,
   rating: Rating,
   reviewTime: Date = new Date(),
-  responseTimeMs: number | null = null
+  responseTimeMs: number | null = null,
+  confidenceRating: ConfidenceRating | null = null,
 ): ScheduleReviewResult {
   const db = getDatabase();
 
@@ -162,14 +164,14 @@ export function scheduleReview(
     scheduled.card.scheduled_days = modifiedDays;
     // Recalculate due date from review time + new interval
     scheduled.card.due = new Date(
-      reviewTime.getTime() + modifiedDays * 24 * 60 * 60 * 1000
+      reviewTime.getTime() + modifiedDays * 24 * 60 * 60 * 1000,
     );
 
     // Sync log entry so the stored scheduled_days matches the actual modified interval
     scheduled.log.scheduled_days = modifiedDays;
 
     console.log(
-      `[FSRS] Applied ${modifier}x modifier for ${responseTimeMs}ms response. Interval: ${originalDays.toFixed(2)} -> ${modifiedDays.toFixed(2)} days`
+      `[FSRS] Applied ${modifier}x modifier for ${responseTimeMs}ms response. Interval: ${originalDays.toFixed(2)} -> ${modifiedDays.toFixed(2)} days`,
     );
   }
 
@@ -192,6 +194,7 @@ export function scheduleReview(
     responseTimeModifier: modifier,
     userAnswer: null, // Prep for F18 Typed Answer Mode
     userExplanation: null, // Prep for F20 Exam Trap Detection
+    confidenceRating: confidenceRating || undefined,
   };
 
   // Execute update + log insert + increment review count in a transaction

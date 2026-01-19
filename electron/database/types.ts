@@ -26,6 +26,9 @@ export type SourceType =
   | "manual";
 export type SourceItemStatus = "inbox" | "processed" | "curated";
 
+export type CorrectnessType = "correct" | "incorrect" | null;
+export type ConfidenceRating = "forgot" | "struggled" | "knew_it";
+
 // Notebook Links (v17)
 export type NotebookLinkType =
   | "same_concept"
@@ -62,6 +65,10 @@ export interface DbCard {
   notebookTopicPageId: string | null;
   sourceBlockId: string | null;
   aiTitle: string | null;
+  // Data Logging Framework (v18)
+  targetedConfusion?: string; // e.g., "Methotrexate vs Methylnaltrexone"
+  relevanceScore?: "high" | "medium" | "low" | "unknown";
+  relevanceReason?: string; // e.g., "Targets your weak area"
 }
 
 export interface DbNote {
@@ -88,6 +95,8 @@ export interface DbReviewLog {
   responseTimeModifier: number | null; // 0.85-1.15x modifier (v7)
   userAnswer: string | null; // Prep for F18 Typed Answer Mode (v9)
   userExplanation: string | null; // Prep for F20 Exam Trap Detection (v9)
+  // Data Logging Framework (v18)
+  confidenceRating?: ConfidenceRating;
 }
 
 export interface DbQuickCapture {
@@ -129,6 +138,10 @@ export interface DbSourceItem {
   createdAt: string;
   processedAt?: string;
   updatedAt?: string;
+  // Data Logging Framework (v18)
+  correctness?: "correct" | "incorrect" | null;
+  notes?: string;
+  testedConcepts?: string[]; // JSON array of testable concepts
 }
 
 export interface DbCanonicalTopic {
@@ -235,6 +248,10 @@ export interface CardRow {
   notebookTopicPageId: string | null;
   sourceBlockId: string | null;
   aiTitle: string | null;
+  // Data Logging Framework (v18)
+  targetedConfusion: string | null;
+  relevanceScore: string | null;
+  relevanceReason: string | null;
 }
 
 export interface CardBrowserFilters {
@@ -280,6 +297,8 @@ export interface ReviewLogRow {
   responseTimeModifier: number | null;
   userAnswer: string | null;
   userExplanation: string | null;
+  // Data Logging Framework (v18)
+  confidenceRating: string | null;
 }
 
 export interface QuickCaptureRow {
@@ -315,6 +334,10 @@ export interface SourceItemRow {
   createdAt: string;
   processedAt: string | null;
   updatedAt: string | null;
+  // Data Logging Framework (v18)
+  correctness: string | null;
+  notes: string | null;
+  testedConcepts: string | null; // JSON string
 }
 
 export interface CanonicalTopicRow {

@@ -13,10 +13,9 @@ export function SourcePreviewPanel({ sourceItem }: SourcePreviewPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   // Determine if this is a QBank item and if it was answered correctly
-  // QBank titles often contain "(Correct)" or "(Incorrect)" from capture
   const isQBank = sourceItem.sourceType === "qbank";
-  const isCorrect = sourceItem.title.toLowerCase().includes("(correct)");
-  const isIncorrect = sourceItem.title.toLowerCase().includes("(incorrect)");
+  const isCorrect = sourceItem.correctness === "correct";
+  const isIncorrect = sourceItem.correctness === "incorrect";
 
   // Get display-friendly source type label
   const sourceTypeLabels: Record<SourceType, string> = {
@@ -41,9 +40,7 @@ export function SourcePreviewPanel({ sourceItem }: SourcePreviewPanelProps) {
               <Badge variant="secondary" className="text-xs shrink-0">
                 {sourceTypeLabels[sourceItem.sourceType]}
               </Badge>
-              <span className="font-medium truncate">
-                {sourceItem.title}
-              </span>
+              <span className="font-medium truncate">{sourceItem.title}</span>
               {isQBank && isCorrect && (
                 <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
               )}
@@ -61,7 +58,7 @@ export function SourcePreviewPanel({ sourceItem }: SourcePreviewPanelProps) {
             </div>
           </Button>
         </CollapsibleTrigger>
-        
+
         <CollapsibleContent>
           <div className="px-4 pb-4 pt-2 border-t">
             {/* Source name and URL */}
@@ -71,12 +68,12 @@ export function SourcePreviewPanel({ sourceItem }: SourcePreviewPanelProps) {
                 <span className="ml-1">• {sourceItem.sourceUrl}</span>
               )}
             </div>
-            
+
             {/* Raw content preview */}
             <div className="text-sm whitespace-pre-wrap max-h-[200px] overflow-y-auto">
               {sourceItem.rawContent || "No content available."}
             </div>
-            
+
             {/* Metadata if available */}
             {sourceItem.metadata?.summary && (
               <div className="mt-2 text-xs text-muted-foreground italic">

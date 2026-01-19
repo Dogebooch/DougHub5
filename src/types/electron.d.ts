@@ -16,6 +16,7 @@ import type {
   CanonicalTopic,
   NotebookTopicPage,
   NotebookBlock,
+  NotebookBlockAiEvaluation,
   SmartView,
   SearchFilter,
   SearchResult,
@@ -139,6 +140,7 @@ export interface ElectronAPI {
       cardId: string,
       rating: RatingValue,
       responseTimeMs?: number | null,
+      confidenceRating?: string | null,
     ) => Promise<IpcResult<ScheduleResult>>;
   };
   quickCaptures: {
@@ -260,12 +262,30 @@ export interface ElectronAPI {
     getBySourceId: (
       sourceId: string,
     ) => Promise<IpcResult<NotebookBlock | null>>;
+    getBySource: (
+      sourceId: string,
+    ) => Promise<
+      IpcResult<{ block: NotebookBlock; topicName: string; pageId: string }[]>
+    >;
     create: (block: NotebookBlock) => Promise<IpcResult<NotebookBlock>>;
+    addToAnotherTopic: (payload: {
+      sourceItemId: string;
+      topicId: string;
+      insight: string;
+      linkToBlockId?: string;
+    }) => Promise<IpcResult<NotebookBlock>>;
     update: (
       id: string,
       updates: Partial<NotebookBlock>,
     ) => Promise<IpcResult<void>>;
     delete: (id: string) => Promise<IpcResult<void>>;
+    searchByContent: (
+      query: string,
+      excludeBlockId?: string,
+      limit?: number,
+    ) => Promise<
+      IpcResult<{ block: NotebookBlock; topicName: string; excerpt: string }[]>
+    >;
   };
   notebookLinks: {
     create: (
@@ -303,6 +323,13 @@ export interface ElectronAPI {
     extractConcepts: (
       content: string,
     ) => Promise<IpcResult<ConceptExtractionResult>>;
+    evaluateInsight: (input: {
+      userInsight: string;
+      sourceContent: string;
+      isIncorrect: boolean;
+      topicContext?: string;
+      blockId?: string;
+    }) => Promise<IpcResult<NotebookBlockAiEvaluation>>;
     analyzeCaptureContent: (
       content: string,
     ) => Promise<IpcResult<CaptureAnalysisResult | null>>;
@@ -342,6 +369,21 @@ export interface ElectronAPI {
       }) => void,
     ) => () => void;
     getOllamaModels: () => Promise<IpcResult<string[]>>;
+  };
+  insights: {
+    getBoardRelevance: (topicTags: string[]) => Promise<
+      IpcResult<{
+        questionsAttempted: number;
+        correctCount: number;
+        accuracy: number;
+        testedConcepts: { concept: string; count: number }[];
+        missedConcepts: { concept: string; sourceItemId: string }[];
+      }>
+    >;
+    getExamTrapBreakdown: () => Promise<
+      IpcResult<{ trapType: string; count: number }[]>
+    >;
+    getConfusionPairs: () => Promise<IpcResult<{ tag: string; count: number }[]>>;
   };
   files: {
     saveImage: (

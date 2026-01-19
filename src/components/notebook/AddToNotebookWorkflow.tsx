@@ -19,10 +19,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { SourceItem, CanonicalTopic } from "@/types";
+import {
+  SourceItem,
+  CanonicalTopic,
+  RelevanceScore,
+  NotebookBlockAiEvaluation,
+} from "@/types";
 import { SourcePreviewPanel } from "./SourcePreviewPanel";
 import { TopicSelector } from "./TopicSelector";
+import { BoardRelevancePanel } from "./BoardRelevancePanel";
 import { InsightTextarea } from "./InsightTextarea";
+import { Badge } from "@/components/ui/badge";
 import { ExistingBlocksList } from "./ExistingBlocksList";
 
 interface AddToNotebookWorkflowProps {
@@ -38,7 +45,9 @@ export function AddToNotebookWorkflow({
   sourceItem,
   onSuccess,
 }: AddToNotebookWorkflowProps) {
-  const [selectedTopic, setSelectedTopic] = useState<CanonicalTopic | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<CanonicalTopic | null>(
+    null,
+  );
   const [insight, setInsight] = useState("");
   const [isInsightValid, setIsInsightValid] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -46,6 +55,13 @@ export function AddToNotebookWorkflow({
     show: boolean;
     existingBlockId?: string;
   } | null>(null);
+
+  const [relevanceScore, setRelevanceScore] =
+    useState<RelevanceScore>("unknown");
+  const [relevanceReason, setRelevanceReason] = useState("");
+  const [isGettingFeedback, setIsGettingFeedback] = useState(false);
+  const [aiFeedback, setAiFeedback] =
+    useState<NotebookBlockAiEvaluation | null>(null);
 
   const { toast } = useToast();
 
@@ -57,20 +73,61 @@ export function AddToNotebookWorkflow({
         setInsight("");
         setIsInsightValid(false);
         setDuplicateWarning(null);
+        setAiFeedback(null);
+        setRelevanceScore("unknown");
+        setRelevanceReason("");
       }, 300); // Allow dialog exit animation
     }
   }, [open]);
 
+  const handleGetAIFeedback = async () => {
+    if (!sourceItem || !isInsightValid) return;
+
+    setIsGettingFeedback(true);
+    try {
+      const result = await window.api.ai.evaluateInsight({
+        userInsight: insight,
+        sourceContent: sourceItem.rawContent,
+        isIncorrect: sourceItem.correctness === "incorrect",
+        topicContext: selectedTopic?.canonicalName,
+      });
+
+      if (result.data) {
+        setAiFeedback(result.data);
+      }
+    } catch (error) {
+      console.error("AI feedback failed:", error);
+      toast({
+        title: "AI Feedback Unavailable",
+        description:
+          "Could not get AI feedback. You can still save your insight.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGettingFeedback(false);
+    }
+  };
+
+  const handleRelevanceComputed = useCallback(
+    (score: RelevanceScore, reason: string) => {
+      setRelevanceScore(score);
+      setRelevanceReason(reason);
+    },
+    [],
+  );
+
   // Handle Create Notebook Entry
   const createNotebookEntry = async () => {
     if (!sourceItem || !selectedTopic) return;
-    
+
     setIsSaving(true);
     try {
       // 1. Get or create notebook page for topic
       const pagesResult = await window.api.notebookPages.getAll();
-      let page = pagesResult.data?.find((p) => p.canonicalTopicId === selectedTopic.id);
-      
+      let page = pagesResult.data?.find(
+        (p) => p.canonicalTopicId === selectedTopic.id,
+      );
+
       if (!page) {
         const newPageResult = await window.api.notebookPages.create({
           id: crypto.randomUUID(),
@@ -79,7 +136,8 @@ export function AddToNotebookWorkflow({
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
-        if (!newPageResult.data) throw new Error(newPageResult.error || "Failed to create page");
+        if (!newPageResult.data)
+          throw new Error(newPageResult.error || "Failed to create page");
         page = newPageResult.data;
       }
 
@@ -93,10 +151,15 @@ export function AddToNotebookWorkflow({
         notebookTopicPageId: page.id,
         sourceItemId: sourceItem.id,
         content: insight,
+        userInsight: insight,
+        aiEvaluation: aiFeedback || undefined,
+        relevanceScore: relevanceScore,
+        relevanceReason: relevanceReason,
         position: nextPosition,
         cardCount: 0,
       });
-      if (!blockResult.data) throw new Error(blockResult.error || "Failed to create block");
+      if (!blockResult.data)
+        throw new Error(blockResult.error || "Failed to create block");
 
       // 4. Update source status to 'curated'
       await window.api.sourceItems.update(sourceItem.id, { status: "curated" });
@@ -123,24 +186,31 @@ export function AddToNotebookWorkflow({
   const handleSaveToNotebook = async () => {
     if (!selectedTopic || !isInsightValid || !sourceItem) return;
     setIsSaving(true);
-    
+
     try {
       // Check for duplicate: Does this source already have a block in this topic?
-      const existingBlock = await window.api.notebookBlocks.getBySourceId(sourceItem.id);
-      
+      const existingBlock = await window.api.notebookBlocks.getBySourceId(
+        sourceItem.id,
+      );
+
       if (existingBlock.data) {
         // Find the page for this block to check if it's the same topic
         const pagesResult = await window.api.notebookPages.getAll();
-        const existingPage = pagesResult.data?.find(p => p.id === existingBlock.data!.notebookTopicPageId);
-        
+        const existingPage = pagesResult.data?.find(
+          (p) => p.id === existingBlock.data!.notebookTopicPageId,
+        );
+
         if (existingPage?.canonicalTopicId === selectedTopic.id) {
           // Same topic - show duplicate warning
-          setDuplicateWarning({ show: true, existingBlockId: existingBlock.data.id });
+          setDuplicateWarning({
+            show: true,
+            existingBlockId: existingBlock.data.id,
+          });
           setIsSaving(false);
           return;
         }
       }
-      
+
       await createNotebookEntry();
     } catch (error) {
       console.error("Duplicate check failed:", error);
@@ -155,10 +225,13 @@ export function AddToNotebookWorkflow({
     setIsSaving(true);
     try {
       // Just mark source as processed (reviewed but not yet added to notebook)
-      await window.api.sourceItems.update(sourceItem.id, { status: "processed" });
+      await window.api.sourceItems.update(sourceItem.id, {
+        status: "processed",
+      });
       toast({
         title: "Draft Saved",
-        description: "Item marked as reviewed. You can add it to your notebook later.",
+        description:
+          "Item marked as reviewed. You can add it to your notebook later.",
       });
       onSuccess?.();
       onOpenChange(false);
@@ -193,6 +266,17 @@ export function AddToNotebookWorkflow({
                 suggestedTopicName={sourceItem.metadata?.subject}
               />
 
+              {selectedTopic && (
+                <BoardRelevancePanel
+                  topicId={selectedTopic.id}
+                  topicTags={
+                    selectedTopic.aliases || [selectedTopic.canonicalName]
+                  }
+                  sourceContent={sourceItem.rawContent}
+                  onRelevanceComputed={handleRelevanceComputed}
+                />
+              )}
+
               <div className="pt-2">
                 <InsightTextarea
                   value={insight}
@@ -200,6 +284,34 @@ export function AddToNotebookWorkflow({
                   onValidChange={setIsInsightValid}
                 />
               </div>
+
+              {aiFeedback && (
+                <div className="rounded-lg border bg-accent/20 p-4 space-y-3">
+                  <h4 className="font-semibold text-sm flex items-center gap-2">
+                    💡 AI Feedback
+                  </h4>
+                  <p className="text-sm">{aiFeedback.feedbackText}</p>
+
+                  {aiFeedback.gaps.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        Gaps identified:
+                      </p>
+                      <ul className="text-sm list-disc list-inside text-muted-foreground">
+                        {aiFeedback.gaps.map((gap, i) => (
+                          <li key={i}>{gap}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {aiFeedback.examTrapType && (
+                    <Badge variant="destructive" className="text-xs">
+                      Exam Trap: {aiFeedback.examTrapType.replace(/-/g, " ")}
+                    </Badge>
+                  )}
+                </div>
+              )}
 
               {selectedTopic && (
                 <div className="pt-2">
@@ -213,26 +325,40 @@ export function AddToNotebookWorkflow({
             <Button
               variant="outline"
               onClick={handleSaveDraft}
-              disabled={isSaving}
+              disabled={isSaving || isGettingFeedback}
               className="px-6"
             >
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Save Draft"
-              )}
+              Save Draft
             </Button>
-            <Button
-              onClick={handleSaveToNotebook}
-              disabled={!selectedTopic || !isInsightValid || isSaving}
-              className="px-6 min-w-[160px]"
-            >
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Save to Notebook"
-              )}
-            </Button>
+
+            {!aiFeedback ? (
+              <Button
+                onClick={handleGetAIFeedback}
+                disabled={!isInsightValid || isGettingFeedback || isSaving}
+                className="px-6 min-w-[160px]"
+              >
+                {isGettingFeedback ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> Getting
+                    Feedback...
+                  </>
+                ) : (
+                  "Get AI Feedback"
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSaveToNotebook}
+                disabled={!selectedTopic || !isInsightValid || isSaving}
+                className="px-6 min-w-[160px]"
+              >
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Save to Notebook"
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -246,8 +372,10 @@ export function AddToNotebookWorkflow({
             <AlertDialogTitle>Block Already Exists</AlertDialogTitle>
             <AlertDialogDescription>
               You already have an entry from this source in{" "}
-              <span className="font-semibold">{selectedTopic?.canonicalName}</span>.
-              Do you want to add another one?
+              <span className="font-semibold">
+                {selectedTopic?.canonicalName}
+              </span>
+              . Do you want to add another one?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

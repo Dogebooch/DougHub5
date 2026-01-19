@@ -11,22 +11,28 @@ import { useAppStore } from "@/stores/useAppStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { BlockLinksSidebar } from "./BlockLinksSidebar";
 
 interface NotebookBlockProps {
   block: NotebookBlock;
+  topicName: string;
   onRefresh: () => void;
   onGenerateCard: (text: string) => void;
   onEdit: (block: NotebookBlock) => void;
+  onNavigate: (blockId: string, pageId: string) => void;
 }
 
 export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
   block,
+  topicName,
   onGenerateCard,
   onEdit,
+  onNavigate,
 }) => {
   const { setCurrentView } = useAppStore();
   const [sourceTitle, setSourceTitle] = useState<string | null>(null);
   const [loadingSource, setLoadingSource] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const contentRef = React.useRef<HTMLDivElement>(null);
 
   // Selection state
@@ -144,99 +150,117 @@ export const NotebookBlockComponent: React.FC<NotebookBlockProps> = ({
 
   return (
     <div
+      id={`block-${block.id}`}
       className={cn(
-        "group relative rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-200",
+        "group relative rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-200 overflow-hidden",
         (block.cardCount ?? 0) > 0 && "border-l-2 border-l-primary/40",
       )}
     >
-      {/* Header Row */}
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-card-muted uppercase tracking-tight">
-            <Layers className="w-3.5 h-3.5" />
-            <span>Block {block.position + 1}</span>
+      <div
+        className={cn(
+          "transition-all duration-200",
+          sidebarOpen ? "pr-64" : "pr-10",
+        )}
+      >
+        {/* Header Row */}
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-card-muted uppercase tracking-tight">
+              <Layers className="w-3.5 h-3.5" />
+              <span>Block {block.position + 1}</span>
+            </div>
+
+            <Badge
+              variant="secondary"
+              className={cn(
+                "text-[11px] px-1.5 py-0.5 h-5 font-semibold border-none transition-colors",
+                (block.cardCount ?? 0) > 0
+                  ? "bg-primary/20 text-primary"
+                  : "bg-primary/10 text-card-muted",
+              )}
+              title={
+                (block.cardCount ?? 0) > 0
+                  ? `${block.cardCount} cards created from this block`
+                  : "No cards created yet"
+              }
+            >
+              {block.cardCount || 0} {block.cardCount === 1 ? "card" : "cards"}
+            </Badge>
+
+            {block.sourceItemId && (
+              <button
+                onClick={handleSourceClick}
+                className="flex items-center gap-1 text-[11px] text-card-muted bg-muted/50 hover:bg-muted px-2 py-0.5 rounded-full border border-border/50 transition-colors"
+              >
+                <LinkIcon className="w-3 h-3" />
+                <span className="max-w-[150px] truncate">
+                  {loadingSource ? "Loading..." : sourceTitle}
+                </span>
+                <ExternalLink className="w-2.5 h-2.5 opacity-50 ml-0.5" />
+              </button>
+            )}
           </div>
 
-          <Badge
-            variant="secondary"
-            className={cn(
-              "text-[11px] px-1.5 py-0.5 h-5 font-semibold border-none transition-colors",
-              (block.cardCount ?? 0) > 0
-                ? "bg-primary/20 text-primary"
-                : "bg-primary/10 text-card-muted",
-            )}
-            title={
-              (block.cardCount ?? 0) > 0
-                ? `${block.cardCount} cards created from this block`
-                : "No cards created yet"
-            }
-          >
-            {block.cardCount || 0} {block.cardCount === 1 ? "card" : "cards"}
-          </Badge>
-
-          {block.sourceItemId && (
-            <button
-              onClick={handleSourceClick}
-              className="flex items-center gap-1 text-[11px] text-card-muted bg-muted/50 hover:bg-muted px-2 py-0.5 rounded-full border border-border/50 transition-colors"
-            >
-              <LinkIcon className="w-3 h-3" />
-              <span className="max-w-[150px] truncate">
-                {loadingSource ? "Loading..." : sourceTitle}
-              </span>
-              <ExternalLink className="w-2.5 h-2.5 opacity-50 ml-0.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Edit Button - appears on hover */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onEdit(block)}
-          className="h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-        >
-          <Pencil className="w-3.5 h-3.5 mr-1" />
-          Edit
-        </Button>
-      </div>
-
-      {/* Content */}
-      <div
-        ref={contentRef}
-        className="text-sm text-card-foreground whitespace-pre-wrap leading-relaxed"
-      >
-        {block.content}
-      </div>
-
-      {/* Floating Selection Trigger */}
-      {selectionData.show && (
-        <div
-          className="selection-trigger fixed z-[100] transition-all duration-200 pointer-events-auto"
-          style={{
-            left: selectionData.x,
-            top: selectionData.y,
-            transform: `translateX(-50%) translateY(${
-              selectionData.isAbove ? "-100%" : "0"
-            })`,
-          }}
-        >
+          {/* Edit Button - appears on hover */}
           <Button
+            variant="ghost"
             size="sm"
-            className="h-8 gap-2 shadow-lg animate-in fade-in zoom-in duration-200"
-            onClick={handleGenerateClick}
+            onClick={() => onEdit(block)}
+            className="h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            Generate Card
+            <Pencil className="w-3.5 h-3.5 mr-1" />
+            Edit
           </Button>
         </div>
-      )}
 
-      {/* Footer hint */}
-      <div className="mt-4 pt-3 border-t">
-        <p className="text-[11px] text-muted-foreground text-center">
-          Select text above to generate cards
-        </p>
+        {/* Content */}
+        <div
+          ref={contentRef}
+          className="text-sm text-card-foreground whitespace-pre-wrap leading-relaxed"
+        >
+          {block.content}
+        </div>
+
+        {/* Floating Selection Trigger */}
+        {selectionData.show && (
+          <div
+            className="selection-trigger fixed z-[100] transition-all duration-200 pointer-events-auto"
+            style={{
+              left: selectionData.x,
+              top: selectionData.y,
+              transform: `translateX(-50%) translateY(${
+                selectionData.isAbove ? "-100%" : "0"
+              })`,
+            }}
+          >
+            <Button
+              size="sm"
+              className="h-8 gap-2 shadow-lg animate-in fade-in zoom-in duration-200"
+              onClick={handleGenerateClick}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Generate Card
+            </Button>
+          </div>
+        )}
+
+        {/* Footer hint */}
+        <div className="mt-4 pt-3 border-t">
+          <p className="text-[11px] text-muted-foreground text-center">
+            Select text above to generate cards
+          </p>
+        </div>
       </div>
+
+      {/* Links sidebar */}
+      <BlockLinksSidebar
+        block={block}
+        topicName={topicName}
+        isOpen={sidebarOpen}
+        onOpenChange={setSidebarOpen}
+        onNavigate={onNavigate}
+        contentRef={contentRef}
+      />
     </div>
   );
 };

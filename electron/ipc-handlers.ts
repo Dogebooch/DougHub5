@@ -32,6 +32,7 @@ import {
   smartViewQueries,
   searchQueries,
   settingsQueries,
+  getDatabase,
   getDatabaseStatus,
   getDbPath,
   initDatabase,
@@ -47,6 +48,7 @@ import {
   DbNotebookBlock,
   DbNotebookLink,
   DbSmartView,
+  ConfidenceRating,
   WeakTopicSummary,
   ExtractionStatus,
   SourceItemStatus,
@@ -81,6 +83,7 @@ import {
   detectMedicalList,
   convertToVignette,
   suggestTags,
+  evaluateInsight,
   generateCardFromBlock,
   generateElaboratedFeedback,
   findRelatedNotes,
@@ -698,6 +701,7 @@ export function registerIpcHandlers(): void {
       cardId: string,
       rating: Rating,
       responseTimeMs?: number | null,
+      confidenceRating?: ConfidenceRating | null,
     ): Promise<
       IpcResult<{
         card: DbCard;
@@ -711,6 +715,7 @@ export function registerIpcHandlers(): void {
           rating,
           new Date(),
           responseTimeMs,
+          confidenceRating,
         );
         return success(result);
       } catch (error) {
@@ -1746,6 +1751,151 @@ export function registerIpcHandlers(): void {
     },
   );
 
+  ipcMain.handle(
+    "notebookBlocks:searchByContent",
+    async (
+      _,
+      {
+        query,
+        excludeBlockId,
+        limit,
+      }: {
+        query: string;
+        excludeBlockId?: string;
+        limit?: number;
+      },
+    ): Promise<
+      IpcResult<
+        { block: DbNotebookBlock; topicName: string; excerpt: string }[]
+      >
+    > => {
+      try {
+        const results = notebookBlockQueries.searchByContent(
+          query,
+          excludeBlockId,
+          limit,
+        );
+        return success(results);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "notebookBlocks:getBySource",
+    async (
+      _,
+      sourceId: string,
+    ): Promise<
+      IpcResult<{ block: DbNotebookBlock; topicName: string; pageId: string }[]>
+    > => {
+      try {
+        const blocks = notebookBlockQueries.getBySourceDetailed(sourceId);
+        return success(blocks);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "notebookBlocks:addToAnotherTopic",
+    async (
+      _,
+      {
+        sourceItemId,
+        topicId,
+        insight,
+        linkToBlockId,
+      }: {
+        sourceItemId: string;
+        topicId: string;
+        insight: string;
+        linkToBlockId?: string;
+      },
+    ): Promise<IpcResult<DbNotebookBlock>> => {
+      try {
+        const db = getDatabase();
+        let resultBlock: DbNotebookBlock | null = null;
+
+        db.transaction(() => {
+          // 1. Check if block already exists for this source+topic combo
+          const existingPage = notebookTopicPageQueries
+            .getAll()
+            .find((p) => p.canonicalTopicId === topicId);
+          if (existingPage) {
+            const existingBlocks = notebookBlockQueries.getByPage(
+              existingPage.id,
+            );
+            if (existingBlocks.some((b) => b.sourceItemId === sourceItemId)) {
+              throw new Error("This source is already added to that topic.");
+            }
+          }
+
+          // 2. Get or create NotebookTopicPage
+          let page = existingPage;
+          if (!page) {
+            page = {
+              id: crypto.randomUUID(),
+              canonicalTopicId: topicId,
+              cardIds: [],
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            notebookTopicPageQueries.insert(page);
+          }
+
+          // 3. Get next position
+          const blocks = notebookBlockQueries.getByPage(page.id);
+          const nextPosition = blocks.length;
+
+          // 4. Create new NotebookBlock
+          const newBlock: DbNotebookBlock = {
+            id: crypto.randomUUID(),
+            notebookTopicPageId: page.id,
+            sourceItemId,
+            content: insight,
+            position: nextPosition,
+            cardCount: 0,
+            userInsight: insight,
+            relevanceScore: "high",
+          };
+          notebookBlockQueries.insert(newBlock);
+
+          // 5. If linkToBlockId provided, create notebook_link
+          if (linkToBlockId) {
+            notebookLinkQueries.create({
+              sourceBlockId: linkToBlockId,
+              targetBlockId: newBlock.id,
+              linkType: "cross_specialty",
+              reason: "Same source, different topic perspective",
+            });
+          }
+
+          // 6. If source status is 'inbox', update to 'processed'
+          const source = sourceItemQueries.getById(sourceItemId);
+          if (source && (source.status as string) === "inbox") {
+            sourceItemQueries.update(sourceItemId, {
+              status: "processed" as SourceItemStatus,
+              processedAt: new Date().toISOString(),
+            });
+          }
+
+          resultBlock = newBlock;
+        })();
+
+        if (!resultBlock) {
+          throw new Error("Failed to create block in transaction.");
+        }
+
+        return success(resultBlock);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
   // --------------------------------------------------------------------------
   // Notebook Link Handlers (v3)
   // --------------------------------------------------------------------------
@@ -2091,6 +2241,83 @@ export function registerIpcHandlers(): void {
 
         const result = await convertToVignette(listItem, context);
         aiCache.set(cacheKey, result);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "ai:evaluateInsight",
+    async (
+      _,
+      input: {
+        userInsight: string;
+        sourceContent: string;
+        isIncorrect: boolean;
+        topicContext?: string;
+        blockId?: string;
+      },
+    ): Promise<IpcResult<NotebookBlockAiEvaluation>> => {
+      try {
+        const result = await evaluateInsight(input);
+
+        // Optional persistence if blockId is provided
+        if (input.blockId) {
+          notebookBlockQueries.update(input.blockId, {
+            userInsight: input.userInsight,
+            aiEvaluation: result,
+          });
+        }
+
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "insights:getBoardRelevance",
+    async (
+      _,
+      topicTags: string[],
+    ): Promise<
+      IpcResult<{
+        questionsAttempted: number;
+        correctCount: number;
+        accuracy: number;
+        testedConcepts: { concept: string; count: number }[];
+        missedConcepts: { concept: string; sourceItemId: string }[];
+      }>
+    > => {
+      try {
+        const result = getBoardRelevanceForTopic(topicTags);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "insights:getExamTrapBreakdown",
+    async (): Promise<IpcResult<{ trapType: string; count: number }[]>> => {
+      try {
+        const result = notebookBlockQueries.getExamTrapBreakdown();
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "insights:getConfusionPairs",
+    async (): Promise<IpcResult<{ tag: string; count: number }[]>> => {
+      try {
+        const result = notebookBlockQueries.getConfusionPairsAggregated();
         return success(result);
       } catch (error) {
         return failure(error);

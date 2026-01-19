@@ -48,6 +48,14 @@
   --transition-slow: 400ms ease-out;
 }
 
+@layer utilities {
+  .vertical-text {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+  }
+}
+
 /* Scoped Overrides for Manila Cards */
 .bg-card {
   --foreground: var(--card-foreground);

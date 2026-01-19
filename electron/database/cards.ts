@@ -29,18 +29,23 @@ export const cardQueries = {
         stability, difficulty, elapsedDays, scheduledDays,
         reps, lapses, state, lastReview,
         cardType, parentListId, listPosition,
-        notebookTopicPageId, sourceBlockId
+        notebookTopicPageId, sourceBlockId, aiTitle,
+        targetedConfusion, relevanceScore, relevanceReason
       ) VALUES (
         @id, @front, @back, @noteId, @tags, @dueDate, @createdAt,
         @stability, @difficulty, @elapsedDays, @scheduledDays,
         @reps, @lapses, @state, @lastReview,
         @cardType, @parentListId, @listPosition,
-        @notebookTopicPageId, @sourceBlockId
+        @notebookTopicPageId, @sourceBlockId, @aiTitle,
+        @targetedConfusion, @relevanceScore, @relevanceReason
       )
     `);
     stmt.run({
       ...card,
       tags: JSON.stringify(card.tags),
+      targetedConfusion: card.targetedConfusion || null,
+      relevanceScore: card.relevanceScore || null,
+      relevanceReason: card.relevanceReason || null,
     });
   },
 
@@ -71,12 +76,19 @@ export const cardQueries = {
         parentListId = @parentListId,
         listPosition = @listPosition,
         notebookTopicPageId = @notebookTopicPageId,
-        sourceBlockId = @sourceBlockId
+        sourceBlockId = @sourceBlockId,
+        aiTitle = @aiTitle,
+        targetedConfusion = @targetedConfusion,
+        relevanceScore = @relevanceScore,
+        relevanceReason = @relevanceReason
       WHERE id = @id
     `);
     stmt.run({
       ...merged,
       tags: JSON.stringify(merged.tags),
+      targetedConfusion: merged.targetedConfusion || null,
+      relevanceScore: merged.relevanceScore || null,
+      relevanceReason: merged.relevanceReason || null,
     });
   },
 
@@ -88,7 +100,7 @@ export const cardQueries = {
   getDueToday(): DbCard[] {
     const now = new Date().toISOString();
     const stmt = getDatabase().prepare(
-      "SELECT * FROM cards WHERE dueDate <= ?"
+      "SELECT * FROM cards WHERE dueDate <= ?",
     );
     const rows = stmt.all(now) as CardRow[];
     return rows.map(parseCardRow);
@@ -96,7 +108,7 @@ export const cardQueries = {
 
   getCardsByBlockId(blockId: string): DbCard[] {
     const stmt = getDatabase().prepare(
-      "SELECT * FROM cards WHERE sourceBlockId = ?"
+      "SELECT * FROM cards WHERE sourceBlockId = ?",
     );
     const rows = stmt.all(blockId) as CardRow[];
     return rows.map(parseCardRow);
@@ -185,7 +197,7 @@ export const cardQueries = {
 
   getBrowserList(
     filters?: CardBrowserFilters,
-    sort?: CardBrowserSort
+    sort?: CardBrowserSort,
   ): DbCard[] {
     const db = getDatabase();
     const whereClauses: string[] = [];
@@ -275,5 +287,11 @@ export function parseCardRow(row: CardRow): DbCard {
     notebookTopicPageId: row.notebookTopicPageId,
     sourceBlockId: row.sourceBlockId,
     aiTitle: row.aiTitle,
+    // Data Logging Framework (v18)
+    targetedConfusion: row.targetedConfusion || undefined,
+    relevanceScore:
+      (row.relevanceScore as "high" | "medium" | "low" | "unknown") ||
+      undefined,
+    relevanceReason: row.relevanceReason || undefined,
   };
 }

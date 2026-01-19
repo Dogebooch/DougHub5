@@ -24,13 +24,17 @@ import { toast } from "@/hooks/use-toast";
 interface TopicPageViewProps {
   pageId: string;
   onRefresh: () => void;
+  targetBlockId?: string | null;
+  onTargetBlockHandled?: () => void;
 }
 
 export const TopicPageView: React.FC<TopicPageViewProps> = ({
   pageId,
   onRefresh,
+  targetBlockId,
+  onTargetBlockHandled,
 }) => {
-  const { addCard } = useAppStore();
+  const { addCard, setCurrentView } = useAppStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<NotebookTopicPage | null>(null);
@@ -97,6 +101,45 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
     setEditingBlock(block);
     setEditModalOpen(true);
   };
+
+  const handleNavigateToBlock = useCallback(
+    async (blockId: string, targetPageId: string) => {
+      if (targetPageId === pageId) {
+        // Same page - just scroll
+        const el = document.getElementById(`block-${blockId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.classList.add("ring-2", "ring-primary", "ring-offset-2");
+          setTimeout(() => {
+            el.classList.remove("ring-2", "ring-primary", "ring-offset-2");
+          }, 2000);
+        }
+      } else {
+        // Different page - use store to navigate
+        setCurrentView("notebook", targetPageId, { blockId });
+      }
+    },
+    [pageId, setCurrentView],
+  );
+
+  // Handle target block scrolling on mount or when transition finishes
+  useEffect(() => {
+    if (targetBlockId && !loading && blocks.length > 0) {
+      // Small timeout to ensure DOM is ready
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`block-${targetBlockId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.classList.add("ring-2", "ring-primary", "ring-offset-2");
+          setTimeout(() => {
+            el.classList.remove("ring-2", "ring-primary", "ring-offset-2");
+          }, 2000);
+          onTargetBlockHandled?.();
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [targetBlockId, loading, blocks, onTargetBlockHandled]);
 
   const handleBlockSave = async (blockId: string, newContent: string) => {
     // Find the original block to compare
@@ -297,11 +340,13 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
               <NotebookBlockComponent
                 key={block.id}
                 block={block}
+                topicName={topic?.canonicalName || ""}
                 onRefresh={fetchData}
                 onGenerateCard={(text) =>
                   handleGenerateCardTrigger(text, block)
                 }
                 onEdit={handleBlockEdit}
+                onNavigate={handleNavigateToBlock}
               />
             ))}
           </div>

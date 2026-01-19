@@ -25,7 +25,11 @@ import type {
   ElaboratedFeedback,
   CaptureAnalysisResult,
 } from "../src/types/ai";
-import { type DbNote, settingsQueries } from "./database";
+import {
+  type DbNote,
+  settingsQueries,
+  NotebookBlockAiEvaluation,
+} from "./database";
 import OpenAI from "openai";
 import * as http from "node:http";
 import { spawn } from "node:child_process";
@@ -193,6 +197,14 @@ export const AI_TASK_CONFIGS: Record<string, AITaskConfig> = {
     timeoutMs: 10000,
     cacheTTLMs: 600000, // 10 min
   },
+  "insight-evaluation": {
+    name: "AI Insight Evaluation",
+    description: "Evaluate learner insights for knowledge gaps and exam traps",
+    temperature: 0.3,
+    maxTokens: 500,
+    timeoutMs: 15000,
+    cacheTTLMs: 300000,
+  },
 };
 
 /**
@@ -326,7 +338,7 @@ export async function ensureOllamaRunning(): Promise<boolean> {
     console.log("[AI Service] Ollama already running");
     notifyOllamaStatus(
       "already-running",
-      "Local AI service is already running."
+      "Local AI service is already running.",
     );
     return true;
   }
@@ -361,14 +373,14 @@ export async function ensureOllamaRunning(): Promise<boolean> {
     // If loop finished without success
     notifyOllamaStatus(
       "failed",
-      "Local AI service failed to respond after starting."
+      "Local AI service failed to respond after starting.",
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[AI Service] Failed to start Ollama:", err);
     notifyOllamaStatus(
       "failed",
-      `Could not start local AI service: ${message}`
+      `Could not start local AI service: ${message}`,
     );
   }
 
@@ -409,13 +421,13 @@ export async function getAvailableOllamaModels(): Promise<string[]> {
             const modelNames = models.map((m) => m.name);
             console.log(
               `[AI Service] Found ${modelNames.length} Ollama models:`,
-              modelNames
+              modelNames,
             );
             resolve(modelNames);
           } catch (error) {
             console.error(
               "[AI Service] Failed to parse Ollama models response:",
-              error
+              error,
             );
             resolve([]);
           }
@@ -453,7 +465,7 @@ export async function getAvailableOllamaModels(): Promise<string[]> {
 export async function detectProvider(): Promise<AIProviderType> {
   // Check user settings first
   const settingsProvider = settingsQueries.get(
-    "aiProvider"
+    "aiProvider",
   ) as AIProviderType | null;
   if (settingsProvider) {
     return settingsProvider;
@@ -517,7 +529,7 @@ export async function detectProvider(): Promise<AIProviderType> {
  * @returns Complete provider configuration
  */
 export async function getProviderConfig(
-  provider?: AIProviderType
+  provider?: AIProviderType,
 ): Promise<AIProviderConfig> {
   const selectedProvider = provider ?? (await detectProvider());
   const preset = PROVIDER_PRESETS[selectedProvider];
@@ -529,8 +541,8 @@ export async function getProviderConfig(
     (selectedProvider === "openai"
       ? getSetting("openaiApiKey")
       : selectedProvider === "anthropic"
-      ? getSetting("anthropicApiKey")
-      : null) ??
+        ? getSetting("anthropicApiKey")
+        : null) ??
     process.env["AI_API_KEY"] ??
     preset.apiKey;
 
@@ -538,10 +550,10 @@ export async function getProviderConfig(
     (selectedProvider === "openai"
       ? getSetting("openaiModel")
       : selectedProvider === "anthropic"
-      ? getSetting("anthropicModel")
-      : selectedProvider === "ollama"
-      ? getSetting("ollamaModel")
-      : null) ??
+        ? getSetting("anthropicModel")
+        : selectedProvider === "ollama"
+          ? getSetting("ollamaModel")
+          : null) ??
     process.env["AI_MODEL"] ??
     preset.model;
 
@@ -574,7 +586,7 @@ let currentConfig: AIProviderConfig | null = null;
  * @returns OpenAI client instance
  */
 export async function initializeClient(
-  config?: AIProviderConfig
+  config?: AIProviderConfig,
 ): Promise<OpenAI> {
   const providerConfig = config ?? (await getProviderConfig());
 
@@ -600,7 +612,7 @@ export async function initializeClient(
       baseURL: providerConfig.baseURL,
       model: providerConfig.model,
       timeout: providerConfig.timeout,
-    }
+    },
   );
 
   return aiClient;
@@ -668,7 +680,7 @@ export async function getProviderStatus(): Promise<AIProviderStatus> {
             clearTimeout(timeoutId);
             resolve(res.statusCode === 200);
             res.resume();
-          }
+          },
         );
 
         req.on("error", () => {
@@ -882,7 +894,7 @@ Respond ONLY with a JSON object in this exact format (no markdown, no code block
 async function withTimeout<T>(
   promise: Promise<T>,
   ms: number,
-  errorMessage = "Operation timed out"
+  errorMessage = "Operation timed out",
 ): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout>;
 
@@ -908,7 +920,7 @@ async function withTimeout<T>(
 async function withRetry<T>(
   fn: () => Promise<T>,
   maxRetries = 2,
-  baseDelayMs = 500
+  baseDelayMs = 500,
 ): Promise<T> {
   let lastError: Error | undefined;
 
@@ -928,7 +940,7 @@ async function withRetry<T>(
       await new Promise((resolve) => setTimeout(resolve, delay));
 
       console.log(
-        `[AI Service] Retry ${attempt + 1}/${maxRetries} after ${delay}ms`
+        `[AI Service] Retry ${attempt + 1}/${maxRetries} after ${delay}ms`,
       );
     }
   }
@@ -945,7 +957,7 @@ async function withRetry<T>(
  */
 async function callAI(
   systemPrompt: string,
-  userMessage: string
+  userMessage: string,
 ): Promise<string> {
   const client = await getClient();
   const config = getCurrentConfig();
@@ -965,7 +977,7 @@ async function callAI(
       max_tokens: 2000,
     }),
     config.timeout,
-    `AI request timed out after ${config.timeout}ms`
+    `AI request timed out after ${config.timeout}ms`,
   );
 
   const content = response.choices[0]?.message?.content;
@@ -1030,7 +1042,7 @@ function parseAIResponse<T>(text: string): T {
  * Returns null on timeout/failure (never blocks capture).
  */
 export async function analyzeCaptureContent(
-  content: string
+  content: string,
 ): Promise<CaptureAnalysisResult | null> {
   // Check cache first
   const cacheKey = aiCache.key("capture-analysis", content);
@@ -1126,7 +1138,7 @@ interface ConceptExtractionResponse {
  * @returns Concepts and list detection result
  */
 export async function extractConcepts(
-  content: string
+  content: string,
 ): Promise<ConceptExtractionResult> {
   if (!content.trim()) {
     return {
@@ -1141,7 +1153,7 @@ export async function extractConcepts(
       withRetry(async () => {
         return await callAI(
           PROMPTS.conceptExtraction,
-          `Extract learning concepts from this medical content:\n\n${content}`
+          `Extract learning concepts from this medical content:\n\n${content}`,
         );
       }),
       detectMedicalList(content),
@@ -1149,7 +1161,7 @@ export async function extractConcepts(
 
     console.log(
       "[AI Service] Raw concept extraction response:",
-      conceptsResponse
+      conceptsResponse,
     );
     const parsed = parseAIResponse<
       ConceptExtractionResponse | RawConceptFromAI[]
@@ -1168,10 +1180,10 @@ export async function extractConcepts(
       rawConceptsArray = (parsed as ConceptExtractionResponse).concepts;
     } else {
       console.error(
-        "[AI Service] Invalid response structure. Expected {concepts: [...]} or [...]"
+        "[AI Service] Invalid response structure. Expected {concepts: [...]} or [...]",
       );
       throw new Error(
-        "Invalid response structure from AI: missing or invalid concepts array"
+        "Invalid response structure from AI: missing or invalid concepts array",
       );
     }
 
@@ -1249,7 +1261,7 @@ interface CardValidationResponse {
 export async function validateCard(
   front: string,
   back: string,
-  cardType: "qa" | "cloze" = "qa"
+  cardType: "qa" | "cloze" = "qa",
 ): Promise<ValidationResult> {
   if (!front.trim()) {
     return {
@@ -1276,7 +1288,7 @@ export async function validateCard(
     const response = await withRetry(async () => {
       return await callAI(
         PROMPTS.cardValidation,
-        `Validate this ${cardType} flashcard:\n\n${cardContent}`
+        `Validate this ${cardType} flashcard:\n\n${cardContent}`,
       );
     });
 
@@ -1316,7 +1328,7 @@ interface MedicalListDetectionResponse {
  * @returns Detection result with list type and extracted items
  */
 export async function detectMedicalList(
-  content: string
+  content: string,
 ): Promise<MedicalListDetection> {
   if (!content.trim()) {
     return { isList: false, listType: null, items: [] };
@@ -1338,7 +1350,7 @@ export async function detectMedicalList(
     const response = await withRetry(async () => {
       return await callAI(
         PROMPTS.medicalListDetection,
-        `Analyze this content to determine if it's a medical list:\n\n${content}`
+        `Analyze this content to determine if it's a medical list:\n\n${content}`,
       );
     });
 
@@ -1375,7 +1387,7 @@ interface VignetteConversionResponse {
  */
 export async function convertToVignette(
   listItem: string,
-  context: string
+  context: string,
 ): Promise<VignetteConversion> {
   if (!listItem.trim()) {
     throw new Error("List item is required for vignette conversion");
@@ -1430,7 +1442,7 @@ export async function suggestTags(content: string): Promise<string[]> {
     const response = await withRetry(async () => {
       return await callAI(
         PROMPTS.tagSuggestion,
-        `Suggest relevant medical tags for this content:\n\n${content}`
+        `Suggest relevant medical tags for this content:\n\n${content}`,
       );
     });
 
@@ -1470,7 +1482,7 @@ interface CardGenerationResponse {
 export async function generateCardFromBlock(
   blockContent: string,
   topicContext: string,
-  userIntent?: string
+  userIntent?: string,
 ): Promise<CardSuggestion[]> {
   if (!blockContent.trim()) {
     return [];
@@ -1480,7 +1492,7 @@ export async function generateCardFromBlock(
     "generateCard",
     blockContent,
     topicContext,
-    userIntent || ""
+    userIntent || "",
   );
   const cached = aiCache.get<CardSuggestion[]>(cacheKey);
   if (cached) return cached;
@@ -1502,7 +1514,7 @@ ${
     });
 
     const parsed = parseAIResponse<CardGenerationResponse | CardSuggestion[]>(
-      response
+      response,
     );
 
     // Handle both {suggestions: [...]} and direct array [...] formats
@@ -1514,7 +1526,7 @@ ${
     } else {
       console.error(
         "[AI Service] Invalid card generation response structure:",
-        parsed
+        parsed,
       );
       throw new Error("Invalid response structure for card generation");
     }
@@ -1554,7 +1566,7 @@ ${
         ) {
           console.warn(
             `[AI Service] Card with empty back for format ${s.format}`,
-            { front: s.front.slice(0, 100), cacheKey }
+            { front: s.front.slice(0, 100), cacheKey },
           );
           return false;
         }
@@ -1579,6 +1591,84 @@ ${
  * @param responseTimeMs Optional time user spent before answering
  * @returns Elaborated feedback with pits/pearls
  */
+/**
+ * Evaluate a learner's written insight against the source content.
+ * Identifies gaps, provides feedback, and classifies exam traps.
+ */
+export async function evaluateInsight(input: {
+  userInsight: string;
+  sourceContent: string;
+  isIncorrect: boolean;
+  topicContext?: string;
+}): Promise<NotebookBlockAiEvaluation> {
+  const { userInsight, sourceContent, isIncorrect, topicContext } = input;
+
+  const cacheKey = aiCache.key(
+    "insight-evaluation",
+    userInsight,
+    sourceContent,
+    String(isIncorrect),
+  );
+  const cached = aiCache.get<NotebookBlockAiEvaluation>(cacheKey);
+  if (cached) return cached;
+
+  const config = getTaskConfig("insight-evaluation");
+  const systemPrompt = `You are a medical education expert evaluating a learner's written insight.
+Your task is to identify knowledge gaps, provide constructive feedback, and flag potential concept confusions.
+Always respond with valid JSON matching the schema exactly.`;
+
+  let userPrompt = `SOURCE CONTENT:
+${sourceContent}
+
+LEARNER'S INSIGHT:
+${userInsight}
+
+${topicContext ? `TOPIC CONTEXT: ${topicContext}\n` : ""}
+Evaluate the insight and return JSON:
+{
+  "gaps": ["list of knowledge gaps or missing key points from the source"],
+  "feedbackText": "Constructive feedback on the insight (2-3 sentences)",
+  "confusionTags": ["any concept pairs that might be confused, e.g., 'Methotrexate vs Methylnaltrexone'"],
+  "examTrapType": null
+}`;
+
+  if (isIncorrect) {
+    userPrompt += `
+
+The learner got this question WRONG. Classify the error type for examTrapType:
+- "qualifier-misread": Misread qualifiers like 'most common' vs 'most common abnormality'
+- "negation-blindness": Missed 'NOT' or 'EXCEPT' in question
+- "age-population-skip": Missed population specifier (children, pregnant, elderly)
+- "absolute-terms": Tricked by 'always', 'never', 'only' (usually wrong)
+- "best-vs-correct": Picked correct but not BEST answer
+- "timeline-confusion": Confused initial vs definitive management
+- null: Knowledge gap, not an exam trap
+Set examTrapType to the most likely error type, or null if it was a pure knowledge gap.`;
+  }
+
+  try {
+    const response = await callAI(systemPrompt, userPrompt);
+    const result = parseAIResponse<NotebookBlockAiEvaluation>(response);
+
+    // Final normalization
+    const evaluation: NotebookBlockAiEvaluation = {
+      gaps: Array.isArray(result?.gaps) ? result.gaps : [],
+      feedbackText: result?.feedbackText || "Insight processed.",
+      confusionTags: Array.isArray(result?.confusionTags)
+        ? result.confusionTags
+        : [],
+      examTrapType: isIncorrect ? result?.examTrapType || null : null,
+      evaluatedAt: new Date().toISOString(),
+    };
+
+    aiCache.set(cacheKey, evaluation, config.cacheTTLMs);
+    return evaluation;
+  } catch (error) {
+    console.error("[AI Service] Insight evaluation failed:", error);
+    throw error;
+  }
+}
+
 export async function generateElaboratedFeedback(
   card: { front: string; back: string; cardType: string },
   topicContext: string,
