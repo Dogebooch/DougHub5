@@ -1,71 +1,50 @@
 # DougHub User Profile
 
 ## Identity
-- **Name:** Doug
-- **Role:** IM/EM resident with ADHD studying for licensing boards
-- **One-liner:** Craves systematic learning but drowns in organizational overhead, especially when cognitively depleted post-shift.
 
-## Context
-- **When:** Days off, post-shift, between clinical responsibilities (3-4 hour windows, 1-2 hours usable focus)
-- **Where:** Desktop at home (mobile deferred)
-- **State:** Decision-fatigued, mentally exhausted, zero tolerance for admin work
-- **Session pattern:** Dives in immediately, hates documentation, forgets available features
-- **Frustration response:** Closes app when tool becomes friction source
-
-## Dual Intent
-- **Board-prep facts:** High-yield content for Step 2/3, practice questions
-- **Clinical practice pearls:** Bedside applicable knowledge, clinical reasoning
-
-## Technical Comfort
-- **Comfortable:** Keyboard shortcuts, desktop apps, Anki (despite frustrations)
-- **Uncomfortable:** Complex configuration, CLI, debugging, manual validation
-- **Critical:** Auto-validation—Doug dives in without checking if things work
-- **Errors:** Needs hard stops and obvious messages, never silent failures
+- **Who:** IM/EM resident with ADHD studying for boards
+- **When:** Post-shift, 1-2 hours usable focus, decision-fatigued
+- **Core tension:** Needs systematic learning but drowns in organizational overhead
+- **Behavior:** Dives in immediately, forgets available features, comfortable with keyboard shortcuts
 
 ---
 
-## Mental States: Capture vs Review
+## Mental States by Step
 
-| Aspect | Capture Mode | Review Mode |
-|--------|-------------|-------------|
-| **State** | Learning, curious, building | Task completion, getting through queue |
-| **Patience** | High—wants perfection | Low—zero tolerance for editing |
-| **Goal** | Understand, create perfect cards | Complete reviews efficiently |
-| **AI Tolerance** | Welcomes suggestions | Zero interruptions or decisions |
-| **Time** | Will invest in getting it right | Wants to finish quickly |
+| Steps | State | Patience | AI Tolerance |
+|-------|-------|----------|--------------|
+| 1-4 (Capture → Notebook) | Learning, curious | High | Welcomes suggestions |
+| 5 (Generate Card) | Building | Medium | Show reasoning ("why this format?") |
+| 6 (Review) | Task completion | Zero | Zero interruptions |
 
 ---
 
-## Frustrations & Pain Points
-- **Decision paralysis:** 10+ min lost per session on "Where does this go?"
-- **Tool fragmentation:** Can't find cards, can't update related cards together
-- **Pattern-matching cards:** Tests recognition of format, not medical knowledge
-- **List contamination:** Reviewing one missed differential reveals all answers
-- **Scheduling friction:** Zero tolerance for Easy/Medium/Hard grading decisions
+## Job Statements (mapped to flow)
 
-## Card Anxiety
-- Anxious about creating low-yield cards that won't help
-- Wants AI gatekeeping via card-worthiness evaluation
-- Prefers curation over volume
+1. **Step 1-2:** "When I miss a board question, I want to capture it instantly without deciding where it goes."
 
-## AI Interaction Preferences
-- Welcomes suggestions but reviews each individually (no batch-approve)
-- Wants reasoning transparency (why this format? why this connection?)
-- Wrong suggestions are very annoying—accuracy over speed
-- Must enforce evidence-based flashcard practices
+2. **Step 3:** "When processing my inbox, I want to see my weak topics so I know what matters."
+
+3. **Step 4-5:** "When creating cards, I want AI to suggest format and validate quality so I don't create junk."
+
+4. **Step 6:** "When reviewing, I want zero grading decisions—just content recall."
 
 ---
 
-## Core Conflict
-Doug needs systematic structure to retain medical knowledge, but organizational structure creates the decision points that prevent starting sessions when depleted. He needs clinical reasoning for boards and bedside, but traditional flashcards test rote memorization.
+## Frustration Triggers
 
-## Job Statements
-1. **Primary:** "When I identify key concepts in practice questions, I want to capture and connect them without deciding where they go, so I can build clinical reasoning instead of managing tools."
-
-2. **Exhaustion escape:** "When I'm too tired to process information properly, I want to save it quickly without decisions, so I can deal with it when fresh."
-
-3. **Review efficiency:** "When reviewing flashcards, I want zero scheduling decisions so I can focus entirely on medical content."
+- Tool becomes friction → closes app
+- Silent failures → loses trust
+- Grading buttons → decision paralysis
+- Can't find context → skips card
 
 ---
 
-*Performance targets in Success Metrics. Implementation in TaskMaster.*
+## Design Implications
+
+- Default to inbox (defer organization)
+- Board Relevance Panel (surface weak topics)
+- Card Worthiness Gate (prevent junk, show reasoning)
+- FSRS auto-grading (zero decisions in review)
+- Support keyboard shortcuts
+- AI suggestions reviewed individually (no batch-approve)

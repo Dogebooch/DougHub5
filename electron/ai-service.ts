@@ -350,11 +350,11 @@ export async function ensureOllamaRunning(): Promise<boolean> {
   try {
     const exe = findOllamaExecutable();
 
-    // 2. Spawn as detached background process
+    // 2. Spawn as detached background process (headless on Windows)
     const ollamaProcess = spawn(exe, ["serve"], {
       detached: true,
       stdio: "ignore",
-      shell: true,
+      windowsHide: true, // Prevent console window on Windows
     });
 
     ollamaProcess.unref();

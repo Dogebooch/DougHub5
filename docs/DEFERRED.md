@@ -20,6 +20,13 @@
 
 > **Note:** These features are first in line after MVP completion. They build on core functionality and provide high value.
 
+### AI Backlink Detection (was T137)
+**Description:** Auto-detect related blocks after notebook entry creation. AI finds semantically related blocks and creates notebook_links with anchor text positions.
+**Priority:** Low
+**Source:** Moved from T137, not in canonical QBank flow
+**Dependency:** Requires v16 migration for notebook_links table
+**Notes:** Cool feature but not daily-use critical. Revisit after 6-step QBank flow is polished. Original T137 had 5 subtasks for migration, queue system, AI prompts, IPC handlers, and UI refresh.
+
 ### Card-Worthiness Gate (F6) — INTEGRATED INTO T42
 **Description:** Card-worthiness soft-gate is now integrated into T42 (Card Generation). Traffic-light panel (Testable? One Concept? Discriminative?) shows during card creation, not as a separate gate.
 **Status:** Merged into T42 (2026-01-07)

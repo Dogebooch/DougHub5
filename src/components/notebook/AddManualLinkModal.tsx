@@ -20,7 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { NotebookBlock, NotebookLinkType } from "@/types";
 import { Loader2, Search, Link2, X, ChevronDown, ChevronUp } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
   Collapsible,
@@ -98,24 +98,33 @@ export function AddManualLinkModal({
       return;
     }
 
+    const abortController = new AbortController();
     setIsSearching(true);
+
     searchTimeout.current = setTimeout(async () => {
       try {
         const res = await window.api.notebookBlocks.searchByContent(
           query.trim(),
           sourceBlock.id,
         );
-        if (res.data) {
+        if (res.data && !abortController.signal.aborted) {
           setResults(res.data);
         }
       } catch (err) {
-        console.error("Search failed:", err);
+        if (!abortController.signal.aborted) {
+          console.error("Search failed:", err);
+        }
       } finally {
-        setIsSearching(false);
+        if (!abortController.signal.aborted) {
+          setIsSearching(false);
+        }
       }
     }, 300);
 
-    return () => clearTimeout(searchTimeout.current);
+    return () => {
+      clearTimeout(searchTimeout.current);
+      abortController.abort();
+    };
   }, [query, sourceBlock.id]);
 
   const handleSelection = () => {
@@ -123,15 +132,21 @@ export function AddManualLinkModal({
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed)
       return;
 
-    const range = selection.getRangeAt(0);
     const text = selection.toString().trim();
     if (!text) return;
 
-    // Get offsets relative to the parent container
-    // This is simplified but should work for plain text blocks
+    // Get absolute offsets relative to sourceBlock.content
+    const fullText = sourceBlock.content;
+    const absoluteStart = fullText.indexOf(text);
+
+    if (absoluteStart === -1) {
+      console.warn("Selected text not found in content");
+      return;
+    }
+
     setAnchorText(text);
-    setAnchorStart(range.startOffset);
-    setAnchorEnd(range.endOffset);
+    setAnchorStart(absoluteStart);
+    setAnchorEnd(absoluteStart + text.length);
   };
 
   const handleCreateLink = async () => {
@@ -254,7 +269,10 @@ export function AddManualLinkModal({
                           className="mt-1"
                         />
                         <div className="flex-1 min-w-0 space-y-1">
-                          <Badge variant="secondary" className="text-[10px] h-4">
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] h-4"
+                          >
                             {res.topicName}
                           </Badge>
                           <p className="text-xs text-muted-foreground line-clamp-2">
@@ -266,11 +284,9 @@ export function AddManualLinkModal({
                   </RadioGroup>
                 ) : (
                   <div className="p-8 text-center text-sm text-muted-foreground">
-                    {query.trim().length >= 2 ? (
-                      `No blocks found matching "${query}"`
-                    ) : (
-                      "Type at least 2 characters to search"
-                    )}
+                    {query.trim().length >= 2
+                      ? `No blocks found matching "${query}"`
+                      : "Type at least 2 characters to search"}
                   </div>
                 )}
               </div>

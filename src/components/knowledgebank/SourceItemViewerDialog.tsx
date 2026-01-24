@@ -96,7 +96,7 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
           <div className="rounded-lg overflow-hidden border bg-muted/30 flex items-center justify-center">
             <img
               src={`app-media://${item.mediaPath.replace(/\\/g, "/")}`}
-              alt={item.title || 'Captured image'}
+              alt={item.title || "Captured image"}
               className="max-w-full max-h-[60vh] rounded-lg border object-contain"
             />
           </div>

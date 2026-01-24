@@ -460,7 +460,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 "capitalize",
                 content.source === "peerprep"
                   ? "bg-info/10 text-info border-info/20"
-                  : "bg-success/10 text-success border-success/20"
+                  : "bg-success/10 text-success border-success/20",
               )}
             >
               {content.source === "peerprep" ? "PeerPrep" : "MKSAP"}
@@ -491,7 +491,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                     <ChevronDown
                       className={cn(
                         "w-3 h-3 transition-transform",
-                        isAttemptsOpen && "rotate-180"
+                        isAttemptsOpen && "rotate-180",
                       )}
                     />
                   </Badge>
@@ -593,7 +593,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 <div
                   className={cn(
                     "space-y-3",
-                    displayVignetteHtml && "pt-6 border-t border-primary/10"
+                    displayVignetteHtml && "pt-6 border-t border-primary/10",
                   )}
                 >
                   <span className="text-[10px] font-bold text-card-muted uppercase tracking-widest block">
@@ -609,7 +609,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
 
             {content.images.some(
               (img) =>
-                img.location === "question" || img.location === "vignette"
+                img.location === "question" || img.location === "vignette",
             ) && (
               <div className="mt-6 pt-4 border-t border-primary/5">
                 {renderImages("question")}
@@ -633,8 +633,10 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                     "relative flex items-stretch rounded-lg border transition-all",
                     // Base state
                     "border-border/50 bg-card",
-                    // Correct answer styling
-                    isCorrectAnswer && "border-success/50 bg-success/5",
+                    // Correct answer styling - ONLY when user selected it
+                    answer.isUserChoice &&
+                      isCorrectAnswer &&
+                      "border-success/50 bg-success/5",
                     // Wrong user choice
                     isWrongUserChoice &&
                       "border-destructive/50 bg-destructive/5",
@@ -644,7 +646,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                     answer.isUserChoice && isCorrectAnswer && "ring-success/40",
                     answer.isUserChoice &&
                       !isCorrectAnswer &&
-                      "ring-destructive/40"
+                      "ring-destructive/40",
                   )}
                 >
                   {/* Letter badge */}
@@ -654,8 +656,8 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                       isCorrectAnswer
                         ? "bg-success/15 text-success"
                         : isWrongUserChoice
-                        ? "bg-destructive/15 text-destructive"
-                        : "bg-muted/30 text-muted-foreground"
+                          ? "bg-destructive/15 text-destructive"
+                          : "bg-muted/30 text-muted-foreground",
                     )}
                   >
                     {answer.letter}
@@ -680,7 +682,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                               "text-xs font-semibold tabular-nums",
                               isCorrectAnswer
                                 ? "text-success"
-                                : "text-muted-foreground"
+                                : "text-muted-foreground",
                             )}
                           >
                             {answer.peerPercent}%
@@ -692,7 +694,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                               "h-full rounded-full transition-all duration-500",
                               isCorrectAnswer
                                 ? "bg-success/70"
-                                : "bg-muted-foreground/30"
+                                : "bg-muted-foreground/30",
                             )}
                             style={{ width: `${answer.peerPercent}%` }}
                           />
@@ -703,7 +705,14 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                     {/* Status indicator */}
                     <div className="flex flex-col items-center gap-0.5 min-w-[48px]">
                       {isCorrectAnswer && (
-                        <CheckCircle2 className="w-5 h-5 text-success" />
+                        <>
+                          <CheckCircle2 className="w-5 h-5 text-success" />
+                          {!answer.isUserChoice && (
+                            <span className="text-[9px] font-bold tracking-wider uppercase text-muted-foreground/70">
+                              Correct
+                            </span>
+                          )}
+                        </>
                       )}
                       {isWrongUserChoice && (
                         <XCircle className="w-5 h-5 text-destructive" />
@@ -736,7 +745,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 <ChevronDown
                   className={cn(
                     "w-4 h-4 text-card-muted transition-transform",
-                    isExplanationOpen && "rotate-180"
+                    isExplanationOpen && "rotate-180",
                   )}
                 />
               </CollapsibleTrigger>
@@ -744,13 +753,18 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 <div className="px-4 pb-6 space-y-4">
                   {/* Educational Objective callout (MKSAP) - subtle inline before explanation */}
                   {content.educationalObjectiveHtml && (
-                    <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-primary/5 border border-primary/15">
+                    <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
                       <div className="shrink-0 mt-0.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                       </div>
-                      <p className="text-sm font-medium text-primary leading-relaxed">
-                        {content.educationalObjectiveHtml}
-                      </p>
+                      <div className="flex-1">
+                        <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                          Educational Objective:{" "}
+                        </span>
+                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300 leading-relaxed">
+                          {content.educationalObjectiveHtml}
+                        </span>
+                      </div>
                     </div>
                   )}
                   <div className="rounded-xl bg-card border border-border/50 overflow-hidden">
@@ -784,7 +798,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   <ChevronDown
                     className={cn(
                       "w-4 h-4 text-card-muted transition-transform",
-                      isKeyPointsOpen && "rotate-180"
+                      isKeyPointsOpen && "rotate-180",
                     )}
                   />
                 </CollapsibleTrigger>
@@ -825,7 +839,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   <ChevronDown
                     className={cn(
                       "w-4 h-4 text-card-muted transition-transform",
-                      isPeerPearlsOpen && "rotate-180"
+                      isPeerPearlsOpen && "rotate-180",
                     )}
                   />
                 </CollapsibleTrigger>
@@ -865,7 +879,7 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                   <ChevronDown
                     className={cn(
                       "w-4 h-4 text-muted-foreground transition-transform",
-                      isReferencesOpen && "rotate-180"
+                      isReferencesOpen && "rotate-180",
                     )}
                   />
                 </CollapsibleTrigger>

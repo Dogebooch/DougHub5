@@ -56,7 +56,8 @@ database.ts → ipc-handlers.ts → preload.ts → electron.d.ts → useAppStore
 **Notes:** Context, dependencies, or implementation hints
 ```
 
-**MVP Path:** T42 ✅ → T45 ✅ → T117 ✅ → T118 ✅ → **T115 (Card Browser)** ← CURRENT
+**MVP Path:** Polish 6-step QBank flow (see `docs/Workflow_Guide.ini`):
+1. Capture ✅ → 2. Inbox (T129) → 3. Add to Notebook (T138) → 4. Topic Page (T130) → 5. Generate Card ✅ → 6. Review ✅
 
 ---
 

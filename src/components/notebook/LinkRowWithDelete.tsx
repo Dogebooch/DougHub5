@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ArrowRight, X, Loader2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface LinkRowWithDeleteProps {
   link: NotebookLink;
@@ -51,17 +51,17 @@ export function LinkRowWithDelete({
         onDelete(link.id);
         toast({ description: "Link removed" });
         setShowConfirm(false);
-      } else if (res.error) {
+      } else {
         toast({
           title: "Error",
-          description: res.error,
+          description: res.error || "Failed to delete link",
           variant: "destructive",
         });
       }
     } catch (err: any) {
       toast({
         title: "Error",
-        description: err.message,
+        description: err.message || "Unexpected error",
         variant: "destructive",
       });
     } finally {
@@ -109,10 +109,8 @@ export function LinkRowWithDelete({
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Link?</AlertDialogTitle>
             <AlertDialogDescription>
-              Remove link to {targetTopicName}: "{targetBlockExcerpt.substring(
-                0,
-                50,
-              )}
+              Remove link to {targetTopicName}: "
+              {targetBlockExcerpt.substring(0, 50)}
               ..."?
               {link.anchorText && (
                 <span className="block mt-2 text-muted-foreground text-xs italic">

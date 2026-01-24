@@ -24,7 +24,13 @@ const api = {
   reviews: {
     log: (review) => electron.ipcRenderer.invoke("reviews:log", review),
     getByCard: (cardId) => electron.ipcRenderer.invoke("reviews:getByCard", cardId),
-    schedule: (cardId, rating, responseTimeMs) => electron.ipcRenderer.invoke("reviews:schedule", cardId, rating, responseTimeMs)
+    schedule: (cardId, rating, responseTimeMs, confidenceRating) => electron.ipcRenderer.invoke(
+      "reviews:schedule",
+      cardId,
+      rating,
+      responseTimeMs,
+      confidenceRating
+    )
   },
   quickCaptures: {
     getAll: () => electron.ipcRenderer.invoke("quickCaptures:getAll"),
@@ -100,9 +106,22 @@ const api = {
     getByPage: (pageId) => electron.ipcRenderer.invoke("notebookBlocks:getByPage", pageId),
     getById: (id) => electron.ipcRenderer.invoke("notebookBlocks:getById", id),
     getBySourceId: (sourceId) => electron.ipcRenderer.invoke("notebookBlocks:getBySourceId", sourceId),
+    getBySource: (sourceId) => electron.ipcRenderer.invoke("notebookBlocks:getBySource", sourceId),
     create: (block) => electron.ipcRenderer.invoke("notebookBlocks:create", block),
+    addToAnotherTopic: (payload) => electron.ipcRenderer.invoke("notebookBlocks:addToAnotherTopic", payload),
     update: (id, updates) => electron.ipcRenderer.invoke("notebookBlocks:update", id, updates),
-    delete: (id) => electron.ipcRenderer.invoke("notebookBlocks:delete", id)
+    delete: (id) => electron.ipcRenderer.invoke("notebookBlocks:delete", id),
+    searchByContent: (query, excludeBlockId, limit) => electron.ipcRenderer.invoke("notebookBlocks:searchByContent", {
+      query,
+      excludeBlockId,
+      limit
+    })
+  },
+  notebookLinks: {
+    create: (link) => electron.ipcRenderer.invoke("notebookLinks:create", link),
+    getBySourceBlock: (blockId) => electron.ipcRenderer.invoke("notebookLinks:getBySourceBlock", blockId),
+    getByTargetBlock: (blockId) => electron.ipcRenderer.invoke("notebookLinks:getByTargetBlock", blockId),
+    delete: (id) => electron.ipcRenderer.invoke("notebookLinks:delete", id)
   },
   smartViews: {
     getAll: () => electron.ipcRenderer.invoke("smartViews:getAll"),
@@ -131,6 +150,8 @@ const api = {
   ai: {
     getProviderStatus: () => electron.ipcRenderer.invoke("ai:getProviderStatus"),
     extractConcepts: (content) => electron.ipcRenderer.invoke("ai:extractConcepts", content),
+    evaluateInsight: (input) => electron.ipcRenderer.invoke("ai:evaluateInsight", input),
+    analyzeCaptureContent: (content) => electron.ipcRenderer.invoke("ai:analyzeCaptureContent", content),
     validateCard: (front, back, cardType) => electron.ipcRenderer.invoke("ai:validateCard", front, back, cardType),
     detectMedicalList: (content) => electron.ipcRenderer.invoke("ai:detectMedicalList", content),
     convertToVignette: (listItem, context) => electron.ipcRenderer.invoke("ai:convertToVignette", listItem, context),
@@ -161,6 +182,11 @@ const api = {
     },
     getOllamaModels: () => electron.ipcRenderer.invoke("ai:getOllamaModels")
   },
+  insights: {
+    getBoardRelevance: (topicTags) => electron.ipcRenderer.invoke("insights:getBoardRelevance", topicTags),
+    getExamTrapBreakdown: () => electron.ipcRenderer.invoke("insights:getExamTrapBreakdown"),
+    getConfusionPairs: () => electron.ipcRenderer.invoke("insights:getConfusionPairs")
+  },
   files: {
     saveImage: (data, mimeType) => electron.ipcRenderer.invoke("files:saveImage", { data, mimeType })
   },
@@ -171,6 +197,7 @@ const api = {
     getAll: () => electron.ipcRenderer.invoke("settings:getAll")
   },
   capture: {
+    getStatus: () => electron.ipcRenderer.invoke("capture:getStatus"),
     process: (payload) => electron.ipcRenderer.invoke("capture:process", payload),
     onReceived: (callback) => {
       const handler = (_event, payload) => callback(payload);

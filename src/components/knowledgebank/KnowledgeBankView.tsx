@@ -7,6 +7,7 @@ import { StatusGroup } from './StatusGroup';
 import { BatchActions } from './BatchActions';
 import { AddToNotebookWorkflow } from "../notebook/AddToNotebookWorkflow";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import {
   Select,
   SelectContent,
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/select";
 
 export const KnowledgeBankView = () => {
+  const { toast } = useToast();
   const {
     selectedItemId,
     setCurrentView,
@@ -57,10 +59,6 @@ export const KnowledgeBankView = () => {
     }
   }, [selectedItemId, items, setCurrentView]);
 
-  // Dialog state
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [targetItem, setTargetItem] = useState<SourceItem | null>(null);
-
   const fetchItems = useCallback(async () => {
     setIsLoading(true);
     const result = await window.api.sourceItems.getAll();
@@ -92,7 +90,7 @@ export const KnowledgeBankView = () => {
       quickcapture: items.filter((i) => i.sourceType === "quickcapture").length,
       manual: items.filter((i) => i.sourceType === "manual").length,
     }),
-    [items]
+    [items],
   );
 
   // Group and sort items
@@ -103,7 +101,7 @@ export const KnowledgeBankView = () => {
 
     const sorted = [...filteredItems].sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     return {
@@ -114,15 +112,40 @@ export const KnowledgeBankView = () => {
   }, [items, sourceTypeFilter]);
 
   const handleDelete = async (id: string) => {
-    const result = await window.api.sourceItems.delete(id);
-    if (!result.error) {
-      fetchItems();
+    try {
+      const result = await window.api.sourceItems.delete(id);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+      } else {
+        toast({ description: "Item deleted" });
+        fetchItems();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete item",
+        variant: "destructive",
+      });
     }
   };
 
   const handleBatchDelete = async () => {
-    await batchDeleteInbox(Array.from(selectedInboxItems));
-    fetchItems();
+    try {
+      const count = selectedInboxItems.size;
+      await batchDeleteInbox(Array.from(selectedInboxItems));
+      toast({ description: `Deleted ${count} item${count > 1 ? "s" : ""}` });
+      fetchItems();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete items",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewInNotebook = async (item: SourceItem) => {
@@ -131,11 +154,18 @@ export const KnowledgeBankView = () => {
       if (result.data) {
         setCurrentView("notebook", result.data.notebookTopicPageId);
       } else {
-        console.warn("Item is curated but no notebook block found");
-        // Fallback or alert user
+        toast({
+          title: "Not Found",
+          description: "Item is curated but no notebook block found",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.error("Failed to find notebook block:", error);
+      toast({
+        title: "Error",
+        description: "Failed to find notebook block",
+        variant: "destructive",
+      });
     }
   };
 
@@ -249,9 +279,9 @@ export const KnowledgeBankView = () => {
                 sourceItem={sItem}
                 isSelected={selectedInboxItems.has(sItem.id)}
                 isHighlighted={selectedItemId === sItem.id}
-                onToggleSelect={(id) => toggleInboxSelection(id)}
+                onToggleSelect={(id, _checked) => toggleInboxSelection(id)}
                 onAddToNotebook={(it) => openAddDialog(it)}
-                onOpen={(it) => console.log("Open:", it.id)}
+                onOpen={(it) => setCurrentView("knowledgebank", it.id)}
                 onDelete={(it) => handleDelete(it.id)}
               />
             ))
@@ -277,9 +307,9 @@ export const KnowledgeBankView = () => {
                 sourceItem={sItem}
                 isSelected={selectedInboxItems.has(sItem.id)}
                 isHighlighted={selectedItemId === sItem.id}
-                onToggleSelect={(id) => toggleInboxSelection(id)}
+                onToggleSelect={(id, _checked) => toggleInboxSelection(id)}
                 onAddToNotebook={(it) => openAddDialog(it)}
-                onOpen={(it) => console.log("Open:", it.id)}
+                onOpen={(it) => setCurrentView("knowledgebank", it.id)}
                 onDelete={(it) => handleDelete(it.id)}
               />
             ))
@@ -305,10 +335,10 @@ export const KnowledgeBankView = () => {
                 sourceItem={sItem}
                 isSelected={selectedInboxItems.has(sItem.id)}
                 isHighlighted={selectedItemId === sItem.id}
-                onToggleSelect={(id) => toggleInboxSelection(id)}
+                onToggleSelect={(id, _checked) => toggleInboxSelection(id)}
                 onAddToNotebook={(it) => openAddDialog(it)}
                 onViewInNotebook={handleViewInNotebook}
-                onOpen={(it) => console.log("Open:", it.id)}
+                onOpen={(it) => setCurrentView("knowledgebank", it.id)}
                 onDelete={(it) => handleDelete(it.id)}
               />
             ))

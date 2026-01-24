@@ -66,6 +66,8 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 
 let win: BrowserWindow | null;
 
+const AUTO_BACKUP_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+const BACKUP_RETENTION_DAYS = 7; // Keep 7 days of backups
 let autoBackupInterval: NodeJS.Timeout | null = null;
 
 function startAutoBackup() {
@@ -75,15 +77,15 @@ function startAutoBackup() {
     try {
       const dbPath = getDbPath();
       if (dbPath && win && !win.isDestroyed()) {
-        console.log("[Auto-Backup] Creating scheduled backup...");
         createBackup(dbPath);
+        cleanupOldBackups(BACKUP_RETENTION_DAYS);
         const timestamp = new Date().toISOString();
         win.webContents.send("backup:auto-complete", timestamp);
       }
     } catch (error) {
       console.error("[Auto-Backup] Failed scheduled backup:", error);
     }
-  }, 30000); // 30 seconds
+  }, AUTO_BACKUP_INTERVAL_MS);
 }
 
 function createWindow() {
@@ -203,16 +205,39 @@ function createWindow() {
       new URL(VITE_DEV_SERVER_URL); // Throws if malformed
       console.log(
         "[Dev Mode] Loading from Vite dev server:",
-        VITE_DEV_SERVER_URL
+        VITE_DEV_SERVER_URL,
       );
-      win.loadURL(VITE_DEV_SERVER_URL).catch((error) => {
-        console.error("[Dev Mode] Failed to load from Vite dev server:", error);
-        // Show error dialog to developer
-        dialog.showErrorBox(
-          "Dev Server Error",
-          `Failed to load from Vite dev server at ${VITE_DEV_SERVER_URL}.\n\nError: ${error.message}\n\nMake sure 'npm run dev' is running.`
-        );
-      });
+
+      // Retry logic for Vite dev server (handles dependency optimization reloads)
+      const loadWithRetry = async (retries = 3, delay = 1000) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            await win.loadURL(VITE_DEV_SERVER_URL);
+            console.log("[Dev Mode] Successfully loaded Vite dev server");
+            return;
+          } catch (error: any) {
+            console.warn(
+              `[Dev Mode] Load attempt ${i + 1}/${retries} failed:`,
+              error.message,
+            );
+            if (i < retries - 1) {
+              await new Promise((resolve) => setTimeout(resolve, delay));
+            } else {
+              console.error(
+                "[Dev Mode] Failed to load from Vite dev server after retries:",
+                error,
+              );
+              dialog.showErrorBox(
+                "Dev Server Error",
+                `Failed to load from Vite dev server at ${VITE_DEV_SERVER_URL}.\n\nError: ${error.message}\n\nMake sure 'npm run dev' is running.`,
+              );
+            }
+          }
+        }
+      };
+
+      loadWithRetry();
+
       // Open DevTools docked (disable with DOUGHUB_NO_DEVTOOLS=1)
       if (!process.env.DOUGHUB_NO_DEVTOOLS) {
         win.webContents.openDevTools({ mode: "right", activate: false });
@@ -221,7 +246,7 @@ function createWindow() {
       console.error(
         "[Dev Mode] Invalid VITE_DEV_SERVER_URL:",
         VITE_DEV_SERVER_URL,
-        urlError
+        urlError,
       );
       // Fall back to loading dist files
       console.log("[Production Mode] Loading from built files (fallback)");
@@ -232,13 +257,13 @@ function createWindow() {
   } else {
     console.log(
       "[Production Mode] Loading from built files:",
-      path.join(RENDERER_DIST, "index.html")
+      path.join(RENDERER_DIST, "index.html"),
     );
     win.loadFile(path.join(RENDERER_DIST, "index.html")).catch((error) => {
       console.error("[Production Mode] Failed to load built files:", error);
       dialog.showErrorBox(
         "Startup Error",
-        `Failed to load application files.\n\nError: ${error.message}\n\nTry rebuilding with 'npm run build'.`
+        `Failed to load application files.\n\nError: ${error.message}\n\nTry rebuilding with 'npm run build'.`,
       );
     });
   }
@@ -283,8 +308,8 @@ app.whenReady().then(() => {
   ensureBackupsDir();
   console.log("[Backup] Backups directory ready");
 
-  // Cleanup old backups (keep 7 days by default)
-  const deleted = cleanupOldBackups(7);
+  // Cleanup old backups
+  const deleted = cleanupOldBackups(BACKUP_RETENTION_DAYS);
   if (deleted > 0) {
     console.log(`[Backup] Cleaned up ${deleted} old backup(s)`);
   }
@@ -309,7 +334,7 @@ app.whenReady().then(() => {
       const status = await getProviderStatus();
       if (status.isLocal && status.isConnected) {
         console.log(
-          `[AI Service] Warmed up successfully - ${status.model} ready`
+          `[AI Service] Warmed up successfully - ${status.model} ready`,
         );
       } else if (status.isLocal && !status.isConnected) {
         console.log("[AI Service] Attempting to start Ollama in background...");
