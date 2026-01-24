@@ -101,7 +101,7 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="p-6 pb-2 border-b flex-none">
           <div className="flex items-center gap-2 mb-2">
             <Badge variant="outline" className="capitalize">
@@ -123,7 +123,7 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
 
         {/* Action Footer */}
         <TooltipProvider delayDuration={300}>
-          <div className="p-4 border-t bg-background flex items-center justify-end gap-3 flex-none">
+          <div className="p-4 border-t bg-background flex items-center justify-between flex-none">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -135,42 +135,45 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
                   Close
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
+              <TooltipContent side="top">
                 <p>Close without taking action</p>
               </TooltipContent>
             </Tooltip>
-            {onArchiveToKB && item.status !== "curated" && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    onClick={() => onArchiveToKB(item)}
-                  >
-                    <Archive className="h-4 w-4 mr-2" />
-                    Keep in Knowledge Bank
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Mark as reviewed and keep in your Knowledge Bank without adding to Notebook</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {onAddToNotebook && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => onAddToNotebook(item)}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    <BookPlus className="h-4 w-4 mr-2" />
-                    Add to Notebook
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Add to your Notebook with your insight for card creation</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+
+            <div className="flex items-center gap-3">
+              {onArchiveToKB && item.status !== "curated" && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      onClick={() => onArchiveToKB(item)}
+                    >
+                      <Archive className="h-4 w-4 mr-2" />
+                      Archive
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Keep for reference, no cards needed</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {onAddToNotebook && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => onAddToNotebook(item)}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      <BookPlus className="h-4 w-4 mr-2" />
+                      Add to Notebook
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>I want to learn this — add notes and make cards</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </div>
         </TooltipProvider>
       </DialogContent>

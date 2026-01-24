@@ -4,10 +4,10 @@ export type CardType = "standard" | "qa" | "cloze" | "vignette" | "list-cloze";
 // Quick capture extraction status
 export type ExtractionStatus = "pending" | "processing" | "completed";
 
-// v2 Knowledge Bank - Source types
+// v2 Archive - Source types
 export type SourceType = 'qbank' | 'article' | 'pdf' | 'image' | 'audio' | 'quickcapture' | 'manual';
 
-// v2 Knowledge Bank - Source processing status
+// v2 Archive - Source processing status
 export type SourceItemStatus = 'inbox' | 'processed' | 'curated';
 
 export interface Card {
@@ -68,7 +68,7 @@ export interface QuickCapture {
   processedAt: string | null;
 }
 
-// v2 Architecture - Knowledge Bank Layer
+// v2 Architecture - Archive Layer
 export interface SourceMetadata {
   summary?: string; // AI-generated 4-6 word summary for inbox differentiation
   subject?: string; // Medical subject (Cardiology, Pulm, Toxicology, etc.)
@@ -347,7 +347,7 @@ export interface CapturePayload {
   }[];
 }
 
-// v2 Knowledge Bank - Board Question Parsed Content
+// v2 Archive - Board Question Parsed Content
 export interface BoardAnswer {
   letter: string;
   html: string;

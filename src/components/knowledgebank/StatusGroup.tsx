@@ -18,7 +18,7 @@ interface StatusGroupProps {
 }
 
 /**
- * StatusGroup is a collapsible section component used in the Knowledge Bank 
+ * StatusGroup is a collapsible section component used in the Archive
  * to group SourceItems by their current status (inbox, processed, curated).
  * It is a pure presentational component controlled by its parent.
  */

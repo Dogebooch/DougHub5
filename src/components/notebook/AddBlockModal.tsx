@@ -61,7 +61,7 @@ export function AddBlockModal({
           console.error("Failed to fetch sources:", result.error);
           toast({
             title: "Error",
-            description: "Failed to load sources from Knowledge Bank",
+            description: "Failed to load sources from Archive",
             variant: "destructive",
           });
           setSources([]);
@@ -187,7 +187,7 @@ export function AddBlockModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Add from Knowledge Bank</DialogTitle>
+          <DialogTitle>Add from Archive</DialogTitle>
           <DialogDescription>
             Select a processed source to add as a content block
           </DialogDescription>

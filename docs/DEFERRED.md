@@ -71,7 +71,7 @@
 **Remaining for POST-MVP:** Advanced card format templates for uniform patterns: EKG findings, physical exam findings, crossover confusion topics, medication side effects, lab value interpretations, procedural complications.
 
 ### AI Duplicate Detection (F2)
-**Description:** AI-powered detection of duplicate or near-duplicate content in Knowledge Bank and Notebook. Warns user before creating redundant entries. Prep: Add embedding columns to schema now for future similarity search.
+**Description:** AI-powered detection of duplicate or near-duplicate content in Archive and Notebook. Warns user before creating redundant entries. Prep: Add embedding columns to schema now for future similarity search.
 **Priority:** High
 **Source:** Canonical MVP Post-MVP list (2026-01-07)
 **Notes:** Requires embeddings infrastructure. Add embedding columns in advance during T42 work.
@@ -191,7 +191,7 @@
 **Description:** AI tutor that proactively detects learning patterns and offers targeted interventions. Three intervention types:
 1. **Confusion Pairs:** "You confuse Methotrexate and Methylnaltrexone - want a contrast card or mnemonic?"
 2. **Topic Weakness:** "You struggle with ethics - want some practice board questions?"
-3. **Knowledge Gap Remediation:** "You have poor understanding of Type 4 RTA. I found resources in your Knowledge Bank - review them, then run a targeted flashcard session?"
+3. **Knowledge Gap Remediation:** "You have poor understanding of Type 4 RTA. I found resources in your Archive - review them, then run a targeted flashcard session?"
 **Priority:** High
 **Source:** User vision (2026-01-07)
 **Dependency:** F2 (embeddings), F12 (confusion detection), F16 (session history), F18 (answer logging), F34 (exam traps)
@@ -277,39 +277,39 @@
 **Source:** User request during testing (2026-01-06)
 **Notes:** Could reduce clicks for common capture patterns.
 
-### Knowledge Bank Advanced Filters
+### Archive Advanced Filters
 **Source:** Task 40 scoping (2026-01-06)
-**Description:** Additional filter options for Knowledge Bank: topic filter dropdown, tag filter dropdown, date range picker, multi-select status/sourceType filters.
+**Description:** Additional filter options for Archive: topic filter dropdown, tag filter dropdown, date range picker, multi-select status/sourceType filters.
 **Priority:** Low
 **Notes:** Single-select chips + source dropdown covers 95% of use cases. Add if users request.
 
-### Knowledge Bank Full-Text Search
+### Archive Full-Text Search
 **Source:** Task 40 scoping (2026-01-06)
 **Description:** Search rawContent field in addition to title. Requires new IPC handler `sourceItems:search(query)` with SQLite FTS5.
 **Priority:** Medium
 **Notes:** Title search covers most cases. Add when users have 500+ items and can't find content.
 
-### Knowledge Bank RAG Chat (Grounded Discussion)
-**Description:** Chat interface grounded on Knowledge Bank content for hallucination-free topic discussion.
+### Archive RAG Chat (Grounded Discussion)
+**Description:** Chat interface grounded on Archive content for hallucination-free topic discussion.
 **Priority:** Medium
 **Source:** Clinical Workflows Planning Session (2026-01-09)
 **Architecture:**
 ```
-User question → FTS search Knowledge Bank → Retrieve relevant chunks →
+User question → FTS search Archive → Retrieve relevant chunks →
 Inject into LLM context → Generate grounded response with source citations
 ```
 **Components:**
 1. ChatMessage table: id, topicId?, role (user|assistant), content, sourcesUsed[], createdAt
 2. Grounded prompt builder: Constructs prompt with source content injection
-3. Chat panel/modal UI: Accessible from KB or Notebook view
+3. Chat panel/modal UI: Accessible from Archive or Notebook view
 **MVP Implementation:** Simple FTS keyword search (existing source_items_fts), no embeddings
 **Post-MVP Enhancement:** Embedding-based semantic search (requires F2 infrastructure)
 **Example:** "Walk me through Kanavel's signs" → Answers from user's saved Tintinalli excerpt
 **Notes:** Enables "discuss with your notes" without AI hallucination. Sources shown with each response.
 
-### Knowledge Bank Keyboard Navigation
+### Archive Keyboard Navigation
 **Source:** Task 40 scoping (2026-01-06)
-**Description:** Keyboard shortcuts for Knowledge Bank: `/` to focus search, `i/p/c` to filter by status, arrow keys to navigate list, Enter to open item.
+**Description:** Keyboard shortcuts for Archive: `/` to focus search, `i/p/c` to filter by status, arrow keys to navigate list, Enter to open item.
 **Priority:** Low
 **Notes:** Follows Superhuman/Things 3 patterns. Power user polish.
 
@@ -646,7 +646,7 @@ Inject into LLM context → Generate grounded response with source citations
 **Notes:** Position field exists in schema. Complex drag-drop UI not MVP-critical. Blocks display fine in creation order.
 
 ### Notebook Block Excerpt Selection
-**Description:** When adding a block from Knowledge Bank, allow text highlighting/selection to capture specific excerpt instead of full content.
+**Description:** When adding a block from Archive, allow text highlighting/selection to capture specific excerpt instead of full content.
 **Priority:** Medium
 **Source:** Task T41 scoping (2026-01-07)
 **Notes:** MVP uses full rawContent. Excerpt selection needs text selection UI, potentially contenteditable or range selection API. Add when users have long source items.

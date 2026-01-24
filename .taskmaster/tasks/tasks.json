@@ -78,7 +78,7 @@
       },
       {
         "id": "40",
-        "title": "[v2-T3] Knowledge Bank UI: vertical list grouped by status, search, filters",
+        "title": "[v2-T3] Archive UI: vertical list grouped by status, search, filters",
         "status": "done",
         "dependencies": ["39"],
         "subtasks": []

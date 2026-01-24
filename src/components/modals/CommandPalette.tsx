@@ -80,13 +80,13 @@ export function CommandPalette({
       },
       {
         id: "knowledgebank",
-        label: "Go to Knowledge Bank",
+        label: "Go to Archive",
         icon: <Brain className="h-4 w-4" />,
         action: () => {
           setCurrentView("knowledgebank");
           onClose();
         },
-        keywords: ["bank", "knowledge", "sources", "raw"],
+        keywords: ["archive", "sources", "raw", "curated"],
       },
       {
         id: "cards",

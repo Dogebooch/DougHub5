@@ -9,7 +9,7 @@ DougHub is a **flashcard app for medical residents with ADHD** studying for boar
 
 ### v2 Architecture: 3-Layer System
 ```
-Layer 1: Knowledge Bank (SourceItems) - Raw captures, inbox → processed → curated
+Layer 1: Archive (SourceItems) - Raw captures, inbox → processed → curated
 Layer 2: Personal Notebook (NotebookTopicPages) - Curated topics with blocks
 Layer 3: Flashcards (Cards) - Generated ONLY from Notebook blocks
 ```

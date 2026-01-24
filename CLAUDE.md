@@ -18,9 +18,9 @@ IPC returns IpcResult<T>: { data, error: null } | { data: null, error }
 ```
 
 **v2 3-Layer System:**
-1. Knowledge Bank (SourceItems) → 2. Notebook (NotebookTopicPages) → 3. Cards
+1. Archive (SourceItems) → 2. Notebook (NotebookTopicPages) → 3. Cards
 - **Notebook = "What Boards Test" registry** — curated, clinically-relevant content
-- Cards ONLY from Notebook blocks, never direct from KB (Card Browser is for maintenance only)
+- Cards ONLY from Notebook blocks, never direct from Archive (Card Browser is for maintenance only)
 - Card generation: text selection → AI suggests format + card-worthiness feedback → user confirms
 - CanonicalTopic with alias normalization (no raw topic strings)
 - Deep links always: Cards → NotebookTopicPage → SourceItem

@@ -87,16 +87,16 @@ export function BatchActions({
                   ) : (
                     <Archive className="h-4 w-4 mr-2" />
                   )}
-                  Keep in KB
+                  Archive
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
-                    Archive {selectedCount} items to Knowledge Bank?
+                    Archive {selectedCount} items?
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    These items will be marked as reviewed and moved to your Knowledge Bank
+                    These items will be marked as reviewed and moved to your Archive
                     without being added to the Notebook.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

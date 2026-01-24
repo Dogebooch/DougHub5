@@ -78,7 +78,7 @@ export function Sidebar({ className }: SidebarProps) {
     },
     {
       id: "knowledgebank",
-      label: "Knowledge Bank",
+      label: "Archive",
       icon: Brain,
       implemented: true,
     },

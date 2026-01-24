@@ -249,7 +249,7 @@ export function InboxView() {
     if (failCount === 0) {
       toast({
         title: "Batch Archive Successful",
-        description: `Archived ${successCount} items to Knowledge Bank.`,
+        description: `Archived ${successCount} items.`,
       });
     } else {
       toast({
@@ -306,6 +306,28 @@ export function InboxView() {
     }
   };
 
+  const handleArchive = async (item: SourceItem) => {
+    try {
+      const result = await window.api.sourceItems.update(item.id, { status: "curated" });
+      if (!result.error) {
+        toast({
+          title: "Archived",
+          description: "Item moved to Archive.",
+        });
+        fetchInbox();
+        refreshCounts();
+      } else {
+        toast({
+          title: "Archive Failed",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("Error archiving item:", err);
+    }
+  };
+
   const handleAddToNotebook = (item: SourceItem) => {
     setTargetItem(item);
     setIsAddDialogOpen(true);
@@ -326,8 +348,8 @@ export function InboxView() {
       const result = await window.api.sourceItems.update(item.id, { status: "curated" });
       if (!result.error) {
         toast({
-          title: "Archived to Knowledge Bank",
-          description: "Item has been reviewed and kept in your Knowledge Bank.",
+          title: "Archived",
+          description: "Item has been reviewed and kept in your Archive.",
         });
         setViewingItem(null);
         fetchInbox();
@@ -470,6 +492,17 @@ export function InboxView() {
               </Select>
             </div>
 
+            {(searchQuery || filterSourceType !== "all" || filterResult !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-xs text-muted-foreground hover:text-foreground h-8 px-2"
+              >
+                Clear filters
+              </Button>
+            )}
+
             <div className="flex items-center gap-2 ml-auto">
               <Checkbox
                 id="select-all"
@@ -487,7 +520,7 @@ export function InboxView() {
                 htmlFor="select-all"
                 className="text-xs text-muted-foreground hover:text-foreground cursor-pointer whitespace-nowrap transition-colors"
               >
-                Select Visible
+                Select All
               </Label>
             </div>
           </div>
@@ -519,6 +552,7 @@ export function InboxView() {
                         isExtracting={extractingIds.has(item.id)}
                         onToggleSelect={() => toggleInboxSelection(item.id)}
                         onOpen={handleOpen}
+                        onArchive={handleArchive}
                         onDelete={handleDelete}
                       />
                     ))}

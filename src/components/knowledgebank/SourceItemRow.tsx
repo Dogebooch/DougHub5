@@ -10,7 +10,7 @@ import {
   Check,
   X,
   Loader2,
-  ClipboardCheck,
+  Archive,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { SourceItem } from "@/types";
@@ -39,6 +39,7 @@ interface SourceItemRowProps {
   onToggleSelect: (id: string, checked: boolean) => void;
   onViewInNotebook?: (item: SourceItem) => void;
   onOpen: (item: SourceItem) => void;
+  onArchive?: (item: SourceItem) => void;
   onDelete: (item: SourceItem) => void;
 }
 
@@ -50,6 +51,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
   onToggleSelect,
   onViewInNotebook,
   onOpen,
+  onArchive,
   onDelete,
 }) => {
   const getIcon = () => {
@@ -206,7 +208,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
       </div>
 
       <div
-        className="items-center gap-2 hidden group-hover:flex group-focus-within:flex whitespace-nowrap shrink-0"
+        className="items-center gap-1 hidden group-hover:flex group-focus-within:flex whitespace-nowrap shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {sourceItem.status === "curated" && onViewInNotebook ? (
@@ -218,21 +220,23 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
           >
             <span className="hidden sm:inline">View in </span>Notebook
           </Button>
-        ) : (
+        ) : onArchive ? (
           <Button
-            size="sm"
-            className="h-8 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
-            onClick={() => onOpen(sourceItem)}
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+            onClick={() => onArchive(sourceItem)}
+            title="Archive"
           >
-            <ClipboardCheck className="h-3.5 w-3.5 mr-1.5" />
-            Process
+            <Archive className="h-4 w-4" />
           </Button>
-        )}
+        ) : null}
         <Button
           size="icon"
           variant="ghost"
           className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
           onClick={() => onDelete(sourceItem)}
+          title="Delete"
         >
           <Trash2 className="h-4 w-4" />
         </Button>

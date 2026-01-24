@@ -34,7 +34,7 @@ See `docs/Workflow_Guide.ini` for detailed mockups and implementation.
 ## 3-Layer Architecture
 
 ```
-LAYER 1: KNOWLEDGE BANK
+LAYER 1: ARCHIVE
 ├── Raw captures, status: inbox → processed → curated
 └── CANNOT create cards here (enforced)
          ↓
@@ -58,6 +58,51 @@ LAYER 3: FLASHCARDS
 - **No grading buttons** — FSRS auto-schedules
 - **No feature decisions during capture** — AI confirms, user decides
 - **No manual scheduling** — Complete automation
+
+---
+
+## Interaction Design Principles
+
+### 1. Action Placement by Cognitive Load
+
+| Load Level | Examples | Placement |
+|------------|----------|-----------|
+| Zero-thought | archive, delete, select, star/flag | Hover or batch bar |
+| Light-decision | open, confirm | Visible buttons in detail view |
+| Deliberate-work | categorize, write, generate | Modal or dedicated screen |
+
+**Rule:** If it needs a dropdown, text input, or "which one?" → not on hover
+
+### 2. Progressive Disclosure
+
+- Show only what's needed at each layer
+- Simple first, complex one level deeper
+- Exception: If users do it every session → ≤2 clicks
+
+### 3. Consistent Interaction Patterns
+
+- **Click row** = open detail (never require a button)
+- **Hover** = quick triage actions only
+- **Modals** = focused, single-purpose tasks
+- **Escape** = close/cancel at any level
+
+### 4. Reference Apps
+
+| App | Pattern to Steal |
+|-----|------------------|
+| Gmail | triage → detail → organize |
+| Things 3 | inbox → project → task detail |
+| Superhuman | keyboard-first, minimal UI |
+| Anki Browse | **Anti-pattern:** too dense, overwhelming |
+
+### 5. ADHD/Fatigue-Specific
+
+- Fewer choices = faster action
+- Default to most common choice (pre-select when obvious)
+- Undo over "Are you sure?" (no confirmation for reversible actions)
+- No dead-ends (always a clear next step or escape)
+- Auto-save everywhere
+- Visual feedback within 500ms
 
 ---
 
