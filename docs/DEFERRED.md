@@ -20,12 +20,50 @@
 
 > **Note:** These features are first in line after MVP completion. They build on core functionality and provide high value.
 
+### Image Capture Support (was T113)
+**Description:** Image paste/drop in capture, display in KB/Notebook/Cards.
+**Priority:** Medium
+**Source:** Moved from T113, not blocking 6-step flow
+**Notes:** Nice-to-have for visual content. Core text capture works.
+
+### Browser Capture Auth & Settings (was T116)
+**Description:** API key auth, settings UI, Tampermonkey script template for browser capture.
+**Priority:** Low
+**Source:** Moved from T116 subtasks, polish features
+**Notes:** Basic capture server works. Auth/settings are security polish.
+
+### Data Logging Framework (was T125)
+**Description:** Schema extensions for future AI training: confidenceRating, userNotes, testedConcepts logging.
+**Priority:** Medium
+**Source:** Moved from T125, future AI infrastructure
+**Notes:** Useful for personalized learning features (F38-F44). Not blocking MVP.
+
+### notebook_links Table (was T126)
+**Description:** v16 migration for bidirectional block links with anchor text positions.
+**Priority:** Low
+**Source:** Moved from T126, required for AI Backlinks
+**Dependency:** Required by AI Backlink Detection
+**Notes:** Only needed if AI Backlinks feature is implemented.
+
 ### AI Backlink Detection (was T137)
-**Description:** Auto-detect related blocks after notebook entry creation. AI finds semantically related blocks and creates notebook_links with anchor text positions.
+**Description:** Auto-detect related blocks after notebook entry creation.
 **Priority:** Low
 **Source:** Moved from T137, not in canonical QBank flow
-**Dependency:** Requires v16 migration for notebook_links table
-**Notes:** Cool feature but not daily-use critical. Revisit after 6-step QBank flow is polished. Original T137 had 5 subtasks for migration, queue system, AI prompts, IPC handlers, and UI refresh.
+**Dependency:** Requires notebook_links table (T126)
+**Notes:** Cool feature but not daily-use critical.
+
+### Add Source to Another Topic (was T132)
+**Description:** Modal to add existing source to additional topic with new insight.
+**Priority:** Low
+**Source:** Moved from T132, edge case workflow
+**Notes:** Power user feature. Core flow adds source to one topic.
+
+### Links Sidebar with Hover-Highlight (was T135)
+**Description:** Collapsible sidebar showing block links with hover-highlight on anchor text.
+**Priority:** Low
+**Source:** Moved from T135, depends on notebook_links
+**Dependency:** Requires notebook_links table (T126)
+**Notes:** Part of AI Backlinks ecosystem.
 
 ### Card-Worthiness Gate (F6) — INTEGRATED INTO T42
 **Description:** Card-worthiness soft-gate is now integrated into T42 (Card Generation). Traffic-light panel (Testable? One Concept? Discriminative?) shows during card creation, not as a separate gate.
@@ -137,12 +175,6 @@
 **Schema Prep:** Add `userAnswer TEXT` column to review_logs table (nullable, zero-cost prep for future).
 **Notes:** Enables active recall (typing > recognition) and provides rich data for F12 (Confusion Clusters) and F19 (Adaptive Learning Assistant). Consider speech-to-text integration (T50) as alternative input mode.
 
-### Card Browser Performance Optimization (F35)
-**Description:** Implement dedicated batch IPC channels for card operations (suspend, delete, move). Current implementation uses sequential IPC calls which may lag for 500+ cards.
-**Priority:** Low
-**Source:** T115.10 implementation (2026-01-08)
-**Notes:** Sequential iteration is fine for typical resident workflows (<100 cards), but lacks scalability.
-
 ### Card Browser Shift+Click Selection (F21)
 **Description:** Support range selection via Shift+Click in the Card Browser.
 **Priority:** Low
@@ -150,10 +182,10 @@
 **Notes:** More intuitive UX for desktop users. Requires tracking selection anchor and calculating range within filtered/sorted list state.
 
 ### Batch IPC Channel for Card Operations (F33)
-**Description:** Dedicated batch IPC channels (`cards:batchSuspend`, `cards:batchDelete`) that accept arrays of card IDs and perform operations in a single database transaction. Current implementation iterates sequential IPC calls which may lag for 500+ card selections.
+**Description:** Dedicated batch IPC channels (`cards:batchSuspend`, `cards:batchDelete`) for single-transaction bulk operations. Sequential IPC may lag for 500+ cards.
 **Priority:** Low
 **Source:** T115.10 performance consideration (2026-01-08)
-**Notes:** Sequential iteration is acceptable for typical workflows (<100 cards). Optimization candidate if real-world usage shows performance issues with large selections.
+**Notes:** Sequential iteration fine for typical workflows (<100 cards). Optimize if real-world usage shows lag.
 
 ### Adaptive Learning Assistant (F19)
 **Description:** AI tutor that proactively detects learning patterns and offers targeted interventions. Three intervention types:
@@ -341,12 +373,6 @@ Inject into LLM context → Generate grounded response with source citations
 ---
 
 ## Capture & Extraction
-
-### Medical List Processing
-**Description:** Convert medical lists (differentials, procedures) into clinical vignettes and overlapping cloze cards to prevent sibling contamination.
-**Priority:** Medium
-**Source:** Task T4 (Legacy)
-**Notes:** Has detailed subtasks in original TaskMaster. Revisit after core v2 flow works.
 
 ### Connection Suggestions
 **Description:** AI surfaces related notes during extraction based on semantic similarity.
@@ -656,6 +682,12 @@ Inject into LLM context → Generate grounded response with source citations
 ---
 
 ## Cloze & Card Editing
+
+### Medical List Processing (Card Format)
+**Description:** Convert medical lists (differentials, procedures) into overlapping cloze cards to prevent sibling contamination. See CLAUDE.md: "Medical lists → overlapping cloze (not naked lists)".
+**Priority:** Medium
+**Source:** Task T4 (Legacy)
+**Notes:** Card generation concern, not capture. Affects how lists become cards.
 
 ### Modern Cloze UI
 **Description:** Replace {{c1::text}} syntax with click-based cloze creation. Select text → click "Make Cloze" or use keyboard shortcut. Cleaner review display without curly braces.
@@ -1055,4 +1087,4 @@ Inject into LLM context → Generate grounded response with source citations
 
 ---
 
-*Last updated: 2026-01-12 (AI Task Configuration Framework implemented, Ollama model benchmarks documented)*
+*Last updated: 2026-01-23 (Moved T113, T116, T119, T125, T126, T132, T135 from TaskMaster; merged F33/F35; moved Medical List Processing to Card Editing section)*

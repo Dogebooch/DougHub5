@@ -6,111 +6,15 @@
         "title": "Database schema expansion for Quick Dump queue and medical features",
         "status": "done",
         "dependencies": [],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create quick_dumps table schema and migration logic",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Extend cards table with medical feature columns",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Extend review_logs table with performance tracking columns",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Create connections table for semantic note relationships",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Implement query functions and IPC handlers for new tables",
-            "status": "done",
-            "dependencies": [
-              1,
-              2,
-              3,
-              4
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "subtasks": []
+      },
       },
       {
         "id": "2",
         "title": "AI service integration layer",
         "status": "done",
-        "dependencies": [
-          "1"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create AI provider abstraction and type definitions",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement concept extraction and card validation functions",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Implement medical list detection and vignette conversion",
-            "status": "done",
-            "dependencies": [
-              1,
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Implement tag suggestions and semantic similarity search",
-            "status": "done",
-            "dependencies": [
-              1,
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add caching layer and IPC handlers for AI service",
-            "status": "done",
-            "dependencies": [
-              2,
-              3,
-              4
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["1"],
+        "subtasks": []
       },
       {
         "id": "3",
@@ -125,196 +29,22 @@
         "id": "5",
         "title": "Zero-decision review interface (eliminate grading buttons)",
         "status": "done",
-        "dependencies": [
-          "1"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Remove grading buttons and interval preview UI",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement Show Answer → Continue flow with response time tracking",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Implement auto-rating algorithm based on response time",
-            "status": "done",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Update scheduleReview to accept and store responseTimeMs",
-            "status": "done",
-            "dependencies": [
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "UI cleanup and zero-decision interface verification",
-            "status": "done",
-            "dependencies": [
-              4
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 6,
-            "title": "Auto-grade animation feedback display",
-            "status": "done",
-            "dependencies": [
-              5
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 7,
-            "title": "Quick override mechanism during feedback display",
-            "status": "done",
-            "dependencies": [
-              6
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["1"],
+        "subtasks": []
       },
       {
         "id": "10",
         "title": "Global search with <200ms response time",
         "status": "done",
-        "dependencies": [
-          "1"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create FTS5 virtual tables for cards, notes, and source_items with sync triggers",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement searchQueries.search() with filter support and performance tracking",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Add IPC handler, preload exposure, and TypeScript types for search",
-            "status": "done",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Build basic SearchBar component with debounced query and results dropdown",
-            "status": "done",
-            "dependencies": [
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add horizontal filter chips UI with toggleable selection and count badges",
-            "status": "done",
-            "dependencies": [
-              4
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 6,
-            "title": "Implement keyboard navigation and Ctrl+F global shortcut",
-            "status": "done",
-            "dependencies": [
-              5
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 7,
-            "title": "Add search term highlighting in result snippets",
-            "status": "done",
-            "dependencies": [
-              4
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 8,
-            "title": "Create full SearchResults page component with sections and view-all navigation",
-            "status": "done",
-            "dependencies": [
-              7
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["1"],
+        "subtasks": []
       },
       {
         "id": "17",
         "title": "Auto-start Ollama from Electron on first AI request",
         "status": "done",
-        "dependencies": [
-          "2"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement ensureOllamaRunning() function with process spawning",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Integrate auto-start into AI client initialization",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Add user notification for Ollama status via IPC",
-            "status": "done",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Handle cross-platform Ollama executable detection",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["2"],
+        "subtasks": []
       },
       {
         "id": "31",
@@ -330,434 +60,56 @@
         "title": "[v2-T1] Data model v3: SourceItem, CanonicalTopic, NotebookTopicPage, SmartView schemas",
         "status": "done",
         "dependencies": [],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Define TypeScript interfaces for v3 data model",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Create database schema v3 with migration from v2",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Implement CRUD functions for new tables",
-            "status": "done",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Wire IPC handlers for new CRUD operations",
-            "status": "done",
-            "dependencies": [
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Update test helpers with new schema",
-            "status": "done",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "subtasks": []
       },
       {
         "id": "36",
         "title": "[v2-T1.1] Topic normalization: alias table, matching rules, dedupe prevention",
         "status": "done",
-        "dependencies": [
-          "35"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create electron/topic-service.ts with core alias resolution functions",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement suggestTopicMatches() with fuzzy search for autocomplete",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Implement addTopicAlias() with uniqueness validation",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Implement mergeTopics() with transactional safety and reference updates",
-            "status": "done",
-            "dependencies": [
-              1,
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Wire IPC handlers and create TopicAutocomplete UI component",
-            "status": "done",
-            "dependencies": [
-              1,
-              2,
-              3,
-              4
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["35"],
+        "subtasks": []
       },
       {
         "id": "38",
         "title": "[v2-T2] Capture pipeline: Quick Dump → SourceItem (inbox), text + image support",
         "status": "done",
-        "dependencies": [
-          "35"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Update QuickDumpModal to create SourceItems instead of QuickDumps",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Add image paste/drop support to QuickDumpModal",
-            "status": "cancelled",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Implement image file storage and mediaPath handling",
-            "status": "cancelled",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Add inboxCount state management to useAppStore",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Wire Sidebar to display inbox badge count from useAppStore",
-            "status": "done",
-            "dependencies": [
-              4
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["35"],
+        "subtasks": []
       },
       {
         "id": "40",
         "title": "[v2-T3] Knowledge Bank UI: vertical list grouped by status, search, filters",
         "status": "done",
-        "dependencies": [
-          "39"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create StatusGroup collapsible component (COMPLETE)",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Create KnowledgeBankView with status-grouped layout",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Add search and filter controls to KnowledgeBankView",
-            "status": "done",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["39"],
+        "subtasks": []
       },
       {
         "id": "41",
         "title": "[v2-T4] Notebook UI: topic pages, add blocks from sources, enforce card-creation here only",
         "status": "done",
-        "dependencies": [
-          "40",
-          "36"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create NotebookView container component with routing integration",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Build TopicPageList sidebar with search and new topic creation",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Build TopicPageView with header, stats, and blocks list",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Create NotebookBlock component with source deep link and actions",
-            "status": "done",
-            "dependencies": [
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Build AddBlockModal for selecting sources from Knowledge Bank",
-            "status": "done",
-            "dependencies": [
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 6,
-            "title": "Wire up Notebook view navigation and integrate with app routing",
-            "status": "done",
-            "dependencies": [
-              2,
-              3,
-              4,
-              5
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["40", "36"],
+        "subtasks": []
       },
       {
         "id": "42",
         "title": "Card Generation from Notebook Blocks",
         "status": "done",
-        "dependencies": [
-          "41"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Define CardSuggestion types and AI generateCardFromBlock function",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Wire IPC handler for ai:generateCardFromBlock",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Build CardGenerationModal with FormatSelector and preview",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Build CardWorthinessPanel with traffic-light feedback",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add text selection UI to NotebookBlock",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 6,
-            "title": "Wire modal to IPC and card creation flow",
-            "status": "done",
-            "dependencies": [
-              2,
-              3,
-              4,
-              5
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 7,
-            "title": "Add muted indicator styling for blocks with cards",
-            "status": "done",
-            "dependencies": [
-              6
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["41"],
+        "subtasks": []
       },
       {
         "id": "44",
         "title": "[v2-T8] Smart Views: system views (Inbox, Today, Queue, Weak Topics), filter engine",
         "status": "done",
-        "dependencies": [
-          "35"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create filter engine types and applyFilter() function",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Define system view configurations (Inbox, Today, Queue, Weak Topics)",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Build SmartViewSidebar component with view list UI",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Implement badge counts and integrate into AppLayout",
-            "status": "done",
-            "dependencies": [
-              1,
-              3
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["35"],
+        "subtasks": []
       },
       {
         "id": "45",
         "title": "[v2-T6] FSRS integration: scheduling fields, review UI, response time tracking",
         "status": "done",
-        "dependencies": [
-          "41",
-          "42"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add provenance display in ReviewInterface with NotebookTopicPage navigation",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement response-time signal for FSRS interval adjustment",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Add database query for low-difficulty cards aggregated by topic",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Add visual indicator for high-difficulty cards in ReviewInterface",
-            "status": "done",
-            "dependencies": [
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Create Weak Topics smart view component",
-            "status": "done",
-            "dependencies": [
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 6,
-            "title": "Add FSRS parameter optimization groundwork (schema and hooks)",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["41", "42"],
+        "subtasks": []
       },
       {
         "id": "91",
@@ -770,108 +122,16 @@
         "id": "112",
         "title": "Sidebar Consolidation: merge SmartViewSidebar into Sidebar",
         "status": "done",
-        "dependencies": [
-          "44"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Update Sidebar.tsx: Add Capture at top and restructure sections",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Add Review emphasis styling with subtle glow when cards due",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Remove Topics and Stats from secondary navigation",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Update AppLayout.tsx: Remove SmartViewSidebar component",
-            "status": "done",
-            "dependencies": [
-              1,
-              2,
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Delete SmartViewSidebar.tsx and clean up unused Smart View state",
-            "status": "done",
-            "dependencies": [
-              4
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["44"],
+        "subtasks": []
       },
       {
         "id": "113",
         "title": "Image Capture Support: paste, drop, display in KB/Notebook",
-        "status": "done",
-        "dependencies": [
-          "38",
-          "41"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add image paste and drag-drop handlers to QuickCaptureModal",
-            "status": "pending",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Verify IPC handler saves images to userData/images/ directory",
-            "status": "pending",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Display images in SourceItemRow and KnowledgeBankView",
-            "status": "pending",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Display images in NotebookBlock component",
-            "status": "pending",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Display images on card front/back during review session",
-            "status": "pending",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "status": "cancelled",
+        "dependencies": ["38", "41"],
+        "subtasks": [],
+        "updatedAt": "2026-01-24T02:47:41.363Z"
       },
       {
         "id": "114",
@@ -884,352 +144,45 @@
         "id": "115",
         "title": "Card Browser: view all cards with filters (topic, status, due date)",
         "status": "done",
-        "dependencies": [
-          "42",
-          "45"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Schema + Types: Add aiTitle column and CardBrowserItem interface",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Core List Component: CardBrowserView.tsx with virtual scrolling",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "IPC + Database: cards:getBrowserList with filters and sorting",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Card Row Expand/Collapse: Show full front/back and source chain",
-            "status": "done",
-            "dependencies": [
-              2,
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Hover Quick Actions: Edit, Suspend, Delete with confirmation",
-            "status": "done",
-            "dependencies": [
-              4
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 6,
-            "title": "Preview Pane: Bottom panel with ~150 chars of back content",
-            "status": "done",
-            "dependencies": [
-              4
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 7,
-            "title": "Sibling Cards (Deck Visual): Show deck lines and fan out siblings",
-            "status": "done",
-            "dependencies": [
-              3,
-              4
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 8,
-            "title": "Compact Mode Toggle: Single-line condensed layout (3x density)",
-            "status": "done",
-            "dependencies": [
-              2,
-              4
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 9,
-            "title": "Right Drawer (Source Context): Sheet with NotebookBlock preview and cards list",
-            "status": "done",
-            "dependencies": [
-              4
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 10,
-            "title": "Bulk Selection Mode: Checkbox selection with batch suspend/delete",
-            "status": "done",
-            "dependencies": [
-              2,
-              5
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 11,
-            "title": "Keyboard Shortcuts: Comprehensive navigation and action hotkeys",
-            "status": "done",
-            "dependencies": [
-              2,
-              4,
-              5,
-              6
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 12,
-            "title": "Empty States + Leech UX: No results state and leech warning indicators",
-            "status": "done",
-            "dependencies": [
-              2,
-              4
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["42", "45"],
+        "subtasks": []
       },
       {
         "id": "116",
         "title": "Browser Capture Hook: local HTTP API for Tampermonkey integration",
-        "status": "done",
-        "dependencies": [
-          "38"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add API key authentication to HTTP capture server",
-            "status": "pending",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Expose capture server settings and controls via IPC",
-            "status": "pending",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Build Capture Server settings UI in SettingsView",
-            "status": "pending",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Create Tampermonkey script template for qbank capture",
-            "status": "pending",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "status": "cancelled",
+        "dependencies": ["38"],
+        "subtasks": [],
+        "updatedAt": "2026-01-24T02:47:41.443Z"
       },
       {
         "id": "117",
         "title": "Basic Learning Mode: post-review mistakes summary with elaborated feedback",
         "status": "done",
-        "dependencies": [
-          "45"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Track mistakes in ReviewInterface state",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Add session-end modal trigger",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Create AI generateElaboratedFeedback function",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Create MistakesReviewModal component",
-            "status": "done",
-            "dependencies": [
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add session stats to mistake review",
-            "status": "done",
-            "dependencies": [
-              1,
-              4
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 6,
-            "title": "Types and integration",
-            "status": "done",
-            "dependencies": [
-              2,
-              3,
-              4,
-              5
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["45"],
+        "subtasks": []
       },
       {
         "id": "118",
         "title": "Two-Mode Capture: FAB modal with auto-classification and Process Now button",
         "status": "done",
-        "dependencies": [
-          "38"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create content type auto-detection utility",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Add AI auto-title generation with debouncing",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Update QuickCaptureModal UI with type badge and title editing",
-            "status": "done",
-            "dependencies": [
-              1,
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Add two-button footer with disabled Process Now button",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add drag-drop file support for PDFs and other file types",
-            "status": "cancelled",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 6,
-            "title": "Update SourceType and database schema if needed",
-            "status": "done",
-            "dependencies": [
-              1,
-              3
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "dependencies": ["38"],
+        "subtasks": []
       },
       {
         "id": "119",
         "title": "Insight Writing Modal: Redesign Add to Notebook Flow",
-        "status": "done",
-        "dependencies": [
-          "118",
-          "125"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Board Relevance Panel Component",
-            "status": "pending",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "IPC Handler: getBoardRelevanceForTopic",
-            "status": "pending",
-            "dependencies": [],
-            "parentId": "undefined"
-          }
-        ]
+        "status": "cancelled",
+        "dependencies": ["118", "125"],
+        "subtasks": [],
+        "updatedAt": "2026-01-24T02:47:41.519Z"
       },
       {
         "id": "120",
         "title": "NotebookBlock Schema Extension for AI Evaluation",
         "status": "done",
         "dependencies": [],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Define TypeScript types for AI evaluation schema",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Create database migration v17 and update DbNotebookBlock interface",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Update IPC layer to expose new NotebookBlock fields",
-            "status": "done",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "subtasks": []
       },
       {
         "id": "121",
@@ -1265,284 +218,37 @@
         "title": "Tampermonkey Script Integration for Quick Capture",
         "status": "done",
         "dependencies": [],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create Express HTTP capture server in Electron main process",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Create board question parser types and base structure",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Implement image download service for board question media",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Wire up IPC handlers and types for capture integration",
-            "status": "done",
-            "dependencies": [
-              1,
-              3,
-              6,
-              7
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Create BoardQuestionView React component",
-            "status": "done",
-            "dependencies": [
-              4
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 6,
-            "title": "Implement PeerPrep HTML parser",
-            "status": "done",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 7,
-            "title": "Implement MKSAP HTML parser",
-            "status": "done",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 8,
-            "title": "Update Tampermonkey script for DougHub integration",
-            "status": "done",
-            "dependencies": [
-              4
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "subtasks": []
       },
       {
         "id": "125",
         "title": "Data Logging Framework: Schema Extensions for Future AI",
-        "status": "done",
-        "dependencies": [
-          "118",
-          "117"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Database migration v16: Add 7 schema columns for AI data logging",
-            "status": "pending",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Update TypeScript interfaces for 7 new database fields",
-            "status": "pending",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Add Correct/Incorrect toggle UI in QuickCaptureModal for qbank items",
-            "status": "pending",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Add notes textarea in SourceItemViewerDialog for annotations",
-            "status": "pending",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add confidence rating buttons in Learning/Review interface",
-            "status": "pending",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "status": "cancelled",
+        "dependencies": ["118", "117"],
+        "subtasks": [],
+        "updatedAt": "2026-01-24T02:47:41.587Z"
       },
       {
         "id": "126",
         "title": "v16 Migration: Create notebook_links Table",
-        "status": "done",
+        "status": "cancelled",
         "dependencies": [],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create v17 migration file with notebook_links table schema",
-            "status": "pending",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Add DbNotebookLink and NotebookLinkRow types to database/types.ts",
-            "status": "pending",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Create electron/database/notebook-links.ts query module",
-            "status": "pending",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Add IPC handlers for notebook links operations",
-            "status": "pending",
-            "dependencies": [
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Wire up preload.ts and electron.d.ts for renderer access",
-            "status": "pending",
-            "dependencies": [
-              4
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "subtasks": [],
+        "updatedAt": "2026-01-24T02:47:41.661Z"
       },
       {
         "id": "127",
         "title": "Workflow 2 FIX: Prominent 'What did you learn?' Insight UI",
         "status": "done",
         "dependencies": [],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create collapsible source preview panel component",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Build prominent insight textarea with validation and character counter",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Implement topic selector with inline create functionality",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Display existing blocks for selected topic with insight previews",
-            "status": "done",
-            "dependencies": [
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Integrate all components with dual save buttons and database transaction",
-            "status": "done",
-            "dependencies": [
-              1,
-              2,
-              3,
-              4
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "subtasks": []
       },
       {
         "id": "128",
         "title": "Workflow 1: Quick Capture Completion",
         "status": "done",
         "dependencies": [],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement AI Analysis Service for Quick Capture",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Add AI Analysis Integration to QuickCaptureModal Component",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Implement Duplicate Detection via Title Search",
-            "status": "done",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Complete Save to Inbox Path with AI-Enhanced Metadata",
-            "status": "done",
-            "dependencies": [
-              2,
-              3
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Implement Add to Notebook Now Navigation Path",
-            "status": "done",
-            "dependencies": [
-              4
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "subtasks": []
       },
       {
         "id": "129",
@@ -1573,109 +279,15 @@
         "title": "Workflow 7: Edit Block",
         "status": "done",
         "dependencies": [],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add Edit button to NotebookBlockComponent with hover reveal",
-            "status": "done",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Create BlockEditModal component with InsightTextarea",
-            "status": "done",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Add stale card warning banner when cardCount > 0",
-            "status": "done",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Implement unsaved changes confirmation dialog",
-            "status": "done",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Wire up save to database with optimistic UI update",
-            "status": "done",
-            "dependencies": [
-              2,
-              3,
-              4
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "subtasks": []
       },
       {
         "id": "132",
         "title": "Workflow 8: Add Source to Another Topic",
-        "status": "done",
-        "dependencies": [
-          "126"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add IPC handler for getNotebookBlocksBySource",
-            "status": "pending",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Create AddSourceToTopicModal component structure",
-            "status": "pending",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Implement topic filtering to exclude already-used topics",
-            "status": "pending",
-            "dependencies": [
-              1,
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Add 'Copy from existing' button for insight textarea",
-            "status": "pending",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Implement addSourceToAnotherTopic database operation and IPC",
-            "status": "pending",
-            "dependencies": [
-              1,
-              2,
-              3
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "status": "cancelled",
+        "dependencies": ["126"],
+        "subtasks": [],
+        "updatedAt": "2026-01-24T02:47:41.742Z"
       },
       {
         "id": "133",
@@ -1699,58 +311,10 @@
       {
         "id": "135",
         "title": "Workflow 6 Enhancement: Links Sidebar with Hover-Highlight",
-        "status": "done",
-        "dependencies": [
-          "126",
-          "133",
-          "134"
-        ],
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create collapsible sidebar structure with link count badge",
-            "status": "pending",
-            "dependencies": [],
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement REFERENCES section for outgoing links",
-            "status": "pending",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Implement LINKED FROM section for incoming links",
-            "status": "pending",
-            "dependencies": [
-              1
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Implement hover-highlight of anchor text in block content",
-            "status": "pending",
-            "dependencies": [
-              2
-            ],
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Implement navigation on link click to target block",
-            "status": "pending",
-            "dependencies": [
-              2,
-              3
-            ],
-            "parentId": "undefined"
-          }
-        ]
+        "status": "cancelled",
+        "dependencies": ["126", "133", "134"],
+        "subtasks": [],
+        "updatedAt": "2026-01-24T02:47:41.817Z"
       },
       {
         "id": "136",
@@ -1762,77 +326,10 @@
       {
         "id": "137",
         "title": "Workflow 3: AI Backlink Detection (Async)",
-        "description": "Implement async AI backlink detection that runs after notebook block creation to find and suggest related blocks.",
-        "details": "WORKFLOW 3: AI BACKLINK DETECTION (ASYNC)\n\nStatus: Requires notebook_links table (v16 migration)\n\nWHEN IT RUNS:\n- After notebook block created (Workflow 2)\n- After notebook block edited with significant content change (Workflow 7)\n- Runs asynchronously - NEVER blocks the save operation\n\nTRIGGER POINTS:\n```typescript\n// In addToNotebook (Workflow 2), after block created:\nawait window.api.createNotebookBlock({ ... });\n// Trigger async - don't await\nwindow.api.queueBacklinkDetection(newBlockId);\n\n// In updateBlock (Workflow 7), if content changed significantly:\nif (levenshteinRatio(oldContent, newContent) > 0.3) {\n  window.api.queueBacklinkDetection(blockId);\n}\n```\n\nAI PROMPT - BACKLINK DETECTION:\n```\nSYSTEM: Find related notebook blocks and identify anchor phrases.\n\nNEW BLOCK:\nContent: {content}\nTopic: {topicName}\nTags: {tags}\n\nEXISTING BLOCKS (candidates):\n[\n  { \"id\": \"abc123\", \"topicName\": \"CKD Staging\", \"excerpt\": \"GFR cutoffs...\" },\n  { \"id\": \"def456\", \"topicName\": \"Statin Therapy\", \"excerpt\": \"When to start...\" },\n  ...\n]\n\nOUTPUT JSON:\n{\n  \"relatedBlocks\": [\n    {\n      \"blockId\": \"abc123\",\n      \"reason\": \"Same disease context\",\n      \"linkType\": \"same_concept\",\n      \"anchorText\": \"CKD patients\",\n      \"anchorStart\": 0,\n      \"anchorEnd\": 12\n    }\n  ]\n}\n\nRULES:\n- Max 5 related blocks\n- Only genuinely related content (high confidence)\n- anchorText must be exact substring of content\n- Prefer specific phrases over generic terms\n- linkType must be one of: same_concept, related_topic, cross_specialty, comparison, builds_on\n```\n\nBACKEND PROCESSING:\n```typescript\n// In main process - background job queue\nasync function processBacklinkDetection(blockId: string) {\n  const block = await db.getNotebookBlock(blockId);\n  const page = await db.getNotebookTopicPage(block.notebookTopicPageId);\n  const topic = await db.getCanonicalTopic(page.canonicalTopicId);\n  \n  // Get candidate blocks (limit to prevent huge context)\n  const candidates = await db.getRecentNotebookBlocks(100); // Last 100 blocks\n  const candidatesExcludingSelf = candidates.filter(c => c.id !== blockId);\n  \n  // Call AI\n  const aiResult = await callAI(buildBacklinkPrompt(block, topic, candidatesExcludingSelf));\n  \n  // Create links\n  for (const rel of aiResult.relatedBlocks) {\n    await db.run(`\n      INSERT INTO notebook_links (\n        id, sourceBlockId, targetBlockId, linkType, reason,\n        anchorText, anchorStart, anchorEnd, createdAt\n      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)\n      ON CONFLICT(sourceBlockId, targetBlockId) DO UPDATE SET\n        reason = excluded.reason,\n        anchorText = excluded.anchorText,\n        anchorStart = excluded.anchorStart,\n        anchorEnd = excluded.anchorEnd\n    `, [uuid(), blockId, rel.blockId, rel.linkType, rel.reason,\n        rel.anchorText, rel.anchorStart, rel.anchorEnd, new Date().toISOString()]);\n  }\n  \n  // Notify renderer that links updated\n  mainWindow.webContents.send('backlinks-updated', { blockId });\n}\n```\n\nUI NOTIFICATION:\n- While processing: subtle indicator in links sidebar (spinner icon)\n- When complete: refresh links sidebar, show count badge update\n- If AI found links: subtle toast \"Found X related blocks\"\n- No blocking UI - user can continue working\n\nCANDIDATE SELECTION:\n- Don't send ALL blocks to AI (context limits)\n- Strategy: Recent 100 blocks across all topics\n- Future enhancement: Use embeddings for semantic similarity pre-filter\n\nEDGE CASES:\n\nAI timeout/failure:\n- Log error, don't retry immediately\n- No user-facing error (async background task)\n- Retry on next app launch or manual trigger\n\nDuplicate detection run:\n- If block edited multiple times quickly, debounce\n- Only run once per block per 30 seconds\n\nNo related blocks found:\n- Valid result - not everything is related\n- Don't create any links, don't notify user\n\nBlock deleted before processing:\n- Check block exists before processing\n- If deleted, skip silently",
-        "testStrategy": "Test backlink detection triggered after block creation. Test runs asynchronously (doesn't block save). Test AI prompt includes block content and candidates. Test links created with correct fields. Test ON CONFLICT updates existing links. Test UI notified via IPC when complete. Test links sidebar refreshes. Test debounce prevents rapid re-runs. Test graceful handling of AI timeout. Test deleted block handled gracefully.",
         "priority": "medium",
-        "dependencies": [
-          "126",
-          "127"
-        ],
+        "dependencies": ["126", "127"],
         "status": "cancelled",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create v16 migration for notebook_links table",
-            "description": "Add notebook_links table schema in new v16 migration file to store bidirectional links between notebook blocks with anchor text positions.",
-            "dependencies": [],
-            "details": "Create electron/database/migrations/v16.ts following the pattern from v15.ts. The table should include: id (TEXT PRIMARY KEY), sourceBlockId (TEXT NOT NULL), targetBlockId (TEXT NOT NULL), linkType (TEXT NOT NULL - values: same_concept, related_topic, cross_specialty, comparison, builds_on), reason (TEXT NOT NULL), anchorText (TEXT), anchorStart (INTEGER), anchorEnd (INTEGER), createdAt (TEXT NOT NULL), isManual (INTEGER DEFAULT 0). Add UNIQUE constraint on (sourceBlockId, targetBlockId). Add foreign keys to notebook_blocks with ON DELETE CASCADE. Create indices on sourceBlockId and targetBlockId. Update electron/database/migrations/index.ts to import and call migrateToV16. Update electron/database/client.ts to run v16 if currentVersion < 16.",
-            "status": "pending",
-            "testStrategy": "Test migration creates table with correct schema. Test UNIQUE constraint prevents duplicate links. Test foreign keys cascade deletes. Test indices are created. Test migration runs on app startup when schema version is 15.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement background job queue for backlink detection",
-            "description": "Create async job queue system in main process to handle backlink detection without blocking notebook operations.",
-            "dependencies": [
-              1
-            ],
-            "details": "Create electron/services/backlink-queue.ts with: 1) In-memory Map to track queued jobs (blockId -> timestamp), 2) 30-second debounce per blockId to prevent duplicate runs, 3) queueBacklinkDetection(blockId) function that adds job to queue and triggers processing, 4) processBacklinkDetection(blockId) async function that: fetches block + page + topic, gets recent 100 blocks (excluding self) via notebookBlockQueries, calls AI service with backlink detection prompt, creates/updates links in notebook_links table using INSERT ON CONFLICT, sends 'backlinks-updated' IPC event to renderer. Handle edge cases: block deleted before processing (check exists), AI timeout/failure (log only, no retry), duplicate detection (debounce). Export queue functions for use in ipc-handlers.",
-            "status": "pending",
-            "testStrategy": "Test debounce prevents multiple runs within 30 seconds. Test queue processes jobs asynchronously. Test block deletion before processing is handled gracefully. Test AI failure doesn't crash queue. Test 'backlinks-updated' IPC sent after completion.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Add AI backlink detection prompt to ai-service.ts",
-            "description": "Implement detectBacklinks function in ai-service.ts that calls AI with structured prompt to find related blocks and suggest anchor text.",
-            "dependencies": [
-              1
-            ],
-            "details": "Add detectBacklinks(block, topic, candidateBlocks) function to electron/ai-service.ts following the pattern from existing functions like findRelatedNotes. Build prompt with: NEW BLOCK (content, topicName, tags), EXISTING BLOCKS array (id, topicName, excerpt - first 200 chars). Request JSON output with relatedBlocks array containing: blockId, reason, linkType (enum), anchorText (exact substring), anchorStart, anchorEnd. Rules: max 5 related blocks, high confidence only, anchorText must be exact substring of content, prefer specific phrases over generic terms. Use aiCache for caching with key based on block content + candidate IDs. Handle AI timeout (return empty results), invalid JSON (log error, return empty), missing required fields (skip that link). Export type BacklinkDetectionResult with relatedBlocks array.",
-            "status": "pending",
-            "testStrategy": "Test prompt includes block content and candidates. Test max 5 results enforced. Test anchorText validation (must be substring). Test linkType enum validation. Test cache hit returns cached result. Test AI timeout returns empty array. Test invalid JSON handled gracefully.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Add IPC handlers and trigger points for backlink detection",
-            "description": "Wire up IPC handler for queueBacklinkDetection and add trigger calls in createNotebookBlock and updateNotebookBlock handlers.",
-            "dependencies": [
-              2,
-              3
-            ],
-            "details": "In electron/ipc-handlers.ts: 1) Add ipcMain.handle('notebook:queueBacklinkDetection', async (_, blockId) => { queueBacklinkDetection(blockId); return { data: null, error: null }; }). 2) In existing 'notebook:createBlock' handler, after block created successfully, add non-awaited call: queueBacklinkDetection(newBlock.id). 3) In existing 'notebook:updateBlock' handler (if exists, otherwise create in subtask), after update succeeds, calculate content change using simple comparison (e.g., oldContent !== newContent), if changed call queueBacklinkDetection(blockId). In electron/preload.ts: Add notebook.queueBacklinkDetection: (blockId: string) => ipcRenderer.invoke('notebook:queueBacklinkDetection', blockId). In src/types/electron.d.ts: Add queueBacklinkDetection to notebook interface. Note: Don't await the queue call - it must be fire-and-forget.",
-            "status": "pending",
-            "testStrategy": "Test queueBacklinkDetection IPC exists. Test createBlock triggers detection without blocking save. Test updateBlock triggers detection on content change. Test no detection on no-op update. Test preload exposes queueBacklinkDetection. Test TypeScript types updated.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Implement notebook_links database queries and IPC for UI refresh",
-            "description": "Create notebook-links.ts queries module and IPC handler for getBlockLinks, plus IPC listener in renderer for backlinks-updated events.",
-            "dependencies": [
-              1,
-              2
-            ],
-            "details": "Create electron/database/notebook-links.ts with: 1) notebookLinkQueries.getBySourceBlock(blockId) - returns links where sourceBlockId matches, JOIN with notebook_blocks and notebook_topic_pages to get target block content + topic name, 2) notebookLinkQueries.getByTargetBlock(blockId) - reverse lookup (backlinks), 3) notebookLinkQueries.insert(link) - create new link, 4) notebookLinkQueries.delete(id) - remove link. Export from electron/database.ts. In electron/ipc-handlers.ts: Add 'notebook:getBlockLinks' handler that calls getBySourceBlock and getByTargetBlock, returns { outgoing, incoming }. In electron/preload.ts: Add notebook.getBlockLinks(blockId) and notebook.onBacklinksUpdated(callback) with cleanup. In src/types/electron.d.ts: Add NotebookLink type and interfaces. Update src/stores/useAppStore.ts to add refreshBlockLinks action (optional - depends on UI implementation in later tasks).",
-            "status": "pending",
-            "testStrategy": "Test getBySourceBlock returns correct links. Test getByTargetBlock returns incoming links. Test link insertion with all fields. Test link deletion. Test IPC handler returns outgoing + incoming. Test onBacklinksUpdated listener receives events. Test cleanup removes listener.",
-            "parentId": "undefined"
-          }
-        ],
+        "subtasks": [],
         "updatedAt": "2026-01-24T01:59:56.187Z"
       },
       {
@@ -1850,12 +347,10 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T01:59:56.187Z",
-      "taskCount": 42,
-      "completedCount": 39,
-      "tags": [
-        "master"
-      ]
+      "lastModified": "2026-01-24T02:47:41.817Z",
+      "taskCount": 43,
+      "completedCount": 32,
+      "tags": ["master"]
     }
   }
 }

@@ -448,17 +448,36 @@ function parsePeerPrep(
     return $(this).find(".feedbackTab").length > 0;
   });
   if (reasoningTabPane.length > 0) {
-    explanationHtml = reasoningTabPane.first().html() || "";
+    // Clone the tab pane to avoid modifying the original
+    const tabPaneClone = reasoningTabPane.first().clone();
 
     // Extract Educational Objective from .feedbackTab (the intro paragraph before distractorFeedbacks)
     // This is the first paragraph that summarizes the key learning point
-    const feedbackTabEl = reasoningTabPane.first().find(".feedbackTab");
+    const feedbackTabEl = tabPaneClone.find(".feedbackTab");
     if (feedbackTabEl.length > 0) {
       // Get the text content, stripping HTML but preserving the educational summary
       const objectiveText = feedbackTabEl.text().trim();
       if (objectiveText && objectiveText.length > 20) {
         educationalObjectiveHtml = objectiveText;
+        // Remove the feedbackTab element from the clone to avoid duplication in explanation
+        feedbackTabEl.remove();
       }
+    }
+
+    // Get the HTML after removing the educational objective element
+    explanationHtml = tabPaneClone.html() || "";
+
+    // Additionally, remove any paragraphs that duplicate the educational objective text
+    if (educationalObjectiveHtml && explanationHtml) {
+      const $temp = cheerio.load(explanationHtml);
+      $temp("p").each(function (this: cheerio.Element) {
+        const pText = $temp(this).text().trim();
+        // If this paragraph contains the exact educational objective text, remove it
+        if (pText === educationalObjectiveHtml) {
+          $temp(this).remove();
+        }
+      });
+      explanationHtml = $temp("body").html() || explanationHtml;
     }
   }
 

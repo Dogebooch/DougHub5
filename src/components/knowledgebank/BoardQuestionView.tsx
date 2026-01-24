@@ -251,7 +251,6 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
     // Identify common headers and wrap them in a cleaner sub-header style (card-aware colors)
     const sectionHeaders = [
       "Critique", // MKSAP-specific
-      "Educational Objective",
       "Key Point",
       "Rationale",
       "Clinical Pearl",
@@ -753,15 +752,15 @@ export const BoardQuestionView: React.FC<BoardQuestionViewProps> = ({
                 <div className="px-4 pb-6 space-y-4">
                   {/* Educational Objective callout (MKSAP) - subtle inline before explanation */}
                   {content.educationalObjectiveHtml && (
-                    <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-primary/5 border border-primary/15">
                       <div className="shrink-0 mt-0.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                       </div>
                       <div className="flex-1">
-                        <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                        <span className="text-xs font-bold uppercase tracking-wider text-primary">
                           Educational Objective:{" "}
                         </span>
-                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300 leading-relaxed">
+                        <span className="text-sm font-medium text-foreground leading-relaxed">
                           {content.educationalObjectiveHtml}
                         </span>
                       </div>

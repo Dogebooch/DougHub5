@@ -1,81 +1,72 @@
 # DougHub Vision
 
 ## Vision Statement
-FOR medical residents with ADHD WHO lose 10+ minutes per study session to organizational decisions, DougHub is an active encoding tool THAT makes concept extraction the learning moment. UNLIKE Anki, Notion, or RemNote, our product guides extraction with AI confirmation while preserving user agency over what matters.
+
+FOR medical residents with ADHD WHO lose 10+ minutes per study session to organizational decisions, DougHub is an active encoding tool THAT makes concept extraction the learning moment. UNLIKE Anki, our product guides extraction with AI confirmation, surfaces weak topics via Board Relevance, and delivers 20-30% review time reduction through FSRS.
 
 ## Problem
-The bottleneck isn't content quality or tools—it's decisions:
+
+The bottleneck isn't content quality—it's decisions:
 - "Where does this go?"
-- "How do I connect this to what I already know?"
-- "What format should this card be?"
 - "Is this worth a flashcard?"
+- "What format should this card be?"
 
 These prevent studying from starting.
 
 ## Core Insight
-**Extraction IS the learning.** Active recall during capture embeds knowledge better than passive saving. User assigns tags and makes decisions; AI confirms, checks duplicates, and maintains organization. Quick Capture ensures capture still happens when energy is zero.
 
-## Target User
-IM/EM residents with ADHD studying for boards. Post-shift exhaustion, zero tolerance for admin work, need to capture before forgetting.
 
-## Long-term Vision
-20-30% reduction in daily flashcard workload while improving retention through AI-personalized scheduling—enabled by evidence-based design and data collected from day one.
+
+**Extraction IS the learning.** Active recall during capture embeds knowledge better than passive saving. Quick Capture ensures capture happens when energy is zero; Board Relevance surfaces what matters when energy returns.
 
 ---
 
-## Architecture: 3-Layer System
+## 6-Step QBank Flow (MVP)
 
 ```
-LAYER 1: KNOWLEDGE BANK (Inbox/Library)
-├── Raw captures from any source
-├── Status: inbox → processed → curated
-├── AI auto-tags, user confirms
+1. Capture → 2. Inbox → 3. Add to Notebook → 4. Topic Page → 5. Generate Card → 6. Review
+```
+
+See `docs/Workflow_Guide.ini` for detailed mockups and implementation.
+
+---
+
+## 3-Layer Architecture
+
+```
+LAYER 1: KNOWLEDGE BANK
+├── Raw captures, status: inbox → processed → curated
 └── CANNOT create cards here (enforced)
          ↓
-LAYER 2: PERSONAL NOTEBOOK (Curated Topics)
-├── User-created canonical topic pages
-├── Contains excerpts deep-linked to sources
-├── THIS is where flashcards are created
+LAYER 2: NOTEBOOK (Curated Topics)
+├── User insights deep-linked to sources
+├── Board Relevance Panel shows weak topics
 └── Card-worthiness gate before creation
          ↓
-LAYER 3: FLASHCARDS (Study Deck)
+LAYER 3: FLASHCARDS
 ├── Cards linked to Notebook (provenance)
-├── FSRS scheduling, zero-decision review
-└── Low-ease detection → fix card flow
+└── FSRS scheduling, zero-decision review
 ```
 
-**Key Constraints:**
-- Notebook-only card creation (enforced)
-- Deep links everywhere: Card → Notebook → Source
-- CanonicalTopic with alias normalization (never raw strings)
-
----
-
-## Technical Stack (Mandated)
-- **Frontend:** Electron + React + TypeScript + TailwindCSS
-- **Database:** SQLite with better-sqlite3 (local-first)
-- **Scheduling:** ts-fsrs (mandatory)
-- **Performance:** <200ms search, <20 sec capture
-
----
-
-## Out of Scope (MVP)
-- Picture editor / mnemonic workflow
-- Graph view visualization
-- AI librarian (duplicate detection, merging)
-- Analytics dashboard (data collected, not displayed)
-- Mobile, cloud sync, Anki import
-- Browser extension / web clipper
+**Constraints:** Notebook-only card creation, deep links everywhere, CanonicalTopic normalization.
 
 ---
 
 ## Anti-Patterns
+
 - **No folder hierarchies** — Tags only, search-first
 - **No grading buttons** — FSRS auto-schedules
-- **No basic list cards** — Clinical context conversion required
 - **No feature decisions during capture** — AI confirms, user decides
 - **No manual scheduling** — Complete automation
 
 ---
 
-*Implementation tracking in TaskMaster. Detailed metrics in Success Metrics doc.*
+## Technical Stack
+
+Electron + React + TypeScript + SQLite (local-first) + ts-fsrs
+
+---
+
+## Out of Scope (MVP)
+
+Mobile, cloud sync, Anki import, graph view, analytics dashboard (data collected, not displayed)
