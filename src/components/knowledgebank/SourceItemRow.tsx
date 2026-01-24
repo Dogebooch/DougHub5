@@ -10,6 +10,7 @@ import {
   Check,
   X,
   Loader2,
+  ClipboardCheck,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { SourceItem } from "@/types";
@@ -36,7 +37,6 @@ interface SourceItemRowProps {
   isHighlighted?: boolean;
   isExtracting?: boolean;
   onToggleSelect: (id: string, checked: boolean) => void;
-  onAddToNotebook: (item: SourceItem) => void;
   onViewInNotebook?: (item: SourceItem) => void;
   onOpen: (item: SourceItem) => void;
   onDelete: (item: SourceItem) => void;
@@ -48,7 +48,6 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
   isHighlighted,
   isExtracting,
   onToggleSelect,
-  onAddToNotebook,
   onViewInNotebook,
   onOpen,
   onDelete,
@@ -210,15 +209,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
         className="items-center gap-2 hidden group-hover:flex group-focus-within:flex whitespace-nowrap shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 text-xs font-medium border-border/30 text-card-muted bg-transparent hover:bg-card-muted/10 hover:text-card-foreground shadow-none"
-          onClick={() => onOpen(sourceItem)}
-        >
-          Open
-        </Button>
-        {sourceItem.status === "curated" && onViewInNotebook && (
+        {sourceItem.status === "curated" && onViewInNotebook ? (
           <Button
             size="sm"
             variant="secondary"
@@ -227,14 +218,16 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
           >
             <span className="hidden sm:inline">View in </span>Notebook
           </Button>
+        ) : (
+          <Button
+            size="sm"
+            className="h-8 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+            onClick={() => onOpen(sourceItem)}
+          >
+            <ClipboardCheck className="h-3.5 w-3.5 mr-1.5" />
+            Process
+          </Button>
         )}
-        <Button
-          size="sm"
-          className="h-8 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
-          onClick={() => onAddToNotebook(sourceItem)}
-        >
-          Add<span className="hidden sm:inline"> to Notebook</span>
-        </Button>
         <Button
           size="icon"
           variant="ghost"

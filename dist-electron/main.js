@@ -1,7 +1,7 @@
 import "electron";
 import "node:url";
 import "node:path";
-import { M, R, V } from "./main-CpfmdAWA.js";
+import { M, R, V } from "./main-BihKRZq_.js";
 import "node:crypto";
 export {
   M as MAIN_DIST,

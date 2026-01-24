@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,55 +10,30 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { SourceItem, BoardQuestionContent } from "@/types";
 import { BoardQuestionView } from "./BoardQuestionView";
 import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { StickyNote, ChevronDown, Loader2 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { BookPlus, Archive, X } from "lucide-react";
 
 interface SourceItemViewerDialogProps {
   open: boolean;
   onClose: () => void;
   item: SourceItem | null;
+  onAddToNotebook?: (item: SourceItem) => void;
+  onArchiveToKB?: (item: SourceItem) => void;
 }
 
 export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
   open,
   onClose,
   item,
+  onAddToNotebook,
+  onArchiveToKB,
 }) => {
-  const [notes, setNotes] = useState(item?.notes || "");
-  const [isSavingNotes, setIsSavingNotes] = useState(false);
-  const notesTimeout = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (item) setNotes(item.notes || "");
-  }, [item]);
-
-  const saveNotes = useCallback(
-    async (value: string) => {
-      if (!item) return;
-      setIsSavingNotes(true);
-      try {
-        await window.api.sourceItems.update(item.id, { notes: value || null });
-      } catch (err) {
-        console.error("Failed to save notes:", err);
-      } finally {
-        setIsSavingNotes(false);
-      }
-    },
-    [item],
-  );
-
-  const handleNotesChange = (value: string) => {
-    setNotes(value);
-    if (notesTimeout.current) clearTimeout(notesTimeout.current);
-    notesTimeout.current = setTimeout(() => saveNotes(value), 400);
-  };
-
   if (!item) return null;
 
   // For qbank items: use AI summary as title if available
@@ -146,34 +121,58 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
 
         <ScrollArea className="flex-1 p-6">{renderContent()}</ScrollArea>
 
-        {/* Personal Notes (v18) */}
-        <div className="p-4 border-t bg-muted/10">
-          <Collapsible defaultOpen={!!notes}>
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full justify-between p-2 h-auto hover:bg-muted/20"
-              >
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  <StickyNote className="h-4 w-4" />
-                  Personal Notes
-                  {isSavingNotes && (
-                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                  )}
-                </span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="animate-in fade-in slide-in-from-top-1 duration-200">
-              <Textarea
-                value={notes}
-                onChange={(e) => handleNotesChange(e.target.value)}
-                placeholder="Add informal annotations (e.g., 'I thought X because Y')"
-                className="min-h-[80px] mt-2 bg-background border-muted resize-none focus-visible:ring-1"
-              />
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
+        {/* Action Footer */}
+        <TooltipProvider delayDuration={300}>
+          <div className="p-4 border-t bg-background flex items-center justify-end gap-3 flex-none">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  onClick={onClose}
+                  className="text-muted-foreground"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Close
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Close without taking action</p>
+              </TooltipContent>
+            </Tooltip>
+            {onArchiveToKB && item.status !== "curated" && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={() => onArchiveToKB(item)}
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Keep in Knowledge Bank
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Mark as reviewed and keep in your Knowledge Bank without adding to Notebook</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {onAddToNotebook && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => onAddToNotebook(item)}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <BookPlus className="h-4 w-4 mr-2" />
+                    Add to Notebook
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Add to your Notebook with your insight for card creation</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        </TooltipProvider>
       </DialogContent>
     </Dialog>
   );

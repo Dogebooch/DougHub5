@@ -280,7 +280,6 @@ export const KnowledgeBankView = () => {
                 isSelected={selectedInboxItems.has(sItem.id)}
                 isHighlighted={selectedItemId === sItem.id}
                 onToggleSelect={(id, _checked) => toggleInboxSelection(id)}
-                onAddToNotebook={(it) => openAddDialog(it)}
                 onOpen={(it) => setCurrentView("knowledgebank", it.id)}
                 onDelete={(it) => handleDelete(it.id)}
               />
@@ -308,7 +307,6 @@ export const KnowledgeBankView = () => {
                 isSelected={selectedInboxItems.has(sItem.id)}
                 isHighlighted={selectedItemId === sItem.id}
                 onToggleSelect={(id, _checked) => toggleInboxSelection(id)}
-                onAddToNotebook={(it) => openAddDialog(it)}
                 onOpen={(it) => setCurrentView("knowledgebank", it.id)}
                 onDelete={(it) => handleDelete(it.id)}
               />
@@ -336,7 +334,6 @@ export const KnowledgeBankView = () => {
                 isSelected={selectedInboxItems.has(sItem.id)}
                 isHighlighted={selectedItemId === sItem.id}
                 onToggleSelect={(id, _checked) => toggleInboxSelection(id)}
-                onAddToNotebook={(it) => openAddDialog(it)}
                 onViewInNotebook={handleViewInNotebook}
                 onOpen={(it) => setCurrentView("knowledgebank", it.id)}
                 onDelete={(it) => handleDelete(it.id)}

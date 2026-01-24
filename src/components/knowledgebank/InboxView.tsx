@@ -1,10 +1,10 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { 
-  isToday, 
-  isYesterday, 
-  parseISO 
+import {
+  isToday,
+  isYesterday,
+  parseISO
 } from 'date-fns';
-import { Search, SortDesc, Inbox } from "lucide-react";
+import { Search, Inbox } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -29,6 +29,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import { useToast } from "@/hooks/use-toast";
 
 type SortOrder = "newest" | "oldest";
+type ResultFilter = "all" | "incorrect" | "correct";
 
 export function InboxView() {
   const [items, setItems] = useState<SourceItem[]>([]);
@@ -36,6 +37,7 @@ export function InboxView() {
   const [filterSourceType, setFilterSourceType] = useState<SourceType | "all">(
     "all"
   );
+  const [filterResult, setFilterResult] = useState<ResultFilter>("all");
   const [sortBy, setSortBy] = useState<SortOrder>("newest");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -131,6 +133,18 @@ export function InboxView() {
   const clearFilters = () => {
     setSearchQuery("");
     setFilterSourceType("all");
+    setFilterResult("all");
+  };
+
+  // Helper to get wasCorrect from qbank items
+  const getWasCorrect = (item: SourceItem): boolean | null => {
+    if (item.sourceType !== "qbank") return null;
+    try {
+      const content = JSON.parse(item.rawContent);
+      return content.wasCorrect ?? null;
+    } catch {
+      return null;
+    }
   };
 
   const sourceTypeCounts = useMemo(
@@ -154,14 +168,27 @@ export function InboxView() {
           .includes(searchQuery.toLowerCase());
         const matchesType =
           filterSourceType === "all" || item.sourceType === filterSourceType;
-        return matchesSearch && matchesType;
+
+        // Result filter (only applies to qbank items)
+        let matchesResult = true;
+        if (filterResult !== "all") {
+          const wasCorrect = getWasCorrect(item);
+          if (wasCorrect === null) {
+            // Non-qbank items: hide when filtering by result
+            matchesResult = false;
+          } else {
+            matchesResult = filterResult === "correct" ? wasCorrect : !wasCorrect;
+          }
+        }
+
+        return matchesSearch && matchesType && matchesResult;
       })
       .sort((a, b) => {
         const dateA = parseISO(a.createdAt).getTime();
         const dateB = parseISO(b.createdAt).getTime();
         return sortBy === "newest" ? dateB - dateA : dateA - dateB;
       });
-  }, [items, searchQuery, filterSourceType, sortBy]);
+  }, [items, searchQuery, filterSourceType, filterResult, sortBy]);
 
   const visibleIds = useMemo(
     () => filteredAndSortedItems.map((i) => i.id),
@@ -198,6 +225,43 @@ export function InboxView() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleBatchArchive = async () => {
+    const ids = Array.from(selectedInboxItems);
+    const count = ids.length;
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const id of ids) {
+      try {
+        const result = await window.api.sourceItems.update(id, { status: "curated" });
+        if (!result.error) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch {
+        failCount++;
+      }
+    }
+
+    if (failCount === 0) {
+      toast({
+        title: "Batch Archive Successful",
+        description: `Archived ${successCount} items to Knowledge Bank.`,
+      });
+    } else {
+      toast({
+        title: "Batch Archive Partial",
+        description: `Archived ${successCount} items, ${failCount} failed.`,
+        variant: "destructive",
+      });
+    }
+
+    clearInboxSelection();
+    fetchInbox();
+    refreshCounts();
   };
 
   const groupedItems = useMemo(() => {
@@ -257,6 +321,39 @@ export function InboxView() {
     setViewingItem(item);
   };
 
+  const handleArchiveToKB = async (item: SourceItem) => {
+    try {
+      const result = await window.api.sourceItems.update(item.id, { status: "curated" });
+      if (!result.error) {
+        toast({
+          title: "Archived to Knowledge Bank",
+          description: "Item has been reviewed and kept in your Knowledge Bank.",
+        });
+        setViewingItem(null);
+        fetchInbox();
+        refreshCounts();
+      } else {
+        toast({
+          title: "Archive Failed",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("Error archiving item:", err);
+      toast({
+        title: "Archive Failed",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddToNotebookFromViewer = (item: SourceItem) => {
+    setViewingItem(null); // Close viewer first
+    handleAddToNotebook(item); // Open add to notebook workflow
+  };
+
   if (isLoading && items.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -291,79 +388,26 @@ export function InboxView() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-4 items-end bg-surface-elevated/30 p-4 rounded-xl border border-border/50 shadow-sm backdrop-blur-sm">
-          <div className="flex-1 min-w-[200px] space-y-2">
-            <Label
-              htmlFor="search"
-              className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-bold ml-1"
-            >
-              Search Inbox
-            </Label>
-            <div className="relative">
+        <div className="bg-surface-elevated/30 p-4 rounded-xl border border-border/50 shadow-sm backdrop-blur-sm space-y-3">
+          {/* Row 1: Search + Order */}
+          <div className="flex items-center gap-4">
+            <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
               <Input
                 id="search"
                 placeholder="Filter by title..."
-                className="pl-9 bg-background/50 border-border/10 ring-offset-background transition-all focus-visible:ring-1 focus-visible:ring-primary/30 h-10"
+                className="pl-9 bg-background/50 border-border/10 ring-offset-background transition-all focus-visible:ring-1 focus-visible:ring-primary/30 h-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-bold ml-1">
-              Source Type
-            </Label>
-            <Select
-              value={filterSourceType}
-              onValueChange={(v) =>
-                setFilterSourceType(v as SourceType | "all")
-              }
-            >
-              <SelectTrigger className="w-[150px] bg-background/50 border-border/10 h-10 ring-offset-background transition-all focus:ring-1 focus:ring-primary/30">
-                <SelectValue placeholder="All types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">
-                  All Sources ({items.length})
-                </SelectItem>
-                <SelectItem value="qbank">
-                  QBank ({sourceTypeCounts.qbank})
-                </SelectItem>
-                <SelectItem value="article">
-                  Article ({sourceTypeCounts.article})
-                </SelectItem>
-                <SelectItem value="pdf">
-                  PDF ({sourceTypeCounts.pdf})
-                </SelectItem>
-                <SelectItem value="image">
-                  Image ({sourceTypeCounts.image})
-                </SelectItem>
-                <SelectItem value="audio">
-                  Audio ({sourceTypeCounts.audio})
-                </SelectItem>
-                <SelectItem value="quickcapture">
-                  Quick Capture ({sourceTypeCounts.quickcapture})
-                </SelectItem>
-                <SelectItem value="manual">
-                  Manual ({sourceTypeCounts.manual})
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2 min-w-[180px]">
-            <Label className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-bold ml-1 flex items-center gap-1.5 focus:ring-1 focus:ring-primary/30">
-              <SortDesc className="h-3 w-3" /> Order
-            </Label>
             <RadioGroup
               value={sortBy}
               onValueChange={(v) => setSortBy(v as SortOrder)}
-              className="flex items-center gap-4 bg-background/40 h-10 px-3 rounded-md border border-border/10 shadow-inner"
+              className="flex items-center gap-3"
             >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="newest" id="newest" />
+              <div className="flex items-center space-x-1.5">
+                <RadioGroupItem value="newest" id="newest" className="h-3.5 w-3.5" />
                 <Label
                   htmlFor="newest"
                   className="text-xs font-medium cursor-pointer whitespace-nowrap"
@@ -371,8 +415,8 @@ export function InboxView() {
                   Newest
                 </Label>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="oldest" id="oldest" />
+              <div className="flex items-center space-x-1.5">
+                <RadioGroupItem value="oldest" id="oldest" className="h-3.5 w-3.5" />
                 <Label
                   htmlFor="oldest"
                   className="text-xs font-medium cursor-pointer whitespace-nowrap"
@@ -383,25 +427,69 @@ export function InboxView() {
             </RadioGroup>
           </div>
 
-          <div className="flex items-center gap-3 h-10 self-end ml-auto px-1">
-            <Checkbox
-              id="select-all"
-              checked={
-                isAllVisibleSelected
-                  ? true
-                  : isAnyVisibleSelected
-                  ? "indeterminate"
-                  : false
-              }
-              onCheckedChange={handleSelectAllToggle}
-              className="border-muted-foreground/30 data-[state=checked]:bg-primary"
-            />
-            <Label
-              htmlFor="select-all"
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground cursor-pointer whitespace-nowrap transition-colors"
-            >
-              Select Visible
-            </Label>
+          {/* Row 2: Filters + Select */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Source:</span>
+              <Select
+                value={filterSourceType}
+                onValueChange={(v) =>
+                  setFilterSourceType(v as SourceType | "all")
+                }
+              >
+                <SelectTrigger className="w-[140px] bg-background/50 border-border/10 h-8 text-xs">
+                  <SelectValue placeholder="All types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sources</SelectItem>
+                  <SelectItem value="qbank">QBank ({sourceTypeCounts.qbank})</SelectItem>
+                  <SelectItem value="article">Article ({sourceTypeCounts.article})</SelectItem>
+                  <SelectItem value="pdf">PDF ({sourceTypeCounts.pdf})</SelectItem>
+                  <SelectItem value="image">Image ({sourceTypeCounts.image})</SelectItem>
+                  <SelectItem value="audio">Audio ({sourceTypeCounts.audio})</SelectItem>
+                  <SelectItem value="quickcapture">Quick Capture ({sourceTypeCounts.quickcapture})</SelectItem>
+                  <SelectItem value="manual">Manual ({sourceTypeCounts.manual})</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Result:</span>
+              <Select
+                value={filterResult}
+                onValueChange={(v) => setFilterResult(v as ResultFilter)}
+              >
+                <SelectTrigger className="w-[130px] bg-background/50 border-border/10 h-8 text-xs">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="incorrect">Incorrect only</SelectItem>
+                  <SelectItem value="correct">Correct only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <Checkbox
+                id="select-all"
+                checked={
+                  isAllVisibleSelected
+                    ? true
+                    : isAnyVisibleSelected
+                    ? "indeterminate"
+                    : false
+                }
+                onCheckedChange={handleSelectAllToggle}
+                className="border-muted-foreground/30 data-[state=checked]:bg-primary h-3.5 w-3.5"
+              />
+              <Label
+                htmlFor="select-all"
+                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer whitespace-nowrap transition-colors"
+              >
+                Select Visible
+              </Label>
+            </div>
           </div>
         </div>
       </header>
@@ -430,7 +518,6 @@ export function InboxView() {
                         isSelected={selectedInboxItems.has(item.id)}
                         isExtracting={extractingIds.has(item.id)}
                         onToggleSelect={() => toggleInboxSelection(item.id)}
-                        onAddToNotebook={handleAddToNotebook}
                         onOpen={handleOpen}
                         onDelete={handleDelete}
                       />
@@ -454,7 +541,7 @@ export function InboxView() {
                     : "No items match your current search and filter criteria."}
                 </p>
               </div>
-              {(searchQuery || filterSourceType !== "all") && (
+              {(searchQuery || filterSourceType !== "all" || filterResult !== "all") && (
                 <Button variant="outline" size="sm" onClick={clearFilters}>
                   Clear all filters
                 </Button>
@@ -467,6 +554,7 @@ export function InboxView() {
       <BatchActions
         selectedCount={selectedInboxItems.size}
         onDelete={handleBatchDelete}
+        onArchive={handleBatchArchive}
         onClearSelection={clearInboxSelection}
       />
 
@@ -474,6 +562,8 @@ export function InboxView() {
         open={!!viewingItem}
         item={viewingItem}
         onClose={() => setViewingItem(null)}
+        onAddToNotebook={handleAddToNotebookFromViewer}
+        onArchiveToKB={handleArchiveToKB}
       />
 
       <AddToNotebookWorkflow

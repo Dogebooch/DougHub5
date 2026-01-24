@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, X, Loader2 } from "lucide-react";
+import { Trash2, X, Loader2, Archive } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,15 +16,18 @@ import { Button } from "@/components/ui/button";
 interface BatchActionsProps {
   selectedCount: number;
   onDelete: () => Promise<void>;
+  onArchive?: () => Promise<void>;
   onClearSelection: () => void;
 }
 
 export function BatchActions({
   selectedCount,
   onDelete,
+  onArchive,
   onClearSelection,
 }: BatchActionsProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   if (selectedCount === 0) return null;
 
@@ -34,6 +37,16 @@ export function BatchActions({
       await onDelete();
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleArchive = async () => {
+    if (!onArchive) return;
+    setIsArchiving(true);
+    try {
+      await onArchive();
+    } finally {
+      setIsArchiving(false);
     }
   };
 
@@ -59,6 +72,43 @@ export function BatchActions({
             <X className="h-4 w-4 mr-2" />
             Clear
           </Button>
+
+          {onArchive && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full h-9 px-4"
+                  disabled={isArchiving}
+                >
+                  {isArchiving ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Archive className="h-4 w-4 mr-2" />
+                  )}
+                  Keep in KB
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Archive {selectedCount} items to Knowledge Bank?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    These items will be marked as reviewed and moved to your Knowledge Bank
+                    without being added to the Notebook.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleArchive}>
+                    Archive
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
