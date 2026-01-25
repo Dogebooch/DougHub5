@@ -175,6 +175,7 @@ export interface DbNotebookBlock {
   aiEvaluation?: NotebookBlockAiEvaluation;
   relevanceScore?: RelevanceScore;
   relevanceReason?: string;
+  calloutType?: "pearl" | "trap" | "caution" | null;
 }
 
 export interface DbNotebookLink {
@@ -391,6 +392,7 @@ export interface NotebookBlockRow {
   aiEvaluation: string | null; // JSON string
   relevanceScore: string | null;
   relevanceReason: string | null;
+  calloutType: string | null;
 }
 
 export interface NotebookLinkRow {

@@ -69,11 +69,11 @@ export const notebookBlockQueries = {
     const stmt = getDatabase().prepare(`
       INSERT INTO notebook_blocks (
         id, notebookTopicPageId, sourceItemId, content, annotations, mediaPath, position,
-        userInsight, aiEvaluation, relevanceScore, relevanceReason
+        userInsight, aiEvaluation, relevanceScore, relevanceReason, calloutType
       )
       VALUES (
         @id, @notebookTopicPageId, @sourceItemId, @content, @annotations, @mediaPath, @position,
-        @userInsight, @aiEvaluation, @relevanceScore, @relevanceReason
+        @userInsight, @aiEvaluation, @relevanceScore, @relevanceReason, @calloutType
       )
     `);
     stmt.run({
@@ -86,6 +86,7 @@ export const notebookBlockQueries = {
         : null,
       relevanceScore: block.relevanceScore || null,
       relevanceReason: block.relevanceReason || null,
+      calloutType: block.calloutType || null,
     });
   },
 
@@ -110,7 +111,8 @@ export const notebookBlockQueries = {
         userInsight = @userInsight,
         aiEvaluation = @aiEvaluation,
         relevanceScore = @relevanceScore,
-        relevanceReason = @relevanceReason
+        relevanceReason = @relevanceReason,
+        calloutType = @calloutType
       WHERE id = @id
     `);
     updateStmt.run({
@@ -123,6 +125,7 @@ export const notebookBlockQueries = {
         : null,
       relevanceScore: merged.relevanceScore || null,
       relevanceReason: merged.relevanceReason || null,
+      calloutType: merged.calloutType || null,
     });
   },
 
@@ -171,7 +174,10 @@ export const notebookBlockQueries = {
         const evaluation = JSON.parse(
           row.aiEvaluation,
         ) as NotebookBlockAiEvaluation;
-        if (evaluation.confusionTags && Array.isArray(evaluation.confusionTags)) {
+        if (
+          evaluation.confusionTags &&
+          Array.isArray(evaluation.confusionTags)
+        ) {
           for (const tag of evaluation.confusionTags) {
             tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
           }
@@ -190,7 +196,7 @@ export const notebookBlockQueries = {
   searchByContent(
     query: string,
     excludeBlockId?: string,
-    limit = 10
+    limit = 10,
   ): { block: DbNotebookBlock; topicName: string; excerpt: string }[] {
     const db = getDatabase();
     let sql = `
@@ -212,7 +218,9 @@ export const notebookBlockQueries = {
     params.push(limit);
 
     const stmt = db.prepare(sql);
-    const rows = stmt.all(...params) as (NotebookBlockRow & { topicName: string })[];
+    const rows = stmt.all(...params) as (NotebookBlockRow & {
+      topicName: string;
+    })[];
 
     return rows.map((row) => ({
       block: parseNotebookBlockRow(row),
@@ -237,7 +245,7 @@ export function parseNotebookBlockRow(row: NotebookBlockRow): DbNotebookBlock {
     } catch (e) {
       console.error(
         `[Database] Failed to parse aiEvaluation for block ${row.id}:`,
-        e
+        e,
       );
     }
   }
@@ -255,5 +263,6 @@ export function parseNotebookBlockRow(row: NotebookBlockRow): DbNotebookBlock {
     aiEvaluation,
     relevanceScore: (row.relevanceScore as RelevanceScore) || "unknown",
     relevanceReason: row.relevanceReason || undefined,
+    calloutType: (row.calloutType as "pearl" | "trap" | "caution") || undefined,
   };
 }

@@ -1,8 +1,13 @@
 import { SearchBar } from "./SearchBar";
 import { useAppStore } from "@/stores/useAppStore";
+import { useDevStore } from "@/stores/useDevStore";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Bot, Bug } from "lucide-react";
+
 export function Header() {
   const setCurrentView = useAppStore((state) => state.setCurrentView);
+  const { isOpen, togglePanel } = useDevStore();
   const isBrowserMode = typeof window !== "undefined" && !window.api;
 
   return (
@@ -32,6 +37,20 @@ export function Header() {
             <Badge variant="outline" className="text-[11px] h-6">
               Browser Mode
             </Badge>
+          )}
+
+          {!isBrowserMode && window.api?.dev && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className={
+                isOpen ? "text-primary bg-primary/10" : "text-muted-foreground"
+              }
+              onClick={togglePanel}
+              title="Toggle AI Dev Panel (Cmd+Shift+D)"
+            >
+              <Bug className="h-4 w-4" />
+            </Button>
           )}
         </div>
       </div>

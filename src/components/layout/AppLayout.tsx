@@ -16,12 +16,15 @@ import type { SourceItem } from "@/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { useDevStore } from "@/stores/useDevStore";
+import { AIDevPanelContent } from "@/components/dev/AIDevPanel";
 
 export function AppLayout() {
   const currentView = useAppStore((state) => state.currentView);
   const setCurrentView = useAppStore((state) => state.setCurrentView);
   const refreshCounts = useAppStore((state) => state.refreshCounts);
   const onNewSourceItem = useAppStore((state) => state.onNewSourceItem);
+  const isDevPanelOpen = useDevStore((state) => state.isOpen);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
   const { toast } = useToast();
@@ -143,12 +146,17 @@ export function AppLayout() {
               "mx-auto",
               currentView === "cards"
                 ? "h-full w-full max-w-none"
-                : "max-w-4xl px-6 py-8"
+                : "max-w-4xl px-6 py-8",
             )}
           >
             {renderView()}
           </div>
         </main>
+        {isDevPanelOpen && (
+          <div className="w-[400px] border-l bg-background shrink-0 flex flex-col">
+            <AIDevPanelContent />
+          </div>
+        )}
       </div>
 
       {/* Floating Quick Capture button */}

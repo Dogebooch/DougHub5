@@ -162,6 +162,7 @@ export interface NotebookBlock {
   mediaPath?: string;
   position: number;
   cardCount: number; // v2: Number of cards generated from this block
+  calloutType?: "pearl" | "trap" | "caution" | null;
 }
 
 export type NotebookLinkType =
@@ -200,6 +201,13 @@ export interface LowEaseTopic {
   strugglingCardCount: number;
   avgDifficulty: number;
   worstDifficulty: number;
+}
+
+export interface GlobalCardStats {
+  totalCards: number;
+  reviewedCards: number;
+  newCards: number;
+  retention: number; // 0-100 percentage
 }
 
 // v2 Architecture - Smart Views

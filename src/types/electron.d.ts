@@ -27,6 +27,7 @@ import type {
   NotebookLink,
   NotebookLinkType,
   TopicWithStats,
+  GlobalCardStats,
 } from "./index";
 import type {
   AIProviderStatus,
@@ -39,6 +40,7 @@ import type {
   CardSuggestion,
   ElaboratedFeedback,
 } from "./ai";
+import type { AILogEntry, DevSettings } from "./dev";
 
 export interface CapturePayload {
   timestamp: string;
@@ -108,6 +110,7 @@ export interface ElectronAPI {
     ) => Promise<IpcResult<{ name: string; cardCount: number } | null>>;
     getWeakTopicSummaries: () => Promise<IpcResult<WeakTopicSummary[]>>;
     getLowEaseTopics: () => Promise<IpcResult<LowEaseTopic[]>>;
+    getGlobalStats: () => Promise<IpcResult<GlobalCardStats>>;
     getBrowserList: (
       filters?: {
         status?: number[];
@@ -423,6 +426,11 @@ export interface ElectronAPI {
     search: (query: string) => Promise<IpcResult<ReferenceRange[]>>;
     getByCategory: (category: string) => Promise<IpcResult<ReferenceRange[]>>;
     getCategories: () => Promise<IpcResult<string[]>>;
+  };
+  dev: {
+    getSettings: () => Promise<IpcResult<Record<string, string>>>;
+    updateSetting: (key: string, value: string) => Promise<IpcResult<void>>;
+    onAILog: (callback: (payload: AILogEntry) => void) => () => void;
   };
   reloadApp: () => Promise<void>;
 }

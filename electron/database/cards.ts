@@ -303,7 +303,65 @@ export const cardQueries = {
 
     return db.prepare(sql).all() as LowEaseTopic[];
   },
+
+  /**
+   * Get global card statistics including calculated retention rate.
+   * Retention is calculated as the average retrievability of reviewed cards.
+   * Retrievability formula: e^(-elapsedDays / stability)
+   */
+  getGlobalStats(): GlobalCardStats {
+    const db = getDatabase();
+
+    // Get counts
+    const countsSql = `
+      SELECT
+        COUNT(*) as totalCards,
+        SUM(CASE WHEN reps > 0 THEN 1 ELSE 0 END) as reviewedCards,
+        SUM(CASE WHEN state = 0 THEN 1 ELSE 0 END) as newCards
+      FROM cards
+    `;
+    const counts = db.prepare(countsSql).get() as {
+      totalCards: number;
+      reviewedCards: number;
+      newCards: number;
+    };
+
+    // Calculate average retrievability for cards that have been reviewed
+    // Only include cards with stability > 0 to avoid division issues
+    const retentionSql = `
+      SELECT
+        AVG(
+          CASE
+            WHEN stability > 0 AND reps > 0
+            THEN EXP(-1.0 * elapsedDays / stability)
+            ELSE NULL
+          END
+        ) as avgRetrievability
+      FROM cards
+      WHERE reps > 0 AND stability > 0
+    `;
+    const retentionResult = db.prepare(retentionSql).get() as {
+      avgRetrievability: number | null;
+    };
+
+    // Default to 0.89 (FSRS default) if no reviewed cards
+    const retention = retentionResult.avgRetrievability ?? 0.89;
+
+    return {
+      totalCards: counts.totalCards || 0,
+      reviewedCards: counts.reviewedCards || 0,
+      newCards: counts.newCards || 0,
+      retention: Math.round(retention * 100), // Return as percentage (0-100)
+    };
+  },
 };
+
+export interface GlobalCardStats {
+  totalCards: number;
+  reviewedCards: number;
+  newCards: number;
+  retention: number; // 0-100 percentage
+}
 
 export function parseCardRow(row: CardRow): DbCard {
   return {

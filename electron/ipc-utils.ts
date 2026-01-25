@@ -42,3 +42,10 @@ export function notifyAIExtraction(payload: AIExtractionPayload): void {
     win.webContents.send("sourceItems:aiExtraction", payload);
   }
 }
+
+export function notifyAILog(payload: any): void {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (win && !win.isDestroyed()) {
+    win.webContents.send("ai:log", payload);
+  }
+}

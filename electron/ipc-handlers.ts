@@ -32,6 +32,7 @@ import {
   smartViewQueries,
   searchQueries,
   settingsQueries,
+  devSettingsQueries,
   getDatabase,
   getDatabaseStatus,
   getDbPath,
@@ -52,6 +53,7 @@ import {
   WeakTopicSummary,
   TopicWithStats,
   LowEaseTopic,
+  GlobalCardStats,
   ExtractionStatus,
   SourceItemStatus,
   DbStatus,
@@ -496,6 +498,18 @@ export function registerIpcHandlers(): void {
       try {
         const topics = cardQueries.getLowEaseTopics();
         return success(topics);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "cards:getGlobalStats",
+    async (): Promise<IpcResult<GlobalCardStats>> => {
+      try {
+        const stats = cardQueries.getGlobalStats();
+        return success(stats);
       } catch (error) {
         return failure(error);
       }
@@ -2690,6 +2704,23 @@ export function registerIpcHandlers(): void {
       }
     },
   );
+
+  ipcMain.handle("dev:getSettings", async () => {
+    try {
+      return success(devSettingsQueries.getAll());
+    } catch (e) {
+      return failure(e);
+    }
+  });
+
+  ipcMain.handle("dev:updateSetting", async (_, key: string, value: string) => {
+    try {
+      devSettingsQueries.set(key, value);
+      return success(null);
+    } catch (e) {
+      return failure(e);
+    }
+  });
 
   console.log("[IPC] All handlers registered");
 }

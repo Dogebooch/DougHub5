@@ -28,15 +28,17 @@ import type {
 import {
   type DbNote,
   settingsQueries,
+  devSettingsQueries,
   NotebookBlockAiEvaluation,
 } from "./database";
+import * as crypto from "node:crypto";
 import OpenAI from "openai";
 import * as http from "node:http";
 import { spawn } from "node:child_process";
 import * as path from "node:path";
 import * as os from "node:os";
 import * as fs from "node:fs";
-import { notifyOllamaStatus } from "./ipc-utils";
+import { notifyOllamaStatus, notifyAILog } from "./ipc-utils";
 
 // ============================================================================
 // AI Result Cache
@@ -706,26 +708,91 @@ async function callAI(
     throw new Error("AI client not initialized");
   }
 
-  const response = await withTimeout(
-    client.chat.completions.create({
-      model: config.model,
+  // Dev Overrides
+  const devSettings = devSettingsQueries.getAll();
+  const model = devSettings["aiModel"] || config.model;
+  // Default values from original code: temp 0.3, max_tokens 2000
+  const temperature = devSettings["aiTemperature"]
+    ? parseFloat(devSettings["aiTemperature"])
+    : 0.3;
+  const maxTokens = devSettings["aiMaxTokens"]
+    ? parseInt(devSettings["aiMaxTokens"])
+    : 2000;
+
+  const requestId = crypto.randomUUID();
+  const startTime = Date.now();
+
+  // Log Request
+  notifyAILog({
+    id: requestId,
+    timestamp: startTime,
+    endpoint: "chat/completions",
+    model: model,
+    latencyMs: 0,
+    status: "pending",
+    request: {
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userMessage },
       ],
-      temperature: 0.3, // Lower temperature for more consistent extraction
-      max_tokens: 2000,
-    }),
-    config.timeout,
-    `AI request timed out after ${config.timeout}ms`,
-  );
+      temperature,
+      max_tokens: maxTokens,
+    },
+  });
 
-  const content = response.choices[0]?.message?.content;
-  if (!content) {
-    throw new Error("Empty response from AI provider");
+  try {
+    const response = await withTimeout(
+      client.chat.completions.create({
+        model: model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        temperature: temperature,
+        max_tokens: maxTokens,
+      }),
+      config.timeout,
+      `AI request timed out after ${config.timeout}ms`,
+    );
+
+    const content = response.choices[0]?.message?.content;
+    const endTime = Date.now();
+
+    notifyAILog({
+      id: requestId,
+      timestamp: endTime,
+      endpoint: "chat/completions",
+      model: model,
+      latencyMs: endTime - startTime,
+      status: "success",
+      tokens: response.usage
+        ? {
+            prompt: response.usage.prompt_tokens,
+            completion: response.usage.completion_tokens,
+            total: response.usage.total_tokens,
+          }
+        : undefined,
+      response: response,
+    });
+
+    if (!content) {
+      throw new Error("Empty response from AI provider");
+    }
+
+    return content;
+  } catch (err: any) {
+    const endTime = Date.now();
+    notifyAILog({
+      id: requestId,
+      timestamp: endTime,
+      endpoint: "chat/completions",
+      model: model,
+      latencyMs: endTime - startTime,
+      status: "error",
+      error: err.message,
+    });
+    throw err;
   }
-
-  return content;
 }
 
 /**
@@ -823,15 +890,64 @@ export async function analyzeCaptureContent(
     const client = await getClient();
     const userPrompt = task.buildUserPrompt({ content });
 
+    // Dev overrides
+    const devSettings = devSettingsQueries.getAll();
+    const model = devSettings["aiModel"] || config.model;
+    const temperature = devSettings["aiTemperature"]
+      ? parseFloat(devSettings["aiTemperature"])
+      : task.temperature;
+    const maxTokens = devSettings["aiMaxTokens"]
+      ? parseInt(devSettings["aiMaxTokens"])
+      : task.maxTokens;
+
+    const requestId = crypto.randomUUID();
+    const startTime = Date.now();
+    notifyAILog({
+      id: requestId,
+      timestamp: startTime,
+      endpoint: "chat/completions",
+      model: model,
+      latencyMs: 0,
+      status: "pending",
+      request: {
+        messages: [
+          { role: "system", content: task.systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature,
+        max_tokens: maxTokens,
+      },
+      reason: "analyzeCaptureContent",
+    });
+
     const response = await client.chat.completions.create({
-      model: config.model,
+      model: model,
       messages: [
         { role: "system", content: task.systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: task.temperature,
-      max_tokens: task.maxTokens,
+      temperature: temperature,
+      max_tokens: maxTokens,
       response_format: { type: "json_object" },
+    });
+
+    const endTime = Date.now();
+    notifyAILog({
+      id: requestId,
+      timestamp: endTime,
+      endpoint: "chat/completions",
+      model: model,
+      latencyMs: endTime - startTime,
+      status: "success",
+      tokens: response.usage
+        ? {
+            prompt: response.usage.prompt_tokens,
+            completion: response.usage.completion_tokens,
+            total: response.usage.total_tokens,
+          }
+        : undefined,
+      response: response,
+      reason: "analyzeCaptureContent",
     });
 
     const resultText = response.choices[0]?.message?.content;
@@ -893,9 +1009,9 @@ export async function extractConcepts(
       "[AI Service] Raw concept extraction response:",
       conceptsResponse,
     );
-    const parsed = parseAIResponse<ConceptExtractionTaskResult | RawConceptFromAI[]>(
-      conceptsResponse,
-    );
+    const parsed = parseAIResponse<
+      ConceptExtractionTaskResult | RawConceptFromAI[]
+    >(conceptsResponse);
     console.log("[AI Service] Parsed response:", parsed);
 
     // Use task normalizer to handle response format
@@ -1100,9 +1216,7 @@ export async function convertToVignette(
     const parsed = parseAIResponse<VignetteConversionResult>(response);
 
     // Use task normalizer (will throw if invalid)
-    return task.normalizeResult
-      ? task.normalizeResult(parsed)
-      : parsed;
+    return task.normalizeResult ? task.normalizeResult(parsed) : parsed;
   } catch (error) {
     console.error("[AI Service] Vignette conversion failed:", error);
     throw error;
@@ -1309,7 +1423,7 @@ export type TestedConceptResult = IdentifyConceptResult;
  */
 export async function identifyTestedConcept(
   sourceContent: string,
-  sourceType: string
+  sourceType: string,
 ): Promise<TestedConceptResult> {
   const task = identifyTestedConceptTask;
 
@@ -1362,7 +1476,7 @@ export type { PolishInsightResult };
 export async function polishInsight(
   userText: string,
   sourceContent: string,
-  testedConcept?: string
+  testedConcept?: string,
 ): Promise<PolishInsightResult> {
   const task = polishInsightTask;
 
@@ -1433,16 +1547,11 @@ import type { ElaboratedFeedbackResult } from "./ai/tasks/types";
 export async function generateElaboratedFeedback(
   card: { front: string; back: string; cardType: string },
   topicContext: string,
-  responseTimeMs: number | null
+  responseTimeMs: number | null,
 ): Promise<ElaboratedFeedback> {
   const task = elaboratedFeedbackTask;
 
-  const cacheKey = aiCache.key(
-    task.id,
-    card.front,
-    card.back,
-    topicContext
-  );
+  const cacheKey = aiCache.key(task.id, card.front, card.back, topicContext);
   const cached = aiCache.get<ElaboratedFeedback>(cacheKey);
   if (cached) return cached;
 
@@ -1502,7 +1611,7 @@ function getTermFrequency(text: string): Map<string, number> {
  */
 function cosineSimilarity(
   tf1: Map<string, number>,
-  tf2: Map<string, number>
+  tf2: Map<string, number>,
 ): number {
   let dotProduct = 0;
   let norm1 = 0;
@@ -1542,7 +1651,7 @@ export function findRelatedNotes(
   content: string,
   existingNotes: DbNote[],
   minSimilarity = 0.1,
-  maxResults = 5
+  maxResults = 5,
 ): SemanticMatch[] {
   if (!content.trim() || existingNotes.length === 0) {
     return [];
@@ -1597,7 +1706,7 @@ import type { QuestionSummaryResult } from "./ai/tasks/types";
  */
 export async function extractQuestionSummary(
   content: string,
-  sourceType: string
+  sourceType: string,
 ): Promise<QuestionSummaryResult | null> {
   const task = questionSummaryTask;
 
@@ -1610,7 +1719,7 @@ export async function extractQuestionSummary(
   // Validate content length
   if (!content || content.trim().length < 20) {
     console.warn(
-      `[AI Service] Content too short for extraction: ${content.length} chars`
+      `[AI Service] Content too short for extraction: ${content.length} chars`,
     );
     return null;
   }
@@ -1618,8 +1727,16 @@ export async function extractQuestionSummary(
   // Get config for cache key (include model to invalidate on model change)
   const config = await getProviderConfig();
 
+  // Dev overrides
+  const devSettings = devSettingsQueries.getAll();
+  const effectiveModel = devSettings["aiModel"] || config.model;
+
   // Check cache (include model in key)
-  const cacheKey = aiCache.key(task.id, config.model, content.substring(0, 500));
+  const cacheKey = aiCache.key(
+    task.id,
+    effectiveModel,
+    content.substring(0, 500),
+  );
   const cached = aiCache.get<QuestionSummaryResult>(cacheKey);
   if (cached) {
     console.log(`[AI Service] ✓ Cache hit:`, cached.summary);
@@ -1632,36 +1749,82 @@ export async function extractQuestionSummary(
   // Retry logic: try once, retry once on failure
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      console.log(
-        `[AI Service] ${task.name} (attempt ${attempt}/2)...`
-      );
+      console.log(`[AI Service] ${task.name} (attempt ${attempt}/2)...`);
       const startTime = Date.now();
 
       const client = await getClient();
 
-      console.log(`[AI Service] Using model: ${config.model} | Task: ${task.name}`);
+      const temperature = devSettings["aiTemperature"]
+        ? parseFloat(devSettings["aiTemperature"])
+        : task.temperature;
+      const maxTokens = devSettings["aiMaxTokens"]
+        ? parseInt(devSettings["aiMaxTokens"])
+        : task.maxTokens;
+
+      console.log(
+        `[AI Service] Using model: ${effectiveModel} | Task: ${task.name}`,
+      );
 
       // Create AbortController with task-specific timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), task.timeoutMs);
 
+      const requestId = crypto.randomUUID();
+      notifyAILog({
+        id: requestId,
+        timestamp: startTime,
+        endpoint: "chat/completions",
+        model: effectiveModel,
+        latencyMs: 0,
+        status: "pending",
+        request: {
+          messages: [
+            { role: "system", content: task.systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature,
+          max_tokens: maxTokens,
+        },
+        reason: "extractQuestionSummary",
+      });
+
       try {
         const completion = await client.chat.completions.create(
           {
-            model: config.model,
+            model: effectiveModel,
             messages: [
               { role: "system", content: task.systemPrompt },
               { role: "user", content: userPrompt },
             ],
-            temperature: task.temperature,
-            max_tokens: task.maxTokens,
+            temperature: temperature,
+            max_tokens: maxTokens,
           },
-          { signal: controller.signal as any }
+          { signal: controller.signal as any },
         );
 
         clearTimeout(timeoutId);
 
-        const elapsedMs = Date.now() - startTime;
+        const endTime = Date.now();
+        const elapsedMs = endTime - startTime;
+
+        notifyAILog({
+          id: requestId,
+          timestamp: endTime,
+          endpoint: "chat/completions",
+          model: effectiveModel,
+          latencyMs: elapsedMs,
+          status: "success",
+          tokens: completion.usage
+            ? {
+                prompt: completion.usage.prompt_tokens,
+                completion: completion.usage.completion_tokens,
+                total: completion.usage.total_tokens,
+              }
+            : undefined,
+          response: completion,
+          reason: "extractQuestionSummary",
+        });
+
         const responseText =
           completion.choices[0]?.message?.content?.trim() || "";
 
@@ -1700,6 +1863,17 @@ export async function extractQuestionSummary(
         return result;
       } catch (aiError) {
         clearTimeout(timeoutId);
+        const endTime = Date.now();
+        notifyAILog({
+          id: requestId,
+          timestamp: endTime,
+          endpoint: "chat/completions",
+          model: effectiveModel,
+          latencyMs: endTime - startTime,
+          status: "error",
+          error: (aiError as any)?.message,
+          reason: "extractQuestionSummary",
+        });
         if ((aiError as any)?.name === "AbortError") {
           console.warn(`[AI Service] ⏱️  Timeout after ${task.timeoutMs}ms`);
           if (attempt < 2) {
@@ -1713,7 +1887,7 @@ export async function extractQuestionSummary(
     } catch (error) {
       console.error(
         `[AI Service] ❌ Failed to extract (attempt ${attempt}/2):`,
-        error
+        error,
       );
       if (error instanceof Error) {
         console.error("[AI Service] Error details:", {

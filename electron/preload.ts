@@ -24,6 +24,7 @@ const api = {
     findDuplicateFrontBack: () =>
       ipcRenderer.invoke("cards:findDuplicateFrontBack"),
     getLowEaseTopics: () => ipcRenderer.invoke("cards:getLowEaseTopics"),
+    getGlobalStats: () => ipcRenderer.invoke("cards:getGlobalStats"),
   },
   notes: {
     getAll: () => ipcRenderer.invoke("notes:getAll"),
@@ -386,6 +387,17 @@ const api = {
     getByCategory: (category: string) =>
       ipcRenderer.invoke("reference-ranges:getByCategory", category),
     getCategories: () => ipcRenderer.invoke("reference-ranges:getCategories"),
+  },
+  dev: {
+    getSettings: () => ipcRenderer.invoke("dev:getSettings"),
+    updateSetting: (key: string, value: string) =>
+      ipcRenderer.invoke("dev:updateSetting", key, value),
+    onAILog: (callback: (payload: any) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, payload: any) =>
+        callback(payload);
+      ipcRenderer.on("ai:log", handler);
+      return () => ipcRenderer.removeListener("ai:log", handler);
+    },
   },
   reloadApp: () => ipcRenderer.invoke("app:reload"),
 };

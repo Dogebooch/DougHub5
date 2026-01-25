@@ -40,6 +40,7 @@ export {
 } from "./database/client";
 
 export { cardQueries, parseCardRow } from "./database/cards";
+export type { GlobalCardStats } from "./database/cards";
 export { noteQueries, parseNoteRow } from "./database/notes";
 export { reviewLogQueries, parseReviewLogRow } from "./database/review-logs";
 export {
@@ -87,4 +88,5 @@ export {
 export type { ReferenceRange } from "./database/reference-ranges";
 export { searchQueries } from "./database/search";
 export { settingsQueries } from "./database/settings";
+export { devSettingsQueries } from "./database/dev-settings";
 export { getDatabaseStatus } from "./database/status";

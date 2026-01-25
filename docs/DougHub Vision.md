@@ -15,8 +15,6 @@ These prevent studying from starting.
 
 ## Core Insight
 
-
-
 **Extraction IS the learning.** Active recall during capture embeds knowledge better than passive saving. Quick Capture ensures capture happens when energy is zero; Board Relevance surfaces what matters when energy returns.
 
 ---
@@ -58,6 +56,7 @@ LAYER 3: FLASHCARDS
 - **No grading buttons** — FSRS auto-schedules
 - **No feature decisions during capture** — AI confirms, user decides
 - **No manual scheduling** — Complete automation
+- **Avoid Placeholders** -- I am likely to forget hard coded placeholders, try to make rudimentary hook ups for functions that rely on actual data, even if they don't work. Include hard stops, not silent errors or fallbacks without letting the user know in the UI.
 
 ---
 

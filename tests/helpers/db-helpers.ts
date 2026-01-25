@@ -102,6 +102,7 @@ type NotebookBlock = {
   annotations?: string;
   mediaPath?: string;
   position: number;
+  calloutType?: "pearl" | "trap" | "caution" | null;
 };
 
 type CardType = "standard" | "qa" | "cloze" | "vignette" | "list-cloze";

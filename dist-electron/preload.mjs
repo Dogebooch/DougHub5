@@ -12,7 +12,9 @@ const api = {
     getWeakTopicSummaries: () => electron.ipcRenderer.invoke("cards:getWeakTopicSummaries"),
     getBrowserList: (filters, sort) => electron.ipcRenderer.invoke("cards:getBrowserList", filters, sort),
     getBySiblings: (sourceBlockId) => electron.ipcRenderer.invoke("cards:getBySiblings", sourceBlockId),
-    findDuplicateFrontBack: () => electron.ipcRenderer.invoke("cards:findDuplicateFrontBack")
+    findDuplicateFrontBack: () => electron.ipcRenderer.invoke("cards:findDuplicateFrontBack"),
+    getLowEaseTopics: () => electron.ipcRenderer.invoke("cards:getLowEaseTopics"),
+    getGlobalStats: () => electron.ipcRenderer.invoke("cards:getGlobalStats")
   },
   notes: {
     getAll: () => electron.ipcRenderer.invoke("notes:getAll"),
@@ -101,6 +103,9 @@ const api = {
     create: (page) => electron.ipcRenderer.invoke("notebookPages:create", page),
     update: (id, updates) => electron.ipcRenderer.invoke("notebookPages:update", id, updates),
     delete: (id) => electron.ipcRenderer.invoke("notebookPages:delete", id)
+  },
+  notebook: {
+    getTopicsWithStats: () => electron.ipcRenderer.invoke("notebook:getTopicsWithStats")
   },
   notebookBlocks: {
     getByPage: (pageId) => electron.ipcRenderer.invoke("notebookBlocks:getByPage", pageId),
@@ -220,6 +225,15 @@ const api = {
     search: (query) => electron.ipcRenderer.invoke("reference-ranges:search", query),
     getByCategory: (category) => electron.ipcRenderer.invoke("reference-ranges:getByCategory", category),
     getCategories: () => electron.ipcRenderer.invoke("reference-ranges:getCategories")
+  },
+  dev: {
+    getSettings: () => electron.ipcRenderer.invoke("dev:getSettings"),
+    updateSetting: (key, value) => electron.ipcRenderer.invoke("dev:updateSetting", key, value),
+    onAILog: (callback) => {
+      const handler = (_event, payload) => callback(payload);
+      electron.ipcRenderer.on("ai:log", handler);
+      return () => electron.ipcRenderer.removeListener("ai:log", handler);
+    }
   },
   reloadApp: () => electron.ipcRenderer.invoke("app:reload")
 };

@@ -452,7 +452,7 @@
         "testStrategy": "Test Needs Attention shows topics with <70% accuracy. Test Recently Updated shows last 7 days. Test domain grouping collapses/expands. Test topic search filters all sections. Test hover actions appear on topic rows. Test clicking topic navigates to Topic Article view. Test footer stats are accurate.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -517,7 +517,8 @@
             "details": "Display total topics, total cards, overall retention rate at bottom of browser.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-01-25T21:23:25.031Z"
       },
       {
         "id": "140",
@@ -673,9 +674,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-25T19:26:00.742Z",
+      "lastModified": "2026-01-25T21:23:25.031Z",
       "taskCount": 48,
-      "completedCount": 35,
+      "completedCount": 36,
       "tags": [
         "master"
       ]

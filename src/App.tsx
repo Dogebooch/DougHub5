@@ -3,6 +3,7 @@ import { Toaster, toast } from "sonner";
 import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAppStore } from "@/stores/useAppStore";
+import { useDevStore } from "@/stores/useDevStore";
 import { AppLayout } from "@/components/layout/AppLayout";
 
 export default function App() {
@@ -12,7 +13,7 @@ export default function App() {
     initialize();
 
     // Listen for Ollama status updates
-    const cleanup = window.api.ai.onOllamaStatus((payload) => {
+    const cleanupOllama = window.api.ai.onOllamaStatus((payload) => {
       switch (payload.status) {
         case "starting":
           toast.info(payload.message, { id: "ollama-status" });
@@ -30,8 +31,27 @@ export default function App() {
       }
     });
 
+    let cleanupLog: (() => void) | undefined;
+    let handleKeyDown: ((e: KeyboardEvent) => void) | undefined;
+
+    if (window.api?.dev) {
+      cleanupLog = window.api.dev.onAILog((payload) => {
+        useDevStore.getState().addLog(payload);
+      });
+
+      handleKeyDown = (e: KeyboardEvent) => {
+        if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "KeyD") {
+          e.preventDefault();
+          useDevStore.getState().togglePanel();
+        }
+      };
+      window.addEventListener("keydown", handleKeyDown);
+    }
+
     return () => {
-      cleanup();
+      cleanupOllama();
+      if (cleanupLog) cleanupLog();
+      if (handleKeyDown) window.removeEventListener("keydown", handleKeyDown);
     };
   }, [initialize]);
 

@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { BookOpen, Loader2 } from "lucide-react";
-import { NotebookTopicPage, CanonicalTopic } from "@/types";
+import { BookOpen } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
-import { TopicPageList } from "./TopicPageList";
+import { TopicBrowser } from "./browser/TopicBrowser";
 import { TopicPageView } from "./TopicPageView";
 
 /**
@@ -10,18 +9,20 @@ import { TopicPageView } from "./TopicPageView";
  *
  * Container component for the Notebook layer.
  * Implements a list/detail pattern for Topic Pages.
+ * Re-designed to use the smart TopicBrowser.
  */
 export const NotebookView = () => {
   const { selectedItemId, viewOptions, setCurrentView } = useAppStore();
-  const [pages, setPages] = useState<NotebookTopicPage[]>([]);
-  const [topics, setTopics] = useState<Map<string, CanonicalTopic>>(new Map());
+
   const [selectedPageId, setSelectedPageId] = useState<string | null>(
     selectedItemId || null,
   );
   const [targetBlockId, setTargetBlockId] = useState<string | null>(
     viewOptions?.blockId || null,
   );
-  const [isLoading, setIsLoading] = useState(true);
+
+  // refreshKey to force re-fetch in TopicBrowser if needed
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Sync selectedPageId with store's selectedItemId (deep linking)
   useEffect(() => {
@@ -35,146 +36,41 @@ export const NotebookView = () => {
     }
   }, [selectedItemId, selectedPageId, viewOptions, setCurrentView]);
 
-  // Load data - extracted to useCallback for child components
-  const fetchData = useCallback(async () => {
-    try {
-      const pagesResult = await window.api.notebookPages.getAll();
-
-      if (pagesResult.error) {
-        console.error("Failed to fetch notebook pages:", pagesResult.error);
-        return;
-      }
-
-      const fetchedPages = pagesResult.data || [];
-      setPages(fetchedPages);
-
-      // Fetch canonical topics for each page to show names
-      const topicMap = new Map<string, CanonicalTopic>();
-      await Promise.all(
-        fetchedPages.map(async (page) => {
-          if (page.canonicalTopicId && !topicMap.has(page.canonicalTopicId)) {
-            try {
-              const topicResult = await window.api.canonicalTopics.getById(
-                page.canonicalTopicId,
-              );
-              if (topicResult.data) {
-                topicMap.set(page.canonicalTopicId, topicResult.data);
-              }
-            } catch (err) {
-              console.error(
-                `Failed to fetch topic ${page.canonicalTopicId}:`,
-                err,
-              );
-            }
-          }
-        }),
-      );
-
-      setTopics(topicMap);
-    } catch (error) {
-      console.error("Error in NotebookView data fetching:", error);
-    }
+  const handleRefresh = useCallback(() => {
+    setRefreshKey((prev) => prev + 1);
   }, []);
 
-  // Initial load
-  useEffect(() => {
-    const doInitialLoad = async () => {
-      setIsLoading(true);
-      await fetchData();
-      setIsLoading(false);
-    };
-
-    doInitialLoad();
-  }, [fetchData]);
-
-  const handlePageDeleted = useCallback(
-    (deletedId: string) => {
-      if (selectedPageId === deletedId) {
-        setSelectedPageId(null);
-      }
-      fetchData();
-    },
-    [selectedPageId, fetchData],
-  );
-
-  // Loading State
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full space-y-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-muted-foreground animate-pulse">
-          Loading Notebook...
-        </p>
-      </div>
-    );
-  }
-
-  // Empty State - but we still want to show the container so we can create pages
-  // Only show the big empty state if we really want to block the UI
-  // Requirement 6 in T41.1 says show empty state when no pages exist.
-  // Requirement 4 in T41.2 says TopicPageList should handle empty states too.
-  // I will keep the full-screen empty state if pages.length === 0,
-  // but I need to make sure the user can still create a page.
-  // Wait, if pages.length === 0, NotebookView returns early.
-  // Let's modify this so TopicPageList is always visible or the empty state has a button.
-  if (pages.length === 0) {
-    return (
-      <div className="flex h-full overflow-hidden">
-        {/* Sidebar still visible so user can click "New Topic Page" */}
-        <div className="w-64 border-r bg-muted/30 flex flex-col h-full">
-          <TopicPageList
-            pages={pages}
-            topics={topics}
-            selectedId={selectedPageId}
-            onSelect={setSelectedPageId}
-            onPageCreated={fetchData}
-            onPageDeleted={handlePageDeleted}
-          />
-        </div>
-
-        <div className="flex-1 flex flex-col items-center justify-center space-y-4 p-8 text-center bg-background">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-2">
-            <BookOpen className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold">No topic pages yet</h2>
-            <p className="text-muted-foreground max-w-xs">
-              Create a topic page from the sidebar to start organizing your
-              knowledge.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex h-full overflow-hidden">
-      {/* Sidebar: Topic Page List */}
-      <div className="w-64 border-r bg-muted/30 flex flex-col h-full">
-        <TopicPageList
-          pages={pages}
-          topics={topics}
+    <div className="flex h-full overflow-hidden bg-background">
+      {/* Sidebar: Topic Browser (Redesign T139) */}
+      <div className="w-80 border-r border-border/40 flex flex-col h-full shrink-0">
+        <TopicBrowser
+          key={refreshKey}
           selectedId={selectedPageId}
           onSelect={setSelectedPageId}
-          onPageCreated={fetchData}
-          onPageDeleted={handlePageDeleted}
+          onPageCreated={handleRefresh}
         />
       </div>
 
-      {/* Main Content: Topic Page View */}
-      <div className="flex-1 h-full bg-background">
+      {/* Main Content: Topic Page View (Article View) */}
+      <div className="flex-1 h-full overflow-hidden">
         {selectedPageId ? (
           <TopicPageView
             pageId={selectedPageId}
-            onRefresh={fetchData}
+            onRefresh={handleRefresh}
             targetBlockId={targetBlockId}
             onTargetBlockHandled={() => setTargetBlockId(null)}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8">
-            <BookOpen className="w-12 h-12 mb-4 opacity-20" />
-            <p>Select a topic page from the sidebar to view details.</p>
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 bg-muted/5">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4 opacity-50">
+              <BookOpen className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-medium text-foreground/70">Notebook</h3>
+            <p className="max-w-xs text-center text-sm">
+              Select a topic from the sidebar to view details, or use the
+              searchbar above.
+            </p>
           </div>
         )}
       </div>
