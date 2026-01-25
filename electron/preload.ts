@@ -272,6 +272,19 @@ const api = {
       topicContext?: string;
       blockId?: string;
     }) => ipcRenderer.invoke("ai:evaluateInsight", input),
+    identifyTestedConcept: (sourceContent: string, sourceType: string) =>
+      ipcRenderer.invoke("ai:identifyTestedConcept", sourceContent, sourceType),
+    polishInsight: (
+      userText: string,
+      sourceContent: string,
+      testedConcept?: string,
+    ) =>
+      ipcRenderer.invoke(
+        "ai:polishInsight",
+        userText,
+        sourceContent,
+        testedConcept,
+      ),
     analyzeCaptureContent: (content: string) =>
       ipcRenderer.invoke("ai:analyzeCaptureContent", content),
     validateCard: (front: string, back: string, cardType: "qa" | "cloze") =>

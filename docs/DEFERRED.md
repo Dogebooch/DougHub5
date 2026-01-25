@@ -392,6 +392,13 @@ Inject into LLM context → Generate grounded response with source citations
 **Source:** Task T9 (Legacy)
 **Notes:** Tags exist in schema. This is about AI suggestions and tag management UI.
 
+### Notebook Block Tags
+**Description:** Add tags to NotebookBlock for additional categorization beyond topic. AI suggests tags based on content (e.g., "status-epilepticus", "benzos", "first-line-treatment"). Tag filtering in Notebook view.
+**Priority:** Low
+**Source:** Add to Notebook workflow review (2026-01-24)
+**Dependency:** Tag-Based Organization (T9)
+**Notes:** Evaluated for MVP - doesn't improve card generation quality. Topics provide primary organization. Tags would be secondary metadata. Defer until backlinks system is in place, then reassess if tags add value vs topic aliasing.
+
 ### Metadata Schema Templates
 **Description:** AI prompt templates per source type for extracting metadata (qbank, article, pdf, etc).
 **Priority:** Low
@@ -455,8 +462,10 @@ Inject into LLM context → Generate grounded response with source citations
 **Key insight:** General instruction-tuned models beat medical fine-tunes for structured extraction tasks
 
 ### AI Task Configuration Framework - IMPLEMENTED ✓
-**Location:** `electron/ai-service.ts` - `AI_TASK_CONFIGS`
+**Location:** `electron/ai/tasks/*.ts` - Individual task files with full registry in `index.ts`
 **Design:** One model + task-specific settings (temp, tokens, timeout, cache TTL)
+**Tasks:** 13 total - identify-tested-concept, insight-evaluation, card-suggestion, capture-analysis, elaborated-feedback, question-summary, polish-insight, concept-extraction, card-validation, medical-list-detection, vignette-conversion, tag-suggestion, card-generation
+**Date Completed:** 2026-01-25 (Full migration from PROMPTS object to individual task files)
 
 ### Vision/Image Analysis (F45)
 **Status:** NOT IMPLEMENTED - current AI has no vision capability

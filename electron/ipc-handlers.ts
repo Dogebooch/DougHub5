@@ -84,6 +84,8 @@ import {
   convertToVignette,
   suggestTags,
   evaluateInsight,
+  identifyTestedConcept,
+  polishInsight,
   generateCardFromBlock,
   generateElaboratedFeedback,
   findRelatedNotes,
@@ -96,6 +98,8 @@ import {
   type VignetteConversion,
   type CardSuggestion,
   type ElaboratedFeedback,
+  type TestedConceptResult,
+  type PolishInsightResult,
 } from "./ai-service";
 import {
   resolveTopicAlias,
@@ -2271,6 +2275,43 @@ export function registerIpcHandlers(): void {
           });
         }
 
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // T138: Add to Notebook AI Helpers
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  ipcMain.handle(
+    "ai:identifyTestedConcept",
+    async (
+      _,
+      sourceContent: string,
+      sourceType: string,
+    ): Promise<IpcResult<TestedConceptResult>> => {
+      try {
+        const result = await identifyTestedConcept(sourceContent, sourceType);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "ai:polishInsight",
+    async (
+      _,
+      userText: string,
+      sourceContent: string,
+      testedConcept?: string,
+    ): Promise<IpcResult<PolishInsightResult>> => {
+      try {
+        const result = await polishInsight(userText, sourceContent, testedConcept);
         return success(result);
       } catch (error) {
         return failure(error);

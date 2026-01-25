@@ -1,20 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
-import { Check, ChevronsUpDown, Loader2, Plus, AlertCircle } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Check, Loader2, Plus, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CanonicalTopic } from "@/types";
 
@@ -32,22 +19,24 @@ export function TopicSelector({
   suggestedTopicName,
   className,
 }: TopicSelectorProps) {
-  const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState(suggestedTopicName || "");
   const [suggestions, setSuggestions] = useState<CanonicalTopic[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Sync input value with selected topic when it changes externally
   useEffect(() => {
     if (selectedTopic) {
       setInputValue(selectedTopic.canonicalName);
-    } else if (!open && !inputValue && suggestedTopicName) {
-      // Re-populate suggestion if nothing selected and dropdown is closed
+    } else if (!isFocused && !inputValue && suggestedTopicName) {
       setInputValue(suggestedTopicName);
     }
-  }, [selectedTopic, open, suggestedTopicName]);
+  }, [selectedTopic, isFocused, suggestedTopicName]);
 
   // Debounced search for topic suggestions
   const fetchSuggestions = useCallback(async (input: string) => {
@@ -61,6 +50,7 @@ export function TopicSelector({
       const result = await window.api.canonicalTopics.suggestMatches(input);
       if (result.data) {
         setSuggestions(result.data);
+        setHighlightedIndex(0);
       } else if (result.error) {
         setError(result.error);
       }
@@ -75,7 +65,6 @@ export function TopicSelector({
   // Debounce effect
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Only search if we don't have a selected topic that matches the input exactly
       if (inputValue && (!selectedTopic || selectedTopic.canonicalName !== inputValue)) {
         fetchSuggestions(inputValue);
       }
@@ -87,15 +76,16 @@ export function TopicSelector({
   const handleSelectTopic = (topic: CanonicalTopic) => {
     onTopicSelect(topic);
     setInputValue(topic.canonicalName);
-    setOpen(false);
+    setSuggestions([]);
     setError(null);
+    inputRef.current?.blur();
   };
 
   // Handle creating a new topic
   const handleCreateTopic = async () => {
     const trimmedInput = inputValue.trim();
     if (!trimmedInput || isCreating) return;
-    
+
     setIsCreating(true);
     setError(null);
     try {
@@ -103,7 +93,8 @@ export function TopicSelector({
       if (result.data) {
         onTopicSelect(result.data);
         setInputValue(result.data.canonicalName);
-        setOpen(false);
+        setSuggestions([]);
+        inputRef.current?.blur();
       } else if (result.error) {
         setError(result.error);
       }
@@ -117,136 +108,239 @@ export function TopicSelector({
 
   // Check if input exactly matches an existing topic (canonical or alias)
   const exactMatch = suggestions.find(
-    (s) => 
+    (s) =>
       s.canonicalName.toLowerCase() === inputValue.toLowerCase() ||
-      s.aliases.some(a => a.toLowerCase() === inputValue.toLowerCase())
+      s.aliases.some((a) => a.toLowerCase() === inputValue.toLowerCase())
   );
 
+  // Find which part of the input matched for display
+  const getMatchReason = (topic: CanonicalTopic): string | null => {
+    const lowerInput = inputValue.toLowerCase();
+    if (topic.canonicalName.toLowerCase().includes(lowerInput)) {
+      return null; // Direct match on canonical name, no need to show
+    }
+    const matchedAlias = topic.aliases.find((a) =>
+      a.toLowerCase().includes(lowerInput)
+    );
+    if (matchedAlias) {
+      return `matches "${matchedAlias}"`;
+    }
+    return null;
+  };
+
+  // Determine if dropdown should show
+  const showDropdown =
+    isFocused &&
+    inputValue.length >= 2 &&
+    (suggestions.length > 0 || (!exactMatch && !isSearching) || isSearching || error);
+
+  // Build the list of selectable items for keyboard navigation
+  const selectableItems: Array<{ type: "topic"; topic: CanonicalTopic } | { type: "create" }> = [];
+  suggestions.forEach((topic) => {
+    selectableItems.push({ type: "topic", topic });
+  });
+  if (inputValue.length >= 2 && !exactMatch && !error && !isSearching) {
+    selectableItems.push({ type: "create" });
+  }
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showDropdown || selectableItems.length === 0) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setHighlightedIndex((prev) =>
+          prev < selectableItems.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+        break;
+      case "Enter":
+        e.preventDefault();
+        const item = selectableItems[highlightedIndex];
+        if (item) {
+          if (item.type === "topic") {
+            handleSelectTopic(item.topic);
+          } else {
+            handleCreateTopic();
+          }
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        inputRef.current?.blur();
+        break;
+    }
+  };
+
   return (
-    <div className={cn("space-y-2", className)}>
-      <Label htmlFor="topic-selector" className="text-sm font-medium">Topic</Label>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            id="topic-selector"
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between font-normal"
-          >
-            {selectedTopic ? (
-              <span className="truncate">{selectedTopic.canonicalName}</span>
-            ) : (
-              <span className="text-muted-foreground truncate">
-                {inputValue || "Search or create topic..."}
+    <div className={cn("space-y-2 relative", className)}>
+      <Label htmlFor="topic-input" className="text-sm font-medium flex items-center gap-2">
+        📁 Topic
+      </Label>
+
+      <div className="relative">
+        <Input
+          ref={inputRef}
+          id="topic-input"
+          type="text"
+          value={inputValue}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            if (selectedTopic && e.target.value !== selectedTopic.canonicalName) {
+              onTopicSelect(null);
+            }
+          }}
+          onFocus={() => {
+            setIsFocused(true);
+            if (inputValue.length >= 2) {
+              fetchSuggestions(inputValue);
+            }
+          }}
+          onBlur={() => {
+            // Delay to allow click on dropdown items
+            setTimeout(() => setIsFocused(false), 200);
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder="Type to search or create a topic..."
+          className={cn(
+            "w-full",
+            selectedTopic && "border-primary/50 bg-primary/5"
+          )}
+          autoComplete="off"
+        />
+
+        {/* Selected indicator */}
+        {selectedTopic && !isFocused && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <Check className="h-4 w-4 text-primary" />
+          </div>
+        )}
+
+        {/* Loading indicator in input */}
+        {isSearching && isFocused && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        )}
+      </div>
+
+      {/* Dropdown suggestions */}
+      {showDropdown && (
+        <div
+          ref={listRef}
+          className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg overflow-hidden"
+          style={{ top: "100%" }}
+        >
+          {/* Error state */}
+          {error && (
+            <div className="flex items-center p-3 text-sm text-destructive bg-destructive/10">
+              <AlertCircle className="mr-2 h-4 w-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Loading state */}
+          {isSearching && (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">
+                Searching...
               </span>
-            )}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-          <Command shouldFilter={false}>
-            <CommandInput
-              placeholder="Search topics..."
-              value={inputValue}
-              onValueChange={(val) => {
-                setInputValue(val);
-                // Clear selection if user types something different
-                if (selectedTopic && val !== selectedTopic.canonicalName) {
-                  onTopicSelect(null);
-                }
-              }}
-            />
-            <CommandList className="max-h-[300px] overflow-y-auto">
-              {/* Error state */}
-              {error && (
-                <div className="flex items-center p-2 text-sm text-destructive bg-destructive/10">
-                  <AlertCircle className="mr-2 h-4 w-4" />
-                  <span>{error}</span>
-                </div>
-              )}
+            </div>
+          )}
 
-              {/* Loading state */}
-              {isSearching && (
-                <div className="flex items-center justify-center p-4">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    Searching...
-                  </span>
-                </div>
-              )}
+          {/* Suggestions list */}
+          {!isSearching && !error && (
+            <div className="max-h-[280px] overflow-y-auto">
+              {suggestions.map((topic, index) => {
+                const matchReason = getMatchReason(topic);
+                const isFirst = index === 0;
+                const isHighlighted = highlightedIndex === index;
 
-              {/* Existing topic suggestions */}
-              {!isSearching && suggestions.length > 0 && (
-                <CommandGroup heading="Existing Topics">
-                  {suggestions.map((topic) => (
-                    <CommandItem
-                      key={topic.id}
-                      value={topic.id}
-                      onSelect={() => handleSelectTopic(topic)}
-                      className="cursor-pointer"
-                    >
+                return (
+                  <div
+                    key={topic.id}
+                    onClick={() => handleSelectTopic(topic)}
+                    className={cn(
+                      "flex items-center justify-between px-3 py-2.5 cursor-pointer transition-colors",
+                      isHighlighted
+                        ? "bg-accent"
+                        : "hover:bg-accent/50",
+                      index !== suggestions.length - 1 && "border-b border-border/50"
+                    )}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <Check
                         className={cn(
-                          "mr-2 h-4 w-4",
+                          "h-4 w-4 flex-shrink-0",
                           selectedTopic?.id === topic.id
-                            ? "opacity-100"
+                            ? "text-primary opacity-100"
                             : "opacity-0"
                         )}
                       />
-                      <div className="flex flex-col">
-                        <span className="font-medium">{topic.canonicalName}</span>
-                        {topic.aliases.length > 0 && (
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-medium truncate">
+                          {topic.canonicalName}
+                        </span>
+                        {matchReason && (
                           <span className="text-xs text-muted-foreground">
-                            Aliases: {topic.aliases.join(", ")}
+                            {matchReason}
                           </span>
                         )}
                       </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
+                    </div>
+
+                    {isFirst && suggestions.length > 1 && (
+                      <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">
+                        ← Best match
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
 
               {/* Create new topic option */}
-              {!isSearching && inputValue.length >= 2 && !exactMatch && !error && (
-                <CommandGroup heading="New Topic">
-                  <CommandItem
-                    value="create-new"
-                    onSelect={handleCreateTopic}
-                    disabled={isCreating}
-                    className="cursor-pointer text-primary"
-                  >
-                    {isCreating ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Plus className="mr-2 h-4 w-4" />
-                    )}
-                    <span>Create "{inputValue}"</span>
-                  </CommandItem>
-                </CommandGroup>
-              )}
-
-              {/* Minimum characters hint */}
-              {!isSearching && inputValue.length > 0 && inputValue.length < 2 && (
-                <div className="p-4 text-xs text-muted-foreground italic text-center">
-                  Type at least 2 characters to search...
+              {inputValue.length >= 2 && !exactMatch && (
+                <div
+                  onClick={handleCreateTopic}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors",
+                    highlightedIndex === suggestions.length
+                      ? "bg-accent text-accent-foreground"
+                      : "text-primary hover:bg-accent/50",
+                    suggestions.length > 0 && "border-t border-border"
+                  )}
+                >
+                  {isCreating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  <span>Create "{inputValue}" as new topic</span>
                 </div>
               )}
 
-              {/* No results state */}
-              {!isSearching &&
-                inputValue.length >= 2 &&
-                suggestions.length === 0 &&
-                !exactMatch &&
-                !error && (
-                  <CommandEmpty className="py-6 text-center text-sm">
-                    No existing topics found.
-                  </CommandEmpty>
-                )}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+              {/* No results - only show create option */}
+              {suggestions.length === 0 && !exactMatch && inputValue.length >= 2 && (
+                <div className="px-3 py-2 text-sm text-muted-foreground border-b border-border/50">
+                  No existing topics found
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Hint text when not focused and no topic selected */}
+      {!isFocused && !selectedTopic && inputValue.length < 2 && (
+        <p className="text-xs text-muted-foreground">
+          Type at least 2 characters to search
+        </p>
+      )}
     </div>
   );
 }

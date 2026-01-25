@@ -121,108 +121,17 @@ export const aiCache = new AICache();
 // AI Task Configuration Framework
 // ============================================================================
 //
-// This framework allows different AI tasks to have optimized settings while
-// sharing a single model to avoid VRAM thrashing. Key design decisions:
+// Task configurations have been migrated to individual files in:
+//   electron/ai/tasks/
 //
-// 1. ONE MODEL: All tasks use qwen2.5:7b-instruct (tested winner for speed + accuracy)
-// 2. TASK-SPECIFIC PROMPTS: Each task type has its own optimized prompt template
-// 3. TASK-SPECIFIC SETTINGS: Temperature, max_tokens tuned per task
-// 4. KEEP_ALIVE: Model stays warm between calls (30 min default in Ollama)
+// Each task file exports a typed AITaskConfig with:
+// - System prompt
+// - User prompt builder
+// - Temperature, max tokens, timeout settings
+// - Result normalizer and fallback
 //
-// To add a new AI task:
-// 1. Add entry to AI_TASK_CONFIGS with task-specific settings
-// 2. Create the task function using getTaskConfig() for settings
-//
-// Future: Could add model override per task if testing shows benefit
+// See electron/ai/tasks/index.ts for the task registry.
 // ============================================================================
-
-/** Configuration for a specific AI task */
-export interface AITaskConfig {
-  name: string;
-  description: string;
-  temperature: number; // 0.0-1.0: lower = more deterministic
-  maxTokens: number; // Max response length
-  timeoutMs: number; // Task-specific timeout
-  cacheTTLMs: number; // How long to cache results
-}
-
-/** Task-specific configurations (all use same model) */
-export const AI_TASK_CONFIGS: Record<string, AITaskConfig> = {
-  "question-summary": {
-    name: "Question Summary Extraction",
-    description:
-      "Extract summary, subject, and questionType from board questions",
-    temperature: 0.2, // Low for consistent classification
-    maxTokens: 150, // JSON output is compact
-    timeoutMs: 10000, // 10s - quick extraction
-    cacheTTLMs: 300000, // 5 min cache
-  },
-  "capture-analysis": {
-    name: "Quick Capture Analysis",
-    description: "Analyze pasted content to auto-populate metadata",
-    temperature: 0.3,
-    maxTokens: 500,
-    timeoutMs: 10000,
-    cacheTTLMs: 300000,
-  },
-  "concept-extraction": {
-    name: "Concept Extraction",
-    description: "Extract key medical concepts from content",
-    temperature: 0.3,
-    maxTokens: 500,
-    timeoutMs: 15000,
-    cacheTTLMs: 300000,
-  },
-  "card-suggestion": {
-    name: "Card Suggestion",
-    description: "Suggest flashcard format and content from notebook blocks",
-    temperature: 0.4, // Slightly creative for card phrasing
-    maxTokens: 800,
-    timeoutMs: 20000,
-    cacheTTLMs: 60000, // 1 min - user may iterate
-  },
-  "explanation-enhancement": {
-    name: "Explanation Enhancement",
-    description: "Enhance or clarify medical explanations",
-    temperature: 0.5,
-    maxTokens: 1000,
-    timeoutMs: 30000,
-    cacheTTLMs: 300000,
-  },
-  "semantic-match": {
-    name: "Semantic Matching",
-    description: "Find semantically similar content",
-    temperature: 0.1, // Very deterministic
-    maxTokens: 200,
-    timeoutMs: 10000,
-    cacheTTLMs: 600000, // 10 min
-  },
-  "insight-evaluation": {
-    name: "AI Insight Evaluation",
-    description: "Evaluate learner insights for knowledge gaps and exam traps",
-    temperature: 0.3,
-    maxTokens: 500,
-    timeoutMs: 15000,
-    cacheTTLMs: 300000,
-  },
-};
-
-/**
- * Get configuration for a specific AI task.
- * Falls back to sensible defaults if task not found.
- */
-export function getTaskConfig(taskName: string): AITaskConfig {
-  return (
-    AI_TASK_CONFIGS[taskName] || {
-      name: taskName,
-      description: "Unknown task",
-      temperature: 0.3,
-      maxTokens: 500,
-      timeoutMs: 15000,
-      cacheTTLMs: 300000,
-    }
-  );
-}
 
 // ============================================================================
 // Provider Presets
@@ -705,183 +614,14 @@ export async function getProviderStatus(): Promise<AIProviderStatus> {
 }
 
 // ============================================================================
-// System Prompts
+// AI Task Configuration
 // ============================================================================
-
-/** System prompts for AI operations */
-const PROMPTS = {
-  conceptExtraction: `You are a medical education AI assistant specializing in flashcard creation.
-Your task is to extract key learning concepts from pasted medical content.
-
-For each concept, identify:
-1. The core fact, definition, mechanism, or relationship
-2. The type of concept (definition, mechanism, differential, treatment, diagnostic, epidemiology)
-3. Whether it's best as a Q&A card or cloze deletion
-4. Your confidence level (0-1) based on clarity and importance
-
-Guidelines:
-- Focus on testable, discrete facts
-- Prefer cloze for lists, sequences, and fill-in-the-blank content
-- Prefer Q&A for "why" questions, mechanisms, and comparisons
-- Extract 3-7 concepts per input, prioritizing high-yield content
-- Skip trivial or obvious information
-
-Respond ONLY with a JSON object in this exact format (no markdown, no code blocks):
-{
-  "concepts": [
-    {
-      "text": "Description of the concept",
-      "conceptType": "definition|mechanism|treatment|diagnosis|epidemiology",
-      "confidence": 0.9,
-      "suggestedFormat": "qa|cloze"
-    }
-  ]
-}`,
-
-  cardValidation: `You are a medical education AI assistant that validates flashcard quality.
-Evaluate cards based on the Minimum Information Principle:
-1. Each card should test ONE atomic piece of knowledge
-2. The question should be clear and unambiguous
-3. The answer should be concise and directly address the question
-4. Avoid compound questions or multiple answers
-
-Check for common issues:
-- Question too broad or vague
-- Answer too long (>50 words suggests multiple concepts)
-- Missing context needed for understanding
-- Cloze deletions that are too easy or ambiguous
-
-Respond with valid JSON only, no markdown formatting.`,
-
-  medicalListDetection: `You are a medical education AI assistant that identifies structured medical lists.
-Analyze the content to determine if it's a medical list that would benefit from vignette conversion.
-
-Types of medical lists:
-1. Differential diagnosis lists (DDx) - conditions that could cause a symptom/finding
-2. Procedure lists - steps in a medical procedure or algorithm
-3. Algorithm lists - decision trees or treatment pathways
-
-Indicators of a medical list:
-- Numbered or bulleted items
-- Common list headers: "Causes of...", "DDx for...", "Steps to...", "Treatment of..."
-- Multiple related medical terms in a structured format
-- Mnemonic-based content
-
-Extract each item as a standalone entry suitable for flashcard conversion.
-
-Respond with valid JSON only, no markdown formatting.`,
-
-  vignetteConversion: `You are a medical education AI assistant that converts medical list items into clinical vignettes.
-Your task is to transform a list item into a realistic patient scenario that tests the same knowledge.
-
-Guidelines for vignette creation:
-1. Include realistic patient demographics (age, sex when relevant)
-2. Present clinical findings that logically point to the answer
-3. Use "A X-year-old patient presents with..." format
-4. Include key history, physical exam, or lab findings
-5. Make each vignette independently answerable without needing sibling context
-6. Avoid giving away the answer in the presentation
-7. Keep vignettes concise (2-4 sentences)
-
-For the cloze version:
-- Create a fill-in-the-blank statement using {{c1::answer}} format
-- The cloze should test the same concept as the vignette
-
-Respond with valid JSON only, no markdown formatting.`,
-
-  tagSuggestion: `You are a medical education AI assistant that suggests relevant tags for medical content.
-Analyze the content and suggest 2-5 tags from these categories:
-
-Medical Specialties:
-cardiology, pulmonology, gastroenterology, nephrology, neurology, endocrinology,
-rheumatology, hematology, oncology, infectious-disease, dermatology, psychiatry,
-emergency-medicine, critical-care, pediatrics, obstetrics, surgery
-
-Foundational Sciences:
-anatomy, physiology, pathology, pharmacology, biochemistry, microbiology, immunology
-
-Content Types:
-diagnosis, treatment, mechanism, epidemiology, pathophysiology, clinical-presentation,
-differential-diagnosis, procedure, algorithm, lab-interpretation
-
-Only suggest tags that are directly relevant to the content.
-Prefer specific tags over general ones (e.g., "cardiology" over "medicine").
-
-Respond ONLY with a JSON object in this exact format (no markdown, no code blocks):
-{
-  "tags": ["tag1", "tag2", "tag3"]
-}`,
-
-  cardGeneration: `You are a medical education AI assistant that generates high-quality flashcards.
-Your goal is to transform the provided medical text into effective, testable, and discrete flashcards.
-
-Worthiness Criteria (Evaluate each card):
-1. TESTABLE: Does it have one clear correct answer? (fail: essays, open-ended)
-2. ONE CONCEPT: Does it test exactly one retrievable fact? (fail: lists, multiple facts)
-3. DISCRIMINATIVE: Does it distinguish from similar concepts? (fail: too generic)
-
-Format Detection Heuristics:
-- Procedural keywords (steps, procedure, technique, how to) → format: 'procedural' (use Q&A style)
-- List patterns (numbered, "causes of", "types of") → format: 'overlapping-cloze' (generate one card per item)
-- Image references or visual descriptions → format: 'image-occlusion' (describe what should be occluded)
-- Single fact or definition → format: 'cloze' (use {{c1::answer}} syntax)
-- Reasoning, comparison, or "why" questions → format: 'qa'
-
-Guidelines:
-- Put clinical scenarios into 'qa' or 'cloze' format.
-- For lists, return a separate CardSuggestion for EACH item in the list (overlapping clozes).
-- Use green/yellow/red for worthiness ratings.
-- Provide brief, specific explanations for worthiness ratings.
-
-CRITICAL for Clinical Vignettes/Patient Scenarios:
-- FRONT: Patient demographics, clinical presentation, exam findings, labs (the scenario)
-- BACK: Diagnosis, condition name, or specific answer being tested
-- Use format: 'qa' (NOT cloze for vignettes)
-- Example: front: "37yo woman with bilateral eye redness, photophobia, and pain. Found to have bilateral uveitis." back: "Anterior uveitis (requires urgent ophthalmology referral)"
-- NEVER duplicate the scenario in both front and back
-
-Respond ONLY with a JSON object in this exact format (no markdown, no code blocks):
-{
-  "suggestions": [
-    {
-      "format": "qa|cloze|overlapping-cloze|image-occlusion|procedural",
-      "front": "Front of card",
-      "back": "Back of card (if applicable)",
-      "confidence": 0.9,
-      "worthiness": {
-        "testable": "green|yellow|red",
-        "oneConcept": "green|yellow|red",
-        "discriminative": "green|yellow|red",
-        "explanations": {
-          "testable": "reason",
-          "oneConcept": "reason",
-          "discriminative": "reason"
-        }
-      },
-      "formatReason": "Why this format was chosen"
-    }
-  ]
-}`,
-
-  elaboratedFeedback: `You are a medical education AI tutor specializing in boards-style study.
-A student just struggled with a flashcard. Your task is to provide concise, high-yield feedback to help them understand the concept.
-
-Analyze the flashcard content, the broader topic context, and the fact that the user struggled (possibly indicated by response time).
-
-Explain:
-1. WHY the user might have been confused (whyWrong) - point out common clinical pitfalls or similar-sounding concepts.
-2. The core logic or "Clinical Pearl" (whyRight) - explain why the correct answer is correct in a way that sticks.
-3. Related concepts or "Differential Pitfalls" (relatedConcepts) - list 2-3 related concepts they should be wary of confusing with this one.
-
-Focus on clinical reasoning and board-relevant facts. Keep it concise (ADHD-friendly).
-
-Respond ONLY with a JSON object in this exact format (no markdown, no code blocks):
-{
-  "whyWrong": "Explanation of potential confusion or pitfall",
-  "whyRight": "High-yield explanation of the correct concept",
-  "relatedConcepts": ["Concept A", "Concept B"]
-}`,
-};
+//
+// All AI task configurations (prompts, settings, response handling) have been
+// migrated to individual files in electron/ai/tasks/*.ts
+//
+// See electron/ai/tasks/index.ts for the task registry.
+// ============================================================================
 
 /**
  * Wrap a promise with a timeout.
@@ -1037,18 +777,41 @@ function parseAIResponse<T>(text: string): T {
 // Quick Capture Analysis
 // ============================================================================
 
+import { captureAnalysisTask } from "./ai/tasks/capture-analysis";
+import { conceptExtractionTask } from "./ai/tasks/concept-extraction";
+import { cardValidationTask } from "./ai/tasks/card-validation";
+import { medicalListDetectionTask } from "./ai/tasks/medical-list-detection";
+import { vignetteConversionTask } from "./ai/tasks/vignette-conversion";
+import { tagSuggestionTask } from "./ai/tasks/tag-suggestion";
+import { cardGenerationTask } from "./ai/tasks/card-generation";
+import type {
+  RawConceptFromAI,
+  ConceptExtractionTaskResult,
+  CardValidationResult,
+  MedicalListDetectionResult,
+  VignetteConversionResult,
+  TagSuggestionResult,
+  CardGenerationResult,
+} from "./ai/tasks/types";
+
 /**
  * Analyze quick capture content to auto-populate form fields.
  * Returns null on timeout/failure (never blocks capture).
+ *
+ * Configuration: electron/ai/tasks/capture-analysis.ts
+ *
+ * Note: Uses direct client API for JSON mode support (response_format).
  */
 export async function analyzeCaptureContent(
   content: string,
 ): Promise<CaptureAnalysisResult | null> {
+  const task = captureAnalysisTask;
+
   // Check cache first
-  const cacheKey = aiCache.key("capture-analysis", content);
+  const cacheKey = aiCache.key(task.id, content);
   const cached = aiCache.get<CaptureAnalysisResult>(cacheKey);
   if (cached) {
-    console.log("[AI Service] Capture analysis cache hit");
+    console.log(`[AI Service] ${task.name} cache hit`);
     return cached;
   }
 
@@ -1057,52 +820,36 @@ export async function analyzeCaptureContent(
 
   try {
     const config = await getProviderConfig();
-    const taskConfig = getTaskConfig("capture-analysis");
     const client = await getClient();
+    const userPrompt = task.buildUserPrompt({ content });
 
     const response = await client.chat.completions.create({
       model: config.model,
       messages: [
-        {
-          role: "system",
-          content: `You are a medical education content analyzer. Analyze the provided content and return a JSON object.
-DETECTION RULES for sourceType:
-- Contains answer choices like "A)", "B)", "C)", "D)" AND contains "Explanation" or "Rationale" → "qbank"
-- Contains URLs from UpToDate, PubMed, NEJM, or medical journals → "article"  
-- Short, user-written note without citations or formal structure → "manual"
-- Otherwise → "quickcapture"
-OUTPUT FORMAT (JSON only, no markdown):
-{
-  "title": "Short descriptive title under 10 words",
-  "sourceType": "qbank|article|manual|quickcapture",
-  "domain": "Primary medical specialty (e.g., Nephrology, Cardiology)",
-  "secondaryDomains": ["Related specialties"],
-  "tags": ["Relevant tags like Management, Diagnosis, Boards-HY"],
-  "extractedFacts": ["Key clinical facts from the content"],
-  "suggestedTopic": "Canonical topic name for notebook organization"
-}`,
-        },
-        {
-          role: "user",
-          content: content.slice(0, 4000), // Limit to avoid token overflow
-        },
+        { role: "system", content: task.systemPrompt },
+        { role: "user", content: userPrompt },
       ],
-      temperature: taskConfig.temperature,
-      max_tokens: taskConfig.maxTokens,
+      temperature: task.temperature,
+      max_tokens: task.maxTokens,
       response_format: { type: "json_object" },
     });
 
     const resultText = response.choices[0]?.message?.content;
     if (!resultText) return null;
 
-    const result = parseAIResponse<CaptureAnalysisResult>(resultText);
+    const parsed = parseAIResponse<CaptureAnalysisResult>(resultText);
+
+    // Use task's normalizer
+    const result = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : parsed || task.fallbackResult!;
 
     // Cache for configured TTL
-    aiCache.set(cacheKey, result, taskConfig.cacheTTLMs);
+    aiCache.set(cacheKey, result, task.cacheTTLMs);
 
     return result;
   } catch (error) {
-    console.error("[AI] Capture analysis failed:", error);
+    console.error(`[AI Service] ${task.name} failed:`, error);
     return null; // Never throw - allow manual entry
   }
 }
@@ -1111,28 +858,11 @@ OUTPUT FORMAT (JSON only, no markdown):
 // Concept Extraction
 // ============================================================================
 
-/** Raw AI response format - may have alternate field names */
-interface RawConceptFromAI {
-  // Standard names (from our schema)
-  text?: string;
-  conceptType?: string;
-  suggestedFormat?: string;
-  // Alternate names (some AI models return these)
-  concept?: string;
-  type?: string;
-  format?: string;
-  // Always present
-  confidence: number;
-}
-
-/** Response format for concept extraction */
-interface ConceptExtractionResponse {
-  concepts: RawConceptFromAI[];
-}
-
 /**
  * Extract learning concepts from pasted medical content.
  * Also detects if content is a medical list.
+ *
+ * Configuration: electron/ai/tasks/concept-extraction.ts
  *
  * @param content Raw text content to analyze
  * @returns Concepts and list detection result
@@ -1147,14 +877,14 @@ export async function extractConcepts(
     };
   }
 
+  const task = conceptExtractionTask;
+
   try {
     // Run concept extraction and list detection in parallel
     const [conceptsResponse, listDetection] = await Promise.all([
       withRetry(async () => {
-        return await callAI(
-          PROMPTS.conceptExtraction,
-          `Extract learning concepts from this medical content:\n\n${content}`,
-        );
+        const userPrompt = task.buildUserPrompt({ content });
+        return await callAI(task.systemPrompt, userPrompt);
       }),
       detectMedicalList(content),
     ]);
@@ -1163,32 +893,18 @@ export async function extractConcepts(
       "[AI Service] Raw concept extraction response:",
       conceptsResponse,
     );
-    const parsed = parseAIResponse<
-      ConceptExtractionResponse | RawConceptFromAI[]
-    >(conceptsResponse);
+    const parsed = parseAIResponse<ConceptExtractionTaskResult | RawConceptFromAI[]>(
+      conceptsResponse,
+    );
     console.log("[AI Service] Parsed response:", parsed);
 
-    // Handle both {concepts: [...]} and direct array [...] formats
-    let rawConceptsArray: RawConceptFromAI[];
-    if (Array.isArray(parsed)) {
-      // Ollama sometimes returns array directly
-      rawConceptsArray = parsed;
-    } else if (
-      parsed &&
-      Array.isArray((parsed as ConceptExtractionResponse).concepts)
-    ) {
-      rawConceptsArray = (parsed as ConceptExtractionResponse).concepts;
-    } else {
-      console.error(
-        "[AI Service] Invalid response structure. Expected {concepts: [...]} or [...]",
-      );
-      throw new Error(
-        "Invalid response structure from AI: missing or invalid concepts array",
-      );
-    }
+    // Use task normalizer to handle response format
+    const normalized = task.normalizeResult
+      ? task.normalizeResult(parsed as ConceptExtractionTaskResult)
+      : { concepts: [] };
 
     // Filter and validate concepts before mapping
-    const validConcepts = rawConceptsArray.filter((c) => {
+    const validConcepts = normalized.concepts.filter((c: RawConceptFromAI) => {
       // Normalize field names (handle both 'text'/'concept', 'conceptType'/'type', etc.)
       const text = c.text || c.concept;
       const conceptType = c.conceptType || c.type;
@@ -1212,22 +928,24 @@ export async function extractConcepts(
     });
 
     // Add unique IDs to validated concepts and normalize field names
-    const concepts: ExtractedConcept[] = validConcepts.map((concept, index) => {
-      const text = concept.text || concept.concept || "";
-      const conceptType = concept.conceptType || concept.type || "";
-      const format = concept.suggestedFormat || concept.format;
-      // Normalize format string
-      const normalizedFormat: "qa" | "cloze" =
-        format === "Q&A" || format === "qa" ? "qa" : "cloze";
+    const concepts: ExtractedConcept[] = validConcepts.map(
+      (concept: RawConceptFromAI, index: number) => {
+        const text = concept.text || concept.concept || "";
+        const conceptType = concept.conceptType || concept.type || "";
+        const format = concept.suggestedFormat || concept.format;
+        // Normalize format string
+        const normalizedFormat: "qa" | "cloze" =
+          format === "Q&A" || format === "qa" ? "qa" : "cloze";
 
-      return {
-        id: `concept-${Date.now()}-${index}`,
-        text: text,
-        conceptType: conceptType,
-        confidence: Math.min(1, Math.max(0, concept.confidence)), // Clamp to 0-1
-        suggestedFormat: normalizedFormat,
-      };
-    });
+        return {
+          id: `concept-${Date.now()}-${index}`,
+          text: text,
+          conceptType: conceptType,
+          confidence: Math.min(1, Math.max(0, concept.confidence)), // Clamp to 0-1
+          suggestedFormat: normalizedFormat,
+        };
+      },
+    );
 
     return {
       concepts,
@@ -1243,15 +961,10 @@ export async function extractConcepts(
 // Card Validation
 // ============================================================================
 
-/** Response format for card validation */
-interface CardValidationResponse {
-  isValid: boolean;
-  warnings: string[];
-  suggestions: string[];
-}
-
 /**
  * Validate a flashcard for quality and adherence to learning principles.
+ *
+ * Configuration: electron/ai/tasks/card-validation.ts
  *
  * @param front Card front (question or cloze text)
  * @param back Card back (answer)
@@ -1279,34 +992,25 @@ export async function validateCard(
     };
   }
 
+  const task = cardValidationTask;
+
   try {
-    const cardContent =
-      cardType === "cloze"
-        ? `Cloze card:\n${front}`
-        : `Question: ${front}\nAnswer: ${back}`;
+    const userPrompt = task.buildUserPrompt({ front, back, cardType });
 
     const response = await withRetry(async () => {
-      return await callAI(
-        PROMPTS.cardValidation,
-        `Validate this ${cardType} flashcard:\n\n${cardContent}`,
-      );
+      return await callAI(task.systemPrompt, userPrompt);
     });
 
-    const parsed = parseAIResponse<CardValidationResponse>(response);
+    const parsed = parseAIResponse<CardValidationResult>(response);
 
-    return {
-      isValid: parsed.isValid ?? true,
-      warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
-      suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
-    };
+    // Use task normalizer
+    return task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : task.fallbackResult!;
   } catch (error) {
     console.error("[AI Service] Card validation failed:", error);
     // Return a permissive result on error - don't block card creation
-    return {
-      isValid: true,
-      warnings: ["AI validation unavailable"],
-      suggestions: [],
-    };
+    return { ...task.fallbackResult!, usedFallback: true };
   }
 }
 
@@ -1314,15 +1018,10 @@ export async function validateCard(
 // Medical List Detection
 // ============================================================================
 
-/** Response format for medical list detection */
-interface MedicalListDetectionResponse {
-  isList: boolean;
-  listType: "differential" | "procedure" | "algorithm" | null;
-  items: string[];
-}
-
 /**
  * Detect if content is a medical list that should be converted to vignettes.
+ *
+ * Configuration: electron/ai/tasks/medical-list-detection.ts
  *
  * @param content Content to analyze
  * @returns Detection result with list type and extracted items
@@ -1346,25 +1045,25 @@ export async function detectMedicalList(
     return { isList: false, listType: null, items: [] };
   }
 
+  const task = medicalListDetectionTask;
+
   try {
+    const userPrompt = task.buildUserPrompt({ content });
+
     const response = await withRetry(async () => {
-      return await callAI(
-        PROMPTS.medicalListDetection,
-        `Analyze this content to determine if it's a medical list:\n\n${content}`,
-      );
+      return await callAI(task.systemPrompt, userPrompt);
     });
 
-    const parsed = parseAIResponse<MedicalListDetectionResponse>(response);
+    const parsed = parseAIResponse<MedicalListDetectionResult>(response);
 
-    return {
-      isList: parsed.isList ?? false,
-      listType: parsed.listType ?? null,
-      items: Array.isArray(parsed.items) ? parsed.items : [],
-    };
+    // Use task normalizer
+    return task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : task.fallbackResult!;
   } catch (error) {
     console.error("[AI Service] Medical list detection failed:", error);
     // Return non-list on error to allow normal processing
-    return { isList: false, listType: null, items: [] };
+    return { ...task.fallbackResult!, usedFallback: true };
   }
 }
 
@@ -1372,14 +1071,10 @@ export async function detectMedicalList(
 // Vignette Conversion
 // ============================================================================
 
-/** Response format for vignette conversion */
-interface VignetteConversionResponse {
-  vignette: string;
-  cloze: string;
-}
-
 /**
  * Convert a medical list item to a clinical vignette and cloze deletion.
+ *
+ * Configuration: electron/ai/tasks/vignette-conversion.ts
  *
  * @param listItem The list item to convert (e.g., "Acute MI")
  * @param context Additional context about the list (e.g., "DDx for chest pain")
@@ -1393,25 +1088,21 @@ export async function convertToVignette(
     throw new Error("List item is required for vignette conversion");
   }
 
+  const task = vignetteConversionTask;
+
   try {
-    const prompt = context
-      ? `Convert this medical list item to a clinical vignette.\n\nContext: ${context}\nItem: ${listItem}`
-      : `Convert this medical list item to a clinical vignette.\n\nItem: ${listItem}`;
+    const userPrompt = task.buildUserPrompt({ listItem, context });
 
     const response = await withRetry(async () => {
-      return await callAI(PROMPTS.vignetteConversion, prompt);
+      return await callAI(task.systemPrompt, userPrompt);
     });
 
-    const parsed = parseAIResponse<VignetteConversionResponse>(response);
+    const parsed = parseAIResponse<VignetteConversionResult>(response);
 
-    if (!parsed.vignette || !parsed.cloze) {
-      throw new Error("Invalid vignette conversion response");
-    }
-
-    return {
-      vignette: parsed.vignette,
-      cloze: parsed.cloze,
-    };
+    // Use task normalizer (will throw if invalid)
+    return task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : parsed;
   } catch (error) {
     console.error("[AI Service] Vignette conversion failed:", error);
     throw error;
@@ -1422,13 +1113,10 @@ export async function convertToVignette(
 // Tag Suggestions
 // ============================================================================
 
-/** Response format for tag suggestions */
-interface TagSuggestionResponse {
-  tags: string[];
-}
-
 /**
  * Suggest relevant medical domain tags for content.
+ *
+ * Configuration: electron/ai/tasks/tag-suggestion.ts
  *
  * @param content Content to analyze for tags
  * @returns Array of suggested tag strings
@@ -1438,22 +1126,23 @@ export async function suggestTags(content: string): Promise<string[]> {
     return [];
   }
 
+  const task = tagSuggestionTask;
+
   try {
+    const userPrompt = task.buildUserPrompt({ content });
+
     const response = await withRetry(async () => {
-      return await callAI(
-        PROMPTS.tagSuggestion,
-        `Suggest relevant medical tags for this content:\n\n${content}`,
-      );
+      return await callAI(task.systemPrompt, userPrompt);
     });
 
-    const parsed = parseAIResponse<TagSuggestionResponse>(response);
+    const parsed = parseAIResponse<TagSuggestionResult>(response);
 
-    // Normalize tags: lowercase, trim, filter empty
-    const tags = Array.isArray(parsed.tags) ? parsed.tags : [];
-    return tags
-      .map((tag) => tag.toLowerCase().trim())
-      .filter((tag) => tag.length > 0)
-      .slice(0, 5); // Limit to 5 tags
+    // Use task normalizer (handles lowercase, trim, filter, limit)
+    const result = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : task.fallbackResult!;
+
+    return result.tags;
   } catch (error) {
     console.error("[AI Service] Tag suggestion failed:", error);
     // Return empty array on error - tags are optional
@@ -1465,14 +1154,11 @@ export async function suggestTags(content: string): Promise<string[]> {
 // Card Generation
 // ============================================================================
 
-/** Response format for card generation */
-interface CardGenerationResponse {
-  suggestions: CardSuggestion[];
-}
-
 /**
  * Generate high-quality flashcards from a specific block of content.
  * Puts highlighted content at START of prompt to avoid "lost in the middle" effect.
+ *
+ * Configuration: electron/ai/tasks/card-generation.ts
  *
  * @param blockContent The specific text selected for card generation
  * @param topicContext The broader topic context (title, related concepts)
@@ -1488,8 +1174,10 @@ export async function generateCardFromBlock(
     return [];
   }
 
+  const task = cardGenerationTask;
+
   const cacheKey = aiCache.key(
-    "generateCard",
+    task.id,
     blockContent,
     topicContext,
     userIntent || "",
@@ -1498,85 +1186,30 @@ export async function generateCardFromBlock(
   if (cached) return cached;
 
   try {
-    // Construct user message with content at the START to avoid "lost in the middle"
-    const userMessage = `HIGHLIGHTED CONTENT:
-${blockContent}
-
-TOPIC CONTEXT:
-${topicContext}
-
-${
-  userIntent ? `USER INTENT: ${userIntent}\n` : ""
-}Please generate high-quality card suggestions from the highlighted content.`;
-
-    const response = await withRetry(async () => {
-      return await callAI(PROMPTS.cardGeneration, userMessage);
+    const userPrompt = task.buildUserPrompt({
+      blockContent,
+      topicContext,
+      userIntent,
     });
 
-    const parsed = parseAIResponse<CardGenerationResponse | CardSuggestion[]>(
-      response,
-    );
+    const response = await withRetry(async () => {
+      return await callAI(task.systemPrompt, userPrompt);
+    });
 
-    // Handle both {suggestions: [...]} and direct array [...] formats
-    let suggestions: CardSuggestion[];
-    if (Array.isArray(parsed)) {
-      suggestions = parsed;
-    } else if (parsed && Array.isArray(parsed.suggestions)) {
-      suggestions = parsed.suggestions;
-    } else {
-      console.error(
-        "[AI Service] Invalid card generation response structure:",
-        parsed,
-      );
-      throw new Error("Invalid response structure for card generation");
-    }
+    const parsed = parseAIResponse<CardGenerationResult>(response);
 
-    // Basic normalization and validation
-    const normalizedSuggestions = suggestions
-      .map((s) => ({
-        format: s.format || "qa",
-        front: s.front || "",
-        back: s.back || "",
-        confidence: typeof s.confidence === "number" ? s.confidence : 0.8,
-        worthiness: s.worthiness || {
-          testable: "yellow",
-          oneConcept: "yellow",
-          discriminative: "yellow",
-          explanations: {
-            testable: "Auto-generated",
-            oneConcept: "Auto-generated",
-            discriminative: "Auto-generated",
-          },
-        },
-        formatReason: s.formatReason || "AI suggestion",
-      }))
-      .filter((s) => {
-        // Validate content quality: detect duplicate front/back
-        if (s.front && s.back && s.front.trim() === s.back.trim()) {
-          console.warn(`[AI Service] Filtered duplicate card: front === back`, {
-            front: s.front.slice(0, 100),
-            cacheKey,
-          });
-          return false;
-        }
-        // Warn about empty backs for qa/vignette cards
-        if (
-          (s.format === "qa" || s.format === "procedural") &&
-          !s.back?.trim()
-        ) {
-          console.warn(
-            `[AI Service] Card with empty back for format ${s.format}`,
-            { front: s.front.slice(0, 100), cacheKey },
-          );
-          return false;
-        }
-        return true;
-      });
+    // Use task normalizer (handles format validation, filtering, etc.)
+    const result = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : task.fallbackResult!;
+
+    // Map CardGenerationSuggestion to CardSuggestion (they have same structure)
+    const suggestions = result.suggestions as unknown as CardSuggestion[];
 
     // Store in cache
-    aiCache.set(cacheKey, normalizedSuggestions);
+    aiCache.set(cacheKey, suggestions, task.cacheTTLMs);
 
-    return normalizedSuggestions;
+    return suggestions;
   } catch (error) {
     console.error("[AI Service] Card generation failed:", error);
     throw error;
@@ -1591,9 +1224,14 @@ ${
  * @param responseTimeMs Optional time user spent before answering
  * @returns Elaborated feedback with pits/pearls
  */
+import { insightEvaluationTask } from "./ai/tasks/insight-evaluation";
+import type { InsightEvaluationResult } from "./ai/tasks/types";
+
 /**
  * Evaluate a learner's written insight against the source content.
  * Identifies gaps, provides feedback, and classifies exam traps.
+ *
+ * Configuration: electron/ai/tasks/insight-evaluation.ts
  */
 export async function evaluateInsight(input: {
   userInsight: string;
@@ -1601,81 +1239,206 @@ export async function evaluateInsight(input: {
   isIncorrect: boolean;
   topicContext?: string;
 }): Promise<NotebookBlockAiEvaluation> {
-  const { userInsight, sourceContent, isIncorrect, topicContext } = input;
+  const task = insightEvaluationTask;
 
   const cacheKey = aiCache.key(
-    "insight-evaluation",
-    userInsight,
-    sourceContent,
-    String(isIncorrect),
+    task.id,
+    input.userInsight,
+    input.sourceContent,
+    String(input.isIncorrect),
   );
   const cached = aiCache.get<NotebookBlockAiEvaluation>(cacheKey);
   if (cached) return cached;
 
-  const config = getTaskConfig("insight-evaluation");
-  const systemPrompt = `You are a medical education expert evaluating a learner's written insight.
-Your task is to identify knowledge gaps, provide constructive feedback, and flag potential concept confusions.
-Always respond with valid JSON matching the schema exactly.`;
-
-  let userPrompt = `SOURCE CONTENT:
-${sourceContent}
-
-LEARNER'S INSIGHT:
-${userInsight}
-
-${topicContext ? `TOPIC CONTEXT: ${topicContext}\n` : ""}
-Evaluate the insight and return JSON:
-{
-  "gaps": ["list of knowledge gaps or missing key points from the source"],
-  "feedbackText": "Constructive feedback on the insight (2-3 sentences)",
-  "confusionTags": ["any concept pairs that might be confused, e.g., 'Methotrexate vs Methylnaltrexone'"],
-  "examTrapType": null
-}`;
-
-  if (isIncorrect) {
-    userPrompt += `
-
-The learner got this question WRONG. Classify the error type for examTrapType:
-- "qualifier-misread": Misread qualifiers like 'most common' vs 'most common abnormality'
-- "negation-blindness": Missed 'NOT' or 'EXCEPT' in question
-- "age-population-skip": Missed population specifier (children, pregnant, elderly)
-- "absolute-terms": Tricked by 'always', 'never', 'only' (usually wrong)
-- "best-vs-correct": Picked correct but not BEST answer
-- "timeline-confusion": Confused initial vs definitive management
-- null: Knowledge gap, not an exam trap
-Set examTrapType to the most likely error type, or null if it was a pure knowledge gap.`;
-  }
+  const userPrompt = task.buildUserPrompt(input);
 
   try {
-    const response = await callAI(systemPrompt, userPrompt);
-    const result = parseAIResponse<NotebookBlockAiEvaluation>(response);
+    const response = await callAI(task.systemPrompt, userPrompt);
+    const parsed = parseAIResponse<InsightEvaluationResult>(response);
 
-    // Final normalization
+    // Use task's normalizer
+    const result = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : parsed || task.fallbackResult!;
+
+    // Map to NotebookBlockAiEvaluation (same structure)
     const evaluation: NotebookBlockAiEvaluation = {
-      gaps: Array.isArray(result?.gaps) ? result.gaps : [],
-      feedbackText: result?.feedbackText || "Insight processed.",
-      confusionTags: Array.isArray(result?.confusionTags)
-        ? result.confusionTags
-        : [],
-      examTrapType: isIncorrect ? result?.examTrapType || null : null,
-      evaluatedAt: new Date().toISOString(),
+      gaps: result.gaps,
+      feedbackText: result.feedbackText,
+      confusionTags: result.confusionTags || [],
+      examTrapType: input.isIncorrect ? result.examTrapType || null : null,
+      evaluatedAt: result.evaluatedAt,
     };
 
-    aiCache.set(cacheKey, evaluation, config.cacheTTLMs);
+    aiCache.set(cacheKey, evaluation, task.cacheTTLMs);
     return evaluation;
   } catch (error) {
-    console.error("[AI Service] Insight evaluation failed:", error);
-    throw error;
+    console.error(`[AI Service] ${task.name} failed:`, error);
+    // Return fallback instead of throwing
+    const fallback = task.fallbackResult!;
+    return {
+      gaps: fallback.gaps,
+      feedbackText: fallback.feedbackText,
+      confusionTags: fallback.confusionTags || [],
+      examTrapType: null,
+      evaluatedAt: fallback.evaluatedAt,
+    };
   }
 }
 
+// ============================================================================
+// Identify Tested Concept
+// ============================================================================
+
+import { identifyTestedConceptTask } from "./ai/tasks/identify-tested-concept";
+import type { IdentifyConceptResult } from "./ai/tasks/types";
+
+// Re-export for backwards compatibility
+export type TestedConceptResult = IdentifyConceptResult;
+
+/**
+ * Identify what specific concept or learning point a source is testing.
+ * Used to guide the learner when writing their insight.
+ *
+ * Configuration: electron/ai/tasks/identify-tested-concept.ts
+ * Test script: scripts/ai-tests/test-identify-concept-final.cjs
+ *
+ * @param sourceContent The raw content of the source item
+ * @param sourceType The type of source (qbank, article, lecture, etc.)
+ * @returns The identified concept and confidence level
+ */
+export async function identifyTestedConcept(
+  sourceContent: string,
+  sourceType: string
+): Promise<TestedConceptResult> {
+  const task = identifyTestedConceptTask;
+
+  const cacheKey = aiCache.key(task.id, sourceContent, sourceType);
+  const cached = aiCache.get<TestedConceptResult>(cacheKey);
+  if (cached) return cached;
+
+  const userPrompt = task.buildUserPrompt({ sourceContent, sourceType });
+
+  try {
+    const response = await callAI(task.systemPrompt, userPrompt);
+    const parsed = parseAIResponse<TestedConceptResult>(response);
+
+    // Use task's normalizer if available, otherwise use parsed result
+    const result = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : parsed || task.fallbackResult!;
+
+    aiCache.set(cacheKey, result, task.cacheTTLMs);
+    return result;
+  } catch (error) {
+    console.error(`[AI Service] ${task.name} failed:`, error);
+    // Return fallback instead of throwing - don't block the user
+    return { ...task.fallbackResult!, usedFallback: true };
+  }
+}
+
+// ============================================================================
+// Polish Insight
+// ============================================================================
+
+import { polishInsightTask } from "./ai/tasks/polish-insight";
+import type { PolishInsightResult } from "./ai/tasks/types";
+
+// Re-export for external use
+export type { PolishInsightResult };
+
+/**
+ * Polish a user's insight while preserving their voice.
+ * Returns the enhanced text with attribution showing what came from the user
+ * vs what the AI added.
+ *
+ * Configuration: electron/ai/tasks/polish-insight.ts
+ *
+ * @param userText The user's raw insight text
+ * @param sourceContent The source content for context
+ * @param testedConcept Optional - the identified tested concept
+ * @returns Polished text with attribution arrays
+ */
+export async function polishInsight(
+  userText: string,
+  sourceContent: string,
+  testedConcept?: string
+): Promise<PolishInsightResult> {
+  const task = polishInsightTask;
+
+  // Don't polish empty or very short text
+  if (!userText || userText.trim().length < 10) {
+    return {
+      polished: userText,
+      fromUser: [userText],
+      addedContext: [],
+    };
+  }
+
+  const cacheKey = aiCache.key(task.id, userText, sourceContent.slice(0, 500));
+  const cached = aiCache.get<PolishInsightResult>(cacheKey);
+  if (cached) return cached;
+
+  const userPrompt = task.buildUserPrompt({
+    userText,
+    sourceContent,
+    testedConcept,
+  });
+
+  try {
+    const response = await callAI(task.systemPrompt, userPrompt);
+    const parsed = parseAIResponse<PolishInsightResult>(response);
+
+    // Use task's normalizer
+    const result = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : parsed || task.fallbackResult!;
+
+    // If polished text is empty, return original
+    if (!result.polished) {
+      return {
+        polished: userText,
+        fromUser: [userText],
+        addedContext: [],
+      };
+    }
+
+    aiCache.set(cacheKey, result, task.cacheTTLMs);
+    return result;
+  } catch (error) {
+    console.error(`[AI Service] ${task.name} failed:`, error);
+    // Return original text on failure - don't block the user
+    return {
+      polished: userText,
+      fromUser: [userText],
+      addedContext: [],
+      usedFallback: true,
+    };
+  }
+}
+
+import { elaboratedFeedbackTask } from "./ai/tasks/elaborated-feedback";
+import type { ElaboratedFeedbackResult } from "./ai/tasks/types";
+
+/**
+ * Generate elaborated feedback for a card the user struggled with.
+ *
+ * Configuration: electron/ai/tasks/elaborated-feedback.ts
+ *
+ * @param card Card content (front, back, type)
+ * @param topicContext Broader context (topic title, etc.)
+ * @param responseTimeMs Optional time user spent before answering
+ * @returns Elaborated feedback with pits/pearls
+ */
 export async function generateElaboratedFeedback(
   card: { front: string; back: string; cardType: string },
   topicContext: string,
   responseTimeMs: number | null
 ): Promise<ElaboratedFeedback> {
+  const task = elaboratedFeedbackTask;
+
   const cacheKey = aiCache.key(
-    "elaboratedFeedback",
+    task.id,
     card.front,
     card.back,
     topicContext
@@ -1683,43 +1446,32 @@ export async function generateElaboratedFeedback(
   const cached = aiCache.get<ElaboratedFeedback>(cacheKey);
   if (cached) return cached;
 
+  const userPrompt = task.buildUserPrompt({
+    cardFront: card.front,
+    cardBack: card.back,
+    cardType: card.cardType,
+    topicContext,
+    responseTimeMs,
+  });
+
   try {
-    const userMessage = `FLASHCARD:
-Front: ${card.front}
-Back: ${card.back}
-Type: ${card.cardType}
-
-TOPIC CONTEXT:
-${topicContext}
-
-${
-  responseTimeMs
-    ? `USER RESPONSE TIME: ${responseTimeMs}ms (Student struggled with this card)`
-    : "Student struggled with this card/requested feedback."
-}
-
-Please provide elaborated feedback.`;
-
     const response = await withRetry(async () => {
-      return await callAI(PROMPTS.elaboratedFeedback, userMessage);
+      return await callAI(task.systemPrompt, userPrompt);
     });
 
-    const result = parseAIResponse<ElaboratedFeedback>(response);
+    const parsed = parseAIResponse<ElaboratedFeedbackResult>(response);
 
-    // Basic normalization
-    const feedback: ElaboratedFeedback = {
-      whyWrong: result?.whyWrong || "No specific pitfall identified.",
-      whyRight: result?.whyRight || "No clinical pearl available.",
-      relatedConcepts: Array.isArray(result?.relatedConcepts)
-        ? result.relatedConcepts
-        : [],
-    };
+    // Use task's normalizer
+    const result = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : parsed || task.fallbackResult!;
 
-    aiCache.set(cacheKey, feedback);
-    return feedback;
+    aiCache.set(cacheKey, result, task.cacheTTLMs);
+    return result;
   } catch (error) {
-    console.error("[AI Service] Elaborated feedback failed:", error);
-    throw error;
+    console.error(`[AI Service] ${task.name} failed:`, error);
+    // Return fallback instead of throwing
+    return task.fallbackResult!;
   }
 }
 
@@ -1825,18 +1577,20 @@ export function findRelatedNotes(
 // Question Summary Extraction
 // ============================================================================
 
+import { questionSummaryTask } from "./ai/tasks/question-summary";
+import type { QuestionSummaryResult } from "./ai/tasks/types";
+
 /**
  * Extract a concise summary for inbox triage differentiation.
- * 
- * Generates a 4-5 word summary that captures the key learning point or
- * clinical question to help users quickly identify questions in their inbox.
- * 
+ *
+ * Configuration: electron/ai/tasks/question-summary.ts
+ *
  * Features:
- * - 10 second timeout to prevent hanging
+ * - Timeout to prevent hanging (configured in task)
  * - Single retry on transient failures
  * - Comprehensive logging for debugging
  * - Model-aware caching
- * 
+ *
  * @param content Raw question content (rawContent from SourceItem)
  * @param sourceType Type of source (qbank, article, etc.)
  * @returns Object with summary and subject, or null if extraction fails
@@ -1844,11 +1598,9 @@ export function findRelatedNotes(
 export async function extractQuestionSummary(
   content: string,
   sourceType: string
-): Promise<{
-  summary: string;
-  subject?: string;
-  questionType?: string;
-} | null> {
+): Promise<QuestionSummaryResult | null> {
+  const task = questionSummaryTask;
+
   // Only process qbank questions for now
   if (sourceType !== "qbank") {
     console.log(`[AI Service] Skipping extraction - not qbank (${sourceType})`);
@@ -1865,83 +1617,44 @@ export async function extractQuestionSummary(
 
   // Get config for cache key (include model to invalidate on model change)
   const config = await getProviderConfig();
-  
+
   // Check cache (include model in key)
-  const cacheKey = aiCache.key(
-    "question-summary",
-    config.model,
-    content.substring(0, 500)
-  );
-  const cached = aiCache.get<{
-    summary: string;
-    subject?: string;
-    questionType?: string;
-  }>(cacheKey);
+  const cacheKey = aiCache.key(task.id, config.model, content.substring(0, 500));
+  const cached = aiCache.get<QuestionSummaryResult>(cacheKey);
   if (cached) {
-    console.log("[AI Service] ✓ Cache hit:", cached.summary);
+    console.log(`[AI Service] ✓ Cache hit:`, cached.summary);
     return cached;
   }
 
-  // Truncate content to first 800 chars for efficiency
-  const truncatedContent = content.substring(0, 800);
-
-  const prompt = `You are a medical education AI extracting metadata from EM/IM board questions.
-
-TASK: Extract summary, subject, and question type for flashcard optimization.
-
-OUTPUT (JSON only):
-1. "summary": 4-6 word clinical action phrase
-   - Start with verb: "Managing", "Diagnosing", "Treating", "Recognizing", "When to..."
-   - Examples: "Managing agitation in delirium", "Recognizing carbon monoxide toxicity"
-
-2. "subject": Pick ONE:
-   Cardiology | Pulmonology | Neurology | GI | Nephrology | Endocrinology | Rheumatology | ID | Heme/Onc | Toxicology | Trauma | Resuscitation | Derm | Psychiatry | OB/GYN | Peds | MSK | ENT | Ophthalmology | Allergy | Palliative | Preventive | Other
-
-3. "questionType": Pick ONE (for card generation):
-   - Diagnosis: Identify condition from presentation/findings
-   - Management: Choose treatment, intervention, or next step
-   - Workup: Select appropriate test/imaging/lab
-   - Mechanism: Explain pathophysiology or drug action
-   - Prognosis: Predict outcome or risk stratification
-   - Prevention: Screening, prophylaxis, risk reduction
-   - Pharmacology: Drug choice, dosing, interactions, side effects
-   - Anatomy: Structure identification or localization
-   - Complications: Recognize or prevent adverse outcomes
-   - Contraindications: Identify when NOT to do something
-   - Criteria: Apply diagnostic/classification criteria
-   - Emergent: Time-critical intervention decision
-
-CONTENT:
-${truncatedContent}
-
-{"summary": "...", "subject": "...", "questionType": "..."}`;
-
-  // Get task-specific configuration
-  const taskConfig = getTaskConfig("question-summary");
+  // Build prompts from task config
+  const userPrompt = task.buildUserPrompt({ content, sourceType });
 
   // Retry logic: try once, retry once on failure
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       console.log(
-        `[AI Service] Extracting question summary (attempt ${attempt}/2)...`
+        `[AI Service] ${task.name} (attempt ${attempt}/2)...`
       );
       const startTime = Date.now();
 
       const client = await getClient();
 
-      console.log(`[AI Service] Using model: ${config.model} | Task: ${taskConfig.name}`);
+      console.log(`[AI Service] Using model: ${config.model} | Task: ${task.name}`);
 
       // Create AbortController with task-specific timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), taskConfig.timeoutMs);
+      const timeoutId = setTimeout(() => controller.abort(), task.timeoutMs);
 
       try {
         const completion = await client.chat.completions.create(
           {
             model: config.model,
-            messages: [{ role: "user", content: prompt }],
-            temperature: taskConfig.temperature,
-            max_tokens: taskConfig.maxTokens,
+            messages: [
+              { role: "system", content: task.systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            temperature: task.temperature,
+            max_tokens: task.maxTokens,
           },
           { signal: controller.signal as any }
         );
@@ -1956,20 +1669,14 @@ ${truncatedContent}
         console.log("[AI Service] Raw response:", responseText);
 
         // Parse JSON response
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-          console.warn("[AI Service] No JSON found in response:", responseText);
-          if (attempt < 2) {
-            console.log("[AI Service] Retrying in 1 second...");
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            continue;
-          }
-          return null;
-        }
+        const parsed = parseAIResponse<QuestionSummaryResult>(responseText);
 
-        const result = JSON.parse(jsonMatch[0]);
+        // Use task's normalizer
+        const result = task.normalizeResult
+          ? task.normalizeResult(parsed)
+          : parsed || task.fallbackResult!;
 
-        // Validate result
+        // Validate result has adequate summary
         if (!result.summary || result.summary.split(" ").length < 3) {
           console.warn("[AI Service] Invalid summary format:", result);
           if (attempt < 2) {
@@ -1981,7 +1688,7 @@ ${truncatedContent}
         }
 
         // Cache successful result with task-specific TTL
-        aiCache.set(cacheKey, result, taskConfig.cacheTTLMs);
+        aiCache.set(cacheKey, result, task.cacheTTLMs);
 
         console.log("[AI Service] ✅ Successfully extracted:", {
           summary: result.summary,
@@ -1990,15 +1697,11 @@ ${truncatedContent}
           duration: `${elapsedMs}ms`,
         });
 
-        return {
-          summary: result.summary,
-          subject: result.subject || undefined,
-          questionType: result.questionType || undefined,
-        };
+        return result;
       } catch (aiError) {
         clearTimeout(timeoutId);
         if ((aiError as any)?.name === "AbortError") {
-          console.warn(`[AI Service] ⏱️  Timeout after ${taskConfig.timeoutMs}ms`);
+          console.warn(`[AI Service] ⏱️  Timeout after ${task.timeoutMs}ms`);
           if (attempt < 2) {
             console.log("[AI Service] Retrying in 1 second...");
             await new Promise((resolve) => setTimeout(resolve, 1000));

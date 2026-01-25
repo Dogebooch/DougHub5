@@ -8,12 +8,13 @@
         "dependencies": [],
         "subtasks": []
       },
-      },
       {
         "id": "2",
         "title": "AI service integration layer",
         "status": "done",
-        "dependencies": ["1"],
+        "dependencies": [
+          "1"
+        ],
         "subtasks": []
       },
       {
@@ -29,21 +30,27 @@
         "id": "5",
         "title": "Zero-decision review interface (eliminate grading buttons)",
         "status": "done",
-        "dependencies": ["1"],
+        "dependencies": [
+          "1"
+        ],
         "subtasks": []
       },
       {
         "id": "10",
         "title": "Global search with <200ms response time",
         "status": "done",
-        "dependencies": ["1"],
+        "dependencies": [
+          "1"
+        ],
         "subtasks": []
       },
       {
         "id": "17",
         "title": "Auto-start Ollama from Electron on first AI request",
         "status": "done",
-        "dependencies": ["2"],
+        "dependencies": [
+          "2"
+        ],
         "subtasks": []
       },
       {
@@ -66,49 +73,65 @@
         "id": "36",
         "title": "[v2-T1.1] Topic normalization: alias table, matching rules, dedupe prevention",
         "status": "done",
-        "dependencies": ["35"],
+        "dependencies": [
+          "35"
+        ],
         "subtasks": []
       },
       {
         "id": "38",
         "title": "[v2-T2] Capture pipeline: Quick Dump → SourceItem (inbox), text + image support",
         "status": "done",
-        "dependencies": ["35"],
+        "dependencies": [
+          "35"
+        ],
         "subtasks": []
       },
       {
         "id": "40",
         "title": "[v2-T3] Archive UI: vertical list grouped by status, search, filters",
         "status": "done",
-        "dependencies": ["39"],
+        "dependencies": [
+          "39"
+        ],
         "subtasks": []
       },
       {
         "id": "41",
         "title": "[v2-T4] Notebook UI: topic pages, add blocks from sources, enforce card-creation here only",
         "status": "done",
-        "dependencies": ["40", "36"],
+        "dependencies": [
+          "40",
+          "36"
+        ],
         "subtasks": []
       },
       {
         "id": "42",
         "title": "Card Generation from Notebook Blocks",
         "status": "done",
-        "dependencies": ["41"],
+        "dependencies": [
+          "41"
+        ],
         "subtasks": []
       },
       {
         "id": "44",
         "title": "[v2-T8] Smart Views: system views (Inbox, Today, Queue, Weak Topics), filter engine",
         "status": "done",
-        "dependencies": ["35"],
+        "dependencies": [
+          "35"
+        ],
         "subtasks": []
       },
       {
         "id": "45",
         "title": "[v2-T6] FSRS integration: scheduling fields, review UI, response time tracking",
         "status": "done",
-        "dependencies": ["41", "42"],
+        "dependencies": [
+          "41",
+          "42"
+        ],
         "subtasks": []
       },
       {
@@ -122,14 +145,19 @@
         "id": "112",
         "title": "Sidebar Consolidation: merge SmartViewSidebar into Sidebar",
         "status": "done",
-        "dependencies": ["44"],
+        "dependencies": [
+          "44"
+        ],
         "subtasks": []
       },
       {
         "id": "113",
         "title": "Image Capture Support: paste, drop, display in KB/Notebook",
         "status": "cancelled",
-        "dependencies": ["38", "41"],
+        "dependencies": [
+          "38",
+          "41"
+        ],
         "subtasks": [],
         "updatedAt": "2026-01-24T02:47:41.363Z"
       },
@@ -144,14 +172,19 @@
         "id": "115",
         "title": "Card Browser: view all cards with filters (topic, status, due date)",
         "status": "done",
-        "dependencies": ["42", "45"],
+        "dependencies": [
+          "42",
+          "45"
+        ],
         "subtasks": []
       },
       {
         "id": "116",
         "title": "Browser Capture Hook: local HTTP API for Tampermonkey integration",
         "status": "cancelled",
-        "dependencies": ["38"],
+        "dependencies": [
+          "38"
+        ],
         "subtasks": [],
         "updatedAt": "2026-01-24T02:47:41.443Z"
       },
@@ -159,21 +192,28 @@
         "id": "117",
         "title": "Basic Learning Mode: post-review mistakes summary with elaborated feedback",
         "status": "done",
-        "dependencies": ["45"],
+        "dependencies": [
+          "45"
+        ],
         "subtasks": []
       },
       {
         "id": "118",
         "title": "Two-Mode Capture: FAB modal with auto-classification and Process Now button",
         "status": "done",
-        "dependencies": ["38"],
+        "dependencies": [
+          "38"
+        ],
         "subtasks": []
       },
       {
         "id": "119",
         "title": "Insight Writing Modal: Redesign Add to Notebook Flow",
         "status": "cancelled",
-        "dependencies": ["118", "125"],
+        "dependencies": [
+          "118",
+          "125"
+        ],
         "subtasks": [],
         "updatedAt": "2026-01-24T02:47:41.519Z"
       },
@@ -224,7 +264,10 @@
         "id": "125",
         "title": "Data Logging Framework: Schema Extensions for Future AI",
         "status": "cancelled",
-        "dependencies": ["118", "117"],
+        "dependencies": [
+          "118",
+          "117"
+        ],
         "subtasks": [],
         "updatedAt": "2026-01-24T02:47:41.587Z"
       },
@@ -258,9 +301,9 @@
         "testStrategy": "Test Archive changes status to 'curated' not delete. Test archived items no longer appear in inbox. Test filter by sourceType works. Test sort by newest/oldest works. Test batch selection with Select All. Test batch archive updates all without confirmation. Test batch delete shows confirmation. Test empty inbox shows capture prompt.",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-01-12T21:00:00.000Z"
+        "updatedAt": "2026-01-25T18:09:20.721Z"
       },
       {
         "id": "130",
@@ -285,7 +328,9 @@
         "id": "132",
         "title": "Workflow 8: Add Source to Another Topic",
         "status": "cancelled",
-        "dependencies": ["126"],
+        "dependencies": [
+          "126"
+        ],
         "subtasks": [],
         "updatedAt": "2026-01-24T02:47:41.742Z"
       },
@@ -312,7 +357,11 @@
         "id": "135",
         "title": "Workflow 6 Enhancement: Links Sidebar with Hover-Highlight",
         "status": "cancelled",
-        "dependencies": ["126", "133", "134"],
+        "dependencies": [
+          "126",
+          "133",
+          "134"
+        ],
         "subtasks": [],
         "updatedAt": "2026-01-24T02:47:41.817Z"
       },
@@ -327,30 +376,83 @@
         "id": "137",
         "title": "Workflow 3: AI Backlink Detection (Async)",
         "priority": "medium",
-        "dependencies": ["126", "127"],
+        "dependencies": [
+          "126",
+          "127"
+        ],
         "status": "cancelled",
         "subtasks": [],
         "updatedAt": "2026-01-24T01:59:56.187Z"
       },
       {
         "id": "138",
-        "title": "Step 3: Add to Notebook + Board Relevance Panel",
-        "description": "Implement the Add to Notebook modal per canonical workflow. Shows: source preview, topic dropdown, Board Relevance Panel (accuracy stats, concepts tested, what you missed), AI-suggested concepts with checkboxes, optional notes field. See docs/Workflow_Guide.ini Step 3.",
-        "details": "STEP 3: ADD TO NOTEBOOK + BOARD RELEVANCE\n\nTrigger: Click 'Add to Notebook' from detail panel\n\nUI SECTIONS:\n1. Source preview (collapsed): title, type badge, correctness\n2. Topic dropdown + [+ Create New]\n3. Board Relevance Panel:\n   - Questions attempted for this topic\n   - Accuracy (X/Y correct)\n   - Concepts commonly tested (from testedConcepts aggregation)\n   - What you missed (incorrect items for this topic)\n   - AI suggestion on focus area\n4. Key Concepts checkboxes (AI-extracted from source)\n5. Notes field (optional, for confusion notes)\n\nDATA REQUIRED:\n- getBoardRelevanceForTopic(topicIds) already exists in source-items.ts\n- Returns: total, correct, incorrect, testedConcepts aggregation\n\nNEW IPC NEEDED:\n- Expose getBoardRelevanceForTopic via window.api\n\nUI COMPONENT:\n- Enhance AddToNotebookWorkflow.tsx or create new AddToNotebookModal.tsx\n- Board Relevance Panel as collapsible section\n- Concept checkboxes from AI extraction (may already exist)\n\nSAVE BEHAVIOR:\n- Create NotebookBlock with selected concepts + notes as content\n- Update source status to 'processed'",
-        "testStrategy": "Test Board Relevance Panel shows correct stats for selected topic. Test accuracy calculation is correct. Test concepts tested list populates from testedConcepts. Test 'what you missed' shows incorrect items. Test concept checkboxes toggle correctly. Test notes field saves to block. Test topic change refreshes relevance panel.",
+        "title": "Step 3: Add to Notebook - AI-Assisted Insight Extraction",
+        "description": "Enhance the Add to Notebook modal with AI-assisted insight extraction. AI identifies what the source tested (auto on modal open), user writes takeaway in their own words (active recall), optional AI polish to clean up/enhance their writing. User stays in control throughout.",
+        "details": "STEP 3: ADD TO NOTEBOOK - AI-ASSISTED INSIGHT EXTRACTION\n\nPRINCIPLE: User in control, AI assists\n- User types/picks topic -> AI normalizes silently via autocomplete\n- User writes insight -> AI evaluates on request (existing Get Feedback)\n- User can polish -> AI suggests cleaned version (new)\n\nUI FLOW:\n```\nModal Opens\n    |\n    v\nAI identifies tested concept (loading state)\n    |\n    v\nUser sees 'This question tested: X'\nUser writes in textarea\n    |\n    |--- User clicks [Save] ---------> Saves original text\n    |\n    |--- User clicks [Polish] -------> AI generates polished version\n                                       Show comparison panel\n                                       [Keep Original] [Use Polished]\n                                           |\n                                           v\n                                       Selected version in textarea\n                                       User clicks [Save to Notebook]\n```\n\nUI MOCKUP:\n```\n+-------------------------------------------------------------+\n|  ADD TO NOTEBOOK                                       [x]  |\n+-------------------------------------------------------------+\n|  Source Preview                                    [Expand] |\n+-------------------------------------------------------------+\n|  Topic                                                      |\n|  [autocomplete input - already implemented]                 |\n+-------------------------------------------------------------+\n|  CONCEPT TESTED                          (auto-generated)   |\n|  'First-line treatment for status epilepticus'              |\n+-------------------------------------------------------------+\n|  YOUR TAKEAWAY                                              |\n|  What did you learn? Write in your own words.               |\n|  +--------------------------------------------------------+ |\n|  | benzos first like lorazepam. dont wait...              | |\n|  +--------------------------------------------------------+ |\n|                                   Min 20 chars    [Polish]  |\n+-------------------------------------------------------------+\n|  (Polish Panel - appears after clicking Polish)             |\n|  Your version: 'benzos first like lorazepam...'             |\n|  Polished: 'Benzodiazepines (lorazepam, midazolam) are...'  |\n|  Added context: lorazepam/midazolam examples, >5min         |\n|  [Keep Original]  [Use Polished]                            |\n+-------------------------------------------------------------+\n|                     [Get Feedback]  [Save to Notebook]      |\n+-------------------------------------------------------------+\n```\n\nNEW AI FUNCTIONS (ai-service.ts):\n1. identifyTestedConcept(sourceContent, sourceType)\n   - Returns: { concept: string, confidence: 'high'|'medium'|'low' }\n   - Prompt varies by sourceType (QBank vs textbook vs lecture)\n\n2. polishInsight(userText, sourceContent, testedConcept)\n   - Returns: { polished: string, fromUser: string[], addedContext: string[] }\n   - Cleans up language, expands abbreviations\n   - CAN add relevant details from source (Option 2)\n   - Tracks what was added for transparency\n\nNEW IPC HANDLERS:\n- ai:identifyTestedConcept\n- ai:polishInsight\n\nNEW TYPES:\n- TestedConceptResult { concept, confidence }\n- PolishInsightParams { userText, sourceContent, testedConcept? }\n- PolishedInsightResult { polished, fromUser[], addedContext[] }\n\nCOMPONENT CHANGES:\n1. AddToNotebookWorkflow.tsx:\n   - Add state: testedConcept, isLoadingConcept, showPolishPanel, polishedVersion, isPolishing\n   - On modal open: call identifyTestedConcept()\n   - Add ConceptTestedBadge section\n   - Add PolishPanel component\n   - Handlers: handlePolish, handleKeepOriginal, handleUsePolished\n\n2. InsightTextarea.tsx:\n   - Add optional [Polish] button when valid\n   - Pass onPolishClick callback\n\nEXISTING COMPONENTS (keep as-is):\n- TopicSelector (just refactored to autocomplete)\n- BoardRelevancePanel\n- SourcePreviewPanel\n- Get Feedback button (existing AI evaluation)\n\nEDGE CASES:\n- AI can't identify concept (low confidence): Show generic 'What's the key takeaway?'\n- Polish fails: Toast error, keep original text\n- Non-QBank sources: Different prompts for textbook/lecture/article",
+        "testStrategy": "Test concept identification runs on modal open. Test loading state shows while identifying. Test concept displays correctly for QBank sources. Test Polish button appears when insight is valid. Test Polish loading state. Test polished version comparison panel shows both versions. Test 'Added context' shows what AI added. Test Keep Original closes panel and keeps original. Test Use Polished replaces textarea content. Test Save saves whatever is in textarea. Test works with existing Get Feedback flow. Test error handling for AI failures.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": [],
-        "updatedAt": "2026-01-24T02:00:00.000Z"
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "AI Service: identifyTestedConcept function",
+            "status": "done",
+            "details": "Add identifyTestedConcept(sourceContent, sourceType) to ai-service.ts. Returns { concept, confidence }. Different prompts for QBank vs textbook vs lecture.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "AI Service: polishInsight function",
+            "status": "done",
+            "details": "Add polishInsight(userText, sourceContent, testedConcept) to ai-service.ts. Returns { polished, fromUser[], addedContext[] }. Cleans language, can add relevant details, tracks additions.\n<info added on 2026-01-25T15:37:40.129Z>\nImplemented in electron/ai-service.ts as polishInsightWithFallback() which delegates to electron/ai/tasks/polish-insight.ts. Function accepts (userText, sourceContent, testedConcept) and returns { polished, fromUser, addedContext }. Includes response caching for identical inputs and graceful error handling that returns original user text if AI processing fails.\n</info added on 2026-01-25T15:37:40.129Z>",
+            "updatedAt": "2026-01-25T15:37:43.860Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "IPC Handlers for new AI functions",
+            "status": "done",
+            "details": "Add ai:identifyTestedConcept and ai:polishInsight IPC handlers. Add types to electron.d.ts and preload.ts.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-25T15:37:43.865Z"
+          },
+          {
+            "id": 4,
+            "title": "AddToNotebookWorkflow: Concept identification on open",
+            "status": "done",
+            "details": "Add state and useEffect to call identifyTestedConcept when modal opens. Show loading state, then display concept badge.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-25T15:37:43.868Z"
+          },
+          {
+            "id": 5,
+            "title": "InsightTextarea: Add Polish button",
+            "status": "done",
+            "details": "Add optional Polish button that appears when insight is valid. Pass onPolishClick callback to parent.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-25T15:37:43.870Z"
+          },
+          {
+            "id": 6,
+            "title": "AddToNotebookWorkflow: Polish panel UI and handlers",
+            "status": "done",
+            "details": "Add PolishPanel UI showing original vs polished, added context list, Keep Original and Use Polished buttons. Includes handlers: handlePolish() calls AI and shows panel, handleKeepOriginal() closes panel, handleUsePolished() replaces textarea content and closes panel. Panel appears below InsightTextarea when Polish is clicked.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-25T15:37:43.871Z"
+          }
+        ],
+        "updatedAt": "2026-01-25T15:37:43.871Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T02:47:41.817Z",
+      "lastModified": "2026-01-25T18:09:20.721Z",
       "taskCount": 43,
-      "completedCount": 32,
-      "tags": ["master"]
+      "completedCount": 34,
+      "tags": [
+        "master"
+      ]
     }
   }
 }
