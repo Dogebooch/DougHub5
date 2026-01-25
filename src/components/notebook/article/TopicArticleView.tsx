@@ -21,6 +21,7 @@ import { SourceFootnotes } from "./SourceFootnotes";
 import { AddBlockModal } from "../AddBlockModal";
 import { BlockEditModal } from "../BlockEditModal";
 import { SourcePreviewPanel } from "../SourcePreviewPanel";
+import { TopicCardGeneration } from "../cardgen";
 
 interface TopicArticleViewProps {
   pageId: string;
@@ -60,6 +61,9 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<NotebookBlock | null>(null);
+
+  // Card generation modal state
+  const [cardGenOpen, setCardGenOpen] = useState(false);
 
   // Fetch all data
   const fetchData = useCallback(async () => {
@@ -303,7 +307,12 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
           <Plus className="w-4 h-4" />
           Add Content
         </Button>
-        <Button variant="outline" className="gap-2" disabled>
+        <Button
+          variant="outline"
+          className="gap-2"
+          disabled={blocks.length === 0}
+          onClick={() => setCardGenOpen(true)}
+        >
           <Sparkles className="w-4 h-4" />
           Generate Cards
         </Button>
@@ -331,6 +340,15 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
         topicName={topic?.canonicalName || ""}
         onSave={handleBlockSave}
         displayField="userInsight"
+      />
+
+      <TopicCardGeneration
+        open={cardGenOpen}
+        onOpenChange={setCardGenOpen}
+        topicName={topic?.canonicalName || ""}
+        topicPageId={pageId}
+        blocks={blocks}
+        onCardsCreated={fetchData}
       />
     </div>
   );

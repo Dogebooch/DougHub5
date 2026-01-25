@@ -1330,6 +1330,76 @@ export async function generateCardFromBlock(
   }
 }
 
+// ============================================================================
+// Topic Card Generation (T142)
+// ============================================================================
+
+import {
+  topicCardGenerationTask,
+  type TopicCardSuggestion,
+  type TopicCardGenerationResult,
+} from "./ai/tasks/topic-card-generation";
+
+export type { TopicCardSuggestion, TopicCardGenerationResult };
+
+/**
+ * Generate cards from all blocks in a topic at once.
+ * Analyzes all content and suggests the most card-worthy items.
+ *
+ * Configuration: electron/ai/tasks/topic-card-generation.ts
+ *
+ * @param topicName Name of the topic for context
+ * @param blocks Array of blocks with content and metadata
+ * @returns Array of card suggestions with block references
+ */
+export async function generateCardsFromTopic(
+  topicName: string,
+  blocks: Array<{
+    id: string;
+    content: string;
+    userInsight?: string;
+    calloutType?: 'pearl' | 'trap' | 'caution' | null;
+  }>,
+): Promise<TopicCardSuggestion[]> {
+  if (!blocks || blocks.length === 0) {
+    return [];
+  }
+
+  const task = topicCardGenerationTask;
+
+  // Create cache key from topic and block IDs
+  const blockIds = blocks.map(b => b.id).join(',');
+  const cacheKey = aiCache.key(task.id, topicName, blockIds);
+  const cached = aiCache.get<TopicCardSuggestion[]>(cacheKey);
+  if (cached) {
+    console.log(`[AI Service] ${task.name} cache hit`);
+    return cached;
+  }
+
+  try {
+    const userPrompt = task.buildUserPrompt({ topicName, blocks });
+
+    const response = await withRetry(async () => {
+      return await callAI(task.systemPrompt, userPrompt);
+    });
+
+    const parsed = parseAIResponse<TopicCardGenerationResult>(response);
+
+    const result = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : task.fallbackResult!;
+
+    // Cache the results
+    aiCache.set(cacheKey, result.suggestions, task.cacheTTLMs);
+
+    console.log(`[AI Service] Generated ${result.suggestions.length} card suggestions for topic "${topicName}"`);
+    return result.suggestions;
+  } catch (error) {
+    console.error(`[AI Service] ${task.name} failed:`, error);
+    throw error;
+  }
+}
+
 /**
  * Generate elaborated feedback for a card the user struggled with.
  *

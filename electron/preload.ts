@@ -309,6 +309,20 @@ const api = {
         topicContext,
         userIntent,
       ),
+    generateCardsFromTopic: (
+      topicName: string,
+      blocks: Array<{
+        id: string;
+        content: string;
+        userInsight?: string;
+        calloutType?: 'pearl' | 'trap' | 'caution' | null;
+      }>,
+    ) =>
+      ipcRenderer.invoke(
+        "ai:generateCardsFromTopic",
+        topicName,
+        blocks,
+      ),
     generateElaboratedFeedback: (
       card: { front: string; back: string; cardType: string },
       topicContext: string,

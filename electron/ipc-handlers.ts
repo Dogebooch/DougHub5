@@ -92,6 +92,7 @@ import {
   polishInsight,
   generateCardFromBlock,
   generateElaboratedFeedback,
+  generateCardsFromTopic,
   findRelatedNotes,
   aiCache,
   type AIProviderStatus,
@@ -104,6 +105,7 @@ import {
   type ElaboratedFeedback,
   type TestedConceptResult,
   type PolishInsightResult,
+  type TopicCardSuggestion,
 } from "./ai-service";
 import {
   resolveTopicAlias,
@@ -2421,6 +2423,27 @@ export function registerIpcHandlers(): void {
           userIntent,
         );
         return success(cards);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "ai:generateCardsFromTopic",
+    async (
+      _,
+      topicName: string,
+      blocks: Array<{
+        id: string;
+        content: string;
+        userInsight?: string;
+        calloutType?: 'pearl' | 'trap' | 'caution' | null;
+      }>,
+    ): Promise<IpcResult<TopicCardSuggestion[]>> => {
+      try {
+        const suggestions = await generateCardsFromTopic(topicName, blocks);
+        return success(suggestions);
       } catch (error) {
         return failure(error);
       }

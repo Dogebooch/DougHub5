@@ -39,6 +39,7 @@ import type {
   CaptureAnalysisResult,
   CardSuggestion,
   ElaboratedFeedback,
+  WorthinessResult,
 } from "./ai";
 import type { AILogEntry, DevSettings } from "./dev";
 
@@ -92,6 +93,17 @@ export type {
   VignetteConversion,
   SemanticMatch,
 };
+
+// Topic-level card generation types
+export interface TopicCardSuggestion {
+  blockId: string;
+  format: 'qa' | 'cloze' | 'overlapping-cloze' | 'procedural';
+  front: string;
+  back: string;
+  confidence: number;
+  worthiness: WorthinessResult;
+  formatReason: string;
+}
 
 // API interface exposed via preload script
 export interface ElectronAPI {
@@ -359,6 +371,15 @@ export interface ElectronAPI {
       topicContext: string,
       userIntent?: string,
     ) => Promise<IpcResult<CardSuggestion[]>>;
+    generateCardsFromTopic: (
+      topicName: string,
+      blocks: Array<{
+        id: string;
+        content: string;
+        userInsight?: string;
+        calloutType?: 'pearl' | 'trap' | 'caution' | null;
+      }>,
+    ) => Promise<IpcResult<TopicCardSuggestion[]>>;
     generateElaboratedFeedback: (
       card: { front: string; back: string; cardType: string },
       topicContext: string,
