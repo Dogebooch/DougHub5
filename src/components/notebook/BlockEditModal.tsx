@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Lightbulb, ShieldAlert } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,12 +21,21 @@ import { Button } from "@/components/ui/button";
 import { InsightTextarea } from "./InsightTextarea";
 import { NotebookBlock } from "@/types";
 
+type CalloutType = 'pearl' | 'trap' | 'caution' | null;
+
+interface BlockEditUpdates {
+  content?: string;
+  userInsight?: string;
+  calloutType?: CalloutType;
+}
+
 interface BlockEditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   block: NotebookBlock | null;
   topicName: string;
-  onSave: (blockId: string, newContent: string) => Promise<void>;
+  onSave: (blockId: string, updates: BlockEditUpdates) => Promise<void>;
+  displayField?: 'content' | 'userInsight';
 }
 
 export const BlockEditModal: React.FC<BlockEditModalProps> = ({
@@ -35,28 +44,59 @@ export const BlockEditModal: React.FC<BlockEditModalProps> = ({
   block,
   topicName,
   onSave,
+  displayField = 'content',
 }) => {
-  const [content, setContent] = useState("");
+  const [textValue, setTextValue] = useState("");
+  const [calloutType, setCalloutType] = useState<CalloutType>(null);
   const [isValid, setIsValid] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
-  // Reset content when block changes or modal opens
+  // Get the original value based on displayField
+  const getOriginalText = (b: NotebookBlock | null) => {
+    if (!b) return "";
+    return displayField === 'userInsight'
+      ? (b.userInsight || b.content)
+      : b.content;
+  };
+
+  // Reset values when block changes or modal opens
   useEffect(() => {
     if (block && open) {
-      setContent(block.content);
+      setTextValue(getOriginalText(block));
+      setCalloutType(block.calloutType || null);
     }
-  }, [block, open]);
+  }, [block, open, displayField]);
 
-  const hasChanges = block ? content !== block.content : false;
-  const canSave = isValid && hasChanges && !isSaving;
+  const originalText = getOriginalText(block);
+  const originalCalloutType = block?.calloutType || null;
+
+  const hasTextChanges = textValue !== originalText;
+  const hasCalloutChanges = calloutType !== originalCalloutType;
+  const hasChanges = hasTextChanges || hasCalloutChanges;
+  // Allow save if: (text is valid AND text changed) OR (only callout changed)
+  const canSave = ((isValid && hasTextChanges) || (hasCalloutChanges && !hasTextChanges)) && hasChanges && !isSaving;
 
   const handleSave = async () => {
     if (!block || !canSave) return;
-    
+
     setIsSaving(true);
     try {
-      await onSave(block.id, content);
+      const updates: BlockEditUpdates = {};
+
+      if (hasTextChanges) {
+        if (displayField === 'userInsight') {
+          updates.userInsight = textValue;
+        } else {
+          updates.content = textValue;
+        }
+      }
+
+      if (hasCalloutChanges) {
+        updates.calloutType = calloutType;
+      }
+
+      await onSave(block.id, updates);
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to save block:", error);
@@ -81,25 +121,54 @@ export const BlockEditModal: React.FC<BlockEditModalProps> = ({
 
   if (!block) return null;
 
+  const dialogTitle = displayField === 'userInsight' ? 'Edit Insight' : 'Edit Block Content';
+
+  const calloutOptions: { value: CalloutType; label: string; icon: React.ReactNode; colorClass: string }[] = [
+    { value: null, label: 'None', icon: null, colorClass: '' },
+    { value: 'pearl', label: 'Pearl', icon: <Lightbulb className="h-4 w-4" />, colorClass: 'bg-success text-success-foreground' },
+    { value: 'trap', label: 'Trap', icon: <AlertTriangle className="h-4 w-4" />, colorClass: 'bg-warning text-warning-foreground' },
+    { value: 'caution', label: 'Caution', icon: <ShieldAlert className="h-4 w-4" />, colorClass: 'bg-destructive text-destructive-foreground' },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={handleCloseAttempt}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">
-            Editing Block
+            {dialogTitle}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             Topic: {topicName}
           </p>
         </DialogHeader>
-        <div className="py-4">
+        <div className="py-4 space-y-4">
           <InsightTextarea
-            value={content}
-            onChange={setContent}
+            value={textValue}
+            onChange={setTextValue}
             onValidChange={setIsValid}
             minLength={20}
             placeholder="What did you learn from this source?"
           />
+
+          {/* Callout type selector */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground">Callout Style</label>
+            <div className="flex gap-2">
+              {calloutOptions.map((option) => (
+                <Button
+                  key={option.value ?? 'none'}
+                  type="button"
+                  variant={calloutType === option.value ? 'default' : 'outline'}
+                  size="sm"
+                  className={calloutType === option.value ? option.colorClass : ''}
+                  onClick={() => setCalloutType(option.value)}
+                >
+                  {option.icon}
+                  <span className={option.icon ? 'ml-1' : ''}>{option.label}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Stale card warning */}

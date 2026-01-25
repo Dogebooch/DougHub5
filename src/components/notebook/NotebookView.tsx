@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { BookOpen } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { TopicBrowser } from "./browser/TopicBrowser";
-import { TopicPageView } from "./TopicPageView";
+import { TopicArticleView } from "./article";
 
 /**
  * NotebookView
@@ -52,14 +52,12 @@ export const NotebookView = () => {
         />
       </div>
 
-      {/* Main Content: Topic Page View (Article View) */}
+      {/* Main Content: Topic Article View (Redesign T140) */}
       <div className="flex-1 h-full overflow-hidden">
         {selectedPageId ? (
-          <TopicPageView
+          <TopicArticleView
             pageId={selectedPageId}
             onRefresh={handleRefresh}
-            targetBlockId={targetBlockId}
-            onTargetBlockHandled={() => setTargetBlockId(null)}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 bg-muted/5">

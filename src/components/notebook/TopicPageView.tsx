@@ -141,19 +141,20 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
     }
   }, [targetBlockId, loading, blocks, onTargetBlockHandled]);
 
-  const handleBlockSave = async (blockId: string, newContent: string) => {
+  const handleBlockSave = async (
+    blockId: string,
+    updates: { content?: string; userInsight?: string; calloutType?: 'pearl' | 'trap' | 'caution' | null }
+  ) => {
     // Find the original block to compare
     const originalBlock = blocks.find((b) => b.id === blockId);
 
-    // Skip API call if content unchanged (shouldn't happen due to UI guards, but belt-and-suspenders)
-    if (originalBlock && originalBlock.content === newContent) {
+    // Skip API call if nothing to update
+    if (!originalBlock || Object.keys(updates).length === 0) {
       return;
     }
 
     try {
-      const result = await window.api.notebookBlocks.update(blockId, {
-        content: newContent,
-      });
+      const result = await window.api.notebookBlocks.update(blockId, updates);
 
       if (result.error) {
         toast({
@@ -166,7 +167,7 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
 
       // Optimistic update - update local state immediately
       setBlocks((prev) =>
-        prev.map((b) => (b.id === blockId ? { ...b, content: newContent } : b)),
+        prev.map((b) => (b.id === blockId ? { ...b, ...updates } : b)),
       );
 
       toast({
