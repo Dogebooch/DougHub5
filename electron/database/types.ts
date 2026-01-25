@@ -221,6 +221,14 @@ export interface WeakTopicSummary {
   lastReviewDate: string | null;
 }
 
+export interface LowEaseTopic {
+  topicId: string;
+  topicName: string;
+  strugglingCardCount: number;
+  avgDifficulty: number;
+  worstDifficulty: number;
+}
+
 // ============================================================================
 // Internal Row Types (JSON fields are strings in SQLite)
 // ============================================================================
@@ -347,6 +355,18 @@ export interface CanonicalTopicRow {
   domain: string;
   parentTopicId: string | null;
   createdAt: string;
+}
+
+export interface TopicWithStats {
+  id: string;
+  title: string;
+  canonicalTopicId: string | null;
+  updatedAt: string;
+  canonicalName: string | null;
+  domain: string | null;
+  aliases: string | null; // JSON string array
+  blockCount: number;
+  cardCount: number;
 }
 
 export interface NotebookTopicPageRow {

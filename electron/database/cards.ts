@@ -5,6 +5,7 @@ import type {
   CardType,
   DbCard,
   WeakTopicSummary,
+  LowEaseTopic,
   CardBrowserFilters,
   CardBrowserSort,
 } from "./types";
@@ -274,6 +275,33 @@ export const cardQueries = {
       siblingCount: row.siblingCount || 0,
       isLeech: row.isLeech === 1,
     })) as DbCard[];
+  },
+
+  getLowEaseTopics(): LowEaseTopic[] {
+    const db = getDatabase();
+
+    // A card is "struggling" if:
+    // - difficulty >= 0.7 (FSRS scale 0-1, higher = harder)
+    // - OR lapses >= 3
+    // - OR (reps >= 5 AND stability < 7)
+    const sql = `
+      SELECT 
+        ntp.id as topicId,
+        ntp.title as topicName,
+        COUNT(c.id) as strugglingCardCount,
+        AVG(c.difficulty) as avgDifficulty,
+        MAX(c.difficulty) as worstDifficulty
+      FROM cards c
+      JOIN notebook_topic_pages ntp ON c.notebookTopicPageId = ntp.id
+      WHERE c.difficulty >= 0.7 
+         OR c.lapses >= 3 
+         OR (c.reps >= 5 AND c.stability < 7)
+      GROUP BY ntp.id
+      HAVING strugglingCardCount > 0
+      ORDER BY worstDifficulty DESC
+    `;
+
+    return db.prepare(sql).all() as LowEaseTopic[];
   },
 };
 

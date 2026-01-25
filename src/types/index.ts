@@ -118,6 +118,18 @@ export interface NotebookTopicPage {
   updatedAt: string;
 }
 
+export interface TopicWithStats {
+  id: string;
+  title: string;
+  canonicalTopicId: string | null;
+  updatedAt: string;
+  canonicalName: string | null;
+  domain: string | null;
+  aliases: string | null; // JSON string array
+  blockCount: number;
+  cardCount: number;
+}
+
 export type ExamTrapType =
   | "qualifier-misread" // 'most common' vs 'most common abnormality'
   | "negation-blindness" // 'NOT associated with'
@@ -180,6 +192,14 @@ export interface WeakTopicSummary {
   worstDifficulty: number;
   worstCardId: string;
   lastReviewDate: string | null;
+}
+
+export interface LowEaseTopic {
+  topicId: string;
+  topicName: string;
+  strugglingCardCount: number;
+  avgDifficulty: number;
+  worstDifficulty: number;
 }
 
 // v2 Architecture - Smart Views

@@ -21,10 +21,12 @@ import type {
   SearchFilter,
   SearchResult,
   WeakTopicSummary,
+  LowEaseTopic,
   CardBrowserItem,
   ReferenceRange,
   NotebookLink,
   NotebookLinkType,
+  TopicWithStats,
 } from "./index";
 import type {
   AIProviderStatus,
@@ -105,6 +107,7 @@ export interface ElectronAPI {
       pageId: string,
     ) => Promise<IpcResult<{ name: string; cardCount: number } | null>>;
     getWeakTopicSummaries: () => Promise<IpcResult<WeakTopicSummary[]>>;
+    getLowEaseTopics: () => Promise<IpcResult<LowEaseTopic[]>>;
     getBrowserList: (
       filters?: {
         status?: number[];
@@ -256,6 +259,9 @@ export interface ElectronAPI {
     ) => Promise<IpcResult<void>>;
     delete: (id: string) => Promise<IpcResult<void>>;
   };
+  notebook: {
+    getTopicsWithStats: () => Promise<IpcResult<TopicWithStats[]>>;
+  };
   notebookBlocks: {
     getByPage: (pageId: string) => Promise<IpcResult<NotebookBlock[]>>;
     getById: (id: string) => Promise<IpcResult<NotebookBlock | null>>;
@@ -383,7 +389,9 @@ export interface ElectronAPI {
     getExamTrapBreakdown: () => Promise<
       IpcResult<{ trapType: string; count: number }[]>
     >;
-    getConfusionPairs: () => Promise<IpcResult<{ tag: string; count: number }[]>>;
+    getConfusionPairs: () => Promise<
+      IpcResult<{ tag: string; count: number }[]>
+    >;
   };
   files: {
     saveImage: (

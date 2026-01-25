@@ -18,6 +18,8 @@ export type {
   DbMedicalAcronym,
   DbSmartView,
   WeakTopicSummary,
+  LowEaseTopic,
+  TopicWithStats,
   CardBrowserFilters,
   CardBrowserSort,
   DbStatus,
@@ -54,6 +56,7 @@ export {
 } from "./database/canonical-topics";
 export {
   notebookTopicPageQueries,
+  getTopicsWithStats as getNotebookTopicsWithStats,
   parseNotebookTopicPageRow,
 } from "./database/notebook-topic-pages";
 export {

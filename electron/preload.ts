@@ -23,6 +23,7 @@ const api = {
       ipcRenderer.invoke("cards:getBySiblings", sourceBlockId),
     findDuplicateFrontBack: () =>
       ipcRenderer.invoke("cards:findDuplicateFrontBack"),
+    getLowEaseTopics: () => ipcRenderer.invoke("cards:getLowEaseTopics"),
   },
   notes: {
     getAll: () => ipcRenderer.invoke("notes:getAll"),
@@ -199,6 +200,9 @@ const api = {
     update: (id: string, updates: unknown) =>
       ipcRenderer.invoke("notebookPages:update", id, updates),
     delete: (id: string) => ipcRenderer.invoke("notebookPages:delete", id),
+  },
+  notebook: {
+    getTopicsWithStats: () => ipcRenderer.invoke("notebook:getTopicsWithStats"),
   },
   notebookBlocks: {
     getByPage: (pageId: string) =>

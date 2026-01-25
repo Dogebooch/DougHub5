@@ -50,6 +50,8 @@ import {
   DbSmartView,
   ConfidenceRating,
   WeakTopicSummary,
+  TopicWithStats,
+  LowEaseTopic,
   ExtractionStatus,
   SourceItemStatus,
   DbStatus,
@@ -482,6 +484,18 @@ export function registerIpcHandlers(): void {
       try {
         const summaries = cardQueries.getWeakTopicSummaries();
         return success(summaries);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "cards:getLowEaseTopics",
+    async (): Promise<IpcResult<LowEaseTopic[]>> => {
+      try {
+        const topics = cardQueries.getLowEaseTopics();
+        return success(topics);
       } catch (error) {
         return failure(error);
       }
@@ -1669,6 +1683,18 @@ export function registerIpcHandlers(): void {
       try {
         notebookTopicPageQueries.delete(id);
         return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "notebook:getTopicsWithStats",
+    async (): Promise<IpcResult<TopicWithStats[]>> => {
+      try {
+        const topics = notebookTopicPageQueries.getTopicsWithStats();
+        return success(topics);
       } catch (error) {
         return failure(error);
       }
