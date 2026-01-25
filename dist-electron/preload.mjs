@@ -151,6 +151,13 @@ const api = {
     getProviderStatus: () => electron.ipcRenderer.invoke("ai:getProviderStatus"),
     extractConcepts: (content) => electron.ipcRenderer.invoke("ai:extractConcepts", content),
     evaluateInsight: (input) => electron.ipcRenderer.invoke("ai:evaluateInsight", input),
+    identifyTestedConcept: (sourceContent, sourceType) => electron.ipcRenderer.invoke("ai:identifyTestedConcept", sourceContent, sourceType),
+    polishInsight: (userText, sourceContent, testedConcept) => electron.ipcRenderer.invoke(
+      "ai:polishInsight",
+      userText,
+      sourceContent,
+      testedConcept
+    ),
     analyzeCaptureContent: (content) => electron.ipcRenderer.invoke("ai:analyzeCaptureContent", content),
     validateCard: (front, back, cardType) => electron.ipcRenderer.invoke("ai:validateCard", front, back, cardType),
     detectMedicalList: (content) => electron.ipcRenderer.invoke("ai:detectMedicalList", content),

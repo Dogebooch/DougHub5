@@ -35,6 +35,19 @@
   --success-foreground: 40 10% 90%;
   --info: 195 25% 48%;
   --info-foreground: 40 10% 90%;
+
+  /* Notebook design tokens - mapped to theme */
+  --notebook-bg: var(--background);
+  --notebook-card: var(--surface-elevated);
+  --notebook-sidebar: var(--surface-base);
+  --notebook-text: var(--foreground);
+  --notebook-muted: var(--muted-foreground);
+  --notebook-accent: var(--primary);
+  --notebook-pearl: var(--success);
+  --notebook-trap: var(--warning);
+  --notebook-caution: var(--destructive);
+  --notebook-board: 210 40% 25%;
+
   --radius: 0.75rem;
   --chart-1: 175 30% 45%;
   --chart-2: 145 20% 42%;
