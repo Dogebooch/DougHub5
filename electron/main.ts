@@ -31,6 +31,22 @@ import { ensureOllamaRunning, getProviderStatus } from "./ai-service";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+process.on("uncaughtException", (error) => {
+  console.error("[Main] Uncaught Exception:", error);
+  // Perform cleanup
+  try {
+    stopCaptureServer();
+    closeDatabase();
+  } catch (err) {
+    console.error("[Main] Cleanup failed:", err);
+  }
+  app.quit();
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[Main] Unhandled Rejection:", reason);
+});
+
 // Register app-media protocol to allow loading local images securely
 protocol.registerSchemesAsPrivileged([
   {
@@ -207,7 +223,8 @@ function createWindow() {
   // F12 or Ctrl+Shift+I to toggle DevTools
   win.webContents.on("before-input-event", (event, input) => {
     const isF12 = input.key === "F12";
-    const isCtrlShiftI = input.control && input.shift && input.key.toLowerCase() === "i";
+    const isCtrlShiftI =
+      input.control && input.shift && input.key.toLowerCase() === "i";
     if (isF12 || isCtrlShiftI) {
       win.webContents.toggleDevTools();
       event.preventDefault();
@@ -296,6 +313,20 @@ app.on("activate", () => {
     createWindow();
   }
 });
+
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (_event, _commandLine, _workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  });
+}
 
 app.whenReady().then(() => {
   // Handle app-media:// protocol

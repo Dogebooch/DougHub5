@@ -227,7 +227,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
             variant="ghost"
             className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
             onClick={() => onArchive(sourceItem)}
-            title="Archive"
+            title="Keep in Library"
           >
             <Archive className="h-4 w-4" />
           </Button>

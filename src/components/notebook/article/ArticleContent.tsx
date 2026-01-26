@@ -32,7 +32,7 @@ export function ArticleContent({
       <div className="text-center py-12 text-muted-foreground">
         <p className="text-sm">No content yet.</p>
         <p className="text-xs mt-1">
-          Add content from your Archive to get started.
+          Add content from your Library to get started.
         </p>
       </div>
     );

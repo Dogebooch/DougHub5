@@ -153,8 +153,8 @@ export function SettingsView() {
         });
       } else {
         toast({
-          title: "Raw HTML Archive Purged",
-          description: "Successfully removed archived webpage data.",
+          title: "Raw HTML Purged",
+          description: "Successfully removed stored webpage source code from Library.",
         });
       }
     } catch (error) {
@@ -918,7 +918,7 @@ export function SettingsView() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Purge Raw HTML Archive</p>
+                    <p className="font-medium">Purge Raw HTML from Library</p>
                     <p className="text-sm text-foreground/80 leading-snug max-w-[400px]">
                       Removes captured webpage source code to free space. Cards
                       and notes are <strong>not</strong> affected.
@@ -932,14 +932,14 @@ export function SettingsView() {
                         disabled={isPurging}
                         className="gap-2"
                       >
-                        {isPurging ? "Purging..." : "Purge Archive"}
+                        {isPurging ? "Purging..." : "Purge HTML"}
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>
-                          Purge Raw HTML Archive?
+                          Purge Raw HTML from Library?
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                           This will remove all stored source code from webpage

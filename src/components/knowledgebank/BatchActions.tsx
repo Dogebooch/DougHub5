@@ -87,23 +87,23 @@ export function BatchActions({
                   ) : (
                     <Archive className="h-4 w-4 mr-2" />
                   )}
-                  Archive
+                  Keep in Library
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
-                    Archive {selectedCount} items?
+                    Keep {selectedCount} items in Library?
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    These items will be marked as reviewed and moved to your Archive
+                    These items will be marked as reviewed and kept in your Library
                     without being added to the Notebook.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={handleArchive}>
-                    Archive
+                    Keep in Library
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

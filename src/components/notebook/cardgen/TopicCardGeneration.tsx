@@ -69,6 +69,7 @@ export function TopicCardGeneration({
         content: b.content,
         userInsight: b.userInsight,
         calloutType: b.calloutType,
+        isHighYield: b.isHighYield,
       }));
 
       const result = await window.api.ai.generateCardsFromTopic(

@@ -328,7 +328,18 @@ function parsePeerPrep(
       urlObj.searchParams.get("questionId") ||
       urlObj.searchParams.get("qid") ||
       urlObj.searchParams.get("question") ||
+      urlObj.searchParams.get("attemptId") ||
+      urlObj.searchParams.get("testAttemptArchiveId") ||
       undefined;
+
+    // Handle path-based IDs in ACEP review URLs
+    if (!questionId) {
+      const pathParts = urlObj.pathname.split("/");
+      const attemptIdx = pathParts.indexOf("testAttemptArchiveId");
+      if (attemptIdx !== -1 && pathParts[attemptIdx + 1]) {
+        questionId = pathParts[attemptIdx + 1];
+      }
+    }
 
     if (questionId) {
       questionId = `peerprep-${questionId}`;
@@ -338,22 +349,44 @@ function parsePeerPrep(
   }
 
   // Strategy 2: Look for data attributes or specific DOM elements with question IDs
-  // Skip page title/body text searches - PeerPrep shows session counter ("Question #1")
-  // which is NOT unique across different questions
   if (!questionId) {
-    const dataId =
-      $(".question-id, [data-question-id]").attr("data-question-id") ||
-      $(".question-id").text().match(/\d+/)?.[0] ||
-      $("[id^='question-']").attr("id")?.replace("question-", "");
+    // 2.1: Try to extract from review screen background list by matching modal title number
+    const modalTitle = $(".modal-title").text();
+    const qNumMatch = modalTitle.match(/Question\s+(\d+)\s+of/i);
+    if (qNumMatch) {
+      const questionNum = qNumMatch[1];
+      const mixDiv = $(".mix").filter(function(this: cheerio.Element) {
+        return $(this).find(".result-question").text().trim() === questionNum;
+      });
+      
+      const questionClass = mixDiv.attr("class")?.split(/\s+/).find(c => /^question\d+$/.test(c));
+      if (questionClass) {
+        const id = questionClass.replace("question", "");
+        questionId = `peerprep-${id}`;
+      }
+    }
 
-    if (dataId) {
-      questionId = `peerprep-${dataId}`;
+    // 2.2: Existing data-attribute strategies
+    if (!questionId) {
+      const dataId =
+        $(".question-id, [data-question-id]").attr("data-question-id") ||
+        $(".question-id").text().match(/\d+/)?.[0] ||
+        $("[id^='question-']").attr("id")?.replace("question-", "");
+
+      if (dataId) {
+        questionId = `peerprep-${dataId}`;
+      }
     }
   }
 
   // Extract answers first so we can remove them from DOM
   const answers: AnswerOption[] = [];
-  const answerSelectors = [".choices li", ".answerOption", ".answer-choice"];
+  const answerSelectors = [
+    ".choices li",
+    ".answerOption",
+    ".answer-choice",
+    ".answers li",
+  ];
 
   let options = $([]);
   for (const selector of answerSelectors) {
@@ -367,9 +400,10 @@ function parsePeerPrep(
       $el.find('.letter, [class*="letter"]').text().trim() ||
       String.fromCharCode(65 + i);
 
-    // PeerPrep puts actual answer text inside a label tag
+    // PeerPrep puts actual answer text inside a label tag or span.ng-binding (review screen)
     const html =
       $el.find("label").html() ||
+      $el.find("span.ng-binding").html() ||
       $el.find(".answer-text, .content").html() ||
       $el.html() ||
       "";
@@ -387,7 +421,10 @@ function parsePeerPrep(
       $el.hasClass("active") ||
       $el.hasClass("selected") ||
       $el.hasClass("user-selected") ||
-      /\b(active|selected|user-selected)\b/.test($el.attr("class") || "") ||
+      $el.hasClass("your-answer") ||
+      /\b(active|selected|user-selected|your-answer)\b/.test(
+        $el.attr("class") || "",
+      ) ||
       false;
 
     // PeerPrep uses .peer-percent span
@@ -398,14 +435,14 @@ function parsePeerPrep(
       parseFloat(peerText.replace(/[^0-9.]/g, "")) || undefined;
 
     answers.push({ letter, html, isCorrect, isUserChoice, peerPercent });
-  });
+  };);
 
   const finalAnswers = deduplicateAnswers(answers);
   const wasCorrect = finalAnswers.some((a) => a.isUserChoice && a.isCorrect);
 
   // Clean answers from DOM to prevent duplication in vignette
   // We remove the specific options and common containers that might hold them
-  $(".choices, .answerList, .answer-choice, .answerOption").remove();
+  $(".choices, .answerList, .answer-choice, .answerOption, .answers").remove();
 
   // Extract vignette and stem from cleaned DOM
   const vignetteEl = $(".questionStem, .question-stem").first();
@@ -616,38 +653,76 @@ function parsePeerPrep(
 
   // Section Image Extractor Helper
   const extractSectionImages = (
-    selector: string,
+    headingText: string,
+    selectors: string[],
     location: QuestionImage["location"]
   ) => {
-    $(selector)
-      .find("img")
-      .each((_: number, el: cheerio.Element) => {
-        const src = $(el).attr("src");
-        if (src) {
-          images.push({
-            url: src.startsWith("http") ? src : new URL(src, url).href,
-            localPath: "",
-            caption: $(el).attr("alt") || undefined,
-            location,
-          });
-        }
-      });
+    // 1. Try specific selectors first
+    for (const selector of selectors) {
+      const $el = $(selector);
+      if ($el.length > 0) {
+        $el.find("img").each((_: number, imgEl: cheerio.Element) => {
+           const src = $(imgEl).attr("src");
+           if (src) {
+             images.push({
+               url: src.startsWith("http") ? src : new URL(src, url).href,
+               localPath: "",
+               caption: $(imgEl).attr("alt") || $(imgEl).attr("title") || undefined,
+               location,
+             });
+           }
+        });
+        return;
+      }
+    }
+
+    // 2. Search for tab-pane by matching heading text in the navigation
+    const $tabs = $(".nav-tabs li, .uib-tab");
+    let targetIndex = -1;
+    $tabs.each((i, el) => {
+      const text = $(el).text().trim().toLowerCase();
+      if (text.includes(headingText.toLowerCase())) {
+        targetIndex = i;
+        return false;
+      }
+    });
+
+    if (targetIndex !== -1) {
+      const $panes = $(".tab-pane, [role='tabpanel']");
+      if ($panes.length > targetIndex) {
+        $panes.eq(targetIndex).find("img").each((_: number, imgEl: cheerio.Element) => {
+          const src = $(imgEl).attr("src");
+          if (src) {
+            images.push({
+              url: src.startsWith("http") ? src : new URL(src, url).href,
+              localPath: "",
+              caption: $(imgEl).attr("alt") || $(imgEl).attr("title") || undefined,
+              location,
+            });
+          }
+        });
+      }
+    }
   };
 
   extractSectionImages(
-    "div.tab-pane:nth-child(1), .feedbackTab, .feedback-content, #feedbackTab, #reasoning, .tab-pane.reasoning, #explanation, .tab-pane.explanation, .rationale, #rationale, .discussion, #discussion, .commentary, #commentary, .analysis, #analysis, .tab-pane.analysis",
+    "Reasoning",
+    [".feedbackTab", ".feedback-content", "#feedbackTab", "#reasoning", ".tab-pane.reasoning", "#explanation", ".tab-pane.explanation", ".rationale", "#rationale"],
     "explanation"
   );
   extractSectionImages(
-    "div.tab-pane:nth-child(2), .keyPointsTab, .key-points, #keyPointsTab, #related-text, .tab-pane.key-point, .bottom-line, #bottom-line, .tab-pane.bottom-line",
+    "Key Point",
+    [".keyPointsTab", ".key-points", "#keyPointsTab", "#related-text", ".tab-pane.key-point"],
     "keypoint"
   );
   extractSectionImages(
-    "div.tab-pane:nth-child(3), .referencesTab, .references, #referencesTab, #references, .tab-pane.references",
+    "References",
+    [".referenceTab:not(:has(img))", ".referencesTab", ".references", "#referencesTab"],
     "references"
   );
   extractSectionImages(
-    "div.tab-pane:nth-child(4), .tab-pane.peer-pearls, #peer-pearls",
+    "PEER Pearl",
+    [".tab-pane.peer-pearls", "#peer-pearls", ".referenceTab:has(img)"],
     "peerpearls"
   );
 

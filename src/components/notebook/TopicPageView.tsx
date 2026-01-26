@@ -332,7 +332,7 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
             <Library className="w-12 h-12 mb-3 opacity-20" />
             <p className="font-medium text-sm">No blocks yet.</p>
             <p className="text-xs opacity-70">
-              Add content from Archive to get started.
+              Add content from Library to get started.
             </p>
           </div>
         ) : (
@@ -362,7 +362,7 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
           onClick={() => setAddBlockOpen(true)}
         >
           <Plus className="w-4 h-4" />
-          Add from Archive
+          Add from Library
         </Button>
 
         <TooltipProvider>

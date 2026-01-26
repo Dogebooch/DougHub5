@@ -184,7 +184,7 @@ export const KnowledgeBankView = () => {
       <div className="flex flex-col items-center justify-center p-12 space-y-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-muted-foreground animate-pulse">
-          Loading Archive...
+          Loading Library...
         </p>
       </div>
     );
@@ -197,7 +197,7 @@ export const KnowledgeBankView = () => {
           <Database className="h-12 w-12 text-muted-foreground/50" />
         </div>
         <div className="space-y-1">
-          <h2 className="text-xl font-semibold">Archive is empty</h2>
+          <h2 className="text-xl font-semibold">Library is empty</h2>
           <p className="text-muted-foreground max-w-sm">
             Capture content from articles or quick capture to see them here.
           </p>
@@ -214,7 +214,7 @@ export const KnowledgeBankView = () => {
           <div className="bg-primary/10 p-2 rounded-lg">
             <Database className="h-6 w-6 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Archive</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Library</h1>
         </div>
 
         <div className="flex items-center gap-4">

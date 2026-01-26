@@ -173,7 +173,7 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
                       onClick={() => onArchiveToKB(item)}
                     >
                       <Archive className="h-4 w-4 mr-2" />
-                      Archive
+                      Keep in Library
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">

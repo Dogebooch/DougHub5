@@ -248,13 +248,13 @@ export function InboxView() {
 
     if (failCount === 0) {
       toast({
-        title: "Batch Archive Successful",
-        description: `Archived ${successCount} items.`,
+        title: "Saved to Library",
+        description: `Saved ${successCount} items to Library.`,
       });
     } else {
       toast({
-        title: "Batch Archive Partial",
-        description: `Archived ${successCount} items, ${failCount} failed.`,
+        title: "Partial Save to Library",
+        description: `Saved ${successCount} items, ${failCount} failed.`,
         variant: "destructive",
       });
     }
@@ -311,20 +311,20 @@ export function InboxView() {
       const result = await window.api.sourceItems.update(item.id, { status: "curated" });
       if (!result.error) {
         toast({
-          title: "Archived",
-          description: "Item moved to Archive.",
+          title: "Saved to Library",
+          description: "Item saved to Library.",
         });
         fetchInbox();
         refreshCounts();
       } else {
         toast({
-          title: "Archive Failed",
+          title: "Save Failed",
           description: result.error,
           variant: "destructive",
         });
       }
     } catch (err) {
-      console.error("Error archiving item:", err);
+      console.error("Error saving item to library:", err);
     }
   };
 
@@ -348,23 +348,23 @@ export function InboxView() {
       const result = await window.api.sourceItems.update(item.id, { status: "curated" });
       if (!result.error) {
         toast({
-          title: "Archived",
-          description: "Item has been reviewed and kept in your Archive.",
+          title: "Saved to Library",
+          description: "Item has been reviewed and saved to your Library.",
         });
         setViewingItem(null);
         fetchInbox();
         refreshCounts();
       } else {
         toast({
-          title: "Archive Failed",
+          title: "Save Failed",
           description: result.error,
           variant: "destructive",
         });
       }
     } catch (err) {
-      console.error("Error archiving item:", err);
+      console.error("Error saving item to library:", err);
       toast({
-        title: "Archive Failed",
+        title: "Save Failed",
         description: "An unexpected error occurred.",
         variant: "destructive",
       });

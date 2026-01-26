@@ -55,13 +55,20 @@
                 });
             });
 
-            // Feedback/KeyPoint Images
-            document.querySelectorAll('.feedbackTab img, .keyPointsTab img').forEach(img => {
+            // Feedback/KeyPoint/Pearl Images
+            document.querySelectorAll('.feedbackTab img, .keyPointsTab img, .referenceTab img, .tab-pane img').forEach(img => {
+                // Skip icons or tiny images
+                if (img.width < 50 && img.height < 50 && !img.src.includes('Media')) return;
+
+                const section = img.closest('.keyPointsTab') ? 'keypoints' :
+                               img.closest('.feedbackTab') ? 'feedback' :
+                               img.closest('.referenceTab') ? 'peerpearls' : 'feedback';
+
                 images.push({
                     url: img.src,
-                    title: img.alt || 'PeerPrep Feedback Image',
+                    title: img.alt || img.title || 'PeerPrep Image',
                     type: 'inline-image',
-                    source: img.closest('.keyPointsTab') ? 'keypoints' : 'feedback'
+                    source: section
                 });
             });
         } else if (site === 'MKSAP 19') {

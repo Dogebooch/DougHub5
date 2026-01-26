@@ -32,13 +32,15 @@ See `docs/Workflow_Guide.ini` for detailed mockups and implementation.
 ## 3-Layer Architecture
 
 ```
-LAYER 1: ARCHIVE
+LAYER 1: LIBRARY
 ├── Raw captures, status: inbox → processed → curated
+├── High-Yield toggle (⭐) marks board-critical content
 └── CANNOT create cards here (enforced)
          ↓
 LAYER 2: NOTEBOOK (Curated Topics)
 ├── User insights deep-linked to sources
 ├── Board Relevance Panel shows weak topics
+├── High-Yield blocks prioritized in card generation
 └── Card-worthiness gate before creation
          ↓
 LAYER 3: FLASHCARDS
@@ -66,7 +68,7 @@ LAYER 3: FLASHCARDS
 
 | Load Level | Examples | Placement |
 |------------|----------|-----------|
-| Zero-thought | archive, delete, select, star/flag | Hover or batch bar |
+| Zero-thought | keep in library, delete, select, star/flag | Hover or batch bar |
 | Light-decision | open, confirm | Visible buttons in detail view |
 | Deliberate-work | categorize, write, generate | Modal or dedicated screen |
 
