@@ -377,7 +377,7 @@ export interface ElectronAPI {
         id: string;
         content: string;
         userInsight?: string;
-        calloutType?: 'pearl' | 'trap' | 'caution' | null;
+        calloutType?: "pearl" | "trap" | "caution" | null;
       }>,
     ) => Promise<IpcResult<TopicCardSuggestion[]>>;
     generateElaboratedFeedback: (
@@ -422,6 +422,12 @@ export interface ElectronAPI {
       data: string,
       mimeType: string,
     ) => Promise<IpcResult<{ path: string }>>;
+    importFile: (
+      filePath: string,
+      mimeType: string,
+    ) => Promise<IpcResult<{ path: string }>>;
+    openFile: (path: string) => Promise<IpcResult<void>>;
+    getPathForFile: (file: File) => string;
   };
   capture: {
     getStatus: () => Promise<IpcResult<{ isRunning: boolean; port: number }>>;

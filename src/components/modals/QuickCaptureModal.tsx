@@ -20,6 +20,7 @@ import {
   PlayCircle,
   Loader2,
   AlertCircle,
+  FileText,
 } from "lucide-react";
 import type { SourceItem, SourceType } from "@/types";
 import type { CaptureAnalysisResult } from "@/types/ai";
@@ -30,7 +31,7 @@ import { cn } from "@/lib/utils";
 import { AddToNotebookWorkflow } from "@/components/notebook/AddToNotebookWorkflow";
 import { Label } from "@/components/ui/label";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
 
 interface QuickCaptureModalProps {
   isOpen: boolean;
@@ -42,8 +43,11 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
   const [title, setTitle] = useState("");
   const [isTitleManual, setIsTitleManual] = useState(false);
   const [detectedType, setDetectedType] = useState<ContentType>("text");
-  const [contentType, setContentType] = useState<"text" | "image">("text");
+  const [contentType, setContentType] = useState<"text" | "image" | "pdf">(
+    "text",
+  );
   const [imageData, setImageData] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [correctness, setCorrectness] = useState<
@@ -75,25 +79,48 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const refreshCounts = useAppStore((state) => state.refreshCounts);
 
-  const handleImageFile = useCallback((file: File) => {
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error("Image too large (max 10MB)");
-      return;
-    }
+  const handleFileSelected = useCallback(
+    (file: File) => {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`File too large (max 500MB)`);
+        return;
+      }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setImageData(result);
-      setContentType("image");
-      setContent(""); // Clear text as modes are mutually exclusive
-      toast.info("Switched to image mode");
-    };
-    reader.onerror = () => {
-      toast.error("Failed to read image file");
-    };
-    reader.readAsDataURL(file);
-  }, []);
+      setPendingFile(file);
+
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          setImageData(result);
+          setContentType("image");
+          setContent(""); // Clear text as modes are mutually exclusive
+          if (!isTitleManual) {
+            setTitle(file.name.replace(/\.[^/.]+$/, ""));
+          }
+          toast.info("Image selected");
+        };
+        reader.onerror = () => {
+          toast.error("Failed to read image file");
+        };
+        reader.readAsDataURL(file);
+      } else if (
+        file.type === "application/pdf" ||
+        file.name.endsWith(".pdf")
+      ) {
+        setImageData(null);
+        setContentType("pdf");
+        setContent("");
+        if (!isTitleManual) {
+          setTitle(file.name.replace(/\.[^/.]+$/, ""));
+        }
+        toast.info("PDF selected");
+      } else {
+        toast.error("Unsupported file type. Please use images or PDFs.");
+      }
+    },
+    [isTitleManual],
+  );
 
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
@@ -102,7 +129,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
         if (items[i].type.indexOf("image") !== -1) {
           const file = items[i].getAsFile();
           if (file) {
-            handleImageFile(file);
+            handleFileSelected(file);
             // Prevent default to avoid pasting binary text or the image filename
             e.preventDefault();
           }
@@ -110,7 +137,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
         }
       }
     },
-    [handleImageFile],
+    [handleFileSelected],
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -131,11 +158,11 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
       e.stopPropagation();
       setIsDragging(false);
       const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith("image/")) {
-        handleImageFile(file);
+      if (file) {
+        handleFileSelected(file);
       }
     },
-    [handleImageFile],
+    [handleFileSelected],
   );
 
   const handleBrowseClick = () => {
@@ -145,14 +172,15 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      handleImageFile(file);
+      handleFileSelected(file);
     }
     // Reset value so the same file can be picked again if cleared
     e.target.value = "";
   };
 
-  const clearImage = () => {
+  const clearFile = () => {
     setImageData(null);
+    setPendingFile(null);
     setContentType("text");
   };
 
@@ -160,6 +188,8 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     // 1. Instant detection for the badge
     if (contentType === "text") {
       setDetectedType(detectContentType(content));
+    } else if (contentType === "pdf") {
+      setDetectedType("pdf");
     } else {
       setDetectedType("image");
     }
@@ -169,7 +199,9 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
       if (isTitleManual) return;
 
       if (contentType === "image") {
-        setTitle("Image Capture");
+        setTitle(pendingFile?.name.replace(/\.[^/.]+$/, "") || "Image Capture");
+      } else if (contentType === "pdf") {
+        setTitle(pendingFile?.name.replace(/\.[^/.]+$/, "") || "PDF Capture");
       } else if (content.trim()) {
         const firstLine = content
           .split("\n")[0]
@@ -186,8 +218,8 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
 
   // AI Analysis - debounced, triggers 500ms after content changes
   useEffect(() => {
-    // Skip analysis for images or short content
-    if (contentType === "image" || content.length < 50) {
+    // Skip analysis for images, pdfs or short content
+    if (contentType !== "text" || content.length < 50) {
       setAiAnalysis(null);
       setAiError(false);
       return;
@@ -231,7 +263,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [content, contentType, isTitleManual]);
+  };, [content, contentType, isTitleManual]);
 
   // Duplicate detection - debounced, triggers 600ms after title changes
   useEffect(() => {
@@ -322,6 +354,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     setTitle("");
     setIsTitleManual(false);
     setImageData(null);
+    setPendingFile(null);
     setContentType("text");
     setAiAnalysis(null);
     setAiError(false);
@@ -344,36 +377,75 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     if (contentType === "image" && !imageData) {
       return null;
     }
+    if (contentType === "pdf" && !pendingFile) {
+      return null;
+    }
     try {
       if (typeof window !== "undefined" && window.api) {
         let mediaPath: string | undefined = undefined;
-        // If it's an image, save it to disk first
-        if (contentType === "image" && imageData) {
+        let savedSuccessfully = false;
+
+        // If we have a physical file (Browse/Drop), use importFile which is faster and handles large files
+        if (pendingFile && (contentType === "image" || contentType === "pdf")) {
+          const actualPath = window.api.files.getPathForFile(pendingFile);
+          if (actualPath) {
+            const saveResult = await window.api.files.importFile(
+              actualPath,
+              pendingFile.type,
+            );
+            if (!saveResult.error && saveResult.data) {
+              mediaPath = saveResult.data.path;
+              savedSuccessfully = true;
+            } else if (saveResult.error) {
+              toast.error(`Failed to save file: ${saveResult.error}`);
+              return null;
+            }
+          }
+        }
+
+        // Fallback for pasted images (which don't have a physical path on disk yet)
+        if (!savedSuccessfully && contentType === "image" && imageData) {
           const mimeType =
             imageData.match(/^data:([^;]+);/)?.[1] || "image/png";
           const saveResult = await window.api.files.saveImage(
             imageData,
             mimeType,
           );
-          if (saveResult.error) {
+          if (!saveResult.error && saveResult.data) {
+            mediaPath = saveResult.data.path;
+            savedSuccessfully = true;
+          } else if (saveResult.error) {
             toast.error(`Failed to save image file: ${saveResult.error}`);
             return null;
           }
-          if (saveResult.data) {
-            mediaPath = saveResult.data.path;
-          }
         }
+
+        if (
+          (contentType === "image" || contentType === "pdf") &&
+          !savedSuccessfully
+        ) {
+          return null;
+        }
+
         const titleToSave =
           title.trim() ||
-          (contentType === "image" ? "Image Capture" : "Untitled Capture");
+          (contentType === "image"
+            ? "Image Capture"
+            : contentType === "pdf"
+              ? "PDF Capture"
+              : "Untitled Capture");
+
         const sourceTypeMap: Record<ContentType, SourceType> = {
           text: "quickcapture",
           image: "image",
+          pdf: "pdf",
           url: "article",
           qbank: "qbank",
         };
         const finalSourceType: SourceType =
-          aiAnalysis?.sourceType || sourceTypeMap[detectedType];
+          contentType === "pdf"
+            ? "pdf"
+            : aiAnalysis?.sourceType || sourceTypeMap[detectedType];
         const metadata: SourceItem["metadata"] = {};
         if (userDomain) {
           metadata.subject = userDomain;
@@ -389,7 +461,10 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
           sourceType: finalSourceType,
           sourceName: "Quick Capture",
           title: titleToSave,
-          rawContent: trimmedContent || "Image capture",
+          rawContent:
+            contentType === "pdf"
+              ? `PDF file: ${pendingFile?.name}`
+              : trimmedContent || "Image capture",
           mediaPath,
           canonicalTopicIds: [],
           tags: userTags,
@@ -486,7 +561,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
         <DialogContent
-          className="sm:max-w-[600px] overflow-hidden"
+          className="sm:max-w-[600px]"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -496,7 +571,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
               <div className="bg-background/80 p-6 rounded-full shadow-xl flex flex-col items-center gap-2">
                 <Upload className="h-10 w-10 text-primary animate-bounce" />
                 <p className="text-lg font-semibold text-primary">
-                  Drop image here
+                  Drop image or PDF here
                 </p>
               </div>
             </div>
@@ -506,7 +581,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
             <DialogTitle>Quick Capture</DialogTitle>
           </DialogHeader>
 
-          <div className="py-4 min-h-[240px] flex flex-col gap-4">
+          <div className="min-h-[240px] flex flex-col gap-4 w-full">
             <div className="flex flex-col gap-2">
               <Input
                 placeholder="Source Title..."
@@ -597,6 +672,8 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
                           "bg-warning/10 text-warning border-warning/20",
                         detectedType === "image" &&
                           "bg-success/10 text-success border-success/20",
+                        detectedType === "pdf" &&
+                          "bg-orange-500/10 text-orange-600 border-orange-500/20",
                         detectedType === "text" &&
                           "bg-muted text-muted-foreground border-border",
                       )}
@@ -681,7 +758,27 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
                   variant="destructive"
                   size="icon"
                   className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-full h-8 w-8 shadow-md"
-                  onClick={clearImage}
+                  onClick={clearFile}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : contentType === "pdf" ? (
+              <div className="relative group border rounded-md overflow-hidden bg-muted flex flex-col items-center justify-center flex-1 animate-in fade-in duration-300 p-8">
+                <FileText className="h-20 w-20 text-orange-500 mb-4" />
+                <p className="text-sm font-medium text-center max-w-[80%] break-all">
+                  {pendingFile?.name}
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {(pendingFile?.size || 0) > 1024 * 1024
+                    ? `${((pendingFile?.size || 0) / (1024 * 1024)).toFixed(1)} MB`
+                    : `${((pendingFile?.size || 0) / 1024).toFixed(0)} KB`}
+                </p>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-full h-8 w-8 shadow-md"
+                  onClick={clearFile}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -719,24 +816,24 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
             )}
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter>
             <div className="flex items-center gap-2 mr-auto">
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                accept="image/*"
+                accept="image/*,.pdf"
                 className="hidden"
               />
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleBrowseClick}
-                disabled={isSaving || contentType === "image"}
+                disabled={isSaving || contentType !== "text"}
                 className="h-8 px-3 text-muted-foreground hover:text-primary transition-colors"
               >
                 <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
-                Browse image
+                Browse media
               </Button>
             </div>
             <Button
@@ -754,7 +851,11 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
               disabled={
                 isSaving ||
                 isAnalyzing ||
-                (contentType === "text" ? !content.trim() : !imageData)
+                (contentType === "text"
+                  ? !content.trim()
+                  : contentType === "image"
+                    ? !imageData
+                    : !pendingFile)
               }
               className="gap-2"
             >
@@ -767,7 +868,11 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
               onClick={handleSave}
               disabled={
                 isSaving ||
-                (contentType === "text" ? !content.trim() : !imageData)
+                (contentType === "text"
+                  ? !content.trim()
+                  : contentType === "image"
+                    ? !imageData
+                    : !pendingFile)
               }
               className="shadow-sm"
             >

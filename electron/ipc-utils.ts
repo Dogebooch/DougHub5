@@ -49,3 +49,14 @@ export function notifyAILog(payload: any): void {
     win.webContents.send("ai:log", payload);
   }
 }
+
+/**
+ * Notify renderer that a new source item was created.
+ * Triggers inbox list refresh without requiring manual reload.
+ */
+export function notifyNewSourceItem(item: unknown): void {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (win && !win.isDestroyed()) {
+    win.webContents.send("sourceItems:new", item);
+  }
+}

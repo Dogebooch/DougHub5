@@ -197,6 +197,21 @@ function createWindow() {
   // Test active push message to Renderer-process.
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
+
+    // Open DevTools in dev mode after page loads
+    if (VITE_DEV_SERVER_URL && !process.env.DOUGHUB_NO_DEVTOOLS) {
+      win.webContents.openDevTools({ mode: "right", activate: false });
+    }
+  });
+
+  // F12 or Ctrl+Shift+I to toggle DevTools
+  win.webContents.on("before-input-event", (event, input) => {
+    const isF12 = input.key === "F12";
+    const isCtrlShiftI = input.control && input.shift && input.key.toLowerCase() === "i";
+    if (isF12 || isCtrlShiftI) {
+      win.webContents.toggleDevTools();
+      event.preventDefault();
+    }
   });
 
   if (VITE_DEV_SERVER_URL) {
@@ -237,11 +252,6 @@ function createWindow() {
       };
 
       loadWithRetry();
-
-      // Open DevTools docked (disable with DOUGHUB_NO_DEVTOOLS=1)
-      if (!process.env.DOUGHUB_NO_DEVTOOLS) {
-        win.webContents.openDevTools({ mode: "right", activate: false });
-      }
     } catch (urlError) {
       console.error(
         "[Dev Mode] Invalid VITE_DEV_SERVER_URL:",

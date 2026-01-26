@@ -1,14 +1,19 @@
-export type ContentType = 'text' | 'url' | 'image' | 'qbank';
+export type ContentType = "text" | "url" | "image" | "qbank" | "pdf";
 
-export function detectContentType(content: string, isImage?: boolean): ContentType {
-  if (isImage) return 'image';
+export function detectContentType(
+  content: string,
+  isImage?: boolean,
+  isPdf?: boolean,
+): ContentType {
+  if (isImage) return "image";
+  if (isPdf) return "pdf";
 
   const trimmed = content.trim();
 
   // URL detection - simple regex for https?:// at the start of a string or just being a URL
   const urlRegex = /^https?:\/\/[^\s]+$/;
   if (urlRegex.test(trimmed)) {
-    return 'url';
+    return "url";
   }
 
   // QBank detection - multiple lines with specific markers
@@ -27,8 +32,8 @@ export function detectContentType(content: string, isImage?: boolean): ContentTy
 
   // If at least two markers are present, call it a QBank question
   if (matches >= 2) {
-    return 'qbank';
+    return "qbank";
   }
 
-  return 'text';
+  return "text";
 }

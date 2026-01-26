@@ -29,6 +29,7 @@ const SOURCE_DISPLAY_NAMES: Record<string, string> = {
   Rosh: "Rosh Review",
   NEJM: "NEJM",
   UpToDate: "UpToDate",
+  "Quick Capture": "Quick Cap",
 };
 
 interface SourceItemRowProps {
@@ -133,7 +134,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
         />
         <div
           className={cn(
-            "w-9 h-10 rounded-lg bg-black/5 flex flex-col items-center justify-center shrink-0 overflow-hidden",
+            "w-10 h-10 rounded-lg bg-black/5 flex flex-col items-center justify-center shrink-0 overflow-hidden",
             sourceLabel && "pt-1 px-0.5",
           )}
         >
@@ -161,7 +162,7 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
             {getIcon()}
           </div>
           {sourceLabel && (
-            <span className="text-[8px] font-bold text-card-muted/80 tracking-tighter uppercase leading-[1.1] w-full text-center mt-0.5 break-words">
+            <span className="text-[8px] font-bold text-card-muted/80 tracking-tighter uppercase leading-[1.1] w-full text-center mt-0.5">
               {sourceLabel}
             </span>
           )}

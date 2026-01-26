@@ -1,4 +1,11 @@
-import { ipcMain, BrowserWindow, app, Notification, dialog } from "electron";
+import {
+  ipcMain,
+  BrowserWindow,
+  app,
+  Notification,
+  dialog,
+  shell,
+} from "electron";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
@@ -17,7 +24,7 @@ import {
   isCaptureServerRunning,
   getCaptureServerPort,
 } from "./capture-server";
-import { notifyAIExtraction } from "./ipc-utils";
+import { notifyAIExtraction, notifyNewSourceItem } from "./ipc-utils";
 import {
   cardQueries,
   noteQueries,
@@ -173,7 +180,7 @@ function normalizeUrl(urlStr: string): string {
  * Shared capture processing logic used by both IPC and main process auto-capture
  */
 export async function processCapture(
-  payload: CapturePayload
+  payload: CapturePayload,
 ): Promise<{ id: string; isUpdate: boolean }> {
   const normalizedUrl = normalizeUrl(payload.url);
 
@@ -182,7 +189,7 @@ export async function processCapture(
   if (existingCapture) {
     console.log(
       "[Capture] Duplicate capture in progress, waiting for completion:",
-      normalizedUrl
+      normalizedUrl,
     );
     return existingCapture;
   }
@@ -198,7 +205,7 @@ export async function processCapture(
         payload.pageHTML,
         payload.siteName,
         payload.url,
-        payload.timestamp
+        payload.timestamp,
       );
 
       // 2. Download images and update localPaths
@@ -207,13 +214,13 @@ export async function processCapture(
           content.images.map((img) => ({
             url: img.url,
             location: img.location,
-          }))
+          })),
         );
 
         // Update localPaths in content
         content.images = content.images.map((img) => {
           const downloaded = downloadedImages.find(
-            (d) => d.location === img.location && d.localPath
+            (d) => d.location === img.location && d.localPath,
           );
           return { ...img, localPath: downloaded?.localPath || img.localPath };
         });
@@ -227,11 +234,11 @@ export async function processCapture(
         existing = sourceItemQueries.getByQuestionId(content.questionId);
         if (existing) {
           console.log(
-            `[Capture] Found existing question by questionId: ${content.questionId} (source item: ${existing.id})`
+            `[Capture] Found existing question by questionId: ${content.questionId} (source item: ${existing.id})`,
           );
         } else {
           console.log(
-            `[Capture] No existing question found for questionId: ${content.questionId}`
+            `[Capture] No existing question found for questionId: ${content.questionId}`,
           );
         }
       }
@@ -247,7 +254,7 @@ export async function processCapture(
         existing = sourceItemQueries.getByUrl(payload.url);
         if (existing) {
           console.log(
-            `[Capture] Found existing question by URL: ${payload.url} (source item: ${existing.id})`
+            `[Capture] Found existing question by URL: ${payload.url} (source item: ${existing.id})`,
           );
         } else {
           console.log(`[Capture] Creating new question capture`);
@@ -264,12 +271,12 @@ export async function processCapture(
         let existingContent: BoardQuestionContent;
         try {
           existingContent = JSON.parse(
-            existing.rawContent!
+            existing.rawContent!,
           ) as BoardQuestionContent;
         } catch (error) {
           console.error(
             "[Capture] Failed to parse existing rawContent, treating as new:",
-            error
+            error,
           );
           // If we can't parse existing content, treat it as a new capture
           existingContent = { ...content, attempts: [] };
@@ -307,7 +314,7 @@ export async function processCapture(
 
           extractQuestionSummary(
             JSON.stringify(mergedContent),
-            existing.sourceType
+            existing.sourceType,
           )
             .then((extracted) => {
               if (extracted) {
@@ -318,7 +325,7 @@ export async function processCapture(
                   },
                 });
                 console.log(
-                  `[Capture] ✅ AI metadata extracted for existing item: "${extracted.summary}"`
+                  `[Capture] ✅ AI metadata extracted for existing item: "${extracted.summary}"`,
                 );
                 notifyAIExtraction({
                   sourceItemId: existing.id,
@@ -335,7 +342,7 @@ export async function processCapture(
             .catch((err) => {
               console.warn(
                 "[Capture] ⚠️ AI extraction failed for existing item:",
-                err
+                err,
               );
               notifyAIExtraction({
                 sourceItemId: existing.id,
@@ -378,7 +385,7 @@ export async function processCapture(
                 },
               });
               console.log(
-                `[Capture] ✅ AI metadata extracted: "${extracted.summary}"`
+                `[Capture] ✅ AI metadata extracted: "${extracted.summary}"`,
               );
               // Notify renderer that extraction completed with metadata
               notifyAIExtraction({
@@ -993,6 +1000,8 @@ export function registerIpcHandlers(): void {
 
         sourceItemQueries.insert(item);
         console.log(`[IPC] ✅ SourceItem saved: ${item.id}`);
+        // Notify renderer to refresh inbox list
+        notifyNewSourceItem(item);
         return success(item);
       } catch (error) {
         console.error("[IPC] ❌ Failed to create SourceItem:", error);
@@ -2353,7 +2362,11 @@ export function registerIpcHandlers(): void {
       testedConcept?: string,
     ): Promise<IpcResult<PolishInsightResult>> => {
       try {
-        const result = await polishInsight(userText, sourceContent, testedConcept);
+        const result = await polishInsight(
+          userText,
+          sourceContent,
+          testedConcept,
+        );
         return success(result);
       } catch (error) {
         return failure(error);
@@ -2438,7 +2451,7 @@ export function registerIpcHandlers(): void {
         id: string;
         content: string;
         userInsight?: string;
-        calloutType?: 'pearl' | 'trap' | 'caution' | null;
+        calloutType?: "pearl" | "trap" | "caution" | null;
       }>,
     ): Promise<IpcResult<TopicCardSuggestion[]>> => {
       try {
@@ -2651,6 +2664,60 @@ export function registerIpcHandlers(): void {
 
         return success({ path: relativePath });
       } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "files:importFile",
+    async (
+      _,
+      { filePath, mimeType }: { filePath: string; mimeType: string },
+    ): Promise<IpcResult<{ path: string }>> => {
+      try {
+        const ext = path.extname(filePath).toLowerCase() || "";
+        const fileName = `${crypto.randomUUID()}${ext}`;
+        const userDataPath = app.getPath("userData");
+        const mediaDir = path.join(userDataPath, "media");
+
+        // Ensure directory exists
+        if (!fs.existsSync(mediaDir)) {
+          fs.mkdirSync(mediaDir, { recursive: true });
+        }
+
+        const destinationPath = path.join(mediaDir, fileName);
+        const relativePath = path.join("media", fileName).replace(/\\/g, "/");
+
+        // Copy file (async to avoid blocking main thread)
+        await fs.promises.copyFile(filePath, destinationPath);
+
+        return success({ path: relativePath });
+      } catch (error) {
+        console.error("[IPC] files:importFile failed:", error);
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "files:openFile",
+    async (
+      _,
+      { path: relativePath }: { path: string },
+    ): Promise<IpcResult<void>> => {
+      try {
+        const userDataPath = app.getPath("userData");
+        const fullPath = path.join(userDataPath, relativePath);
+
+        if (!fs.existsSync(fullPath)) {
+          throw new Error("File not found: " + fullPath);
+        }
+
+        await shell.openPath(fullPath);
+        return success(undefined);
+      } catch (error) {
+        console.error("[IPC] files:openFile failed:", error);
         return failure(error);
       }
     },

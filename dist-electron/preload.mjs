@@ -173,6 +173,7 @@ const api = {
       topicContext,
       userIntent
     ),
+    generateCardsFromTopic: (topicName, blocks) => electron.ipcRenderer.invoke("ai:generateCardsFromTopic", topicName, blocks),
     generateElaboratedFeedback: (card, topicContext, responseTimeMs) => electron.ipcRenderer.invoke(
       "ai:generateElaboratedFeedback",
       card,
@@ -200,7 +201,10 @@ const api = {
     getConfusionPairs: () => electron.ipcRenderer.invoke("insights:getConfusionPairs")
   },
   files: {
-    saveImage: (data, mimeType) => electron.ipcRenderer.invoke("files:saveImage", { data, mimeType })
+    saveImage: (data, mimeType) => electron.ipcRenderer.invoke("files:saveImage", { data, mimeType }),
+    importFile: (filePath, mimeType) => electron.ipcRenderer.invoke("files:importFile", { filePath, mimeType }),
+    openFile: (path) => electron.ipcRenderer.invoke("files:openFile", { path }),
+    getPathForFile: (file) => electron.webUtils.getPathForFile(file)
   },
   settings: {
     get: (key) => electron.ipcRenderer.invoke("settings:get", key),

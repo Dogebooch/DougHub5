@@ -17,7 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { BookPlus, Archive, X } from "lucide-react";
+import { BookPlus, Archive, X, FileText, ExternalLink } from "lucide-react";
 
 interface SourceItemViewerDialogProps {
   open: boolean;
@@ -75,6 +75,27 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
               className="max-w-full max-h-[60vh] rounded-lg border object-contain"
             />
           </div>
+        ) : item.sourceType === "pdf" && item.mediaPath ? (
+          <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg bg-muted/20">
+            <FileText className="h-24 w-24 text-orange-500 mb-6" />
+            <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
+            <p className="text-sm text-muted-foreground mb-8 text-center max-w-md">
+              This is a PDF document. Click below to open it in your system's
+              default viewer.
+            </p>
+            <Button
+              size="lg"
+              className="gap-2"
+              onClick={async () => {
+                if (item.mediaPath) {
+                  await window.api.files.openFile(item.mediaPath);
+                }
+              }}
+            >
+              <ExternalLink className="h-5 w-5" />
+              Open PDF Document
+            </Button>
+          </div>
         ) : (
           <div className="bg-muted p-4 rounded-md">
             <pre className="whitespace-pre-wrap font-mono text-xs overflow-auto max-h-[600px]">
@@ -83,16 +104,19 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
           </div>
         )}
 
-        {item.sourceUrl && (
-          <div>
-            <a
-              href={item.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-primary hover:underline"
-            >
-              Open Original URL
-            </a>
+        {(item.sourceUrl || (item.sourceType === "pdf" && item.mediaPath)) && (
+          <div className="flex flex-col gap-2">
+            {item.sourceUrl && (
+              <a
+                href={item.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary hover:underline text-sm inline-flex items-center gap-1"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Open Original URL
+              </a>
+            )}
           </div>
         )}
       </div>

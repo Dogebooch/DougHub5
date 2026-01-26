@@ -1,4 +1,4 @@
-import { ipcRenderer, contextBridge } from 'electron'
+import { ipcRenderer, contextBridge, webUtils } from "electron";
 
 // ============================================================================
 // Typed API for renderer process
@@ -315,14 +315,9 @@ const api = {
         id: string;
         content: string;
         userInsight?: string;
-        calloutType?: 'pearl' | 'trap' | 'caution' | null;
+        calloutType?: "pearl" | "trap" | "caution" | null;
       }>,
-    ) =>
-      ipcRenderer.invoke(
-        "ai:generateCardsFromTopic",
-        topicName,
-        blocks,
-      ),
+    ) => ipcRenderer.invoke("ai:generateCardsFromTopic", topicName, blocks),
     generateElaboratedFeedback: (
       card: { front: string; back: string; cardType: string },
       topicContext: string,
@@ -370,6 +365,10 @@ const api = {
   files: {
     saveImage: (data: string, mimeType: string) =>
       ipcRenderer.invoke("files:saveImage", { data, mimeType }),
+    importFile: (filePath: string, mimeType: string) =>
+      ipcRenderer.invoke("files:importFile", { filePath, mimeType }),
+    openFile: (path: string) => ipcRenderer.invoke("files:openFile", { path }),
+    getPathForFile: (file: File) => webUtils.getPathForFile(file),
   },
   settings: {
     get: (key: string) => ipcRenderer.invoke("settings:get", key),
@@ -417,14 +416,14 @@ const api = {
 };
 
 // Expose typed API to renderer
-contextBridge.exposeInMainWorld('api', api)
+contextBridge.exposeInMainWorld("api", api);
 
 // Keep legacy ipcRenderer for backwards compatibility during migration
 contextBridge.exposeInMainWorld("ipcRenderer", {
   on(...args: Parameters<typeof ipcRenderer.on>) {
     const [channel, listener] = args;
     return ipcRenderer.on(channel, (event, ...args) =>
-      listener(event, ...args)
+      listener(event, ...args),
     );
   },
   off(...args: Parameters<typeof ipcRenderer.off>) {
