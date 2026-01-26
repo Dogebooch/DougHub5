@@ -427,6 +427,17 @@ export interface ElectronAPI {
       mimeType: string,
     ) => Promise<IpcResult<{ path: string }>>;
     openFile: (path: string) => Promise<IpcResult<void>>;
+    extractPdfText: (
+      sourceItemId: string,
+      relativePath: string,
+    ) => Promise<IpcResult<{ text: string; pageCount: number }>>;
+    onPdfTextExtracted: (
+      callback: (payload: {
+        sourceItemId: string;
+        textLength: number;
+        pageCount: number;
+      }) => void,
+    ) => () => void;
     getPathForFile: (file: File) => string;
   };
   capture: {

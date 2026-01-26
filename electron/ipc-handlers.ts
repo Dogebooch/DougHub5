@@ -9,6 +9,7 @@ import {
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
+const pdfParse = require("pdf-parse");
 import {
   resetAIClient,
   getAvailableOllamaModels,
@@ -2719,6 +2720,83 @@ export function registerIpcHandlers(): void {
       } catch (error) {
         console.error("[IPC] files:openFile failed:", error);
         return failure(error);
+      }
+    },
+  );
+
+  /**
+   * Extract text from a PDF file and update the source item's transcription field.
+   * This runs asynchronously after the file has been saved to avoid blocking the Quick Capture flow.
+   *
+   * @param sourceItemId - The ID of the source item to update
+   * @param relativePath - The relative path to the PDF file (e.g., "media/uuid.pdf")
+   */
+  ipcMain.handle(
+    "files:extractPdfText",
+    async (
+      _,
+      {
+        sourceItemId,
+        relativePath,
+      }: { sourceItemId: string; relativePath: string },
+    ): Promise<IpcResult<{ text: string; pageCount: number }>> => {
+      try {
+        const userDataPath = app.getPath("userData");
+        const fullPath = path.join(userDataPath, relativePath);
+
+        if (!fs.existsSync(fullPath)) {
+          throw new Error("PDF file not found: " + fullPath);
+        }
+
+        // Read PDF file
+        const dataBuffer = await fs.promises.readFile(fullPath);
+
+        // Extract text (pdf-parse handles malformed PDFs gracefully)
+        const pdfData = await pdfParse(dataBuffer, {
+          // Limit to first 50 pages for performance (typical medical articles are <50 pages)
+          max: 50,
+        });
+
+        const extractedText = pdfData.text?.trim() || "";
+        const pageCount = pdfData.numpages || 0;
+
+        // Only update if we extracted meaningful text (>50 chars)
+        if (extractedText.length > 50) {
+          // Update the source item's transcription field
+          sourceItemQueries.update(sourceItemId, {
+            transcription: extractedText,
+          });
+
+          console.log(
+            `[IPC] Extracted ${extractedText.length} characters from PDF (${pageCount} pages) for source item ${sourceItemId}`,
+          );
+
+          // Notify renderer that OCR is complete (for potential toast notification)
+          const mainWindow = BrowserWindow.getAllWindows()[0];
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("files:pdfTextExtracted", {
+              sourceItemId,
+              textLength: extractedText.length,
+              pageCount,
+            });
+          }
+
+          return success({ text: extractedText, pageCount });
+        } else {
+          console.warn(
+            `[IPC] PDF extraction yielded insufficient text (<50 chars) for ${relativePath}`,
+          );
+          return success({ text: "", pageCount });
+        }
+      } catch (error) {
+        // Log but don't fail - OCR is a nice-to-have, not critical
+        console.error(
+          "[IPC] files:extractPdfText failed (non-critical):",
+          error,
+        );
+
+        // Return empty result instead of failure to avoid user-facing errors
+        return success({ text: "", pageCount: 0 });
       }
     },
   );

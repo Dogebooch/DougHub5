@@ -204,6 +204,15 @@ const api = {
     saveImage: (data, mimeType) => electron.ipcRenderer.invoke("files:saveImage", { data, mimeType }),
     importFile: (filePath, mimeType) => electron.ipcRenderer.invoke("files:importFile", { filePath, mimeType }),
     openFile: (path) => electron.ipcRenderer.invoke("files:openFile", { path }),
+    extractPdfText: (sourceItemId, relativePath) => electron.ipcRenderer.invoke("files:extractPdfText", {
+      sourceItemId,
+      relativePath
+    }),
+    onPdfTextExtracted: (callback) => {
+      const handler = (_event, payload) => callback(payload);
+      electron.ipcRenderer.on("files:pdfTextExtracted", handler);
+      return () => electron.ipcRenderer.removeListener("files:pdfTextExtracted", handler);
+    },
     getPathForFile: (file) => electron.webUtils.getPathForFile(file)
   },
   settings: {

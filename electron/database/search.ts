@@ -148,7 +148,8 @@ export const searchQueries = {
           s.tags,
           snippet(source_items_fts, 1, '<mark>', '</mark>', '...', 32) as s1,
           snippet(source_items_fts, 2, '<mark>', '</mark>', '...', 32) as s2,
-          snippet(source_items_fts, 4, '<mark>', '</mark>', '...', 32) as s3
+          snippet(source_items_fts, 4, '<mark>', '</mark>', '...', 32) as s3,
+          snippet(source_items_fts, 5, '<mark>', '</mark>', '...', 32) as s4
         FROM source_items_fts
         JOIN source_items s ON source_items_fts.id = s.id
         WHERE source_items_fts MATCH ?
@@ -163,10 +164,13 @@ export const searchQueries = {
         s1: string;
         s2: string;
         s3: string;
+        s4: string;
       }>;
       sourceRows.forEach((row) => {
         const snippet =
-          [row.s2, row.s1, row.s3].find((s) => s && s.includes("<mark>")) ||
+          [row.s2, row.s4, row.s1, row.s3].find(
+            (s) => s && s.includes("<mark>"),
+          ) ||
           row.s2 ||
           "";
         results.push({

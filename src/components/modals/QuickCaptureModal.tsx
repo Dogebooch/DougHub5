@@ -53,6 +53,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
   const [correctness, setCorrectness] = useState<
     "correct" | "incorrect" | null
   >(null);
+  const [urlInput, setUrlInput] = useState(""); // URL input field
 
   // AI Analysis state
   const [aiAnalysis, setAiAnalysis] = useState<CaptureAnalysisResult | null>(
@@ -78,6 +79,22 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const refreshCounts = useAppStore((state) => state.refreshCounts);
+
+  // Listen for PDF text extraction completion
+  useEffect(() => {
+    if (!window.api?.files?.onPdfTextExtracted) return;
+
+    const unsubscribe = window.api.files.onPdfTextExtracted((payload) => {
+      toast.success("PDF text extracted", {
+        description: `${payload.textLength.toLocaleString()} characters from ${payload.pageCount} pages`,
+        duration: 3000,
+      });
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   const handleFileSelected = useCallback(
     (file: File) => {
@@ -263,7 +280,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
       isCancelled = true;
       clearTimeout(timer);
     };
-  };, [content, contentType, isTitleManual]);
+  }, [content, contentType, isTitleManual]);
 
   // Duplicate detection - debounced, triggers 600ms after title changes
   useEffect(() => {
@@ -363,6 +380,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     setUserTags([]);
     setUserDomain("");
     setCorrectness(null);
+    setUrlInput("");
   };
 
   /**
@@ -371,7 +389,9 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
    */
   const saveSourceItem = async (): Promise<SourceItem | null> => {
     const trimmedContent = content.trim();
-    if (contentType === "text" && !trimmedContent) {
+    const trimmedUrl = urlInput.trim();
+    // Allow save if we have text content OR a URL
+    if (contentType === "text" && !trimmedContent && !trimmedUrl) {
       return null;
     }
     if (contentType === "image" && !imageData) {
@@ -442,10 +462,14 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
           url: "article",
           qbank: "qbank",
         };
+        // Determine source type: URL input takes priority, then AI analysis, then detected type
+        const hasUrl = trimmedUrl.length > 0;
         const finalSourceType: SourceType =
           contentType === "pdf"
             ? "pdf"
-            : aiAnalysis?.sourceType || sourceTypeMap[detectedType];
+            : hasUrl
+              ? "article"
+              : aiAnalysis?.sourceType || sourceTypeMap[detectedType];
         const metadata: SourceItem["metadata"] = {};
         if (userDomain) {
           metadata.subject = userDomain;
@@ -456,15 +480,29 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
         ) {
           metadata.summary = aiAnalysis.extractedFacts.slice(0, 3).join("; ");
         }
+        // Store URL in metadata if provided
+        if (hasUrl) {
+          metadata.sourceUrl = trimmedUrl;
+        }
+        // Build rawContent: include URL if provided, plus any text content
+        let rawContentValue: string;
+        if (contentType === "pdf") {
+          rawContentValue = `PDF file: ${pendingFile?.name}`;
+        } else if (hasUrl && trimmedContent) {
+          rawContentValue = `${trimmedUrl}\n\n${trimmedContent}`;
+        } else if (hasUrl) {
+          rawContentValue = trimmedUrl;
+        } else if (trimmedContent) {
+          rawContentValue = trimmedContent;
+        } else {
+          rawContentValue = "Image capture";
+        }
         const sourceItem: SourceItem = {
           id: crypto.randomUUID(),
           sourceType: finalSourceType,
           sourceName: "Quick Capture",
           title: titleToSave,
-          rawContent:
-            contentType === "pdf"
-              ? `PDF file: ${pendingFile?.name}`
-              : trimmedContent || "Image capture",
+          rawContent: rawContentValue,
           mediaPath,
           canonicalTopicIds: [],
           tags: userTags,
@@ -479,6 +517,32 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
           toast.error(`Failed to save: ${result.error}`);
           return null;
         }
+
+        // Trigger PDF text extraction in background (non-blocking)
+        if (contentType === "pdf" && mediaPath && sourceItem.id) {
+          window.api.files
+            .extractPdfText(sourceItem.id, mediaPath)
+            .then((extractResult) => {
+              if (
+                !extractResult.error &&
+                extractResult.data &&
+                extractResult.data.text
+              ) {
+                console.log(
+                  `[QuickCapture] PDF text extracted: ${extractResult.data.text.length} characters from ${extractResult.data.pageCount} pages`,
+                );
+                // The IPC handler already sends a notification event, so we can optionally listen for it
+              }
+            })
+            .catch((err) => {
+              // Silent fail - OCR is nice-to-have
+              console.warn(
+                "[QuickCapture] PDF extraction failed (non-critical):",
+                err,
+              );
+            });
+        }
+
         await refreshCounts();
         return sourceItem;
       }
@@ -566,6 +630,15 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
+          {/* Hidden file input for browse functionality */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*,.pdf"
+            className="hidden"
+          />
+
           {isDragging && (
             <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary flex flex-col items-center justify-center backdrop-blur-[2px] pointer-events-none animate-in fade-in zoom-in-95 duration-200">
               <div className="bg-background/80 p-6 rounded-full shadow-xl flex flex-col items-center gap-2">
@@ -774,6 +847,9 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
                     ? `${((pendingFile?.size || 0) / (1024 * 1024)).toFixed(1)} MB`
                     : `${((pendingFile?.size || 0) / 1024).toFixed(0)} KB`}
                 </p>
+                <Badge variant="secondary" className="mt-3 text-xs">
+                  PDF text will be extracted for search
+                </Badge>
                 <Button
                   variant="destructive"
                   size="icon"
@@ -784,7 +860,66 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
                 </Button>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col gap-2 animate-in fade-in duration-300">
+              <div className="flex-1 flex flex-col gap-3 animate-in fade-in duration-300">
+                {/* Remnote-inspired file upload dropzone */}
+                <div className="border-2 border-dashed border-border/60 rounded-lg p-6 bg-muted/30 hover:bg-muted/50 hover:border-border transition-all">
+                  <div className="flex flex-col items-center gap-3">
+                    {/* File type icons */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-md bg-blue-500/10 text-blue-600">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div className="flex items-center justify-center w-10 h-10 rounded-md bg-green-500/10 text-green-600">
+                        <ImageIcon className="h-5 w-5" />
+                      </div>
+                      <div className="flex items-center justify-center w-10 h-10 rounded-md bg-orange-500/10 text-orange-600">
+                        <Upload className="h-5 w-5" />
+                      </div>
+                    </div>
+
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-foreground mb-1">
+                        Drag & drop files here or{" "}
+                        <button
+                          type="button"
+                          onClick={handleBrowseClick}
+                          className="text-primary hover:underline font-semibold"
+                        >
+                          choose files
+                        </button>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Images and PDFs supported
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  or
+                </div>
+
+                {/* URL input field */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-1 bg-muted/30 rounded-md px-3 py-2 border border-border/60">
+                    <PlayCircle className="h-4 w-4 text-red-500 shrink-0" />
+                    <ImageIcon className="h-4 w-4 text-blue-500 shrink-0" />
+                    <FileText className="h-4 w-4 text-orange-500 shrink-0" />
+                    <Input
+                      type="text"
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      placeholder="Paste YouTube, PDF, or web URL"
+                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto py-0 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  or
+                </div>
+
+                {/* Text input */}
                 <Textarea
                   ref={textareaRef}
                   value={content}
@@ -796,8 +931,8 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
                       handleSave();
                     }
                   }}
-                  placeholder="Paste text or image..."
-                  className="flex-1 min-h-[200px] resize-none border-2 border-border/80 focus:border-primary/50 transition-colors"
+                  placeholder="Paste text or type notes..."
+                  className="flex-1 min-h-[140px] resize-none border-2 border-border/80 focus:border-primary/50 transition-colors"
                 />
                 <div className="flex items-center justify-end gap-1 text-[11px] text-muted-foreground select-none">
                   <Keyboard className="h-3 w-3" />
@@ -817,25 +952,6 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
           </div>
 
           <DialogFooter>
-            <div className="flex items-center gap-2 mr-auto">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*,.pdf"
-                className="hidden"
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBrowseClick}
-                disabled={isSaving || contentType !== "text"}
-                className="h-8 px-3 text-muted-foreground hover:text-primary transition-colors"
-              >
-                <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
-                Browse media
-              </Button>
-            </div>
             <Button
               type="button"
               variant="outline"
@@ -852,7 +968,7 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
                 isSaving ||
                 isAnalyzing ||
                 (contentType === "text"
-                  ? !content.trim()
+                  ? !content.trim() && !urlInput.trim()
                   : contentType === "image"
                     ? !imageData
                     : !pendingFile)
@@ -869,13 +985,14 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
               disabled={
                 isSaving ||
                 (contentType === "text"
-                  ? !content.trim()
+                  ? !content.trim() && !urlInput.trim()
                   : contentType === "image"
                     ? !imageData
                     : !pendingFile)
               }
               className="shadow-sm"
             >
+              {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Save to Inbox
             </Button>
           </DialogFooter>

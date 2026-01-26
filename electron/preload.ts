@@ -368,6 +368,30 @@ const api = {
     importFile: (filePath: string, mimeType: string) =>
       ipcRenderer.invoke("files:importFile", { filePath, mimeType }),
     openFile: (path: string) => ipcRenderer.invoke("files:openFile", { path }),
+    extractPdfText: (sourceItemId: string, relativePath: string) =>
+      ipcRenderer.invoke("files:extractPdfText", {
+        sourceItemId,
+        relativePath,
+      }),
+    onPdfTextExtracted: (
+      callback: (payload: {
+        sourceItemId: string;
+        textLength: number;
+        pageCount: number;
+      }) => void,
+    ) => {
+      const handler = (
+        _event: Electron.IpcRendererEvent,
+        payload: {
+          sourceItemId: string;
+          textLength: number;
+          pageCount: number;
+        },
+      ) => callback(payload);
+      ipcRenderer.on("files:pdfTextExtracted", handler);
+      return () =>
+        ipcRenderer.removeListener("files:pdfTextExtracted", handler);
+    },
     getPathForFile: (file: File) => webUtils.getPathForFile(file),
   },
   settings: {
