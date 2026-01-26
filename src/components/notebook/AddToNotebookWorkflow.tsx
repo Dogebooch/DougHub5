@@ -249,6 +249,7 @@ export function AddToNotebookWorkflow({
         relevanceReason: relevanceReason,
         position: nextPosition,
         cardCount: 0,
+        isHighYield: false, // Default to not high-yield
       });
       if (!blockResult.data)
         throw new Error(blockResult.error || "Failed to create block");

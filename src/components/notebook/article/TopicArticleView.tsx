@@ -1,5 +1,21 @@
-import React, { useCallback, useEffect, useState, useMemo } from "react";
-import { ArrowLeft, Plus, Sparkles, Loader2, BarChart3, ChevronDown } from "lucide-react";
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+  useMemo,
+  useRef,
+} from "react";
+import {
+  ArrowLeft,
+  Plus,
+  Sparkles,
+  Loader2,
+  BarChart3,
+  ChevronDown,
+  Star,
+  Layers,
+  PenLine,
+} from "lucide-react";
 import {
   NotebookTopicPage,
   NotebookBlock,
@@ -13,13 +29,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 import { TopicHeader } from "./TopicHeader";
 import { ArticleContent } from "./ArticleContent";
 import { SourceFootnotes } from "./SourceFootnotes";
 import { AddBlockModal } from "../AddBlockModal";
 import { BlockEditModal } from "../BlockEditModal";
+import { DirectAuthorModal } from "../DirectAuthorModal";
 import { SourcePreviewPanel } from "../SourcePreviewPanel";
 import { TopicCardGeneration } from "../cardgen";
 
@@ -43,13 +62,23 @@ interface BoardRelevanceData {
  * AMBOSS-inspired prose reading experience for notebook topic pages.
  * Replaces the block-card view with flowing content, callouts, and footnotes.
  */
-export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleViewProps) {
+export function TopicArticleView({
+  pageId,
+  onBack,
+  onRefresh,
+}: TopicArticleViewProps) {
+  const { toast } = useToast();
+  const mountedRef = useRef(true);
+
   // Data state
   const [page, setPage] = useState<NotebookTopicPage | null>(null);
   const [topic, setTopic] = useState<CanonicalTopic | null>(null);
   const [blocks, setBlocks] = useState<NotebookBlock[]>([]);
-  const [sourceItems, setSourceItems] = useState<Map<string, SourceItem>>(new Map());
-  const [boardRelevance, setBoardRelevance] = useState<BoardRelevanceData | null>(null);
+  const [sourceItems, setSourceItems] = useState<Map<string, SourceItem>>(
+    new Map(),
+  );
+  const [boardRelevance, setBoardRelevance] =
+    useState<BoardRelevanceData | null>(null);
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -57,6 +86,10 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [boardPanelOpen, setBoardPanelOpen] = useState(true);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"all" | "highYield">("all");
+  const [togglingBlockIds, setTogglingBlockIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -64,6 +97,9 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
 
   // Card generation modal state
   const [cardGenOpen, setCardGenOpen] = useState(false);
+
+  // Direct author modal state
+  const [directAuthorOpen, setDirectAuthorOpen] = useState(false);
 
   // Fetch all data
   const fetchData = useCallback(async () => {
@@ -81,7 +117,9 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
       // 2. Fetch topic and blocks in parallel
       const [topicResult, blocksResult] = await Promise.all([
         window.api.canonicalTopics.getById(pageData.canonicalTopicId),
-        window.api.notebookBlocks.getByPage(pageId),
+        window.api.notebookBlocks.getByPage(pageId, {
+          highYieldOnly: viewMode === "highYield",
+        }),
       ]);
 
       if (topicResult.error) throw new Error(topicResult.error);
@@ -103,14 +141,15 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
           if (result.data) {
             sourceMap.set(id, result.data);
           }
-        })
+        }),
       );
       setSourceItems(sourceMap);
 
       // 4. Fetch board relevance if we have topic tags
       if (topicData) {
         const tags = [topicData.canonicalName, ...topicData.aliases];
-        const relevanceResult = await window.api.insights.getBoardRelevance(tags);
+        const relevanceResult =
+          await window.api.insights.getBoardRelevance(tags);
         if (relevanceResult.data) {
           setBoardRelevance(relevanceResult.data);
         }
@@ -123,7 +162,14 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
     } finally {
       setLoading(false);
     }
-  }, [pageId, onRefresh]);
+  }, [pageId, onRefresh, viewMode]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -145,7 +191,12 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
   // Calculate stats
   const totalCards = useMemo(
     () => blocks.reduce((sum, b) => sum + (b.cardCount || 0), 0),
-    [blocks]
+    [blocks],
+  );
+
+  const highYieldCount = useMemo(
+    () => blocks.filter((b) => b.isHighYield).length,
+    [blocks],
   );
 
   const handleFootnoteClick = (sourceItemId: string) => {
@@ -161,9 +212,65 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
     setEditModalOpen(true);
   };
 
+  const handleStarToggle = async (blockId: string, currentValue: boolean) => {
+    // Add to toggling set (disables button)
+    setTogglingBlockIds((prev) => new Set(prev).add(blockId));
+
+    // Optimistic update - instant UI feedback
+    setBlocks((prev) =>
+      prev.map((b) =>
+        b.id === blockId ? { ...b, isHighYield: !currentValue } : b,
+      ),
+    );
+
+    try {
+      // Persist to database using toggleHighYield handler
+      const result = await window.api.notebookBlocks.toggleHighYield(blockId);
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      // Update with server response (in case of any sync issues)
+      if (mountedRef.current && result.data) {
+        setBlocks((prev) =>
+          prev.map((b) => (b.id === blockId ? result.data : b)),
+        );
+      }
+    } catch (err) {
+      // Revert optimistic update on error
+      if (mountedRef.current) {
+        setBlocks((prev) =>
+          prev.map((b) =>
+            b.id === blockId ? { ...b, isHighYield: currentValue } : b,
+          ),
+        );
+        toast({
+          title: "Error",
+          description:
+            err instanceof Error ? err.message : "Failed to update block",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      // Remove from toggling set
+      if (mountedRef.current) {
+        setTogglingBlockIds((prev) => {
+          const next = new Set(prev);
+          next.delete(blockId);
+          return next;
+        });
+      }
+    }
+  };
+
   const handleBlockSave = async (
     blockId: string,
-    updates: { content?: string; userInsight?: string; calloutType?: 'pearl' | 'trap' | 'caution' | null }
+    updates: {
+      content?: string;
+      userInsight?: string;
+      calloutType?: "pearl" | "trap" | "caution" | null;
+    },
   ) => {
     const result = await window.api.notebookBlocks.update(blockId, updates);
     if (result.error) {
@@ -188,7 +295,9 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
     return (
       <div className="flex flex-col items-center justify-center h-full text-destructive p-8 text-center">
         <p className="font-semibold mb-2">Error Loading Article</p>
-        <p className="text-sm opacity-80 mb-4">{error || "Something went wrong"}</p>
+        <p className="text-sm opacity-80 mb-4">
+          {error || "Something went wrong"}
+        </p>
         <Button variant="outline" onClick={fetchData}>
           Try Again
         </Button>
@@ -211,6 +320,29 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
             Back to Topics
           </Button>
         )}
+
+        {/* View Mode Toggle */}
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(value) =>
+            value && setViewMode(value as "all" | "highYield")
+          }
+          size="sm"
+        >
+          <ToggleGroupItem value="all" aria-label="Show all blocks">
+            <Layers className="h-4 w-4 mr-1" />
+            All ({blocks.length})
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="highYield"
+            aria-label="Show only high-yield blocks"
+          >
+            <Star className="h-4 w-4 mr-1" />
+            High-Yield ({highYieldCount})
+          </ToggleGroupItem>
+        </ToggleGroup>
+
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-2" disabled>
             <Sparkles className="h-4 w-4" />
@@ -238,13 +370,16 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">
+                    <Badge
+                      variant="secondary"
+                      className="bg-primary/10 text-primary"
+                    >
                       {boardRelevance.questionsAttempted} questions
                     </Badge>
                     <ChevronDown
                       className={cn(
                         "h-4 w-4 text-muted-foreground transition-transform",
-                        boardPanelOpen && "rotate-180"
+                        boardPanelOpen && "rotate-180",
                       )}
                     />
                   </div>
@@ -252,25 +387,32 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
                 <CollapsibleContent>
                   <div className="px-4 pb-4 space-y-3 text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Your accuracy:</span>
+                      <span className="text-muted-foreground">
+                        Your accuracy:
+                      </span>
                       <span className="font-semibold">
-                        {Math.round(boardRelevance.accuracy)}% ({boardRelevance.correctCount}/
+                        {Math.round(boardRelevance.accuracy)}% (
+                        {boardRelevance.correctCount}/
                         {boardRelevance.questionsAttempted})
                       </span>
                     </div>
                     {boardRelevance.missedConcepts.length > 0 && (
                       <div>
-                        <span className="text-muted-foreground">Common exam traps:</span>
+                        <span className="text-muted-foreground">
+                          Common exam traps:
+                        </span>
                         <div className="mt-1 flex flex-wrap gap-1">
-                          {boardRelevance.missedConcepts.slice(0, 3).map((mc) => (
-                            <Badge
-                              key={mc.concept}
-                              variant="outline"
-                              className="text-xs bg-notebook-trap/10 text-notebook-trap border-notebook-trap/30"
-                            >
-                              {mc.concept}
-                            </Badge>
-                          ))}
+                          {boardRelevance.missedConcepts
+                            .slice(0, 3)
+                            .map((mc) => (
+                              <Badge
+                                key={mc.concept}
+                                variant="outline"
+                                className="text-xs bg-notebook-trap/10 text-notebook-trap border-notebook-trap/30"
+                              >
+                                {mc.concept}
+                              </Badge>
+                            ))}
                         </div>
                       </div>
                     )}
@@ -290,23 +432,54 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
           />
 
           {/* Article Content */}
-          <ArticleContent
-            blocks={blocks}
-            onFootnoteClick={handleFootnoteClick}
-            onBlockEdit={handleBlockEdit}
-          />
+          {blocks.length === 0 && viewMode === "highYield" ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <Star className="h-16 w-16 mx-auto mb-4 opacity-20" />
+              <p className="text-lg font-medium mb-2">
+                No high-yield blocks yet
+              </p>
+              <p className="text-sm">
+                Click the star icon on any block to mark it as high-yield
+              </p>
+            </div>
+          ) : (
+            <ArticleContent
+              blocks={blocks}
+              onFootnoteClick={handleFootnoteClick}
+              onBlockEdit={handleBlockEdit}
+              onStarToggle={handleStarToggle}
+              togglingBlockIds={togglingBlockIds}
+            />
+          )}
 
           {/* Source Footnotes */}
-          <SourceFootnotes footnotes={footnotes} onViewSource={handleViewSource} />
+          <SourceFootnotes
+            footnotes={footnotes}
+            onViewSource={handleViewSource}
+          />
         </div>
       </div>
 
       {/* Footer */}
       <footer className="flex-shrink-0 p-4 border-t border-border/30 bg-notebook-card flex justify-between items-center px-6">
-        <Button variant="default" className="gap-2" onClick={() => setAddBlockOpen(true)}>
-          <Plus className="w-4 h-4" />
-          Add Content
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="default"
+            className="gap-2"
+            onClick={() => setAddBlockOpen(true)}
+          >
+            <Plus className="w-4 h-4" />
+            Add from Library
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => setDirectAuthorOpen(true)}
+          >
+            <PenLine className="w-4 h-4" />
+            Write Note
+          </Button>
+        </div>
         <Button
           variant="outline"
           className="gap-2"
@@ -349,6 +522,16 @@ export function TopicArticleView({ pageId, onBack, onRefresh }: TopicArticleView
         topicPageId={pageId}
         blocks={blocks}
         onCardsCreated={fetchData}
+      />
+
+      <DirectAuthorModal
+        open={directAuthorOpen}
+        onOpenChange={setDirectAuthorOpen}
+        topicName={topic?.canonicalName || ""}
+        pageId={pageId}
+        onSave={() => {
+          fetchData();
+        }}
       />
     </div>
   );

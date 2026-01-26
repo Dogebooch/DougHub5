@@ -142,6 +142,7 @@ export function AddBlockModal({
         mediaPath: source.mediaPath || undefined,
         position: maxPosition + 1,
         cardCount: 0,
+        isHighYield: false, // Default to not high-yield
       };
 
       const createResult = await window.api.notebookBlocks.create(newBlock);

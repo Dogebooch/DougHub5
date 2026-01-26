@@ -108,13 +108,14 @@ const api = {
     getTopicsWithStats: () => electron.ipcRenderer.invoke("notebook:getTopicsWithStats")
   },
   notebookBlocks: {
-    getByPage: (pageId) => electron.ipcRenderer.invoke("notebookBlocks:getByPage", pageId),
+    getByPage: (pageId, options) => electron.ipcRenderer.invoke("notebookBlocks:getByPage", pageId, options),
     getById: (id) => electron.ipcRenderer.invoke("notebookBlocks:getById", id),
     getBySourceId: (sourceId) => electron.ipcRenderer.invoke("notebookBlocks:getBySourceId", sourceId),
     getBySource: (sourceId) => electron.ipcRenderer.invoke("notebookBlocks:getBySource", sourceId),
     create: (block) => electron.ipcRenderer.invoke("notebookBlocks:create", block),
     addToAnotherTopic: (payload) => electron.ipcRenderer.invoke("notebookBlocks:addToAnotherTopic", payload),
     update: (id, updates) => electron.ipcRenderer.invoke("notebookBlocks:update", id, updates),
+    toggleHighYield: (blockId) => electron.ipcRenderer.invoke("notebookBlocks:toggleHighYield", blockId),
     delete: (id) => electron.ipcRenderer.invoke("notebookBlocks:delete", id),
     searchByContent: (query, excludeBlockId, limit) => electron.ipcRenderer.invoke("notebookBlocks:searchByContent", {
       query,

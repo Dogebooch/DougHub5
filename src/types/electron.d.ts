@@ -278,7 +278,10 @@ export interface ElectronAPI {
     getTopicsWithStats: () => Promise<IpcResult<TopicWithStats[]>>;
   };
   notebookBlocks: {
-    getByPage: (pageId: string) => Promise<IpcResult<NotebookBlock[]>>;
+    getByPage: (
+      pageId: string,
+      options?: { highYieldOnly?: boolean },
+    ) => Promise<IpcResult<NotebookBlock[]>>;
     getById: (id: string) => Promise<IpcResult<NotebookBlock | null>>;
     getBySourceId: (
       sourceId: string,
@@ -299,6 +302,7 @@ export interface ElectronAPI {
       id: string,
       updates: Partial<NotebookBlock>,
     ) => Promise<IpcResult<void>>;
+    toggleHighYield: (blockId: string) => Promise<IpcResult<NotebookBlock>>;
     delete: (id: string) => Promise<IpcResult<void>>;
     searchByContent: (
       query: string,
@@ -378,6 +382,7 @@ export interface ElectronAPI {
         content: string;
         userInsight?: string;
         calloutType?: "pearl" | "trap" | "caution" | null;
+        isHighYield?: boolean;
       }>,
     ) => Promise<IpcResult<TopicCardSuggestion[]>>;
     generateElaboratedFeedback: (

@@ -18,6 +18,7 @@ export interface TopicCardGenerationContext {
     content: string;
     userInsight?: string;
     calloutType?: 'pearl' | 'trap' | 'caution' | null;
+    isHighYield?: boolean; // v22: High-yield marker for board prep prioritization
   }>;
 }
 
@@ -74,7 +75,8 @@ Format Selection:
 - 'procedural': For step-by-step procedures
 
 Priority Rules:
-- Blocks marked as 'pearl' or 'trap' are HIGH PRIORITY - always suggest cards for these
+- Blocks marked as 'pearl', 'trap', or [HIGH-YIELD] are HIGH PRIORITY - always suggest cards for these first
+- HIGH-YIELD blocks are user-curated board prep content - generate 2-3 cards for these
 - Focus on content that tests understanding, not trivia
 - Skip blocks that are too vague or lack testable content
 - For clinical vignettes: front = scenario, back = diagnosis/answer (NEVER duplicate)
@@ -105,11 +107,14 @@ Output Format (JSON only, no markdown):
 
   buildUserPrompt: ({ topicName, blocks }: TopicCardGenerationContext) => {
     const blocksText = blocks.map((b, i) => {
-      const calloutLabel = b.calloutType
-        ? ` [${b.calloutType.toUpperCase()}]`
-        : '';
+      // Build labels array for callout type and high-yield
+      const labels: string[] = [];
+      if (b.calloutType) labels.push(b.calloutType.toUpperCase());
+      if (b.isHighYield) labels.push('HIGH-YIELD');
+      const labelStr = labels.length > 0 ? ` [${labels.join(', ')}]` : '';
+
       const content = b.userInsight || b.content;
-      return `BLOCK ${i + 1} (ID: ${b.id})${calloutLabel}:
+      return `BLOCK ${i + 1} (ID: ${b.id})${labelStr}:
 ${content}`;
     }).join('\n\n---\n\n');
 
@@ -119,7 +124,7 @@ BLOCKS TO ANALYZE:
 
 ${blocksText}
 
-Generate high-quality card suggestions for the blocks above. Prioritize blocks with callout types (PEARL, TRAP, CAUTION). Include the blockId in each suggestion.`;
+Generate high-quality card suggestions for the blocks above. Prioritize blocks marked [HIGH-YIELD] or with callout types (PEARL, TRAP, CAUTION). Include the blockId in each suggestion.`;
   },
 
   normalizeResult: (

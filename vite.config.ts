@@ -13,9 +13,38 @@ export default defineConfig({
         entry: "electron/main.ts",
         // Externalize native modules for main process
         vite: {
+          plugins: [
+            {
+              name: "shim-node-sqlite-transform",
+              transform(code, id) {
+                if (code.includes("node:sqlite")) {
+                  const shimPath = path
+                    .resolve(__dirname, "electron/sqlite-shim.ts")
+                    .replace(/\\/g, "/");
+                  return code.replace(/["']node:sqlite["']/g, `"${shimPath}"`);
+                }
+              },
+            },
+          ],
+          resolve: {
+            alias: {
+              "node:sqlite": path.resolve(__dirname, "electron/sqlite-shim.ts"),
+            },
+          },
           build: {
             rollupOptions: {
-              external: ["electron", "better-sqlite3", /^node:/],
+              external: (source) => {
+                if (source === "electron" || source === "better-sqlite3") {
+                  return true;
+                }
+                if (source === "node:sqlite") {
+                  return false;
+                }
+                if (source.startsWith("node:")) {
+                  return true;
+                }
+                return false;
+              },
             },
           },
         },

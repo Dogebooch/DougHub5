@@ -206,8 +206,8 @@ const api = {
     getTopicsWithStats: () => ipcRenderer.invoke("notebook:getTopicsWithStats"),
   },
   notebookBlocks: {
-    getByPage: (pageId: string) =>
-      ipcRenderer.invoke("notebookBlocks:getByPage", pageId),
+    getByPage: (pageId: string, options?: { highYieldOnly?: boolean }) =>
+      ipcRenderer.invoke("notebookBlocks:getByPage", pageId, options),
     getById: (id: string) => ipcRenderer.invoke("notebookBlocks:getById", id),
     getBySourceId: (sourceId: string) =>
       ipcRenderer.invoke("notebookBlocks:getBySourceId", sourceId),
@@ -219,6 +219,8 @@ const api = {
       ipcRenderer.invoke("notebookBlocks:addToAnotherTopic", payload),
     update: (id: string, updates: unknown) =>
       ipcRenderer.invoke("notebookBlocks:update", id, updates),
+    toggleHighYield: (blockId: string) =>
+      ipcRenderer.invoke("notebookBlocks:toggleHighYield", blockId),
     delete: (id: string) => ipcRenderer.invoke("notebookBlocks:delete", id),
     searchByContent: (query: string, excludeBlockId?: string, limit?: number) =>
       ipcRenderer.invoke("notebookBlocks:searchByContent", {
@@ -316,6 +318,7 @@ const api = {
         content: string;
         userInsight?: string;
         calloutType?: "pearl" | "trap" | "caution" | null;
+        isHighYield?: boolean; // v22: High-yield marker for prioritization
       }>,
     ) => ipcRenderer.invoke("ai:generateCardsFromTopic", topicName, blocks),
     generateElaboratedFeedback: (

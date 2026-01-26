@@ -1359,6 +1359,7 @@ export async function generateCardsFromTopic(
     content: string;
     userInsight?: string;
     calloutType?: 'pearl' | 'trap' | 'caution' | null;
+    isHighYield?: boolean; // v22: High-yield marker for prioritization
   }>,
 ): Promise<TopicCardSuggestion[]> {
   if (!blocks || blocks.length === 0) {

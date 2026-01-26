@@ -9,7 +9,9 @@ import {
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
-const pdfParse = require("pdf-parse");
+// @ts-ignore
+import * as pdfParseRaw from "pdf-parse";
+const pdfParse = pdfParseRaw.default ?? pdfParseRaw;
 import {
   resetAIClient,
   getAvailableOllamaModels,
@@ -1733,9 +1735,13 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     "notebookBlocks:getByPage",
-    async (_, pageId: string): Promise<IpcResult<DbNotebookBlock[]>> => {
+    async (
+      _,
+      pageId: string,
+      options?: { highYieldOnly?: boolean },
+    ): Promise<IpcResult<DbNotebookBlock[]>> => {
       try {
-        const blocks = notebookBlockQueries.getByPage(pageId);
+        const blocks = notebookBlockQueries.getByPage(pageId, options);
         return success(blocks);
       } catch (error) {
         return failure(error);
@@ -1789,6 +1795,30 @@ export function registerIpcHandlers(): void {
       try {
         notebookBlockQueries.update(id, updates);
         return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "notebookBlocks:toggleHighYield",
+    async (_, blockId: string): Promise<IpcResult<DbNotebookBlock>> => {
+      try {
+        // Fetch current block
+        const current = notebookBlockQueries.getById(blockId);
+        if (!current) {
+          throw new Error(`NotebookBlock not found: ${blockId}`);
+        }
+
+        // Toggle isHighYield
+        const toggled = { ...current, isHighYield: !current.isHighYield };
+        notebookBlockQueries.update(blockId, {
+          isHighYield: toggled.isHighYield,
+        });
+
+        // Return updated block for optimistic UI sync
+        return success(toggled);
       } catch (error) {
         return failure(error);
       }
@@ -1916,6 +1946,7 @@ export function registerIpcHandlers(): void {
             cardCount: 0,
             userInsight: insight,
             relevanceScore: "high",
+            isHighYield: false, // Default to not high-yield
           };
           notebookBlockQueries.insert(newBlock);
 
@@ -2453,6 +2484,7 @@ export function registerIpcHandlers(): void {
         content: string;
         userInsight?: string;
         calloutType?: "pearl" | "trap" | "caution" | null;
+        isHighYield?: boolean; // v22: High-yield marker for prioritization
       }>,
     ): Promise<IpcResult<TopicCardSuggestion[]>> => {
       try {

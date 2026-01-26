@@ -6,13 +6,24 @@ import type {
   RelevanceScore,
 } from "../../src/types/index";
 
+export interface NotebookBlockQueryOptions {
+  highYieldOnly?: boolean;
+}
+
 export const notebookBlockQueries = {
-  getByPage(pageId: string): DbNotebookBlock[] {
+  getByPage(
+    pageId: string,
+    options?: NotebookBlockQueryOptions,
+  ): DbNotebookBlock[] {
+    const whereClause = options?.highYieldOnly
+      ? "WHERE b.notebookTopicPageId = ? AND b.isHighYield = 1"
+      : "WHERE b.notebookTopicPageId = ?";
+
     const stmt = getDatabase().prepare(`
       SELECT b.*, 
         (SELECT COUNT(*) FROM cards c WHERE c.sourceBlockId = b.id) as cardCount 
       FROM notebook_blocks b 
-      WHERE b.notebookTopicPageId = ? 
+      ${whereClause}
       ORDER BY b.position
     `);
     const rows = stmt.all(pageId) as NotebookBlockRow[];
@@ -69,11 +80,11 @@ export const notebookBlockQueries = {
     const stmt = getDatabase().prepare(`
       INSERT INTO notebook_blocks (
         id, notebookTopicPageId, sourceItemId, content, annotations, mediaPath, position,
-        userInsight, aiEvaluation, relevanceScore, relevanceReason, calloutType
+        userInsight, aiEvaluation, relevanceScore, relevanceReason, calloutType, isHighYield
       )
       VALUES (
         @id, @notebookTopicPageId, @sourceItemId, @content, @annotations, @mediaPath, @position,
-        @userInsight, @aiEvaluation, @relevanceScore, @relevanceReason, @calloutType
+        @userInsight, @aiEvaluation, @relevanceScore, @relevanceReason, @calloutType, @isHighYield
       )
     `);
     stmt.run({
@@ -87,6 +98,7 @@ export const notebookBlockQueries = {
       relevanceScore: block.relevanceScore || null,
       relevanceReason: block.relevanceReason || null,
       calloutType: block.calloutType || null,
+      isHighYield: block.isHighYield ? 1 : 0, // Convert boolean to SQLite INTEGER
     });
   },
 
@@ -112,7 +124,8 @@ export const notebookBlockQueries = {
         aiEvaluation = @aiEvaluation,
         relevanceScore = @relevanceScore,
         relevanceReason = @relevanceReason,
-        calloutType = @calloutType
+        calloutType = @calloutType,
+        isHighYield = @isHighYield
       WHERE id = @id
     `);
     updateStmt.run({
@@ -126,6 +139,7 @@ export const notebookBlockQueries = {
       relevanceScore: merged.relevanceScore || null,
       relevanceReason: merged.relevanceReason || null,
       calloutType: merged.calloutType || null,
+      isHighYield: merged.isHighYield ? 1 : 0, // Convert boolean to SQLite INTEGER
     });
   },
 
@@ -264,5 +278,6 @@ export function parseNotebookBlockRow(row: NotebookBlockRow): DbNotebookBlock {
     relevanceScore: (row.relevanceScore as RelevanceScore) || "unknown",
     relevanceReason: row.relevanceReason || undefined,
     calloutType: (row.calloutType as "pearl" | "trap" | "caution") || undefined,
+    isHighYield: row.isHighYield === 1, // Convert SQLite INTEGER to boolean
   };
 }

@@ -152,7 +152,7 @@ export interface NotebookBlockAiEvaluation {
 export interface NotebookBlock {
   id: string;
   notebookTopicPageId: string;
-  sourceItemId: string;
+  sourceItemId: string | null; // null for direct authoring (not extracted from Library)
   content: string;
   userInsight?: string;
   aiEvaluation?: NotebookBlockAiEvaluation;
@@ -163,6 +163,7 @@ export interface NotebookBlock {
   position: number;
   cardCount: number; // v2: Number of cards generated from this block
   calloutType?: "pearl" | "trap" | "caution" | null;
+  isHighYield: boolean; // v22: High-yield marker for board prep filtering
 }
 
 export type NotebookLinkType =

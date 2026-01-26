@@ -1294,23 +1294,37 @@ const highYieldCount = blocks.filter(b => b.isHighYield).length;
 
 ## Progress Tracking
 
-| Phase | Prompt | Status | Verified |
-|-------|--------|--------|----------|
-| 1.1 | Migration v22 | [ ] | [ ] |
-| 1.2 | Register migration | [ ] | [ ] |
-| 1.3 | Database types | [ ] | [ ] |
-| 1.4 | Frontend types | [ ] | [ ] |
-| 1.5 | Query updates | [ ] | [ ] |
-| 2.1 | Toggle IPC handler | [ ] | [ ] |
-| 2.2 | getByPage filter | [ ] | [ ] |
-| 2.3 | Preload expose | [ ] | [ ] |
-| 2.4 | IPC types | [ ] | [ ] |
-| 2.5 | Store action | [ ] | [ ] |
-| 3.1 | Star toggle UI | [ ] | [ ] |
-| 4.1-4.4 | View toggle | [ ] | [ ] |
-| 5.1 | DirectAuthorModal | [ ] | [ ] |
-| 5.2-5.3 | Write Note button | [ ] | [ ] |
-| 6.1-6.3 | AI task config | [ ] | [ ] |
-| 6.4-6.6 | AI service/UI | [ ] | [ ] |
-| 7 | Archive→Library rename | [ ] | [ ] |
-| 8.1 | Count indicator | [ ] | [ ] |
+| Phase | Prompt | Status | Verified | Notes |
+|-------|--------|--------|----------|-------|
+| 1.1 | Migration v22 | [x] | [x] | Batch 1 - Jan 26 |
+| 1.2 | Register migration | [x] | [x] | Batch 1 - Jan 26 |
+| 1.3 | Database types | [x] | [x] | Batch 1 - Jan 26 |
+| 1.4 | Frontend types | [x] | [x] | Batch 1 - Jan 26 |
+| 1.5 | Query updates | [x] | [x] | Batch 1 - Jan 26 |
+| 2.1 | Toggle IPC handler | [x] | [x] | Batch 2 - Jan 26 |
+| 2.2 | getByPage filter | [x] | [x] | Batch 2 - Jan 26 |
+| 2.3 | Preload expose | [x] | [x] | Batch 2 - Jan 26 |
+| 2.4 | IPC types | [x] | [x] | Batch 2 - Jan 26 |
+| 2.5 | Store action | [~] | [~] | Skipped - UI uses direct IPC calls with local state |
+| 3.1 | Star toggle UI | [x] | [x] | Batch 3 - Jan 26 |
+| 4.1-4.4 | View toggle | [x] | [x] | Batch 3 - Jan 26, includes count indicator (8.1) |
+| 5.1 | DirectAuthorModal | [x] | [x] | Jan 26 - includes auto-save draft, callout type, high-yield checkbox |
+| 5.2-5.3 | Write Note button | [x] | [x] | Jan 26 - added to footer alongside "Add from Library" |
+| 6.1-6.3 | AI task config | [ ] | [ ] | |
+| 6.4-6.6 | AI service/UI | [ ] | [ ] | |
+| 7 | Archive→Library rename | [ ] | [ ] | |
+| 8.1 | Count indicator | [x] | [x] | Implemented in 4.1-4.4 |
+
+### Implementation Summary
+
+**Completed (Jan 26, 2026):**
+- Phase 1: Database Foundation ✅
+- Phase 2: IPC & Store Layer ✅ (store action skipped - not needed)
+- Phase 3: Star Toggle UI ✅
+- Phase 4: View Toggle ✅
+- Phase 5: Direct Authoring Modal ✅ (includes auto-save drafts, callout type, high-yield checkbox)
+- Phase 8.1: Count Indicator ✅ (bundled with Phase 4)
+
+**Remaining:**
+- Phase 6: AI/Card Generation Updates
+- Phase 7: Archive → Library Rename

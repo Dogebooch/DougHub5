@@ -1,12 +1,16 @@
 import React from 'react';
-import { Pencil } from 'lucide-react';
-import { NotebookBlock } from '@/types';
-import { CalloutBlock } from './CalloutBlock';
+import { Pencil, Star } from "lucide-react";
+import { NotebookBlock } from "@/types";
+import { CalloutBlock } from "./CalloutBlock";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ArticleContentProps {
   blocks: NotebookBlock[];
   onFootnoteClick?: (sourceItemId: string) => void;
   onBlockEdit?: (block: NotebookBlock) => void;
+  onStarToggle?: (blockId: string, currentValue: boolean) => void;
+  togglingBlockIds?: Set<string>;
 }
 
 /**
@@ -16,12 +20,20 @@ interface ArticleContentProps {
  * Blocks with calloutType render as styled callout boxes.
  * Each block gets a footnote superscript linking to its source.
  */
-export function ArticleContent({ blocks, onFootnoteClick, onBlockEdit }: ArticleContentProps) {
+export function ArticleContent({
+  blocks,
+  onFootnoteClick,
+  onBlockEdit,
+  onStarToggle,
+  togglingBlockIds = new Set(),
+}: ArticleContentProps) {
   if (!blocks || blocks.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <p className="text-sm">No content yet.</p>
-        <p className="text-xs mt-1">Add content from your Archive to get started.</p>
+        <p className="text-xs mt-1">
+          Add content from your Archive to get started.
+        </p>
       </div>
     );
   }
@@ -33,9 +45,9 @@ export function ArticleContent({ blocks, onFootnoteClick, onBlockEdit }: Article
         const displayContent = block.userInsight || block.content;
 
         // Determine callout type: explicit or auto-detected from AI evaluation
-        const calloutType: 'pearl' | 'trap' | 'caution' | null =
+        const calloutType: "pearl" | "trap" | "caution" | null =
           block.calloutType ||
-          (block.aiEvaluation?.examTrapType ? 'trap' : null);
+          (block.aiEvaluation?.examTrapType ? "trap" : null);
 
         const FootnoteSup = (
           <sup
@@ -47,7 +59,7 @@ export function ArticleContent({ blocks, onFootnoteClick, onBlockEdit }: Article
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (e.key === "Enter" || e.key === " ") {
                 onFootnoteClick?.(block.sourceItemId);
               }
             }}
@@ -79,9 +91,37 @@ export function ArticleContent({ blocks, onFootnoteClick, onBlockEdit }: Article
               {displayContent}
               {FootnoteSup}
             </p>
-            {onBlockEdit && (
-              <Pencil className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-            )}
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {onStarToggle && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  disabled={togglingBlockIds.has(block.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStarToggle(block.id, block.isHighYield);
+                  }}
+                  aria-label={
+                    block.isHighYield
+                      ? "Remove high-yield marker"
+                      : "Mark as high-yield"
+                  }
+                >
+                  <Star
+                    className={cn(
+                      "h-4 w-4 transition-colors",
+                      block.isHighYield
+                        ? "fill-warning text-warning"
+                        : "text-muted-foreground",
+                    )}
+                  />
+                </Button>
+              )}
+              {onBlockEdit && (
+                <Pencil className="h-4 w-4 text-muted-foreground" />
+              )}
+            </div>
           </div>
         );
       })}

@@ -164,7 +164,7 @@ export interface DbNotebookTopicPage {
 export interface DbNotebookBlock {
   id: string;
   notebookTopicPageId: string;
-  sourceItemId: string;
+  sourceItemId: string | null; // null for direct authoring (not extracted from Library)
   content: string;
   annotations?: string;
   mediaPath?: string;
@@ -175,7 +175,10 @@ export interface DbNotebookBlock {
   aiEvaluation?: NotebookBlockAiEvaluation;
   relevanceScore?: RelevanceScore;
   relevanceReason?: string;
+  // v20: Callout types for card generation priority
   calloutType?: "pearl" | "trap" | "caution" | null;
+  // v22: High yield toggle for board prep filtering
+  isHighYield: boolean;
 }
 
 export interface DbNotebookLink {
@@ -381,7 +384,7 @@ export interface NotebookTopicPageRow {
 export interface NotebookBlockRow {
   id: string;
   notebookTopicPageId: string;
-  sourceItemId: string;
+  sourceItemId: string | null;
   content: string;
   annotations: string | null;
   mediaPath: string | null;
@@ -393,6 +396,7 @@ export interface NotebookBlockRow {
   relevanceScore: string | null;
   relevanceReason: string | null;
   calloutType: string | null;
+  isHighYield: number; // SQLite INTEGER: 0 or 1
 }
 
 export interface NotebookLinkRow {
