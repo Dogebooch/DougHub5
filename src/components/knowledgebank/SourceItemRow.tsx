@@ -170,8 +170,8 @@ export const SourceItemRow: React.FC<SourceItemRowProps> = ({
       </div>
 
       <div className="flex-grow min-w-0 flex flex-col gap-1">
-        <div className="flex items-center gap-2 min-w-0">
-          <h3 className="font-medium text-sm truncate leading-normal text-card-foreground flex-1">
+        <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+          <h3 className="font-medium text-sm truncate leading-normal text-card-foreground min-w-0 flex-1">
             {displayTitle}
           </h3>
           {/* AI extraction spinner - shows when metadata is being extracted */}

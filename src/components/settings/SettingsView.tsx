@@ -389,6 +389,7 @@ export function SettingsView() {
       try {
         const result = await window.api.sourceItems.reextractMetadata({
           overwrite,
+          sourceTypes: ["all"],
         });
 
         if (result.error) {
@@ -410,12 +411,12 @@ export function SettingsView() {
           } else if (processed === 0) {
             toast({
               title: "Nothing to Process",
-              description: "All questions already have metadata.",
+              description: "All items already have metadata.",
             });
           } else {
             toast({
               title: "Re-extraction Complete",
-              description: `Processed ${processed} questions: ${succeeded} succeeded, ${failed} failed.`,
+              description: `Processed ${processed} items: ${succeeded} succeeded, ${failed} failed.`,
               variant: failed > 0 ? "destructive" : "default",
             });
           }
@@ -513,7 +514,7 @@ export function SettingsView() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Settings
           </h1>
-          <p className="text-foreground/80 mt-1">
+          <p className="text-muted-foreground mt-1">
             Configure application behavior, AI providers, and data management.
           </p>
         </div>
@@ -544,7 +545,7 @@ export function SettingsView() {
           <Card className="border-border bg-surface-elevated/30">
             <CardHeader>
               <CardTitle>AI Provider & Models</CardTitle>
-              <CardDescription className="text-foreground/80">
+              <CardDescription>
                 Choose which AI model powers concept extraction and card
                 generation.
               </CardDescription>
@@ -584,7 +585,7 @@ export function SettingsView() {
                         }
                         className="font-mono"
                       />
-                      <p className="text-xs text-foreground/80">
+                      <p className="text-xs text-muted-foreground">
                         Stored locally. Never shared. Requires billing enabled
                         at{" "}
                         <a
@@ -707,7 +708,7 @@ export function SettingsView() {
                           />
                         )}
                       </div>
-                      <p className="text-xs text-foreground/80">
+                      <p className="text-xs text-muted-foreground">
                         {availableModels.length > 0
                           ? `${availableModels.length} model${
                               availableModels.length === 1 ? "" : "s"
@@ -728,7 +729,7 @@ export function SettingsView() {
                 <Globe className="w-5 h-5" />
                 Browser Integration
               </CardTitle>
-              <CardDescription className="text-foreground/80">
+              <CardDescription>
                 Capture content from browser extensions via Tampermonkey
               </CardDescription>
             </CardHeader>
@@ -737,7 +738,7 @@ export function SettingsView() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <p className="text-sm font-medium">Capture Server</p>
-                    <p className="text-xs text-foreground/80">
+                    <p className="text-xs text-muted-foreground">
                       localhost:{captureStatus.port}
                     </p>
                   </div>
@@ -755,7 +756,7 @@ export function SettingsView() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-foreground/80">Loading...</p>
+                <p className="text-sm text-muted-foreground">Loading...</p>
               )}
             </CardContent>
           </Card>
@@ -766,7 +767,7 @@ export function SettingsView() {
           <Card className="border-border bg-surface-elevated/30">
             <CardHeader>
               <CardTitle>FSRS Algorithm</CardTitle>
-              <CardDescription className="text-foreground/80">
+              <CardDescription>
                 Customize the spaced-repetition scheduler. Automatic
                 optimization coming soon.
               </CardDescription>
@@ -776,7 +777,7 @@ export function SettingsView() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-base">Request Retention</Label>
-                    <p className="text-sm text-foreground/80">
+                    <p className="text-sm text-muted-foreground">
                       Higher = more reviews, but better memory. DougHub
                       recommends 0.89.
                     </p>
@@ -795,7 +796,7 @@ export function SettingsView() {
                   }
                   className="py-4"
                 />
-                <div className="flex justify-between text-xs text-foreground/80 px-1 font-medium">
+                <div className="flex justify-between text-xs text-muted-foreground px-1 font-medium">
                   <span>80% (Light Load)</span>
                   <span>DougHub Default (89%)</span>
                   <span>95% (Heavy Load)</span>
@@ -810,7 +811,7 @@ export function SettingsView() {
           <Card className="border-border bg-surface-elevated/30">
             <CardHeader>
               <CardTitle>Storage & Files</CardTitle>
-              <CardDescription className="text-foreground/80">
+              <CardDescription>
                 Manage your data footprint and security.
               </CardDescription>
             </CardHeader>
@@ -819,7 +820,7 @@ export function SettingsView() {
                 <div className="flex items-start justify-between p-4 rounded-lg bg-surface-base border border-border">
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Database Location</p>
-                    <p className="text-xs text-foreground/80 break-all font-mono">
+                    <p className="text-xs text-muted-foreground break-all font-mono">
                       {dbPath || "Loading..."}
                     </p>
                   </div>
@@ -828,8 +829,8 @@ export function SettingsView() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <p className="font-medium">Data Backup</p>
-                    <p className="text-sm text-foreground/80 leading-snug">
+                    <p className="font-medium text-foreground">Data Backup</p>
+                    <p className="text-sm text-muted-foreground leading-snug">
                       {lastBackup ? (
                         <>
                           Last backup:{" "}
@@ -918,8 +919,8 @@ export function SettingsView() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Purge Raw HTML from Library</p>
-                    <p className="text-sm text-foreground/80 leading-snug max-w-[400px]">
+                    <p className="font-medium text-foreground">Purge Raw HTML from Library</p>
+                    <p className="text-sm text-muted-foreground leading-snug max-w-[400px]">
                       Removes captured webpage source code to free space. Cards
                       and notes are <strong>not</strong> affected.
                     </p>
@@ -970,7 +971,7 @@ export function SettingsView() {
           <Card className="border-border bg-surface-elevated/30">
             <CardHeader>
               <CardTitle>Card Quality Issues</CardTitle>
-              <CardDescription className="text-foreground/80">
+              <CardDescription>
                 Scan for and fix data quality problems.
               </CardDescription>
             </CardHeader>
@@ -978,8 +979,8 @@ export function SettingsView() {
               <div className="grid gap-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Duplicate Front/Back Cards</p>
-                    <p className="text-sm text-foreground/80 leading-snug max-w-[400px]">
+                    <p className="font-medium text-foreground">Duplicate Front/Back Cards</p>
+                    <p className="text-sm text-muted-foreground leading-snug max-w-[400px]">
                       Find cards where the question (front) and answer (back)
                       are identical—usually caused by vignette generation
                       issues.
@@ -1054,75 +1055,63 @@ export function SettingsView() {
           <Card className="border-border bg-surface-elevated/30">
             <CardHeader>
               <CardTitle>AI Metadata</CardTitle>
-              <CardDescription className="text-foreground/80">
-                Re-extract AI-generated summaries, topics, and tags for board
-                questions.
+              <CardDescription>
+                Re-extract AI-generated summaries, topics, and tags for Library
+                items.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid gap-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Re-extract Question Metadata</p>
-                    <p className="text-sm text-foreground/80 leading-snug max-w-[400px]">
-                      Uses AI to regenerate summaries and classifications for
-                      all captured board questions. Useful after AI prompt
-                      improvements.
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-foreground">
+                    Re-extract All Metadata
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-snug max-w-[400px]">
+                    Uses AI to regenerate summaries and classifications for all
+                    Library items (board questions, textbooks, articles, etc.).
+                    Useful after AI prompt improvements.
+                  </p>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
                     <Button
-                      onClick={() => handleReextractMetadata(false)}
                       variant="outline"
                       size="sm"
                       disabled={isReextractingMetadata}
                       className="gap-2"
                     >
                       <Sparkles className="h-4 w-4" />
-                      {isReextractingMetadata ? "Running..." : "Fill Missing"}
+                      {isReextractingMetadata ? "Running..." : "Re-extract All"}
                     </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={isReextractingMetadata}
-                          className="gap-2"
-                        >
-                          <Sparkles className="h-4 w-4 text-warning" />
-                          Re-extract All
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Re-extract All Metadata?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will re-run AI extraction on ALL board
-                            questions, overwriting existing summaries and
-                            classifications. This may take a while and will use
-                            API credits.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleReextractMetadata(true)}
-                          >
-                            Re-extract All
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Re-extract All Library Metadata?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will re-run AI extraction on ALL items in your
+                        Library, overwriting existing metadata. This may take a
+                        while and will use API credits.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleReextractMetadata(true, ["all"])}
+                      >
+                        Re-extract Everything
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
 
                 {/* Re-parse Questions Section */}
                 <div className="flex items-center justify-between border-t pt-6">
                   <div>
-                    <p className="font-medium">Re-parse Question HTML</p>
-                    <p className="text-sm text-foreground/80 leading-snug max-w-[400px]">
+                    <p className="font-medium text-foreground">Re-parse Question HTML</p>
+                    <p className="text-sm text-muted-foreground leading-snug max-w-[400px]">
                       Re-parses stored raw HTML to update question display
                       (vignette, answers, explanation). Use after parser fixes.
                       Preserves attempt history and downloaded images.

@@ -113,8 +113,11 @@ const api = {
           handler,
         );
     },
-    reextractMetadata: (options?: { ids?: string[]; overwrite?: boolean }) =>
-      ipcRenderer.invoke("sourceItems:reextractMetadata", options),
+    reextractMetadata: (options?: {
+      ids?: string[];
+      overwrite?: boolean;
+      sourceTypes?: ("qbank" | "quickcapture" | "article" | "pdf" | "all")[];
+    }) => ipcRenderer.invoke("sourceItems:reextractMetadata", options),
     onReextractProgress: (
       callback: (progress: {
         current: number;

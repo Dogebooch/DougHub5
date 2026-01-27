@@ -218,6 +218,7 @@ export interface ElectronAPI {
     reextractMetadata: (options?: {
       ids?: string[];
       overwrite?: boolean;
+      sourceTypes?: ("qbank" | "quickcapture" | "article" | "pdf" | "all")[];
     }) => Promise<
       IpcResult<{
         processed: number;

@@ -38,7 +38,9 @@ import { spawn } from "node:child_process";
 import * as path from "node:path";
 import * as os from "node:os";
 import * as fs from "node:fs";
+import { app } from "electron";
 import { notifyOllamaStatus, notifyAILog } from "./ipc-utils";
+import { augmentAndSyncDevStatus } from "./ai/dev-status-sync";
 
 // ============================================================================
 // AI Result Cache
@@ -276,6 +278,8 @@ export async function ensureOllamaRunning(): Promise<boolean> {
       if (await isOllamaRunning()) {
         console.log("[AI Service] Ollama started successfully");
         notifyOllamaStatus("started", "Local AI service is ready.");
+        // Automatic status sync on success
+        getProviderStatus().catch(() => {});
         isStartingOllama = false;
         return true;
       }
@@ -286,6 +290,7 @@ export async function ensureOllamaRunning(): Promise<boolean> {
       "failed",
       "Local AI service failed to respond after starting.",
     );
+    getProviderStatus().catch(() => {});
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[AI Service] Failed to start Ollama:", err);
@@ -293,6 +298,7 @@ export async function ensureOllamaRunning(): Promise<boolean> {
       "failed",
       `Could not start local AI service: ${message}`,
     );
+    getProviderStatus().catch(() => {});
   }
 
   console.error("[AI Service] Failed to start Ollama after retries");
@@ -607,12 +613,21 @@ export async function getProviderStatus(): Promise<AIProviderStatus> {
     isConnected = config.apiKey.length > 0;
   }
 
-  return {
+  // Fetch available models if local
+  let availableModels: string[] | undefined;
+  if (config.isLocal && isConnected) {
+    availableModels = await getAvailableOllamaModels();
+  }
+
+  const status: AIProviderStatus = {
     provider: detectedProvider,
     model: config.model,
     isLocal: config.isLocal,
     isConnected,
   };
+
+  // Augment with dev-only fields and sync to file (automatic in dev mode)
+  return await augmentAndSyncDevStatus(status, config, availableModels);
 }
 
 // ============================================================================
@@ -707,6 +722,9 @@ async function callAI(
   if (!config) {
     throw new Error("AI client not initialized");
   }
+
+  // Automatic status sync in dev whenever AI is active
+  getProviderStatus().catch(() => {});
 
   // Dev Overrides
   const devSettings = devSettingsQueries.getAll();
@@ -1754,6 +1772,187 @@ export function findRelatedNotes(
 }
 
 // ============================================================================
+// Generic Source Metadata Extraction (non-qbank items)
+// ============================================================================
+
+import { captureAnalysisTask } from "./ai/tasks/capture-analysis";
+
+/**
+ * Extract metadata for non-qbank source items (articles, quickcapture, pdf, etc.)
+ * Uses the capture-analysis task to generate title, domain, and tags.
+ * Returns in QuestionSummaryResult format for consistency.
+ */
+async function extractGenericSourceMetadata(
+  content: string,
+  sourceType: string,
+): Promise<QuestionSummaryResult | null> {
+  const task = captureAnalysisTask;
+
+  // Validate content length
+  if (!content || content.trim().length < 20) {
+    console.warn(
+      `[AI Service] Content too short for extraction: ${content.length} chars`,
+    );
+    return null;
+  }
+
+  console.log(
+    `[AI Service] Extracting metadata for ${sourceType} item using capture-analysis task`,
+  );
+
+  // Get config for cache key
+  const config = await getProviderConfig();
+  const devSettings = devSettingsQueries.getAll();
+  const effectiveModel = devSettings["aiModel"] || config.model;
+
+  // Check cache
+  const cacheKey = aiCache.key(
+    task.id,
+    effectiveModel,
+    content.substring(0, 500),
+  );
+  const cached = aiCache.get<QuestionSummaryResult>(cacheKey);
+  if (cached) {
+    console.log(`[AI Service] ✓ Cache hit for ${sourceType}:`, cached.summary);
+    return cached;
+  }
+
+  // Build prompt
+  const userPrompt = task.buildUserPrompt({ content });
+
+  try {
+    const startTime = Date.now();
+    const client = await getClient();
+
+    const temperature = devSettings["aiTemperature"]
+      ? parseFloat(devSettings["aiTemperature"])
+      : task.temperature;
+    const maxTokens = devSettings["aiMaxTokens"]
+      ? parseInt(devSettings["aiMaxTokens"])
+      : task.maxTokens;
+
+    console.log(
+      `[AI Service] Using model: ${effectiveModel} | Task: ${task.name}`,
+    );
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), task.timeoutMs);
+
+    const requestId = crypto.randomUUID();
+    notifyAILog({
+      id: requestId,
+      timestamp: startTime,
+      endpoint: "chat/completions",
+      model: effectiveModel,
+      latencyMs: 0,
+      status: "pending",
+      request: {
+        messages: [
+          { role: "system", content: task.systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature,
+        max_tokens: maxTokens,
+      },
+      reason: "extractGenericSourceMetadata",
+    });
+
+    try {
+      const completion = await client.chat.completions.create(
+        {
+          model: effectiveModel,
+          messages: [
+            { role: "system", content: task.systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature,
+          max_tokens: maxTokens,
+        },
+        { signal: controller.signal as any },
+      );
+
+      clearTimeout(timeoutId);
+      const endTime = Date.now();
+      const elapsedMs = endTime - startTime;
+
+      notifyAILog({
+        id: requestId,
+        timestamp: endTime,
+        endpoint: "chat/completions",
+        model: effectiveModel,
+        latencyMs: elapsedMs,
+        status: "success",
+        tokens: completion.usage
+          ? {
+              prompt: completion.usage.prompt_tokens,
+              completion: completion.usage.completion_tokens,
+              total: completion.usage.total_tokens,
+            }
+          : undefined,
+        response: completion,
+        reason: "extractGenericSourceMetadata",
+      });
+
+      const responseText =
+        completion.choices[0]?.message?.content?.trim() || "";
+
+      console.log(`[AI Service] AI response received (${elapsedMs}ms)`);
+
+      // Parse JSON response
+      const parsed = parseAIResponse<{
+        title?: string;
+        domain?: string;
+        tags?: string[];
+        extractedFacts?: string[];
+      }>(responseText);
+
+      if (!parsed) {
+        console.warn("[AI Service] Failed to parse capture-analysis response");
+        return null;
+      }
+
+      // Convert to QuestionSummaryResult format
+      const result: QuestionSummaryResult = {
+        summary:
+          parsed.title ||
+          content.split("\n")[0]?.substring(0, 60) ||
+          "Untitled",
+        subject: parsed.domain || "General",
+        questionType: sourceType as any,
+      };
+
+      // Cache the result
+      aiCache.set(cacheKey, result, task.cacheTTLMs);
+
+      console.log(`[AI Service] ✅ Extracted ${sourceType} metadata:`, {
+        summary: result.summary,
+        subject: result.subject,
+        duration: `${elapsedMs}ms`,
+      });
+
+      return result;
+    } catch (aiError) {
+      clearTimeout(timeoutId);
+      const endTime = Date.now();
+      notifyAILog({
+        id: requestId,
+        timestamp: endTime,
+        endpoint: "chat/completions",
+        model: effectiveModel,
+        latencyMs: endTime - startTime,
+        status: "error",
+        error: (aiError as any)?.message,
+        reason: "extractGenericSourceMetadata",
+      });
+      throw aiError;
+    }
+  } catch (error) {
+    console.error(`[AI Service] ❌ Failed to extract ${sourceType} metadata:`, error);
+    return null;
+  }
+}
+
+// ============================================================================
 // Question Summary Extraction
 // ============================================================================
 
@@ -1779,13 +1978,12 @@ export async function extractQuestionSummary(
   content: string,
   sourceType: string,
 ): Promise<QuestionSummaryResult | null> {
-  const task = questionSummaryTask;
-
-  // Only process qbank questions for now
+  // For non-qbank items, use capture-analysis task to extract metadata
   if (sourceType !== "qbank") {
-    console.log(`[AI Service] Skipping extraction - not qbank (${sourceType})`);
-    return null;
+    return extractGenericSourceMetadata(content, sourceType);
   }
+
+  const task = questionSummaryTask;
 
   // Validate content length
   if (!content || content.trim().length < 20) {

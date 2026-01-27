@@ -149,6 +149,15 @@ function failure(error: unknown): IpcResult<never> {
 }
 
 /**
+ * Truncate title to max length with ellipsis for display.
+ */
+const MAX_TITLE_LENGTH = 80;
+function truncateTitle(title: string): string {
+  if (!title || title.length <= MAX_TITLE_LENGTH) return title;
+  return title.substring(0, MAX_TITLE_LENGTH - 1) + "…";
+}
+
+/**
  * Normalizes a URL for duplicate detection.
  * Removes common tracking parameters, lowercase path, removes trailing slash.
  */
@@ -306,6 +315,8 @@ export async function processCapture(
           rawContent: JSON.stringify(mergedContent),
           questionId: content.questionId || existing.questionId,
           updatedAt: new Date().toISOString(),
+          // Update correctness to latest attempt result
+          correctness: content.wasCorrect ? "correct" : "incorrect",
           // status: existing.status // Keep existing status (could be 'processed' or 'curated')
         });
         resultId = existing.id;
@@ -359,7 +370,7 @@ export async function processCapture(
         const now = new Date().toISOString();
         const sourceItem: DbSourceItem = {
           id,
-          title: `Board Question - ${content.category || content.source}`,
+          title: truncateTitle(`Board Question - ${content.category || content.source}`),
           sourceType: "qbank",
           sourceName: payload.siteName,
           sourceUrl: payload.url, // Store original URL
@@ -370,6 +381,8 @@ export async function processCapture(
           updatedAt: now,
           canonicalTopicIds: [],
           tags: [payload.siteName],
+          // Promote wasCorrect to indexed column for filtering
+          correctness: content.wasCorrect ? "correct" : "incorrect",
         };
         sourceItemQueries.insert(sourceItem);
         resultId = id;
@@ -966,6 +979,11 @@ export function registerIpcHandlers(): void {
     "sourceItems:create",
     async (_, item: DbSourceItem): Promise<IpcResult<DbSourceItem>> => {
       try {
+        // Truncate long titles to prevent display issues
+        if (item.title) {
+          item.title = truncateTitle(item.title);
+        }
+
         // Extract metadata for qbank questions
         if (item.sourceType === "qbank" && !item.metadata) {
           console.log(
@@ -1337,7 +1355,11 @@ export function registerIpcHandlers(): void {
     "sourceItems:reextractMetadata",
     async (
       event,
-      options?: { ids?: string[]; overwrite?: boolean },
+      options?: {
+        ids?: string[];
+        overwrite?: boolean;
+        sourceTypes?: ("qbank" | "quickcapture" | "article" | "pdf" | "all")[];
+      },
     ): Promise<
       IpcResult<{
         processed: number;
@@ -1352,7 +1374,7 @@ export function registerIpcHandlers(): void {
       reextractBackupFile = null;
 
       try {
-        const { ids, overwrite = false } = options || {};
+        const { ids, overwrite = false, sourceTypes = ["qbank"] } = options || {};
         const sender = event.sender;
 
         // Helper to send progress updates
@@ -1373,8 +1395,14 @@ export function registerIpcHandlers(): void {
           items = ids
             .map((id) => sourceItemQueries.getById(id))
             .filter((item): item is DbSourceItem => item !== null);
+        } else if (sourceTypes.includes("all")) {
+          // Get all source items
+          items = sourceItemQueries.getAll();
         } else {
-          items = sourceItemQueries.getByType("qbank");
+          // Get items for specific source types
+          items = sourceTypes.flatMap((type) =>
+            sourceItemQueries.getByType(type as any),
+          );
         }
 
         // Filter to only those needing extraction (unless overwrite)

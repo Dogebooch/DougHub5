@@ -9,7 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Trash2, Copy, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import {
+  Trash2,
+  Copy,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  RefreshCw,
+  Server,
+  Terminal,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { AILogEntry } from "@/types/dev";
@@ -30,25 +39,51 @@ export function AIDevPanel() {
 }
 
 export function AIDevPanelContent() {
-  const { logs, settings, updateSetting, clearLogs, fetchSettings, isOpen } =
-    useDevStore();
+  const {
+    logs,
+    settings,
+    updateSetting,
+    clearLogs,
+    fetchSettings,
+    fetchBackendStatus,
+    backendStatus,
+    isOpen,
+  } = useDevStore();
 
   useEffect(() => {
     if (isOpen) {
       fetchSettings();
+      fetchBackendStatus();
+
+      // Poll backend status every 10 seconds while open
+      const interval = setInterval(fetchBackendStatus, 10000);
+      return () => clearInterval(interval);
     }
   }, [isOpen]);
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
+      <div className="p-4 border-b flex justify-between items-center">
         <h2 className="text-lg font-semibold">AI Dev Panel</h2>
+        {backendStatus && (
+          <Badge
+            variant={backendStatus.isConnected ? "default" : "destructive"}
+            className="gap-1"
+          >
+            <Server className="w-3 h-3" />
+            {backendStatus.provider}{" "}
+            {backendStatus.isConnected ? "Connected" : "Disconnected"}
+          </Badge>
+        )}
       </div>
 
       <Tabs defaultValue="inspector" className="flex-1 flex flex-col min-h-0">
         <div className="px-4 pt-2 border-b bg-muted/20">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="inspector">Inspector ({logs.length})</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="inspector">
+              Inspector ({logs.length})
+            </TabsTrigger>
+            <TabsTrigger value="backend">Backend</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
         </div>
@@ -56,7 +91,12 @@ export function AIDevPanelContent() {
         <TabsContent value="inspector" className="flex-1 min-h-0 m-0 relative">
           <div className="absolute inset-0 flex flex-col">
             <div className="flex justify-end p-2 border-b bg-muted/10">
-              <Button variant="ghost" size="sm" onClick={clearLogs} className="h-8">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearLogs}
+                className="h-8"
+              >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Clear
               </Button>
@@ -76,7 +116,139 @@ export function AIDevPanelContent() {
           </div>
         </TabsContent>
 
-        <TabsContent value="settings" className="flex-1 p-6 m-0 overflow-y-auto">
+        <TabsContent value="backend" className="flex-1 p-6 m-0 overflow-y-auto">
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                Runtime Status
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={fetchBackendStatus}
+                className="h-8"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+
+            {backendStatus ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 border rounded-md bg-muted/30">
+                    <Label className="text-[10px] uppercase text-muted-foreground">
+                      Provider
+                    </Label>
+                    <div className="font-mono text-sm">
+                      {backendStatus.provider}
+                    </div>
+                  </div>
+                  <div className="p-3 border rounded-md bg-muted/30">
+                    <Label className="text-[10px] uppercase text-muted-foreground">
+                      Status
+                    </Label>
+                    <div
+                      className={cn(
+                        "text-sm flex items-center gap-2",
+                        backendStatus.isConnected
+                          ? "text-green-500"
+                          : "text-red-500",
+                      )}
+                    >
+                      {backendStatus.isConnected ? (
+                        <CheckCircle className="w-4 h-4" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4" />
+                      )}
+                      {backendStatus.isConnected ? "Connected" : "Offline"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 border rounded-md bg-muted/30 space-y-2">
+                  <Label className="text-[10px] uppercase text-muted-foreground">
+                    Active Model
+                  </Label>
+                  <div className="font-mono text-sm font-bold">
+                    {backendStatus.model}
+                  </div>
+                  <div className="flex gap-2 text-xs text-muted-foreground">
+                    <span>Temp: {backendStatus.settings?.temperature}</span>
+                    <span>Max Tokens: {backendStatus.settings?.maxTokens}</span>
+                  </div>
+                </div>
+
+                {backendStatus.availableModels && (
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase text-muted-foreground">
+                      Available Models (Local)
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {backendStatus.availableModels.map((m) => (
+                        <Badge
+                          key={m}
+                          variant={
+                            m === backendStatus.model ? "default" : "outline"
+                          }
+                          className="font-mono text-[10px]"
+                        >
+                          {m}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Terminal className="w-4 h-4" />
+                    <span className="text-xs font-medium uppercase">
+                      Shell Integration
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Access real-time backend state via JSON file:
+                  </p>
+                  <div className="p-2 border rounded bg-background flex items-center justify-between group">
+                    <code className="text-[10px] break-all">
+                      {backendStatus.statusFilePath}
+                    </code>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() =>
+                        navigator.clipboard.writeText(
+                          backendStatus.statusFilePath || "",
+                        )
+                      }
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground italic">
+                    Tip: Use{" "}
+                    <code className="bg-muted px-1 rounded">cat ... | jq</code>{" "}
+                    to query from terminal.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-10 text-muted-foreground">
+                <Clock className="w-8 h-8 mx-auto mb-2 animate-pulse" />
+                Fetching status...
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent
+          value="settings"
+          className="flex-1 p-6 m-0 overflow-y-auto"
+        >
           <div className="space-y-6">
             <div className="space-y-2">
               <Label>Model Override</Label>

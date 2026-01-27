@@ -20,6 +20,7 @@ import { migrateToV19 } from "./v19";
 import { migrateToV20 } from "./v20";
 import { migrateToV21 } from "./v21";
 import { migrateToV22 } from "./v22";
+import { migrateToV23 } from "./v23";
 
 export function runMigrations(dbPath: string): void {
   // Apply migrations in order until the schema reaches the latest version.
@@ -107,6 +108,10 @@ export function runMigrations(dbPath: string): void {
   }
   if (currentVersion < 22) {
     migrateToV22();
+    currentVersion = getSchemaVersion();
+  }
+  if (currentVersion < 23) {
+    migrateToV23();
   }
 }
 
@@ -132,4 +137,5 @@ export {
   migrateToV20,
   migrateToV21,
   migrateToV22,
+  migrateToV23,
 };

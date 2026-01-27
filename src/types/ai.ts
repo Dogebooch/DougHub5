@@ -38,6 +38,17 @@ export interface AIProviderStatus {
   isLocal: boolean;
   /** Whether provider is currently connected */
   isConnected: boolean;
+  /** Available models (populated for local providers) */
+  availableModels?: string[];
+  /** Current runtime settings */
+  settings?: {
+    temperature: number;
+    maxTokens: number;
+    baseURL: string;
+    timeout: number;
+  };
+  /** Path to the status JSON file for external shell access */
+  statusFilePath?: string;
 }
 
 // ============================================================================
