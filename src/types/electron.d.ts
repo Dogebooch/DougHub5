@@ -16,7 +16,6 @@ import type {
   CanonicalTopic,
   NotebookTopicPage,
   NotebookBlock,
-  NotebookBlockAiEvaluation,
   SmartView,
   SearchFilter,
   SearchResult,
@@ -39,9 +38,7 @@ import type {
   VignetteConversion,
   SemanticMatch,
   CaptureAnalysisResult,
-  CardSuggestion,
   ElaboratedFeedback,
-  WorthinessResult,
   ExtractFactsResult,
   GenerateQuizResult,
   GradeAnswerResult,
@@ -99,17 +96,6 @@ export type {
   VignetteConversion,
   SemanticMatch,
 };
-
-// Topic-level card generation types
-export interface TopicCardSuggestion {
-  blockId: string;
-  format: "qa" | "cloze" | "overlapping-cloze" | "procedural";
-  front: string;
-  back: string;
-  confidence: number;
-  worthiness: WorthinessResult;
-  formatReason: string;
-}
 
 // API interface exposed via preload script
 export interface ElectronAPI {
@@ -377,13 +363,6 @@ export interface ElectronAPI {
     extractConcepts: (
       content: string,
     ) => Promise<IpcResult<ConceptExtractionResult>>;
-    evaluateInsight: (input: {
-      userInsight: string;
-      sourceContent: string;
-      isIncorrect: boolean;
-      topicContext?: string;
-      blockId?: string;
-    }) => Promise<IpcResult<NotebookBlockAiEvaluation>>;
     analyzeCaptureContent: (
       content: string,
     ) => Promise<IpcResult<CaptureAnalysisResult | null>>;
@@ -399,21 +378,6 @@ export interface ElectronAPI {
       listItem: string,
       context: string,
     ) => Promise<IpcResult<VignetteConversion>>;
-    generateCards: (
-      blockContent: string,
-      topicContext: string,
-      userIntent?: string,
-    ) => Promise<IpcResult<CardSuggestion[]>>;
-    generateCardsFromTopic: (
-      topicName: string,
-      blocks: Array<{
-        id: string;
-        content: string;
-        userInsight?: string;
-        calloutType?: "pearl" | "trap" | "caution" | null;
-        isHighYield?: boolean;
-      }>,
-    ) => Promise<IpcResult<TopicCardSuggestion[]>>;
     generateElaboratedFeedback: (
       card: { front: string; back: string; cardType: string },
       topicContext: string,

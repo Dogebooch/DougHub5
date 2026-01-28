@@ -1,9 +1,9 @@
 // @see - https://www.electron.build/configuration/configuration
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  "appId": "YourAppID",
+  "appId": "com.doughub.app",
   "asar": true,
-  "productName": "YourAppName",
+  "productName": "DougHub",
   "directories": {
     "output": "release/${version}"
   },
@@ -12,12 +12,14 @@
     "dist-electron"
   ],
   "mac": {
+    "icon": "build/icon.png",
     "target": [
       "dmg"
     ],
     "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
   },
   "win": {
+    "icon": "build/icon.ico",
     "target": [
       {
         "target": "nsis",
@@ -38,6 +40,7 @@
     "target": [
       "AppImage"
     ],
+    "icon": "build",
     "artifactName": "${productName}-Linux-${version}.${ext}"
   }
 }

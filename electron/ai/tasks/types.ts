@@ -116,56 +116,6 @@ export interface IdentifyConceptResult {
 }
 
 /**
- * Context type for polish-insight task
- */
-export interface PolishInsightContext {
-  userText: string;
-  sourceContent: string;
-  testedConcept?: string;
-}
-
-/**
- * Result type for polish-insight task
- */
-export interface PolishInsightResult {
-  polished: string;
-  fromUser: string[];
-  addedContext: string[];
-  /** True if AI failed and fallback was used */
-  usedFallback?: boolean;
-}
-
-/**
- * Context type for insight-evaluation task
- */
-export interface InsightEvaluationContext {
-  userInsight: string;
-  sourceContent: string;
-  isIncorrect: boolean;
-  topicContext?: string;
-}
-
-/**
- * Result type for insight-evaluation task
- */
-export interface InsightEvaluationResult {
-  gaps: string[];
-  feedbackText: string;
-  confusionTags?: string[];
-  examTrapType?:
-    | "qualifier-misread"
-    | "negation-blindness"
-    | "age-population-skip"
-    | "absolute-terms"
-    | "best-vs-correct"
-    | "timeline-confusion"
-    | null;
-  evaluatedAt: string;
-  /** True if AI failed and fallback was used */
-  usedFallback?: boolean;
-}
-
-/**
  * Context type for card-suggestion task
  */
 export interface CardSuggestionContext {

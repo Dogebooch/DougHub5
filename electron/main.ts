@@ -82,12 +82,27 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   : RENDERER_DIST;
 
 let win: BrowserWindow | null;
+let splash: BrowserWindow | null = null;
 
 const AUTO_BACKUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour (increased from 15m)
 const BACKUP_RETENTION_DAYS = 7; // Keep 7 days of backups
 const MAX_BACKUP_COUNT = 20; // Hard limit on total files
 
 let autoBackupInterval: NodeJS.Timeout | null = null;
+
+function handleFatalError(title: string, error: unknown) {
+  console.error(`[Fatal Error] ${title}:`, error);
+  // Close splash so it doesn't obscure the error box
+  if (splash && !splash.isDestroyed()) {
+    splash.close();
+    splash = null;
+  }
+  dialog.showErrorBox(
+    title,
+    error instanceof Error ? error.message : String(error),
+  );
+  app.quit();
+}
 
 function startAutoBackup() {
   if (autoBackupInterval) {
@@ -110,6 +125,42 @@ function startAutoBackup() {
     }
   }, AUTO_BACKUP_INTERVAL_MS);
 }
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function createSplashWindow() {
+  const splashWindow = new BrowserWindow({
+    width: 340,
+    height: 340,
+    frame: false,
+    resizable: false,
+    center: true,
+    show: false,
+    backgroundColor: "#343831",
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
+
+  splashWindow.loadFile(
+    path.join(process.env.VITE_PUBLIC as string, "splash.html"),
+  );
+
+  splashWindow.once("ready-to-show", () => {
+    splashWindow.show();
+  });
+
+  return splashWindow;
+}
+
+const updateSplashStatus = (message: string) => {
+  if (splash && !splash.isDestroyed()) {
+    splash.webContents.send("splash:status", message);
+  }
+};
 
 function createWindow() {
   const displays = screen.getAllDisplays();
@@ -213,10 +264,6 @@ function createWindow() {
 
   Menu.setApplicationMenu(null);
 
-  win.once("ready-to-show", () => {
-    win?.showInactive();
-  });
-
   // Test active push message to Renderer-process.
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
@@ -266,6 +313,10 @@ function createWindow() {
                 "[Dev Mode] Failed to load from Vite dev server after retries:",
                 error,
               );
+              if (splash && !splash.isDestroyed()) {
+                splash.close();
+                splash = null;
+              }
               dialog.showErrorBox(
                 "Dev Server Error",
                 `Failed to load from Vite dev server at ${VITE_DEV_SERVER_URL}.\n\nError: ${error.message}\n\nMake sure 'npm run dev' is running.`,
@@ -286,6 +337,10 @@ function createWindow() {
       console.log("[Production Mode] Loading from built files (fallback)");
       win.loadFile(path.join(RENDERER_DIST, "index.html")).catch((error) => {
         console.error("[Production Mode] Failed to load built files:", error);
+        if (splash && !splash.isDestroyed()) {
+          splash.close();
+          splash = null;
+        }
       });
     }
   } else {
@@ -295,6 +350,10 @@ function createWindow() {
     );
     win.loadFile(path.join(RENDERER_DIST, "index.html")).catch((error) => {
       console.error("[Production Mode] Failed to load built files:", error);
+      if (splash && !splash.isDestroyed()) {
+        splash.close();
+        splash = null;
+      }
       dialog.showErrorBox(
         "Startup Error",
         `Failed to load application files.\n\nError: ${error.message}\n\nTry rebuilding with 'npm run build'.`,
@@ -335,14 +394,25 @@ if (!gotTheLock) {
   });
 }
 
-app.whenReady().then(() => {
+function criticalError(title: string, message: string, error: unknown) {
+  console.error(`[Critical] ${title}:`, error);
+  if (splash && !splash.isDestroyed()) {
+    splash.close();
+  }
+  dialog.showErrorBox(title, `${message}\n\n${error}`);
+  app.quit();
+}
+
+app.whenReady().then(async () => {
+  if (!gotTheLock) return;
+
+  // Show Splash Screen first
+  splash = createSplashWindow();
+
   // Handle app-media:// protocol
   protocol.handle("app-media", (request) => {
     try {
       const url = new URL(request.url);
-      // On Windows, the path might start with / followed by a disk letter or just a path
-      // request.url is "app-media://images/abc.png"
-      // we want "images/abc.png"
       const relativePath = decodeURIComponent(url.hostname + url.pathname);
       const fullPath = path.join(app.getPath("userData"), relativePath);
       return net.fetch(pathToFileURL(fullPath).toString());
@@ -352,77 +422,83 @@ app.whenReady().then(() => {
     }
   });
 
-  // Ensure backups directory exists
-  ensureBackupsDir();
-  console.log("[Backup] Backups directory ready");
-
-  // Cleanup old backups
-  const deleted = cleanupOldBackups(BACKUP_RETENTION_DAYS);
-  if (deleted > 0) {
-    console.log(`[Backup] Cleaned up ${deleted} old backup(s)`);
-  }
-
-  // Initialize SQLite database before creating window
-  const dbPath = path.join(app.getPath("userData"), "doughub.db");
   try {
-    initDatabase(dbPath);
-    console.log("[Database] Initialized successfully at:", dbPath);
-  } catch (error) {
-    console.error("[Database] CRITICAL: Failed to initialize database:", error);
-    // Continue anyway - IPC handlers will fail gracefully with error responses
-  }
-
-  // Register IPC handlers for renderer communication
-  registerIpcHandlers();
-
-  // Warm up AI service in background (non-blocking)
-  // This ensures Ollama is ready when user first needs AI features
-  setTimeout(async () => {
-    try {
-      const status = await getProviderStatus();
-      if (status.isLocal && status.isConnected) {
-        console.log(
-          `[AI Service] Warmed up successfully - ${status.model} ready`,
-        );
-      } else if (status.isLocal && !status.isConnected) {
-        console.log("[AI Service] Attempting to start Ollama in background...");
-        await ensureOllamaRunning();
-      }
-    } catch (error) {
-      console.warn("[AI Service] Background warmup failed:", error);
-      // Non-critical - will initialize on first use
+    // 1. Backups
+    updateSplashStatus("Checking backups...");
+    await sleep(400); // Visual delay
+    ensureBackupsDir();
+    console.log("[Backup] Backups directory ready");
+    const deleted = cleanupOldBackups(BACKUP_RETENTION_DAYS);
+    if (deleted > 0) {
+      console.log(`[Backup] Cleaned up ${deleted} old backup(s)`);
     }
-  }, 2000); // 2s delay to not block app startup
 
-  // Start the Capture Server for browser extension captures
-  startCaptureServer(async (payload: CapturePayload) => {
+    // 2. Database
+    updateSplashStatus("Initializing database...");
+    await sleep(100);
+    const dbPath = path.join(app.getPath("userData"), "doughub.db");
     try {
-      // Auto-process the capture in the background
-      const result = await processCapture(payload);
+      initDatabase(dbPath);
+      console.log("[Database] Initialized successfully at:", dbPath);
+    } catch (error) {
+      throw new Error(`Database initialization failed: ${error}`);
+    }
 
-      // Notify renderer of the new capture (for UI refresh if open)
-      if (win) {
-        win.webContents.send("capture:received", payload);
-        // Also send sourceItems:new to refresh lists
-        const newItem = sourceItemQueries.getById(result.id);
-        if (newItem) {
-          win.webContents.send("sourceItems:new", newItem);
+    // 3. Services
+    updateSplashStatus("Starting services...");
+    registerIpcHandlers();
+
+    startCaptureServer(async (payload: CapturePayload) => {
+      try {
+        const result = await processCapture(payload);
+        if (win) {
+          win.webContents.send("capture:received", payload);
+          const newItem = sourceItemQueries.getById(result.id);
+          if (newItem) {
+            win.webContents.send("sourceItems:new", newItem);
+          }
         }
+        return result.id;
+      } catch (error) {
+        console.error("[Capture Server] Auto-process failed:", error);
+        if (win) {
+          win.webContents.send("capture:received", { ...payload, error });
+        }
+        throw error;
       }
+    });
 
-      return result.id;
-    } catch (error) {
-      console.error("[Capture Server] Auto-process failed:", error);
-      // Still notify renderer even on failure so it can show an error
-      if (win) {
-        win.webContents.send("capture:received", { ...payload, error });
+    // Warm up AI in background (non-critical)
+    setTimeout(async () => {
+      try {
+        const status = await getProviderStatus();
+        if (status.isLocal && !status.isConnected) {
+          console.log(
+            "[AI Service] Attempting to start Ollama in background...",
+          );
+          await ensureOllamaRunning();
+        }
+      } catch (error) {
+        console.warn("[AI Service] Background warmup failed:", error);
       }
-      throw error;
+    }, 2000);
+
+    // 4. Load Visuals (Main Window)
+    updateSplashStatus("Loading visuals...");
+    createWindow();
+
+    if (win) {
+      win.once("ready-to-show", () => {
+        // Small delay to ensure paint
+        setTimeout(() => {
+          if (splash && !splash.isDestroyed()) splash.close();
+          if (win && !win.isDestroyed()) win.show();
+        }, 500);
+      });
     }
-  });
-
-  // Create the main window
-  createWindow();
+  } catch (error) {
+    criticalError("Startup Error", "Failed to initialize application.", error);
+  }
 });
 
 // Clean up database connection on quit

@@ -119,12 +119,8 @@ import {
   detectMedicalList,
   convertToVignette,
   suggestTags,
-  evaluateInsight,
   identifyTestedConcept,
-  polishInsight,
-  generateCardFromBlock,
   generateElaboratedFeedback,
-  generateCardsFromTopic,
   findRelatedNotes,
   aiCache,
   type AIProviderStatus,
@@ -136,8 +132,6 @@ import {
   type CardSuggestion,
   type ElaboratedFeedback,
   type TestedConceptResult,
-  type PolishInsightResult,
-  type TopicCardSuggestion,
 } from "./ai-service";
 import {
   resolveTopicAlias,
@@ -2846,36 +2840,6 @@ export function registerIpcHandlers(): void {
     },
   );
 
-  ipcMain.handle(
-    "ai:evaluateInsight",
-    async (
-      _,
-      input: {
-        userInsight: string;
-        sourceContent: string;
-        isIncorrect: boolean;
-        topicContext?: string;
-        blockId?: string;
-      },
-    ): Promise<IpcResult<NotebookBlockAiEvaluation>> => {
-      try {
-        const result = await evaluateInsight(input);
-
-        // Optional persistence if blockId is provided
-        if (input.blockId) {
-          notebookBlockQueries.update(input.blockId, {
-            userInsight: input.userInsight,
-            aiEvaluation: result,
-          });
-        }
-
-        return success(result);
-      } catch (error) {
-        return failure(error);
-      }
-    },
-  );
-
   // ─────────────────────────────────────────────────────────────────────────────
   // T138: Add to Notebook AI Helpers
   // ─────────────────────────────────────────────────────────────────────────────
@@ -2889,27 +2853,6 @@ export function registerIpcHandlers(): void {
     ): Promise<IpcResult<TestedConceptResult>> => {
       try {
         const result = await identifyTestedConcept(sourceContent, sourceType);
-        return success(result);
-      } catch (error) {
-        return failure(error);
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "ai:polishInsight",
-    async (
-      _,
-      userText: string,
-      sourceContent: string,
-      testedConcept?: string,
-    ): Promise<IpcResult<PolishInsightResult>> => {
-      try {
-        const result = await polishInsight(
-          userText,
-          sourceContent,
-          testedConcept,
-        );
         return success(result);
       } catch (error) {
         return failure(error);
@@ -2958,49 +2901,6 @@ export function registerIpcHandlers(): void {
       try {
         const result = notebookBlockQueries.getConfusionPairsAggregated();
         return success(result);
-      } catch (error) {
-        return failure(error);
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "ai:generateCards",
-    async (
-      _,
-      blockContent: string,
-      topicContext: string,
-      userIntent?: string,
-    ): Promise<IpcResult<CardSuggestion[]>> => {
-      try {
-        const cards = await generateCardFromBlock(
-          blockContent,
-          topicContext,
-          userIntent,
-        );
-        return success(cards);
-      } catch (error) {
-        return failure(error);
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "ai:generateCardsFromTopic",
-    async (
-      _,
-      topicName: string,
-      blocks: Array<{
-        id: string;
-        content: string;
-        userInsight?: string;
-        calloutType?: "pearl" | "trap" | "caution" | null;
-        isHighYield?: boolean; // v22: High-yield marker for prioritization
-      }>,
-    ): Promise<IpcResult<TopicCardSuggestion[]>> => {
-      try {
-        const suggestions = await generateCardsFromTopic(topicName, blocks);
-        return success(suggestions);
       } catch (error) {
         return failure(error);
       }

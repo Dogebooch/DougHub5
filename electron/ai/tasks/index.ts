@@ -16,12 +16,10 @@ export * from "./types";
 
 // Import task configs
 import { identifyTestedConceptTask } from "./identify-tested-concept";
-import { insightEvaluationTask } from "./insight-evaluation";
 import { cardSuggestionTask } from "./card-suggestion";
 import { captureAnalysisTask } from "./capture-analysis";
 import { elaboratedFeedbackTask } from "./elaborated-feedback";
 import { questionSummaryTask } from "./question-summary";
-import { polishInsightTask } from "./polish-insight";
 import { conceptExtractionTask } from "./concept-extraction";
 import { cardValidationTask } from "./card-validation";
 import { medicalListDetectionTask } from "./medical-list-detection";
@@ -36,12 +34,10 @@ import { detectConfusionTask } from "./detect-confusion";
 
 // Export individual tasks for direct import
 export { identifyTestedConceptTask };
-export { insightEvaluationTask };
 export { cardSuggestionTask };
 export { captureAnalysisTask };
 export { elaboratedFeedbackTask };
 export { questionSummaryTask };
-export { polishInsightTask };
 export { conceptExtractionTask };
 export { cardValidationTask };
 export { medicalListDetectionTask };
@@ -68,12 +64,10 @@ import type { AITaskConfig } from "./types";
  */
 export const AI_TASKS: Record<string, AITaskConfig> = {
   "identify-tested-concept": identifyTestedConceptTask,
-  "insight-evaluation": insightEvaluationTask,
   "card-suggestion": cardSuggestionTask,
   "capture-analysis": captureAnalysisTask,
   "elaborated-feedback": elaboratedFeedbackTask,
   "question-summary": questionSummaryTask,
-  "polish-insight": polishInsightTask,
   "concept-extraction": conceptExtractionTask,
   "card-validation": cardValidationTask,
   "medical-list-detection": medicalListDetectionTask,

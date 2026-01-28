@@ -576,11 +576,11 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
     try {
       const savedItem = await saveSourceItem();
       if (savedItem) {
-        // Store the saved item and open AddToNotebookWorkflow
+        // Store the saved item and open IntakeQuizModal
         setSavedItemForNotebook(savedItem);
         resetFormState();
         onClose();
-        // Show AddToNotebookWorkflow after a brief delay to allow modal transition
+        // Show IntakeQuizModal after a brief delay to allow modal transition
         setTimeout(() => {
           setShowAddToNotebook(true);
         }, 100);

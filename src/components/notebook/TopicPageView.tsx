@@ -8,7 +8,6 @@ import {
 } from "@/types";
 import { NotebookBlockComponent } from "./NotebookBlock";
 import { AddBlockModal } from "./AddBlockModal";
-import { CardGenerationModal } from "./CardGenerationModal";
 import { BlockEditModal } from "./BlockEditModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,11 +40,6 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
   const [topic, setTopic] = useState<CanonicalTopic | null>(null);
   const [blocks, setBlocks] = useState<NotebookBlock[]>([]);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
-
-  // Generation Modal State
-  const [genModalOpen, setGenModalOpen] = useState(false);
-  const [selectedText, setSelectedText] = useState("");
-  const [activeBlock, setActiveBlock] = useState<NotebookBlock | null>(null);
 
   // Edit Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -90,12 +84,6 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  const handleGenerateCardTrigger = (text: string, block: NotebookBlock) => {
-    setSelectedText(text);
-    setActiveBlock(block);
-    setGenModalOpen(true);
-  };
 
   const handleBlockEdit = (block: NotebookBlock) => {
     setEditingBlock(block);
@@ -143,7 +131,11 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
 
   const handleBlockSave = async (
     blockId: string,
-    updates: { content?: string; userInsight?: string; calloutType?: 'pearl' | 'trap' | 'caution' | null }
+    updates: {
+      content?: string;
+      userInsight?: string;
+      calloutType?: "pearl" | "trap" | "caution" | null;
+    },
   ) => {
     // Find the original block to compare
     const originalBlock = blocks.find((b) => b.id === blockId);
@@ -180,69 +172,6 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
     } catch (error) {
       // Error already toasted above, just rethrow to keep modal open
       throw error;
-    }
-  };
-
-  type GeneratedCardData = {
-    format:
-      | "qa"
-      | "cloze"
-      | "overlapping-cloze"
-      | "vignette"
-      | "image-occlusion"
-      | "procedural";
-    front: string;
-    back: string;
-  };
-
-  const handleCreateCard = async (data: GeneratedCardData) => {
-    if (!activeBlock || !topic) return;
-
-    // Map AI format to database card type
-    let cardType: CardWithFSRS["cardType"] = "qa";
-    if (data.format === "cloze") cardType = "cloze";
-    if (data.format === "overlapping-cloze") cardType = "list-cloze";
-    if (data.format === "vignette") cardType = "vignette";
-
-    const newCard: CardWithFSRS = {
-      id: crypto.randomUUID(),
-      front: data.front,
-      back: data.back,
-      noteId: "", // Legacy field
-      cardType: cardType,
-      notebookTopicPageId: pageId,
-      sourceBlockId: activeBlock.id,
-      tags: [],
-      dueDate: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      parentListId: null,
-      listPosition: null,
-      aiTitle: null,
-      // FSRS defaults
-      stability: 0,
-      difficulty: 0,
-      elapsedDays: 0,
-      scheduledDays: 0,
-      reps: 0,
-      lapses: 0,
-      state: 0,
-      lastReview: null,
-    };
-
-    const result = await addCard(newCard);
-    if (result.success) {
-      toast({
-        title: "Card Created",
-        description: "Successfully added to your collection.",
-      });
-      // Refresh block card counts
-      fetchData();
-    } else {
-      toast({
-        title: "Error",
-        description: result.error || "Failed to create card",
-        variant: "destructive",
-      });
     }
   };
 
@@ -343,9 +272,6 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
                 block={block}
                 topicName={topic?.canonicalName || ""}
                 onRefresh={fetchData}
-                onGenerateCard={(text) =>
-                  handleGenerateCardTrigger(text, block)
-                }
                 onEdit={handleBlockEdit}
                 onNavigate={handleNavigateToBlock}
               />
@@ -364,26 +290,6 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
           <Plus className="w-4 h-4" />
           Add from Library
         </Button>
-
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="inline-block">
-                <Button
-                  variant="outline"
-                  disabled
-                  className="gap-2 h-9 opacity-60"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Generate All Cards
-                </Button>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Select text in blocks to generate cards</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
       </footer>
 
       {/* MODALS */}
@@ -393,17 +299,6 @@ export const TopicPageView: React.FC<TopicPageViewProps> = ({
         notebookTopicPageId={pageId}
         onSuccess={fetchData}
       />
-
-      {activeBlock && topic && (
-        <CardGenerationModal
-          open={genModalOpen}
-          onOpenChange={setGenModalOpen}
-          selectedText={selectedText}
-          blockContent={activeBlock.content}
-          topicName={topic.canonicalName}
-          onCreateCard={handleCreateCard}
-        />
-      )}
 
       <BlockEditModal
         open={editModalOpen}

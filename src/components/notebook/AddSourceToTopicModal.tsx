@@ -16,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { SourceItem, CanonicalTopic, NotebookBlock } from "@/types";
 import { TopicSelector } from "./TopicSelector";
-import { InsightTextarea } from "./InsightTextarea";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 interface AddSourceToTopicModalProps {
@@ -42,10 +42,18 @@ export function AddSourceToTopicModal({
 }: AddSourceToTopicModalProps) {
   const [existingBlocks, setExistingBlocks] = useState<ExistingBlockInfo[]>([]);
   const [isLoadingExisting, setIsLoadingExisting] = useState(false);
-  const [selectedTopic, setSelectedTopic] = useState<CanonicalTopic | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<CanonicalTopic | null>(
+    null,
+  );
   const [insight, setInsight] = useState("");
   const [isInsightValid, setIsInsightValid] = useState(false);
   const [linkToExisting, setLinkToExisting] = useState(true);
+
+  // Validate insight length
+  useEffect(() => {
+    setIsInsightValid(insight.length >= 20);
+  }, [insight]);
+
   const [isSaving, setIsSaving] = useState(false);
 
   const { toast } = useToast();
@@ -56,7 +64,9 @@ export function AddSourceToTopicModal({
       const fetchExisting = async () => {
         setIsLoadingExisting(true);
         try {
-          const result = await window.api.notebookBlocks.getBySource(sourceItem.id);
+          const result = await window.api.notebookBlocks.getBySource(
+            sourceItem.id,
+          );
           if (result.data) {
             setExistingBlocks(result.data);
           }
@@ -113,9 +123,12 @@ export function AddSourceToTopicModal({
   };
 
   // Check if current source is already in the selected topic
-  const isDuplicate = selectedTopic && existingBlocks.some(
-    b => b.topicName.toLowerCase() === selectedTopic.canonicalName.toLowerCase()
-  );
+  const isDuplicate =
+    selectedTopic &&
+    existingBlocks.some(
+      (b) =>
+        b.topicName.toLowerCase() === selectedTopic.canonicalName.toLowerCase(),
+    );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,9 +145,14 @@ export function AddSourceToTopicModal({
             {/* Source Info */}
             <div className="p-3 rounded-md bg-muted/50 border border-border flex items-start gap-3">
               <div className="flex-1">
-                <h4 className="font-medium text-sm line-clamp-2">{sourceItem.title}</h4>
+                <h4 className="font-medium text-sm line-clamp-2">
+                  {sourceItem.title}
+                </h4>
                 <div className="flex gap-2 mt-2">
-                  <Badge variant="outline" className="text-[10px] uppercase bg-background">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] uppercase bg-background"
+                  >
                     {sourceItem.sourceType}
                   </Badge>
                 </div>
@@ -149,17 +167,19 @@ export function AddSourceToTopicModal({
                 </Label>
                 <div className="grid gap-2">
                   {existingBlocks.map((info) => (
-                    <div 
-                      key={info.block.id} 
+                    <div
+                      key={info.block.id}
                       className={cn(
                         "flex items-center justify-between p-2 rounded-md border text-sm",
-                        info.block.id === existingBlockId ? "bg-accent/50 border-accent/50" : "bg-card"
+                        info.block.id === existingBlockId
+                          ? "bg-accent/50 border-accent/50"
+                          : "bg-card",
                       )}
                     >
                       <span className="font-medium">{info.topicName}</span>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-7 gap-1 text-xs hover:bg-accent"
                         onClick={() => copyInsight(info.block.content)}
                       >
@@ -174,8 +194,10 @@ export function AddSourceToTopicModal({
 
             {/* Topic Selector */}
             <div className="space-y-3">
-              <Label className="text-sm font-semibold">Select Target Topic</Label>
-              <TopicSelector 
+              <Label className="text-sm font-semibold">
+                Select Target Topic
+              </Label>
+              <TopicSelector
                 selectedTopic={selectedTopic}
                 onTopicSelect={setSelectedTopic}
                 className="w-full"
@@ -189,23 +211,23 @@ export function AddSourceToTopicModal({
 
             {/* Insight */}
             <div className="space-y-3">
-              <InsightTextarea
+              <Textarea
                 value={insight}
-                onChange={setInsight}
-                onValidChange={setIsInsightValid}
-                placeholder={`What's the ${selectedTopic?.canonicalName || 'topic'} angle?`}
+                onChange={(e) => setInsight(e.target.value)}
+                placeholder={`What's the ${selectedTopic?.canonicalName || "topic"} angle?`}
+                className="min-h-[120px] resize-none"
               />
             </div>
 
             {/* Linking Options */}
             {existingBlockId && (
               <div className="flex items-center space-x-2 p-1">
-                <Checkbox 
-                  id="link-blocks" 
-                  checked={linkToExisting} 
+                <Checkbox
+                  id="link-blocks"
+                  checked={linkToExisting}
                   onCheckedChange={(checked) => setLinkToExisting(!!checked)}
                 />
-                <label 
+                <label
                   htmlFor="link-blocks"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
@@ -220,9 +242,11 @@ export function AddSourceToTopicModal({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSave} 
-            disabled={!selectedTopic || !isInsightValid || isSaving || isDuplicate}
+          <Button
+            onClick={handleSave}
+            disabled={
+              !selectedTopic || !isInsightValid || isSaving || isDuplicate
+            }
             className="gap-2"
           >
             {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}

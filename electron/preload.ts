@@ -294,26 +294,8 @@ const api = {
     getProviderStatus: () => ipcRenderer.invoke("ai:getProviderStatus"),
     extractConcepts: (content: string) =>
       ipcRenderer.invoke("ai:extractConcepts", content),
-    evaluateInsight: (input: {
-      userInsight: string;
-      sourceContent: string;
-      isIncorrect: boolean;
-      topicContext?: string;
-      blockId?: string;
-    }) => ipcRenderer.invoke("ai:evaluateInsight", input),
     identifyTestedConcept: (sourceContent: string, sourceType: string) =>
       ipcRenderer.invoke("ai:identifyTestedConcept", sourceContent, sourceType),
-    polishInsight: (
-      userText: string,
-      sourceContent: string,
-      testedConcept?: string,
-    ) =>
-      ipcRenderer.invoke(
-        "ai:polishInsight",
-        userText,
-        sourceContent,
-        testedConcept,
-      ),
     analyzeCaptureContent: (content: string) =>
       ipcRenderer.invoke("ai:analyzeCaptureContent", content),
     validateCard: (front: string, back: string, cardType: "qa" | "cloze") =>
@@ -322,27 +304,6 @@ const api = {
       ipcRenderer.invoke("ai:detectMedicalList", content),
     convertToVignette: (listItem: string, context: string) =>
       ipcRenderer.invoke("ai:convertToVignette", listItem, context),
-    generateCards: (
-      blockContent: string,
-      topicContext: string,
-      userIntent?: string,
-    ) =>
-      ipcRenderer.invoke(
-        "ai:generateCards",
-        blockContent,
-        topicContext,
-        userIntent,
-      ),
-    generateCardsFromTopic: (
-      topicName: string,
-      blocks: Array<{
-        id: string;
-        content: string;
-        userInsight?: string;
-        calloutType?: "pearl" | "trap" | "caution" | null;
-        isHighYield?: boolean; // v22: High-yield marker for prioritization
-      }>,
-    ) => ipcRenderer.invoke("ai:generateCardsFromTopic", topicName, blocks),
     generateElaboratedFeedback: (
       card: { front: string; back: string; cardType: string },
       topicContext: string,

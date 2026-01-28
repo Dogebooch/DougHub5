@@ -18,10 +18,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { InsightTextarea } from "./InsightTextarea";
+import { Textarea } from "@/components/ui/textarea";
 import { NotebookBlock } from "@/types";
 
-type CalloutType = 'pearl' | 'trap' | 'caution' | null;
+type CalloutType = "pearl" | "trap" | "caution" | null;
 
 interface BlockEditUpdates {
   content?: string;
@@ -35,7 +35,7 @@ interface BlockEditModalProps {
   block: NotebookBlock | null;
   topicName: string;
   onSave: (blockId: string, updates: BlockEditUpdates) => Promise<void>;
-  displayField?: 'content' | 'userInsight';
+  displayField?: "content" | "userInsight";
 }
 
 export const BlockEditModal: React.FC<BlockEditModalProps> = ({
@@ -44,7 +44,7 @@ export const BlockEditModal: React.FC<BlockEditModalProps> = ({
   block,
   topicName,
   onSave,
-  displayField = 'content',
+  displayField = "content",
 }) => {
   const [textValue, setTextValue] = useState("");
   const [calloutType, setCalloutType] = useState<CalloutType>(null);
@@ -52,11 +52,16 @@ export const BlockEditModal: React.FC<BlockEditModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
+  // Validate text length
+  useEffect(() => {
+    setIsValid(textValue.length >= 20);
+  }, [textValue]);
+
   // Get the original value based on displayField
   const getOriginalText = (b: NotebookBlock | null) => {
     if (!b) return "";
-    return displayField === 'userInsight'
-      ? (b.userInsight || b.content)
+    return displayField === "userInsight"
+      ? b.userInsight || b.content
       : b.content;
   };
 
@@ -75,7 +80,10 @@ export const BlockEditModal: React.FC<BlockEditModalProps> = ({
   const hasCalloutChanges = calloutType !== originalCalloutType;
   const hasChanges = hasTextChanges || hasCalloutChanges;
   // Allow save if: (text is valid AND text changed) OR (only callout changed)
-  const canSave = ((isValid && hasTextChanges) || (hasCalloutChanges && !hasTextChanges)) && hasChanges && !isSaving;
+  const canSave =
+    ((isValid && hasTextChanges) || (hasCalloutChanges && !hasTextChanges)) &&
+    hasChanges &&
+    !isSaving;
 
   const handleSave = async () => {
     if (!block || !canSave) return;
@@ -85,7 +93,7 @@ export const BlockEditModal: React.FC<BlockEditModalProps> = ({
       const updates: BlockEditUpdates = {};
 
       if (hasTextChanges) {
-        if (displayField === 'userInsight') {
+        if (displayField === "userInsight") {
           updates.userInsight = textValue;
         } else {
           updates.content = textValue;
@@ -121,13 +129,34 @@ export const BlockEditModal: React.FC<BlockEditModalProps> = ({
 
   if (!block) return null;
 
-  const dialogTitle = displayField === 'userInsight' ? 'Edit Insight' : 'Edit Block Content';
+  const dialogTitle =
+    displayField === "userInsight" ? "Edit Insight" : "Edit Block Content";
 
-  const calloutOptions: { value: CalloutType; label: string; icon: React.ReactNode; colorClass: string }[] = [
-    { value: null, label: 'None', icon: null, colorClass: '' },
-    { value: 'pearl', label: 'Pearl', icon: <Lightbulb className="h-4 w-4" />, colorClass: 'bg-success text-success-foreground' },
-    { value: 'trap', label: 'Trap', icon: <AlertTriangle className="h-4 w-4" />, colorClass: 'bg-warning text-warning-foreground' },
-    { value: 'caution', label: 'Caution', icon: <ShieldAlert className="h-4 w-4" />, colorClass: 'bg-destructive text-destructive-foreground' },
+  const calloutOptions: {
+    value: CalloutType;
+    label: string;
+    icon: React.ReactNode;
+    colorClass: string;
+  }[] = [
+    { value: null, label: "None", icon: null, colorClass: "" },
+    {
+      value: "pearl",
+      label: "Pearl",
+      icon: <Lightbulb className="h-4 w-4" />,
+      colorClass: "bg-success text-success-foreground",
+    },
+    {
+      value: "trap",
+      label: "Trap",
+      icon: <AlertTriangle className="h-4 w-4" />,
+      colorClass: "bg-warning text-warning-foreground",
+    },
+    {
+      value: "caution",
+      label: "Caution",
+      icon: <ShieldAlert className="h-4 w-4" />,
+      colorClass: "bg-destructive text-destructive-foreground",
+    },
   ];
 
   return (
@@ -137,34 +166,37 @@ export const BlockEditModal: React.FC<BlockEditModalProps> = ({
           <DialogTitle className="text-lg font-semibold">
             {dialogTitle}
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            Topic: {topicName}
-          </p>
+          <p className="text-sm text-muted-foreground">Topic: {topicName}</p>
         </DialogHeader>
         <div className="py-4 space-y-4">
-          <InsightTextarea
+          <Textarea
             value={textValue}
-            onChange={setTextValue}
-            onValidChange={setIsValid}
-            minLength={20}
+            onChange={(e) => setTextValue(e.target.value)}
             placeholder="What did you learn from this source?"
+            className="min-h-[150px] resize-none"
           />
 
           {/* Callout type selector */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">Callout Style</label>
+            <label className="text-sm font-medium text-muted-foreground">
+              Callout Style
+            </label>
             <div className="flex gap-2">
               {calloutOptions.map((option) => (
                 <Button
-                  key={option.value ?? 'none'}
+                  key={option.value ?? "none"}
                   type="button"
-                  variant={calloutType === option.value ? 'default' : 'outline'}
+                  variant={calloutType === option.value ? "default" : "outline"}
                   size="sm"
-                  className={calloutType === option.value ? option.colorClass : ''}
+                  className={
+                    calloutType === option.value ? option.colorClass : ""
+                  }
                   onClick={() => setCalloutType(option.value)}
                 >
                   {option.icon}
-                  <span className={option.icon ? 'ml-1' : ''}>{option.label}</span>
+                  <span className={option.icon ? "ml-1" : ""}>
+                    {option.label}
+                  </span>
                 </Button>
               ))}
             </div>
@@ -176,8 +208,11 @@ export const BlockEditModal: React.FC<BlockEditModalProps> = ({
           <div className="flex items-start gap-3 p-3 mb-4 rounded-md bg-warning/10 border border-warning/30 text-sm">
             <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
             <p className="text-warning-foreground">
-              <span className="font-medium">{block.cardCount} {block.cardCount === 1 ? 'card' : 'cards'}</span>
-              {' '}reference{block.cardCount === 1 ? 's' : ''} this block. Changes may make {block.cardCount === 1 ? 'it' : 'them'} outdated.
+              <span className="font-medium">
+                {block.cardCount} {block.cardCount === 1 ? "card" : "cards"}
+              </span>{" "}
+              reference{block.cardCount === 1 ? "s" : ""} this block. Changes
+              may make {block.cardCount === 1 ? "it" : "them"} outdated.
             </p>
           </div>
         )}
@@ -190,10 +225,7 @@ export const BlockEditModal: React.FC<BlockEditModalProps> = ({
           >
             Cancel
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!canSave}
-          >
+          <Button onClick={handleSave} disabled={!canSave}>
             {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>

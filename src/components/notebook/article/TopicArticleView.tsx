@@ -40,7 +40,6 @@ import { AddBlockModal } from "../AddBlockModal";
 import { BlockEditModal } from "../BlockEditModal";
 import { DirectAuthorModal } from "../DirectAuthorModal";
 import { SourcePreviewPanel } from "../SourcePreviewPanel";
-import { TopicCardGeneration } from "../cardgen";
 import { TopicEntryQuizPrompt, TopicQuizModal } from "../topic-quiz";
 
 interface TopicArticleViewProps {
@@ -98,9 +97,6 @@ export function TopicArticleView({
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<NotebookBlock | null>(null);
-
-  // Card generation modal state
-  const [cardGenOpen, setCardGenOpen] = useState(false);
 
   // Direct author modal state
   const [directAuthorOpen, setDirectAuthorOpen] = useState(false);
@@ -440,13 +436,6 @@ export function TopicArticleView({
             High-Yield ({highYieldCount})
           </ToggleGroupItem>
         </ToggleGroup>
-
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2" disabled>
-            <Sparkles className="h-4 w-4" />
-            Generate Cards
-          </Button>
-        </div>
       </div>
 
       {/* Scrollable Content */}
@@ -580,15 +569,6 @@ export function TopicArticleView({
             Write Note
           </Button>
         </div>
-        <Button
-          variant="outline"
-          className="gap-2"
-          disabled={blocks.length === 0}
-          onClick={() => setCardGenOpen(true)}
-        >
-          <Sparkles className="w-4 h-4" />
-          Generate Cards
-        </Button>
       </footer>
 
       {/* Modals */}
@@ -613,15 +593,6 @@ export function TopicArticleView({
         topicName={topic?.canonicalName || ""}
         onSave={handleBlockSave}
         displayField="userInsight"
-      />
-
-      <TopicCardGeneration
-        open={cardGenOpen}
-        onOpenChange={setCardGenOpen}
-        topicName={topic?.canonicalName || ""}
-        topicPageId={pageId}
-        blocks={blocks}
-        onCardsCreated={fetchData}
       />
 
       <DirectAuthorModal
