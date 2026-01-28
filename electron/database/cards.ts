@@ -8,6 +8,9 @@ import type {
   LowEaseTopic,
   CardBrowserFilters,
   CardBrowserSort,
+  ActivationStatus,
+  ActivationTier,
+  SuspendReason,
 } from "./types";
 
 export const cardQueries = {
@@ -31,14 +34,18 @@ export const cardQueries = {
         reps, lapses, state, lastReview,
         cardType, parentListId, listPosition,
         notebookTopicPageId, sourceBlockId, aiTitle,
-        targetedConfusion, relevanceScore, relevanceReason
+        targetedConfusion, relevanceScore, relevanceReason,
+        activationStatus, activationTier, activationReasons,
+        activatedAt, suspendReason, suspendedAt
       ) VALUES (
         @id, @front, @back, @noteId, @tags, @dueDate, @createdAt,
         @stability, @difficulty, @elapsedDays, @scheduledDays,
         @reps, @lapses, @state, @lastReview,
         @cardType, @parentListId, @listPosition,
         @notebookTopicPageId, @sourceBlockId, @aiTitle,
-        @targetedConfusion, @relevanceScore, @relevanceReason
+        @targetedConfusion, @relevanceScore, @relevanceReason,
+        @activationStatus, @activationTier, @activationReasons,
+        @activatedAt, @suspendReason, @suspendedAt
       )
     `);
     stmt.run({
@@ -47,6 +54,14 @@ export const cardQueries = {
       targetedConfusion: card.targetedConfusion || null,
       relevanceScore: card.relevanceScore || null,
       relevanceReason: card.relevanceReason || null,
+      activationStatus: card.activationStatus || "active",
+      activationTier: card.activationTier || null,
+      activationReasons: card.activationReasons
+        ? JSON.stringify(card.activationReasons)
+        : null,
+      activatedAt: card.activatedAt || null,
+      suspendReason: card.suspendReason || null,
+      suspendedAt: card.suspendedAt || null,
     });
   },
 
@@ -81,7 +96,13 @@ export const cardQueries = {
         aiTitle = @aiTitle,
         targetedConfusion = @targetedConfusion,
         relevanceScore = @relevanceScore,
-        relevanceReason = @relevanceReason
+        relevanceReason = @relevanceReason,
+        activationStatus = @activationStatus,
+        activationTier = @activationTier,
+        activationReasons = @activationReasons,
+        activatedAt = @activatedAt,
+        suspendReason = @suspendReason,
+        suspendedAt = @suspendedAt
       WHERE id = @id
     `);
     stmt.run({
@@ -90,6 +111,14 @@ export const cardQueries = {
       targetedConfusion: merged.targetedConfusion || null,
       relevanceScore: merged.relevanceScore || null,
       relevanceReason: merged.relevanceReason || null,
+      activationStatus: merged.activationStatus || "active",
+      activationTier: merged.activationTier || null,
+      activationReasons: merged.activationReasons
+        ? JSON.stringify(merged.activationReasons)
+        : null,
+      activatedAt: merged.activatedAt || null,
+      suspendReason: merged.suspendReason || null,
+      suspendedAt: merged.suspendedAt || null,
     });
   },
 
@@ -100,11 +129,181 @@ export const cardQueries = {
 
   getDueToday(): DbCard[] {
     const now = new Date().toISOString();
+    // Only return active cards that are due
     const stmt = getDatabase().prepare(
-      "SELECT * FROM cards WHERE dueDate <= ?",
+      "SELECT * FROM cards WHERE dueDate <= ? AND activationStatus = 'active'",
     );
     const rows = stmt.all(now) as CardRow[];
     return rows.map(parseCardRow);
+  },
+
+  // =========================================================================
+  // Notebook v2: Card Activation Methods (v24)
+  // =========================================================================
+
+  /**
+   * Get cards by activation status
+   */
+  getByActivationStatus(status: ActivationStatus): DbCard[] {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM cards WHERE activationStatus = ?",
+    );
+    const rows = stmt.all(status) as CardRow[];
+    return rows.map(parseCardRow);
+  },
+
+  /**
+   * Activate a dormant or suggested card
+   */
+  activate(
+    id: string,
+    tier: ActivationTier = "user_manual",
+    reasons: string[] = [],
+  ): void {
+    const now = new Date().toISOString();
+    const stmt = getDatabase().prepare(`
+      UPDATE cards SET
+        activationStatus = 'active',
+        activationTier = @tier,
+        activationReasons = @reasons,
+        activatedAt = @activatedAt,
+        suspendReason = NULL,
+        suspendedAt = NULL
+      WHERE id = @id
+    `);
+    stmt.run({
+      id,
+      tier,
+      reasons: JSON.stringify(reasons),
+      activatedAt: now,
+    });
+  },
+
+  /**
+   * Suspend an active card
+   */
+  suspend(id: string, reason: SuspendReason): void {
+    const now = new Date().toISOString();
+    const stmt = getDatabase().prepare(`
+      UPDATE cards SET
+        activationStatus = 'suspended',
+        suspendReason = @reason,
+        suspendedAt = @suspendedAt
+      WHERE id = @id
+    `);
+    stmt.run({
+      id,
+      reason,
+      suspendedAt: now,
+    });
+  },
+
+  /**
+   * Bulk activate cards
+   */
+  bulkActivate(
+    ids: string[],
+    tier: ActivationTier = "user_manual",
+    reasons: string[] = [],
+  ): void {
+    if (ids.length === 0) return;
+
+    const now = new Date().toISOString();
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      UPDATE cards SET
+        activationStatus = 'active',
+        activationTier = @tier,
+        activationReasons = @reasons,
+        activatedAt = @activatedAt,
+        suspendReason = NULL,
+        suspendedAt = NULL
+      WHERE id = @id
+    `);
+
+    const bulkActivate = db.transaction((cardIds: string[]) => {
+      for (const id of cardIds) {
+        stmt.run({
+          id,
+          tier,
+          reasons: JSON.stringify(reasons),
+          activatedAt: now,
+        });
+      }
+    });
+
+    bulkActivate(ids);
+  },
+
+  /**
+   * Bulk suspend cards
+   */
+  bulkSuspend(ids: string[], reason: SuspendReason): void {
+    if (ids.length === 0) return;
+
+    const now = new Date().toISOString();
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      UPDATE cards SET
+        activationStatus = 'suspended',
+        suspendReason = @reason,
+        suspendedAt = @suspendedAt
+      WHERE id = @id
+    `);
+
+    const bulkSuspend = db.transaction((cardIds: string[]) => {
+      for (const id of cardIds) {
+        stmt.run({
+          id,
+          reason,
+          suspendedAt: now,
+        });
+      }
+    });
+
+    bulkSuspend(ids);
+  },
+
+  /**
+   * Get active cards for a topic page
+   */
+  getActiveByTopicPage(topicPageId: string): DbCard[] {
+    const stmt = getDatabase().prepare(`
+      SELECT * FROM cards
+      WHERE notebookTopicPageId = ? AND activationStatus = 'active'
+      ORDER BY dueDate ASC
+    `);
+    const rows = stmt.all(topicPageId) as CardRow[];
+    return rows.map(parseCardRow);
+  },
+
+  /**
+   * Get dormant cards for a topic page
+   */
+  getDormantByTopicPage(topicPageId: string): DbCard[] {
+    const stmt = getDatabase().prepare(`
+      SELECT * FROM cards
+      WHERE notebookTopicPageId = ? AND activationStatus = 'dormant'
+      ORDER BY createdAt ASC
+    `);
+    const rows = stmt.all(topicPageId) as CardRow[];
+    return rows.map(parseCardRow);
+  },
+
+  /**
+   * Check if a card is a leech (6+ lapses) and auto-suspend if needed
+   * Returns true if card was suspended as a leech
+   */
+  checkAndSuspendLeech(id: string): boolean {
+    const card = cardQueries.getById(id);
+    if (!card) return false;
+
+    const LEECH_THRESHOLD = 6;
+    if (card.lapses >= LEECH_THRESHOLD && card.activationStatus === "active") {
+      cardQueries.suspend(id, "leech");
+      return true;
+    }
+    return false;
   },
 
   getCardsByBlockId(blockId: string): DbCard[] {
@@ -379,5 +578,14 @@ export function parseCardRow(row: CardRow): DbCard {
       (row.relevanceScore as "high" | "medium" | "low" | "unknown") ||
       undefined,
     relevanceReason: row.relevanceReason || undefined,
+    // Notebook v2: Card Activation (v24)
+    activationStatus: (row.activationStatus as ActivationStatus) || "active",
+    activationTier: (row.activationTier as ActivationTier) || undefined,
+    activationReasons: row.activationReasons
+      ? JSON.parse(row.activationReasons)
+      : undefined,
+    activatedAt: row.activatedAt || undefined,
+    suspendReason: (row.suspendReason as SuspendReason) || undefined,
+    suspendedAt: row.suspendedAt || undefined,
   };
 }

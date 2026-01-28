@@ -28,6 +28,11 @@ import { medicalListDetectionTask } from "./medical-list-detection";
 import { vignetteConversionTask } from "./vignette-conversion";
 import { tagSuggestionTask } from "./tag-suggestion";
 import { cardGenerationTask } from "./card-generation";
+// Notebook v2: Quiz System Tasks (v24)
+import { extractFactsTask } from "./extract-facts";
+import { generateQuizTask } from "./generate-quiz";
+import { gradeAnswerTask } from "./grade-answer";
+import { detectConfusionTask } from "./detect-confusion";
 
 // Export individual tasks for direct import
 export { identifyTestedConceptTask };
@@ -43,6 +48,11 @@ export { medicalListDetectionTask };
 export { vignetteConversionTask };
 export { tagSuggestionTask };
 export { cardGenerationTask };
+// Notebook v2: Quiz System Tasks (v24)
+export { extractFactsTask };
+export { generateQuizTask };
+export { gradeAnswerTask };
+export { detectConfusionTask };
 
 // All context/result types are re-exported from types.ts via the * export above
 
@@ -70,6 +80,11 @@ export const AI_TASKS: Record<string, AITaskConfig> = {
   "vignette-conversion": vignetteConversionTask,
   "tag-suggestion": tagSuggestionTask,
   "card-generation": cardGenerationTask,
+  // Notebook v2: Quiz System Tasks (v24)
+  "extract-facts": extractFactsTask,
+  "generate-quiz": generateQuizTask,
+  "grade-answer": gradeAnswerTask,
+  "detect-confusion": detectConfusionTask,
 } as const;
 
 /**

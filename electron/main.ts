@@ -20,6 +20,7 @@ import { registerIpcHandlers, processCapture } from "./ipc-handlers";
 import {
   ensureBackupsDir,
   cleanupOldBackups,
+  pruneBackupsToCount,
   createBackup,
 } from "./backup-service";
 import {
@@ -82,12 +83,17 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 
 let win: BrowserWindow | null;
 
-const AUTO_BACKUP_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+const AUTO_BACKUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour (increased from 15m)
 const BACKUP_RETENTION_DAYS = 7; // Keep 7 days of backups
+const MAX_BACKUP_COUNT = 20; // Hard limit on total files
+
 let autoBackupInterval: NodeJS.Timeout | null = null;
 
 function startAutoBackup() {
-  if (autoBackupInterval) clearInterval(autoBackupInterval);
+  if (autoBackupInterval) {
+    clearInterval(autoBackupInterval);
+    autoBackupInterval = null;
+  }
 
   autoBackupInterval = setInterval(() => {
     try {
@@ -95,6 +101,7 @@ function startAutoBackup() {
       if (dbPath && win && !win.isDestroyed()) {
         createBackup(dbPath);
         cleanupOldBackups(BACKUP_RETENTION_DAYS);
+        pruneBackupsToCount(MAX_BACKUP_COUNT);
         const timestamp = new Date().toISOString();
         win.webContents.send("backup:auto-complete", timestamp);
       }

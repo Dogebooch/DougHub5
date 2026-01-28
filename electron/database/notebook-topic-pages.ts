@@ -22,6 +22,14 @@ export const notebookTopicPageQueries = {
     return row ? parseNotebookTopicPageRow(row) : null;
   },
 
+  getByCanonicalTopicId(canonicalTopicId: string): DbNotebookTopicPage | null {
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM notebook_topic_pages WHERE canonicalTopicId = ?",
+    );
+    const row = stmt.get(canonicalTopicId) as NotebookTopicPageRow | undefined;
+    return row ? parseNotebookTopicPageRow(row) : null;
+  },
+
   insert(page: DbNotebookTopicPage): void {
     const stmt = getDatabase().prepare(`
       INSERT INTO notebook_topic_pages (id, canonicalTopicId, cardIds, createdAt, updatedAt)

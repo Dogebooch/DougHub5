@@ -18,10 +18,12 @@ import {
   RefreshCw,
   Server,
   Terminal,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { AILogEntry } from "@/types/dev";
+import { ClaudeDevTab } from "./ClaudeDevTab";
 
 export function AIDevPanel() {
   const { isOpen, setOpen } = useDevStore();
@@ -77,9 +79,13 @@ export function AIDevPanelContent() {
         )}
       </div>
 
-      <Tabs defaultValue="inspector" className="flex-1 flex flex-col min-h-0">
+      <Tabs defaultValue="claude" className="flex-1 flex flex-col min-h-0">
         <div className="px-4 pt-2 border-b bg-muted/20">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="claude" className="gap-1">
+              <Bot className="w-3 h-3" />
+              Claude
+            </TabsTrigger>
             <TabsTrigger value="inspector">
               Inspector ({logs.length})
             </TabsTrigger>
@@ -87,6 +93,12 @@ export function AIDevPanelContent() {
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
         </div>
+
+        <TabsContent value="claude" className="flex-1 min-h-0 m-0 relative">
+          <div className="absolute inset-0">
+            <ClaudeDevTab />
+          </div>
+        </TabsContent>
 
         <TabsContent value="inspector" className="flex-1 min-h-0 m-0 relative">
           <div className="absolute inset-0 flex flex-col">

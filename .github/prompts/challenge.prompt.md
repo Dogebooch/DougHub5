@@ -44,6 +44,6 @@ Perform a critical review identifying:
 
 For each issue: **Severity** | **Location** | **Problem** | **Fix**
 
-Prioritize critical bugs and security issues. Make executive decisions on anything that you find, as long as it is within the scope of the subtask and the scope of the foundation docs. Avoid silent errors, ensure all code is production ready. Avoid placeholders or commenting out code. Avoid leaving incomplete or broken code and/or tasks. Once you have made those decisions, Merge all the ideas into one plan, and implement the plan as discussed.
+Prioritize critical bugs and security issues. Make executive decisions on anything that you find, as long as it is within the scope of the subtask and the scope of the foundation docs. Avoid silent errors, ensure all code is production ready. To reiterate, ensure all changes are production ready, within the scope of the defined task. Avoid placeholders or commenting out code. Avoid leaving incomplete or broken code and/or tasks. Once you have made those decisions, Merge all the ideas into one plan, and implement the plan as discussed.
 
 If I answered, below are the answers to any questions you asked before starting the challenge step, as well as any other relevant context. If I did not answer the questions, use your best judgment based on the information available.

@@ -28,10 +28,12 @@ import type {
   NotebookLinkType,
   TopicWithStats,
   GlobalCardStats,
+  TopicQuizAttempt,
 } from "./index";
 import type {
   AIProviderStatus,
   ExtractedConcept,
+  ConceptExtractionResult,
   ValidationResult,
   MedicalListDetection,
   VignetteConversion,
@@ -40,6 +42,10 @@ import type {
   CardSuggestion,
   ElaboratedFeedback,
   WorthinessResult,
+  ExtractFactsResult,
+  GenerateQuizResult,
+  GradeAnswerResult,
+  ExtractedFact,
 } from "./ai";
 import type { AILogEntry, DevSettings } from "./dev";
 
@@ -97,7 +103,7 @@ export type {
 // Topic-level card generation types
 export interface TopicCardSuggestion {
   blockId: string;
-  format: 'qa' | 'cloze' | 'overlapping-cloze' | 'procedural';
+  format: "qa" | "cloze" | "overlapping-cloze" | "procedural";
   front: string;
   back: string;
   confidence: number;
@@ -139,10 +145,29 @@ export interface ElectronAPI {
     getBySiblings: (
       sourceBlockId: string,
     ) => Promise<IpcResult<CardBrowserItem[]>>;
-    getBySiblings: (
-      sourceBlockId: string,
-    ) => Promise<IpcResult<CardBrowserItem[]>>;
     findDuplicateFrontBack: () => Promise<IpcResult<Card[]>>;
+    activate: (
+      id: string,
+      tier?: string,
+      reasons?: string[],
+    ) => Promise<IpcResult<void>>;
+    suspend: (id: string, reason: string) => Promise<IpcResult<void>>;
+    bulkActivate: (
+      ids: string[],
+      tier?: string,
+      reasons?: string[],
+    ) => Promise<IpcResult<void>>;
+    bulkSuspend: (ids: string[], reason: string) => Promise<IpcResult<void>>;
+    getByActivationStatus: (
+      status: string,
+    ) => Promise<IpcResult<CardBrowserItem[]>>;
+    getActiveByTopicPage: (
+      topicPageId: string,
+    ) => Promise<IpcResult<CardBrowserItem[]>>;
+    getDormantByTopicPage: (
+      topicPageId: string,
+    ) => Promise<IpcResult<CardBrowserItem[]>>;
+    checkAndSuspendLeech: (id: string) => Promise<IpcResult<void>>;
   };
   notes: {
     getAll: () => Promise<IpcResult<Note[]>>;
@@ -268,6 +293,9 @@ export interface ElectronAPI {
   notebookPages: {
     getAll: () => Promise<IpcResult<NotebookTopicPage[]>>;
     getById: (id: string) => Promise<IpcResult<NotebookTopicPage | null>>;
+    getByTopic: (
+      topicId: string,
+    ) => Promise<IpcResult<NotebookTopicPage | null>>;
     create: (page: NotebookTopicPage) => Promise<IpcResult<NotebookTopicPage>>;
     update: (
       id: string,
@@ -405,6 +433,23 @@ export interface ElectronAPI {
       }) => void,
     ) => () => void;
     getOllamaModels: () => Promise<IpcResult<string[]>>;
+    // Notebook v2: Quiz System AI (v24)
+    extractFacts: (
+      sourceContent: string,
+      sourceType: string,
+      topicContext?: string,
+    ) => Promise<IpcResult<ExtractFactsResult>>;
+    generateQuiz: (
+      facts: ExtractedFact[],
+      topicContext: string,
+      maxQuestions?: number,
+    ) => Promise<IpcResult<GenerateQuizResult>>;
+    gradeAnswer: (
+      userAnswer: string,
+      correctAnswer: string,
+      acceptableAnswers: string[],
+      questionContext: string,
+    ) => Promise<IpcResult<GradeAnswerResult>>;
   };
   insights: {
     getBoardRelevance: (topicTags: string[]) => Promise<
@@ -470,6 +515,21 @@ export interface ElectronAPI {
     search: (query: string) => Promise<IpcResult<ReferenceRange[]>>;
     getByCategory: (category: string) => Promise<IpcResult<ReferenceRange[]>>;
     getCategories: () => Promise<IpcResult<string[]>>;
+  };
+  topicQuiz: {
+    saveAttempt: (attempt: TopicQuizAttempt) => Promise<IpcResult<void>>;
+    getRecentForTopic: (
+      topicPageId: string,
+      days?: number,
+    ) => Promise<IpcResult<TopicQuizAttempt[]>>;
+    shouldPrompt: (
+      topicPageId: string,
+    ) => Promise<IpcResult<{ shouldPrompt: boolean; daysSince: number }>>;
+    updateLastVisited: (topicPageId: string) => Promise<IpcResult<void>>;
+    getForgottenBlockIds: (
+      topicPageId: string,
+      thresholdDays?: number,
+    ) => Promise<IpcResult<string[]>>;
   };
   dev: {
     getSettings: () => Promise<IpcResult<Record<string, string>>>;

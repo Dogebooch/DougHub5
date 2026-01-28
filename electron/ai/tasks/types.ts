@@ -426,3 +426,127 @@ export interface CardGenerationResult {
   /** True if AI failed and fallback was used */
   usedFallback?: boolean;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notebook v2: Quiz System Task Types (v24)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * A single testable fact extracted from source content
+ */
+export interface ExtractedFact {
+  /** The core fact statement (blanking target) */
+  factText: string;
+  /** Key term/concept that would be blanked in quiz */
+  keyTerm: string;
+  /** Context sentence around the fact */
+  context: string;
+  /** How central is this to the content */
+  importance: "core" | "supporting" | "peripheral";
+}
+
+/**
+ * Context type for extract-facts task
+ */
+export interface ExtractFactsContext {
+  sourceContent: string;
+  sourceType: string;
+  topicContext?: string;
+}
+
+/**
+ * Result type for extract-facts task
+ */
+export interface ExtractFactsResult {
+  facts: ExtractedFact[];
+  /** True if AI failed and fallback was used */
+  usedFallback?: boolean;
+}
+
+/**
+ * A quiz question generated from a fact
+ */
+export interface QuizQuestion {
+  /** Question text with blank (e.g., "In DKA, _____ should be checked before insulin") */
+  questionText: string;
+  /** The correct answer (key term that was blanked) */
+  correctAnswer: string;
+  /** Alternative acceptable answers */
+  acceptableAnswers: string[];
+  /** The original fact this came from */
+  sourceFact: string;
+  /** Difficulty based on specificity */
+  difficulty: "easy" | "medium" | "hard";
+}
+
+/**
+ * Context type for generate-quiz task
+ */
+export interface GenerateQuizContext {
+  facts: ExtractedFact[];
+  topicContext: string;
+  maxQuestions?: number;
+}
+
+/**
+ * Result type for generate-quiz task
+ */
+export interface GenerateQuizResult {
+  questions: QuizQuestion[];
+  /** True if AI failed and fallback was used */
+  usedFallback?: boolean;
+}
+
+/**
+ * Context type for grade-answer task
+ */
+export interface GradeAnswerContext {
+  userAnswer: string;
+  correctAnswer: string;
+  acceptableAnswers: string[];
+  questionContext: string;
+}
+
+/**
+ * Result type for grade-answer task
+ */
+export interface GradeAnswerResult {
+  isCorrect: boolean;
+  /** Semantic match score 0-1 */
+  matchScore: number;
+  /** Explanation of why answer was right/wrong */
+  feedback: string;
+  /** The closest correct answer if wrong */
+  closestMatch?: string;
+  /** True if AI failed and fallback was used */
+  usedFallback?: boolean;
+}
+
+/**
+ * Context type for detect-confusion task
+ */
+export interface DetectConfusionContext {
+  userAnswer: string;
+  correctAnswer: string;
+  topicContext: string;
+  relatedConcepts?: string[];
+}
+
+/**
+ * Result type for detect-confusion task
+ */
+export interface DetectConfusionResult {
+  /** Whether confusion was detected */
+  hasConfusion: boolean;
+  /** The concept the user confused with */
+  confusedWith?: string;
+  /** Explanation of the confusion */
+  confusionReason?: string;
+  /** Suggested disambiguation concept pair */
+  conceptPair?: {
+    conceptA: string;
+    conceptB: string;
+  };
+  /** True if AI failed and fallback was used */
+  usedFallback?: boolean;
+}

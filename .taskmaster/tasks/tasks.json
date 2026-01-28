@@ -37,54 +37,152 @@
       { "id": "138", "title": "Step 3: Add to Notebook - AI-Assisted Insight Extraction", "status": "done" },
       { "id": "139", "title": "Notebook Redesign: Topic Browser (Screen 1)", "status": "done" },
       { "id": "143", "title": "Notebook Redesign: Visual Design System", "status": "done" },
+      { "id": "140", "title": "[SUPERSEDED by Notebook v2] Topic Article View", "status": "cancelled" },
+      { "id": "141", "title": "[SUPERSEDED by Notebook v2] Inline Editing Mode", "status": "cancelled" },
+      { "id": "142", "title": "[SUPERSEDED by Notebook v2] Topic Card Generation", "status": "cancelled" },
       {
-        "id": "140",
-        "title": "Notebook Redesign: Topic Article View (Screen 2)",
-        "description": "Replace block-card view with AMBOSS-style prose article. Blocks render as flowing content with callouts (Pearl/Trap/Caution), footnotes for sources, and collapsible Board Relevance panel at top.",
+        "id": "200",
+        "title": "[Notebook v2] Phase 1: Schema + Core Infrastructure",
+        "description": "v24 migration with card activation fields, block quiz tracking, multi-topic support tables, and IPC handlers for quiz attempts, card activation/suspension, confusion patterns.",
         "priority": "high",
-        "dependencies": ["139"],
+        "dependencies": [],
         "status": "pending",
         "subtasks": [
-          { "id": 1, "title": "Schema migration: Add calloutType column", "status": "pending" },
-          { "id": 2, "title": "TopicArticleView container component", "status": "pending" },
-          { "id": 3, "title": "ArticleContent prose renderer", "status": "pending" },
-          { "id": 4, "title": "CalloutBlock component", "status": "pending" },
-          { "id": 5, "title": "SourceFootnotes component", "status": "pending" },
-          { "id": 6, "title": "Topic header with aliases and stats", "status": "pending" },
-          { "id": 7, "title": "Board Relevance Panel integration", "status": "pending" },
-          { "id": 8, "title": "Add Content and Generate Cards footer", "status": "pending" }
+          { "id": 1, "title": "v24 migration: cards activation fields (activationStatus, activationTier, activationReasons, activatedAt, suspendReason, suspendedAt)", "status": "pending" },
+          { "id": 2, "title": "v24 migration: notebook_blocks quiz tracking (intakeQuizResult, intakeQuizAnswer, priorityScore, priorityReasons)", "status": "pending" },
+          { "id": 3, "title": "v24 migration: block_topic_assignments table for multi-topic support", "status": "pending" },
+          { "id": 4, "title": "v24 migration: intake_quiz_attempts table", "status": "pending" },
+          { "id": 5, "title": "v24 migration: topic_quiz_attempts table", "status": "pending" },
+          { "id": 6, "title": "v24 migration: confusion_patterns table", "status": "pending" },
+          { "id": 7, "title": "v24 migration: notebook_topic_pages.lastVisitedAt column", "status": "pending" },
+          { "id": 8, "title": "IPC handlers: intakeQuiz CRUD (saveAttempt, getBySource)", "status": "pending" },
+          { "id": 9, "title": "IPC handlers: topicQuiz CRUD (saveAttempt, getRecentForTopic, shouldPrompt)", "status": "pending" },
+          { "id": 10, "title": "IPC handlers: card activation (activate, suspend, bulkActivate, bulkSuspend)", "status": "pending" },
+          { "id": 11, "title": "IPC handlers: confusion patterns (create, increment, find)", "status": "pending" },
+          { "id": 12, "title": "IPC handlers: blockTopicAssignments CRUD", "status": "pending" }
         ]
       },
       {
-        "id": "141",
-        "title": "Notebook Redesign: Inline Editing Mode",
-        "description": "Add click-to-edit inline editing for Topic Article. Notion-style slash commands for inserting callouts, headings, and linking sources. Escape to cancel, Cmd+S to save.",
-        "priority": "medium",
-        "dependencies": ["140"],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "142",
-        "title": "Notebook Redesign: Topic Card Generation (Screen 3)",
-        "description": "Replace per-block card generation with topic-level batch generation. AI scans entire topic content, suggests multiple cards of various types, user selects which to create.",
+        "id": "201",
+        "title": "[Notebook v2] Phase 2: AI Tasks for Quiz System",
+        "description": "AI tasks for fact extraction, quiz question generation, answer grading, and confusion detection.",
         "priority": "high",
-        "dependencies": ["140"],
+        "dependencies": ["200"],
         "status": "pending",
         "subtasks": [
-          { "id": 1, "title": "AI Service: generateCardsFromTopic function", "status": "pending" },
-          { "id": 2, "title": "IPC handlers for topic card generation", "status": "pending" },
-          { "id": 3, "title": "TopicCardGeneration modal component", "status": "pending" },
-          { "id": 4, "title": "SuggestedCardItem component", "status": "pending" },
-          { "id": 5, "title": "CardEditInline component", "status": "pending" },
-          { "id": 6, "title": "Batch card creation flow", "status": "pending" }
+          { "id": 1, "title": "AI task: extract-facts.ts - parse source into testable facts with keyTerm positions", "status": "pending" },
+          { "id": 2, "title": "AI task: generate-quiz.ts - create blanked questions from facts", "status": "pending" },
+          { "id": 3, "title": "AI task: grade-answer.ts - fuzzy matching with similarity score", "status": "pending" },
+          { "id": 4, "title": "AI task: detect-confusion.ts - identify concept confusion patterns", "status": "pending" },
+          { "id": 5, "title": "IPC handlers for new AI tasks", "status": "pending" }
+        ]
+      },
+      {
+        "id": "202",
+        "title": "[Notebook v2] Phase 3: Intake Quiz UI (QBank Flow)",
+        "description": "IntakeQuizModal with topic selection, quiz questions, results screen with activation tier controls.",
+        "priority": "high",
+        "dependencies": ["201"],
+        "status": "pending",
+        "subtasks": [
+          { "id": 1, "title": "IntakeQuizModal orchestrator - manages step flow (topic → quiz → results)", "status": "pending" },
+          { "id": 2, "title": "TopicSelector enhancement - multi-select for multi-topic assignment", "status": "pending" },
+          { "id": 3, "title": "QuizQuestionCard component - answer input + 'Don't know yet' button", "status": "pending" },
+          { "id": 4, "title": "QuizResultsScreen - results with activation tier indicators", "status": "pending" },
+          { "id": 5, "title": "ActivationBadge component - dormant/suggested/auto-active status", "status": "pending" },
+          { "id": 6, "title": "Per-result [Activate]/[Suspend] buttons", "status": "pending" },
+          { "id": 7, "title": "Bulk actions: [Suspend All], [Activate All], [Add to Topic →]", "status": "pending" },
+          { "id": 8, "title": "'Skip quiz' exhausted mode checkbox", "status": "pending" }
+        ]
+      },
+      {
+        "id": "203",
+        "title": "[Notebook v2] Phase 4: Card Activation Logic",
+        "description": "Smart activation tier determination with all signals, leech detection at 6 lapses.",
+        "priority": "high",
+        "dependencies": ["200"],
+        "status": "pending",
+        "subtasks": [
+          { "id": 1, "title": "determineActivationTier() function with all 5 signals", "status": "pending" },
+          { "id": 2, "title": "containsNumbers() helper for detecting memorizable values", "status": "pending" },
+          { "id": 3, "title": "Cross-source frequency check (countSourcesWithSimilarFact)", "status": "pending" },
+          { "id": 4, "title": "Confusion pattern integration in activation logic", "status": "pending" },
+          { "id": 5, "title": "Leech detection: auto-suspend at 6 lapses in review flow", "status": "pending" },
+          { "id": 6, "title": "Leech notification with rewrite/delete options", "status": "pending" }
+        ]
+      },
+      {
+        "id": "204",
+        "title": "[Notebook v2] Phase 5: Topic Page Updates",
+        "description": "Priority highlighting in TopicArticleView, inline card status badges, fact detail popovers.",
+        "priority": "medium",
+        "dependencies": ["202"],
+        "status": "pending",
+        "subtasks": [
+          { "id": 1, "title": "PriorityIndicator component - red/orange/yellow inline highlights", "status": "pending" },
+          { "id": 2, "title": "Priority highlighting renderer in ArticleContent", "status": "pending" },
+          { "id": 3, "title": "CardStatusBadge component - inline dormant/active/suggested indicators", "status": "pending" },
+          { "id": 4, "title": "FactDetailPopover - click highlight to see priority reasons and card status", "status": "pending" },
+          { "id": 5, "title": "Filter dropdown: all / priority only / with cards due / without cards", "status": "pending" },
+          { "id": 6, "title": "Topic stats update: '8 facts · 3 priority · 5 cards due'", "status": "pending" }
+        ]
+      },
+      {
+        "id": "205",
+        "title": "[Notebook v2] Phase 6: Topic Entry Quiz (7-day threshold)",
+        "description": "Welcome back quiz prompt after 7 days, quick retention quiz on dormant/priority facts.",
+        "priority": "medium",
+        "dependencies": ["202"],
+        "status": "pending",
+        "subtasks": [
+          { "id": 1, "title": "lastVisitedAt tracking on topic page open", "status": "pending" },
+          { "id": 2, "title": "shouldPromptEntryQuiz() logic - 7 day threshold, configurable later", "status": "pending" },
+          { "id": 3, "title": "TopicEntryQuizPrompt modal - 'Welcome back, quick quiz?'", "status": "pending" },
+          { "id": 4, "title": "TopicQuizModal - quiz on dormant/priority facts", "status": "pending" },
+          { "id": 5, "title": "Quiz results update priority scores", "status": "pending" },
+          { "id": 6, "title": "Forgotten dormant cards → activate on quiz failure", "status": "pending" }
+        ]
+      },
+      {
+        "id": "206",
+        "title": "[Notebook v2] Phase 7: Source Type Flows",
+        "description": "Different intake flows per source type: reference mode, takeaways prompt, checklist verification.",
+        "priority": "medium",
+        "dependencies": ["202"],
+        "status": "pending",
+        "subtasks": [
+          { "id": 1, "title": "getIntakeFlow() function - route by sourceType", "status": "pending" },
+          { "id": 2, "title": "Reference mode for textbook/journal/web - no quiz, AI enrichment only", "status": "pending" },
+          { "id": 3, "title": "Takeaways prompt for lecture/video - 'What were your key takeaways?'", "status": "pending" },
+          { "id": 4, "title": "Optional quiz on takeaways", "status": "pending" },
+          { "id": 5, "title": "Checklist verification for procedure sources", "status": "pending" },
+          { "id": 6, "title": "Step-sequence card generation for procedures", "status": "pending" }
+        ]
+      },
+      {
+        "id": "207",
+        "title": "[Notebook v2] Phase 8: Cleanup + Deprecation",
+        "description": "Delete deprecated components and IPC handlers, update entry points.",
+        "priority": "medium",
+        "dependencies": ["202", "203", "204"],
+        "status": "pending",
+        "subtasks": [
+          { "id": 1, "title": "Delete InsightTextarea.tsx", "status": "pending" },
+          { "id": 2, "title": "Delete CardWorthinessPanel.tsx", "status": "pending" },
+          { "id": 3, "title": "Delete CardGenerationModal.tsx", "status": "pending" },
+          { "id": 4, "title": "Delete TopicCardGeneration.tsx", "status": "pending" },
+          { "id": 5, "title": "Remove IPC handlers: ai:evaluateInsight, ai:polishInsight", "status": "pending" },
+          { "id": 6, "title": "Remove IPC handlers: ai:generateCards, ai:generateCardsFromTopic", "status": "pending" },
+          { "id": 7, "title": "Update InboxView to use IntakeQuizModal", "status": "pending" },
+          { "id": 8, "title": "Update KnowledgeBankView to use IntakeQuizModal", "status": "pending" },
+          { "id": 9, "title": "Remove unused AddToNotebookWorkflow sub-components", "status": "pending" }
         ]
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-26T00:00:00.000Z",
-      "taskCount": 39,
+      "lastModified": "2026-01-27T00:00:00.000Z",
+      "taskCount": 47,
       "completedCount": 36
     }
   }

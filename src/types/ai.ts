@@ -198,3 +198,77 @@ export interface CaptureAnalysisResult {
   /** Suggested canonical topic name */
   suggestedTopic: string;
 }
+
+// ============================================================================
+// Notebook v2: Quiz System Types (v24)
+// ============================================================================
+
+/** A single testable fact extracted from source content */
+export interface ExtractedFact {
+  /** The core fact statement (blanking target) */
+  factText: string;
+  /** Key term/concept that would be blanked in quiz */
+  keyTerm: string;
+  /** Context sentence around the fact */
+  context: string;
+  /** How central is this to the content */
+  importance: 'core' | 'supporting' | 'peripheral';
+}
+
+/** Result from extractFacts AI call */
+export interface ExtractFactsResult {
+  facts: ExtractedFact[];
+  /** True if AI failed and fallback was used */
+  usedFallback?: boolean;
+}
+
+/** A quiz question generated from a fact */
+export interface QuizQuestion {
+  /** Question text with blank (e.g., "In DKA, _____ should be checked before insulin") */
+  questionText: string;
+  /** The correct answer (key term that was blanked) */
+  correctAnswer: string;
+  /** Alternative acceptable answers */
+  acceptableAnswers: string[];
+  /** The original fact this came from */
+  sourceFact: string;
+  /** Difficulty based on specificity */
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
+/** Result from generateQuiz AI call */
+export interface GenerateQuizResult {
+  questions: QuizQuestion[];
+  /** True if AI failed and fallback was used */
+  usedFallback?: boolean;
+}
+
+/** Result from gradeAnswer AI call */
+export interface GradeAnswerResult {
+  isCorrect: boolean;
+  /** Semantic match score 0-1 */
+  matchScore: number;
+  /** Explanation of why answer was right/wrong */
+  feedback: string;
+  /** The closest correct answer if wrong */
+  closestMatch?: string;
+  /** True if AI failed and fallback was used */
+  usedFallback?: boolean;
+}
+
+/** Result from detectConfusion AI call */
+export interface DetectConfusionResult {
+  /** Whether confusion was detected */
+  hasConfusion: boolean;
+  /** The concept the user confused with */
+  confusedWith?: string;
+  /** Explanation of the confusion */
+  confusionReason?: string;
+  /** Suggested disambiguation concept pair */
+  conceptPair?: {
+    conceptA: string;
+    conceptB: string;
+  };
+  /** True if AI failed and fallback was used */
+  usedFallback?: boolean;
+}

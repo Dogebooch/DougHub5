@@ -2177,6 +2177,219 @@ export async function extractQuestionSummary(
 }
 
 // ============================================================================
+// Notebook v2: Quiz System Functions (v24)
+// ============================================================================
+
+import {
+  extractFactsTask,
+  generateQuizTask,
+  gradeAnswerTask,
+  detectConfusionTask,
+  type ExtractFactsResult,
+  type ExtractFactsContext,
+  type GenerateQuizResult,
+  type GenerateQuizContext,
+  type GradeAnswerResult,
+  type GradeAnswerContext,
+  type DetectConfusionResult,
+  type DetectConfusionContext,
+  type ExtractedFact,
+} from "./ai/tasks";
+
+/**
+ * Extract testable facts from source content.
+ * Used by the Intake Quiz system to generate quiz questions.
+ */
+export async function extractFacts(
+  sourceContent: string,
+  sourceType: string,
+  topicContext?: string,
+): Promise<ExtractFactsResult> {
+  if (!sourceContent.trim()) {
+    return { facts: [], usedFallback: true };
+  }
+
+  const task = extractFactsTask;
+  const context: ExtractFactsContext = { sourceContent, sourceType, topicContext };
+
+  try {
+    const response = await withRetry(async () => {
+      const userPrompt = task.buildUserPrompt(context);
+      return await callAI(task.systemPrompt, userPrompt);
+    });
+
+    const parsed = parseAIResponse<ExtractFactsResult>(response);
+    const normalized = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : { facts: [] };
+
+    console.log(
+      `[AI Service] Extracted ${normalized.facts.length} facts from content`,
+    );
+    return normalized;
+  } catch (error) {
+    console.error("[AI Service] extractFacts failed:", error);
+    return task.fallbackResult || { facts: [], usedFallback: true };
+  }
+}
+
+/**
+ * Generate quiz questions from extracted facts.
+ * Creates fill-in-the-blank style questions with key terms removed.
+ */
+export async function generateQuiz(
+  facts: ExtractedFact[],
+  topicContext: string,
+  maxQuestions = 3,
+): Promise<GenerateQuizResult> {
+  if (facts.length === 0) {
+    return { questions: [], usedFallback: true };
+  }
+
+  const task = generateQuizTask;
+  const context: GenerateQuizContext = { facts, topicContext, maxQuestions };
+
+  try {
+    const response = await withRetry(async () => {
+      const userPrompt = task.buildUserPrompt(context);
+      return await callAI(task.systemPrompt, userPrompt);
+    });
+
+    const parsed = parseAIResponse<GenerateQuizResult>(response);
+    const normalized = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : { questions: [] };
+
+    console.log(
+      `[AI Service] Generated ${normalized.questions.length} quiz questions`,
+    );
+    return normalized;
+  } catch (error) {
+    console.error("[AI Service] generateQuiz failed:", error);
+    return task.fallbackResult || { questions: [], usedFallback: true };
+  }
+}
+
+/**
+ * Grade a user's answer against the correct answer using fuzzy matching.
+ * Handles synonyms, abbreviations, and partial matches.
+ */
+export async function gradeAnswer(
+  userAnswer: string,
+  correctAnswer: string,
+  acceptableAnswers: string[],
+  questionContext: string,
+): Promise<GradeAnswerResult> {
+  if (!userAnswer.trim()) {
+    return {
+      isCorrect: false,
+      matchScore: 0,
+      feedback: "No answer provided",
+      usedFallback: true,
+    };
+  }
+
+  // Quick exact match check (case-insensitive)
+  const normalizedUser = userAnswer.trim().toLowerCase();
+  const normalizedCorrect = correctAnswer.trim().toLowerCase();
+  const normalizedAcceptable = acceptableAnswers.map((a) =>
+    a.trim().toLowerCase(),
+  );
+
+  if (
+    normalizedUser === normalizedCorrect ||
+    normalizedAcceptable.includes(normalizedUser)
+  ) {
+    return {
+      isCorrect: true,
+      matchScore: 1.0,
+      feedback: "Correct!",
+    };
+  }
+
+  // Use AI for fuzzy matching
+  const task = gradeAnswerTask;
+  const context: GradeAnswerContext = {
+    userAnswer,
+    correctAnswer,
+    acceptableAnswers,
+    questionContext,
+  };
+
+  try {
+    const response = await withRetry(async () => {
+      const userPrompt = task.buildUserPrompt(context);
+      return await callAI(task.systemPrompt, userPrompt);
+    });
+
+    const parsed = parseAIResponse<GradeAnswerResult>(response);
+    const normalized = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : { isCorrect: false, matchScore: 0, feedback: "Unable to grade" };
+
+    console.log(
+      `[AI Service] Graded answer: ${normalized.isCorrect ? "correct" : "incorrect"} (score: ${normalized.matchScore})`,
+    );
+    return normalized;
+  } catch (error) {
+    console.error("[AI Service] gradeAnswer failed:", error);
+    return (
+      task.fallbackResult || {
+        isCorrect: false,
+        matchScore: 0,
+        feedback: "Unable to grade answer",
+        usedFallback: true,
+      }
+    );
+  }
+}
+
+/**
+ * Detect if a wrong answer indicates confusion between similar concepts.
+ * Used to track confusion patterns for disambiguation card generation.
+ */
+export async function detectConfusion(
+  userAnswer: string,
+  correctAnswer: string,
+  topicContext: string,
+  relatedConcepts?: string[],
+): Promise<DetectConfusionResult> {
+  if (!userAnswer.trim()) {
+    return { hasConfusion: false };
+  }
+
+  const task = detectConfusionTask;
+  const context: DetectConfusionContext = {
+    userAnswer,
+    correctAnswer,
+    topicContext,
+    relatedConcepts,
+  };
+
+  try {
+    const response = await withRetry(async () => {
+      const userPrompt = task.buildUserPrompt(context);
+      return await callAI(task.systemPrompt, userPrompt);
+    });
+
+    const parsed = parseAIResponse<DetectConfusionResult>(response);
+    const normalized = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : { hasConfusion: false };
+
+    if (normalized.hasConfusion) {
+      console.log(
+        `[AI Service] Detected confusion: ${normalized.confusedWith} (${normalized.confusionReason})`,
+      );
+    }
+    return normalized;
+  } catch (error) {
+    console.error("[AI Service] detectConfusion failed:", error);
+    return task.fallbackResult || { hasConfusion: false, usedFallback: true };
+  }
+}
+
+// ============================================================================
 // Exports
 // ============================================================================
 
@@ -2194,3 +2407,13 @@ export {
   type WorthinessResult,
   type ElaboratedFeedback,
 } from "../src/types/ai";
+
+// Notebook v2: Quiz System Types (v24)
+export {
+  type ExtractFactsResult,
+  type ExtractedFact,
+  type GenerateQuizResult,
+  type QuizQuestion,
+  type GradeAnswerResult,
+  type DetectConfusionResult,
+} from "./ai/tasks";

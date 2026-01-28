@@ -34,13 +34,14 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 import { TopicHeader } from "./TopicHeader";
-import { ArticleContent } from "./ArticleContent";
+import { ArticleContent, BlockCardSummary } from "./ArticleContent";
 import { SourceFootnotes } from "./SourceFootnotes";
 import { AddBlockModal } from "../AddBlockModal";
 import { BlockEditModal } from "../BlockEditModal";
 import { DirectAuthorModal } from "../DirectAuthorModal";
 import { SourcePreviewPanel } from "../SourcePreviewPanel";
 import { TopicCardGeneration } from "../cardgen";
+import { TopicEntryQuizPrompt, TopicQuizModal } from "../topic-quiz";
 
 interface TopicArticleViewProps {
   pageId: string;
@@ -79,6 +80,9 @@ export function TopicArticleView({
   );
   const [boardRelevance, setBoardRelevance] =
     useState<BoardRelevanceData | null>(null);
+  const [blockCardSummaries, setBlockCardSummaries] = useState<
+    Map<string, BlockCardSummary>
+  >(new Map());
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -100,6 +104,65 @@ export function TopicArticleView({
 
   // Direct author modal state
   const [directAuthorOpen, setDirectAuthorOpen] = useState(false);
+
+  // Topic entry quiz state
+  const [showEntryPrompt, setShowEntryPrompt] = useState(false);
+  const [showEntryQuiz, setShowEntryQuiz] = useState(false);
+  const [entryQuizDaysSince, setEntryQuizDaysSince] = useState(0);
+  const hasCheckedQuizRef = useRef<string | null>(null);
+
+  // Fetch card summaries for all blocks
+  const fetchCardSummaries = useCallback(
+    async (blocksToFetch: NotebookBlock[]) => {
+      if (!blocksToFetch.length) {
+        setBlockCardSummaries(new Map());
+        return;
+      }
+
+      const summaries = new Map<string, BlockCardSummary>();
+
+      await Promise.all(
+        blocksToFetch.map(async (block) => {
+          try {
+            const result = await window.api.cards.getBySiblings(block.id);
+            if (result.data && result.data.length > 0) {
+              const cards = result.data;
+              // Aggregate: use most "important" status and count all cards
+              // Priority: active > suggested > suspended > dormant > graduated
+              const statusPriority: Record<string, number> = {
+                active: 5,
+                suggested: 4,
+                suspended: 3,
+                dormant: 2,
+                graduated: 1,
+              };
+              const primaryCard = cards.reduce((best, card) =>
+                (statusPriority[card.activationStatus] || 0) >
+                (statusPriority[best.activationStatus] || 0)
+                  ? card
+                  : best,
+              );
+
+              summaries.set(block.id, {
+                activationStatus: primaryCard.activationStatus,
+                activationReasons: primaryCard.activationReasons,
+                cardCount: cards.length,
+                activatedAt: primaryCard.activatedAt,
+                suspendReason: primaryCard.suspendReason,
+              });
+            }
+          } catch (err) {
+            console.error(`Failed to fetch cards for block ${block.id}:`, err);
+          }
+        }),
+      );
+
+      if (mountedRef.current) {
+        setBlockCardSummaries(summaries);
+      }
+    },
+    [],
+  );
 
   // Fetch all data
   const fetchData = useCallback(async () => {
@@ -131,7 +194,23 @@ export function TopicArticleView({
       setTopic(topicData);
       setBlocks(blocksData);
 
-      // 3. Fetch source items for footnotes
+      // 3. Check for topic entry quiz if we haven't checked this session
+      if (hasCheckedQuizRef.current !== pageId) {
+        const promptResult = await window.api.topicQuiz.shouldPrompt(pageId);
+        if (promptResult.data?.shouldPrompt) {
+          setEntryQuizDaysSince(promptResult.data.daysSince);
+          setShowEntryPrompt(true);
+        } else {
+          // No quiz needed, update last visited immediately
+          await window.api.topicQuiz.updateLastVisited(pageId);
+        }
+        hasCheckedQuizRef.current = pageId;
+      }
+
+      // 4. Fetch card summaries for blocks
+      fetchCardSummaries(blocksData);
+
+      // 5. Fetch source items for footnotes
       const sourceIds = [...new Set(blocksData.map((b) => b.sourceItemId))];
       const sourceMap = new Map<string, SourceItem>();
 
@@ -145,7 +224,7 @@ export function TopicArticleView({
       );
       setSourceItems(sourceMap);
 
-      // 4. Fetch board relevance if we have topic tags
+      // 6. Fetch board relevance if we have topic tags
       if (topicData) {
         const tags = [topicData.canonicalName, ...topicData.aliases];
         const relevanceResult =
@@ -162,7 +241,7 @@ export function TopicArticleView({
     } finally {
       setLoading(false);
     }
-  }, [pageId, onRefresh, viewMode]);
+  }, [pageId, onRefresh, viewMode, fetchCardSummaries]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -278,6 +357,25 @@ export function TopicArticleView({
     }
     // Refresh data to show changes
     await fetchData();
+  };
+
+  const handleEntryQuizStart = () => {
+    setShowEntryPrompt(false);
+    setShowEntryQuiz(true);
+  };
+
+  const handleEntryQuizSkip = async () => {
+    setShowEntryPrompt(false);
+    await window.api.topicQuiz.updateLastVisited(pageId);
+  };
+
+  const handleEntryQuizComplete = async (forgottenBlockIds: string[]) => {
+    setShowEntryQuiz(false);
+    await window.api.topicQuiz.updateLastVisited(pageId);
+    // Refresh card summaries if concepts were "forgotten" and cards might have been activated
+    if (forgottenBlockIds.length > 0) {
+      await fetchCardSummaries(blocks);
+    }
   };
 
   // Loading state
@@ -445,9 +543,11 @@ export function TopicArticleView({
           ) : (
             <ArticleContent
               blocks={blocks}
+              blockCardSummaries={blockCardSummaries}
               onFootnoteClick={handleFootnoteClick}
               onBlockEdit={handleBlockEdit}
               onStarToggle={handleStarToggle}
+              onCardStatusChange={() => fetchCardSummaries(blocks)}
               togglingBlockIds={togglingBlockIds}
             />
           )}
@@ -532,6 +632,25 @@ export function TopicArticleView({
         onSave={() => {
           fetchData();
         }}
+      />
+
+      {/* Topic Entry Quiz */}
+      <TopicEntryQuizPrompt
+        isOpen={showEntryPrompt}
+        onClose={() => setShowEntryPrompt(false)}
+        daysSince={entryQuizDaysSince}
+        topicName={topic?.canonicalName || ""}
+        onStartQuiz={handleEntryQuizStart}
+        onSkip={handleEntryQuizSkip}
+      />
+
+      <TopicQuizModal
+        isOpen={showEntryQuiz}
+        onClose={() => setShowEntryQuiz(false)}
+        topicPageId={pageId}
+        topicName={topic?.canonicalName || ""}
+        daysSince={entryQuizDaysSince}
+        onComplete={handleEntryQuizComplete}
       />
     </div>
   );

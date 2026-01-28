@@ -10,6 +10,24 @@ export type SourceType = 'qbank' | 'article' | 'pdf' | 'image' | 'audio' | 'quic
 // v2 Archive - Source processing status
 export type SourceItemStatus = 'inbox' | 'processed' | 'curated';
 
+// Notebook v2: Card Activation System (v24)
+export type ActivationStatus = "dormant" | "suggested" | "active" | "suspended" | "graduated";
+export type ActivationTier = "auto" | "suggested" | "user_manual";
+export type SuspendReason = "user" | "leech" | "rotation_end";
+
+// Notebook v2: Intake Quiz
+export type IntakeQuizResultType = "correct" | "wrong" | "skipped";
+
+export interface TopicQuizAttempt {
+  id: string;
+  notebookTopicPageId: string;
+  blockId: string;
+  questionText: string;
+  isCorrect?: boolean;
+  attemptedAt: string;
+  daysSinceLastVisit?: number;
+}
+
 export interface Card {
   id: string;
   front: string;
@@ -26,10 +44,26 @@ export interface Card {
   notebookTopicPageId: string | null;
   sourceBlockId: string | null;
   aiTitle: string | null;
+  // FSRS fields
+  stability: number;
+  difficulty: number;
+  elapsedDays: number;
+  scheduledDays: number;
+  reps: number;
+  lapses: number;
+  state: number; // 0=New, 1=Learning, 2=Review, 3=Relearning
+  lastReview: string | null;
   // Data Logging Framework (v18)
   targetedConfusion?: string;
   relevanceScore?: "high" | "medium" | "low" | "unknown";
   relevanceReason?: string;
+  // Notebook v2: Card Activation (v24)
+  activationStatus: ActivationStatus;
+  activationTier?: ActivationTier;
+  activationReasons?: string[];
+  activatedAt?: string;
+  suspendReason?: SuspendReason;
+  suspendedAt?: string;
 }
 
 export interface Note {
@@ -162,8 +196,11 @@ export interface NotebookBlock {
   mediaPath?: string;
   position: number;
   cardCount: number; // v2: Number of cards generated from this block
+  priorityScore?: number; // v24: Priority score for retention quizing
   calloutType?: "pearl" | "trap" | "caution" | null;
   isHighYield: boolean; // v22: High-yield marker for board prep filtering
+  // Notebook v2: Intake Quiz tracking (v24)
+  intakeQuizResult?: IntakeQuizResultType;
 }
 
 export type NotebookLinkType =

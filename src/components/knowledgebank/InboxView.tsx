@@ -22,7 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SourceItemRow } from "./SourceItemRow";
 import { BatchActions } from "./BatchActions";
-import { AddToNotebookWorkflow } from "../notebook/AddToNotebookWorkflow";
+import { IntakeQuizModal } from "../notebook/intake-quiz";
 import { SourceItemViewerDialog } from "./SourceItemViewerDialog";
 import { SourceItem, SourceType } from "@/types";
 import { useAppStore } from "@/stores/useAppStore";
@@ -600,12 +600,24 @@ export function InboxView() {
         onArchiveToKB={handleArchiveToKB}
       />
 
-      <AddToNotebookWorkflow
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        sourceItem={targetItem}
-        onSuccess={onAddSuccess}
-      />
+      {targetItem && (
+        <IntakeQuizModal
+          isOpen={isAddDialogOpen}
+          onClose={() => setIsAddDialogOpen(false)}
+          sourceItem={{
+            id: targetItem.id,
+            title: targetItem.title,
+            content: targetItem.content,
+            sourceType: targetItem.sourceType,
+            correctness: targetItem.correctness,
+          }}
+          suggestedTopics={targetItem.metadata?.subject ? [targetItem.metadata.subject] : []}
+          onComplete={() => {
+            onAddSuccess();
+            setIsAddDialogOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

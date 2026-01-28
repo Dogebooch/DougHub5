@@ -25,6 +25,23 @@ const api = {
       ipcRenderer.invoke("cards:findDuplicateFrontBack"),
     getLowEaseTopics: () => ipcRenderer.invoke("cards:getLowEaseTopics"),
     getGlobalStats: () => ipcRenderer.invoke("cards:getGlobalStats"),
+    // Notebook v2: Card Activation (v24)
+    activate: (id: string, tier?: string, reasons?: string[]) =>
+      ipcRenderer.invoke("cards:activate", id, tier, reasons),
+    suspend: (id: string, reason: string) =>
+      ipcRenderer.invoke("cards:suspend", id, reason),
+    bulkActivate: (ids: string[], tier?: string, reasons?: string[]) =>
+      ipcRenderer.invoke("cards:bulkActivate", ids, tier, reasons),
+    bulkSuspend: (ids: string[], reason: string) =>
+      ipcRenderer.invoke("cards:bulkSuspend", ids, reason),
+    getByActivationStatus: (status: string) =>
+      ipcRenderer.invoke("cards:getByActivationStatus", status),
+    getActiveByTopicPage: (topicPageId: string) =>
+      ipcRenderer.invoke("cards:getActiveByTopicPage", topicPageId),
+    getDormantByTopicPage: (topicPageId: string) =>
+      ipcRenderer.invoke("cards:getDormantByTopicPage", topicPageId),
+    checkAndSuspendLeech: (id: string) =>
+      ipcRenderer.invoke("cards:checkAndSuspendLeech", id),
   },
   notes: {
     getAll: () => ipcRenderer.invoke("notes:getAll"),
@@ -200,6 +217,8 @@ const api = {
   notebookPages: {
     getAll: () => ipcRenderer.invoke("notebookPages:getAll"),
     getById: (id: string) => ipcRenderer.invoke("notebookPages:getById", id),
+    getByTopic: (topicId: string) =>
+      ipcRenderer.invoke("notebookPages:getByTopic", topicId),
     create: (page: unknown) => ipcRenderer.invoke("notebookPages:create", page),
     update: (id: string, updates: unknown) =>
       ipcRenderer.invoke("notebookPages:update", id, updates),
@@ -360,6 +379,50 @@ const api = {
       return () => ipcRenderer.removeListener("ai:ollamaStatus", subscription);
     },
     getOllamaModels: () => ipcRenderer.invoke("ai:getOllamaModels"),
+    // Notebook v2: Quiz System AI (v24)
+    extractFacts: (
+      sourceContent: string,
+      sourceType: string,
+      topicContext?: string,
+    ) =>
+      ipcRenderer.invoke(
+        "ai:extractFacts",
+        sourceContent,
+        sourceType,
+        topicContext,
+      ),
+    generateQuiz: (
+      facts: unknown[],
+      topicContext: string,
+      maxQuestions?: number,
+    ) =>
+      ipcRenderer.invoke("ai:generateQuiz", facts, topicContext, maxQuestions),
+    gradeAnswer: (
+      userAnswer: string,
+      correctAnswer: string,
+      acceptableAnswers: string[],
+      questionContext: string,
+    ) =>
+      ipcRenderer.invoke(
+        "ai:gradeAnswer",
+        userAnswer,
+        correctAnswer,
+        acceptableAnswers,
+        questionContext,
+      ),
+    detectConfusion: (
+      userAnswer: string,
+      correctAnswer: string,
+      topicContext: string,
+      relatedConcepts?: string[],
+    ) =>
+      ipcRenderer.invoke(
+        "ai:detectConfusion",
+        userAnswer,
+        correctAnswer,
+        topicContext,
+        relatedConcepts,
+      ),
   },
   insights: {
     getBoardRelevance: (topicTags: string[]) =>
@@ -440,6 +503,151 @@ const api = {
         callback(payload);
       ipcRenderer.on("ai:log", handler);
       return () => ipcRenderer.removeListener("ai:log", handler);
+    },
+  },
+  // ============================================================================
+  // Notebook v2: Quiz & Activation APIs (v24)
+  // ============================================================================
+  intakeQuiz: {
+    saveAttempt: (attempt: unknown) =>
+      ipcRenderer.invoke("intakeQuiz:saveAttempt", attempt),
+    getBySource: (sourceItemId: string) =>
+      ipcRenderer.invoke("intakeQuiz:getBySource", sourceItemId),
+    getByBlock: (blockId: string) =>
+      ipcRenderer.invoke("intakeQuiz:getByBlock", blockId),
+  },
+  topicQuiz: {
+    saveAttempt: (attempt: unknown) =>
+      ipcRenderer.invoke("topicQuiz:saveAttempt", attempt),
+    getRecentForTopic: (topicPageId: string, days?: number) =>
+      ipcRenderer.invoke("topicQuiz:getRecentForTopic", topicPageId, days),
+    shouldPrompt: (topicPageId: string) =>
+      ipcRenderer.invoke("topicQuiz:shouldPrompt", topicPageId),
+    updateLastVisited: (topicPageId: string) =>
+      ipcRenderer.invoke("topicQuiz:updateLastVisited", topicPageId),
+    getForgottenBlockIds: (topicPageId: string, thresholdDays?: number) =>
+      ipcRenderer.invoke(
+        "topicQuiz:getForgottenBlockIds",
+        topicPageId,
+        thresholdDays,
+      ),
+  },
+  confusionPatterns: {
+    create: (pattern: unknown) =>
+      ipcRenderer.invoke("confusionPatterns:create", pattern),
+    increment: (conceptA: string, conceptB: string, topicId: string) =>
+      ipcRenderer.invoke(
+        "confusionPatterns:increment",
+        conceptA,
+        conceptB,
+        topicId,
+      ),
+    find: (conceptA: string, conceptB: string) =>
+      ipcRenderer.invoke("confusionPatterns:find", conceptA, conceptB),
+    getAll: () => ipcRenderer.invoke("confusionPatterns:getAll"),
+    getHighOccurrence: (minOccurrence?: number) =>
+      ipcRenderer.invoke("confusionPatterns:getHighOccurrence", minOccurrence),
+    setDisambiguationCard: (patternId: string, cardId: string) =>
+      ipcRenderer.invoke(
+        "confusionPatterns:setDisambiguationCard",
+        patternId,
+        cardId,
+      ),
+  },
+  blockTopicAssignments: {
+    create: (assignment: unknown) =>
+      ipcRenderer.invoke("blockTopicAssignments:create", assignment),
+    getByBlock: (blockId: string) =>
+      ipcRenderer.invoke("blockTopicAssignments:getByBlock", blockId),
+    getByTopicPage: (topicPageId: string) =>
+      ipcRenderer.invoke("blockTopicAssignments:getByTopicPage", topicPageId),
+    setPrimary: (blockId: string, topicPageId: string) =>
+      ipcRenderer.invoke(
+        "blockTopicAssignments:setPrimary",
+        blockId,
+        topicPageId,
+      ),
+    remove: (blockId: string, topicPageId: string) =>
+      ipcRenderer.invoke("blockTopicAssignments:remove", blockId, topicPageId),
+    bulkCreate: (
+      blockId: string,
+      topicPageIds: string[],
+      primaryTopicPageId: string,
+    ) =>
+      ipcRenderer.invoke(
+        "blockTopicAssignments:bulkCreate",
+        blockId,
+        topicPageIds,
+        primaryTopicPageId,
+      ),
+    getTopicPageIds: (blockId: string) =>
+      ipcRenderer.invoke("blockTopicAssignments:getTopicPageIds", blockId),
+  },
+  // ============================================================================
+  // Claude Dev Integration
+  // ============================================================================
+  claudeDev: {
+    getStatus: () => ipcRenderer.invoke("claudeDev:getStatus"),
+    captureScreenshot: (rect?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }) => ipcRenderer.invoke("claudeDev:captureScreenshot", rect),
+    sendMessage: (
+      content: string,
+      options: {
+        screenshot?: string;
+        elementInfo?: {
+          selector: string;
+          tagName: string;
+          className: string;
+          id?: string;
+          textContent?: string;
+          boundingRect: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+          };
+        };
+        currentView: string;
+      },
+    ) => ipcRenderer.invoke("claudeDev:sendMessage", content, options),
+    startSession: () => ipcRenderer.invoke("claudeDev:startSession"),
+    endSession: () => ipcRenderer.invoke("claudeDev:endSession"),
+    getMessages: () => ipcRenderer.invoke("claudeDev:getMessages"),
+    clearMessages: () => ipcRenderer.invoke("claudeDev:clearMessages"),
+    resetClient: () => ipcRenderer.invoke("claudeDev:resetClient"),
+    onMessage: (
+      callback: (message: {
+        id: string;
+        role: "user" | "assistant";
+        content: string;
+        timestamp: number;
+        screenshot?: string;
+        elementInfo?: unknown;
+      }) => void,
+    ) => {
+      const handler = (
+        _event: Electron.IpcRendererEvent,
+        message: {
+          id: string;
+          role: "user" | "assistant";
+          content: string;
+          timestamp: number;
+          screenshot?: string;
+          elementInfo?: unknown;
+        },
+      ) => callback(message);
+      ipcRenderer.on("claudeDev:message", handler);
+      return () => ipcRenderer.removeListener("claudeDev:message", handler);
+    },
+    onChunk: (callback: (chunk: string) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, chunk: string) =>
+        callback(chunk);
+      ipcRenderer.on("claudeDev:chunk", handler);
+      return () => ipcRenderer.removeListener("claudeDev:chunk", handler);
     },
   },
   reloadApp: () => ipcRenderer.invoke("app:reload"),

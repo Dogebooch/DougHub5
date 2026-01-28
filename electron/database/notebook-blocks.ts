@@ -1,5 +1,9 @@
 import { getDatabase } from "./db-connection";
-import type { DbNotebookBlock, NotebookBlockRow } from "./types";
+import type {
+  DbNotebookBlock,
+  NotebookBlockRow,
+  IntakeQuizResult,
+} from "./types";
 import type {
   ExamTrapType,
   NotebookBlockAiEvaluation,
@@ -80,11 +84,13 @@ export const notebookBlockQueries = {
     const stmt = getDatabase().prepare(`
       INSERT INTO notebook_blocks (
         id, notebookTopicPageId, sourceItemId, content, annotations, mediaPath, position,
-        userInsight, aiEvaluation, relevanceScore, relevanceReason, calloutType, isHighYield
+        userInsight, aiEvaluation, relevanceScore, relevanceReason, calloutType, isHighYield,
+        intakeQuizResult, intakeQuizAnswer, priorityScore, priorityReasons
       )
       VALUES (
         @id, @notebookTopicPageId, @sourceItemId, @content, @annotations, @mediaPath, @position,
-        @userInsight, @aiEvaluation, @relevanceScore, @relevanceReason, @calloutType, @isHighYield
+        @userInsight, @aiEvaluation, @relevanceScore, @relevanceReason, @calloutType, @isHighYield,
+        @intakeQuizResult, @intakeQuizAnswer, @priorityScore, @priorityReasons
       )
     `);
     stmt.run({
@@ -98,7 +104,13 @@ export const notebookBlockQueries = {
       relevanceScore: block.relevanceScore || null,
       relevanceReason: block.relevanceReason || null,
       calloutType: block.calloutType || null,
-      isHighYield: block.isHighYield ? 1 : 0, // Convert boolean to SQLite INTEGER
+      isHighYield: block.isHighYield ? 1 : 0,
+      intakeQuizResult: block.intakeQuizResult || null,
+      intakeQuizAnswer: block.intakeQuizAnswer || null,
+      priorityScore: block.priorityScore ?? 50,
+      priorityReasons: block.priorityReasons
+        ? JSON.stringify(block.priorityReasons)
+        : null,
     });
   },
 
@@ -125,7 +137,11 @@ export const notebookBlockQueries = {
         relevanceScore = @relevanceScore,
         relevanceReason = @relevanceReason,
         calloutType = @calloutType,
-        isHighYield = @isHighYield
+        isHighYield = @isHighYield,
+        intakeQuizResult = @intakeQuizResult,
+        intakeQuizAnswer = @intakeQuizAnswer,
+        priorityScore = @priorityScore,
+        priorityReasons = @priorityReasons
       WHERE id = @id
     `);
     updateStmt.run({
@@ -139,7 +155,13 @@ export const notebookBlockQueries = {
       relevanceScore: merged.relevanceScore || null,
       relevanceReason: merged.relevanceReason || null,
       calloutType: merged.calloutType || null,
-      isHighYield: merged.isHighYield ? 1 : 0, // Convert boolean to SQLite INTEGER
+      isHighYield: merged.isHighYield ? 1 : 0,
+      intakeQuizResult: merged.intakeQuizResult || null,
+      intakeQuizAnswer: merged.intakeQuizAnswer || null,
+      priorityScore: merged.priorityScore ?? 50,
+      priorityReasons: merged.priorityReasons
+        ? JSON.stringify(merged.priorityReasons)
+        : null,
     });
   },
 
@@ -264,6 +286,18 @@ export function parseNotebookBlockRow(row: NotebookBlockRow): DbNotebookBlock {
     }
   }
 
+  let priorityReasons: string[] | undefined;
+  if (row.priorityReasons) {
+    try {
+      priorityReasons = JSON.parse(row.priorityReasons);
+    } catch (e) {
+      console.error(
+        `[Database] Failed to parse priorityReasons for block ${row.id}:`,
+        e,
+      );
+    }
+  }
+
   return {
     id: row.id,
     notebookTopicPageId: row.notebookTopicPageId,
@@ -278,6 +312,11 @@ export function parseNotebookBlockRow(row: NotebookBlockRow): DbNotebookBlock {
     relevanceScore: (row.relevanceScore as RelevanceScore) || "unknown",
     relevanceReason: row.relevanceReason || undefined,
     calloutType: (row.calloutType as "pearl" | "trap" | "caution") || undefined,
-    isHighYield: row.isHighYield === 1, // Convert SQLite INTEGER to boolean
+    isHighYield: row.isHighYield === 1,
+    // Notebook v2: Intake Quiz tracking (v24)
+    intakeQuizResult: (row.intakeQuizResult as IntakeQuizResult) || undefined,
+    intakeQuizAnswer: row.intakeQuizAnswer || undefined,
+    priorityScore: row.priorityScore ?? 50,
+    priorityReasons,
   };
 }

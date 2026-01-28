@@ -5,7 +5,7 @@ import { SourceItem } from '@/types';
 import { SourceItemRow } from './SourceItemRow';
 import { StatusGroup } from './StatusGroup';
 import { BatchActions } from './BatchActions';
-import { AddToNotebookWorkflow } from "../notebook/AddToNotebookWorkflow";
+import { IntakeQuizModal } from "../notebook/intake-quiz";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -348,12 +348,24 @@ export const KnowledgeBankView = () => {
       </div>
 
       {/* Dialogs & Batch Actions */}
-      <AddToNotebookWorkflow
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        sourceItem={targetItem}
-        onSuccess={handleAddSuccess}
-      />
+      {targetItem && (
+        <IntakeQuizModal
+          isOpen={isAddDialogOpen}
+          onClose={() => setIsAddDialogOpen(false)}
+          sourceItem={{
+            id: targetItem.id,
+            title: targetItem.title,
+            content: targetItem.content,
+            sourceType: targetItem.sourceType,
+            correctness: targetItem.correctness,
+          }}
+          suggestedTopics={targetItem.metadata?.subject ? [targetItem.metadata.subject] : []}
+          onComplete={() => {
+            handleAddSuccess();
+            setIsAddDialogOpen(false);
+          }}
+        />
+      )}
 
       <BatchActions
         selectedCount={selectedInboxItems.size}

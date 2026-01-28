@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "cleanup": "taskkill /F /IM electron.exe /T || exit 0",
-    "dev": "npm run cleanup && vite",
+    "clean": "npx rimraf dist dist-electron node_modules/.vite",
+    "dev": "npm run cleanup && npm run clean && vite",
     "build": "tsc && vite build && electron-builder",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",

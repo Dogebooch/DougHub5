@@ -23,7 +23,24 @@ export function initializeConnection(dbPath: string): Database.Database {
   // Enable foreign key constraints
   db.pragma("foreign_keys = ON");
 
+  // Keep database file size lean
+  db.pragma("auto_vacuum = INCREMENTAL");
+
   return db;
+}
+
+/**
+ * Manually reclaim space and defragment the database file.
+ * Useful after large deletions or significant schema changes.
+ */
+export function vacuumDatabase(): void {
+  if (!db) return;
+  try {
+    db.pragma("vacuum");
+    console.log("[Database] Vacuum completed successfully");
+  } catch (error) {
+    console.error("[Database] Vacuum failed:", error);
+  }
 }
 
 export function reopenConnection(dbPath: string): Database.Database {

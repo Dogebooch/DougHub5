@@ -23,3 +23,37 @@ export interface AILogEntry {
   error?: string;
   reason?: string;
 }
+
+// ============================================================================
+// Claude Dev Integration Types
+// ============================================================================
+
+export interface ClaudeDevMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+  screenshot?: string; // Base64 PNG data URL
+  elementInfo?: ElementInfo;
+}
+
+export interface ElementInfo {
+  selector: string;
+  tagName: string;
+  className: string;
+  id?: string;
+  textContent?: string;
+  boundingRect: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
+export interface ClaudeDevStatus {
+  isConnected: boolean;
+  hasApiKey: boolean;
+  model: string;
+  error?: string;
+}

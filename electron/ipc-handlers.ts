@@ -16,6 +16,16 @@ import {
   resetAIClient,
   getAvailableOllamaModels,
   extractQuestionSummary,
+  // Notebook v2: Quiz System AI functions (v24)
+  extractFacts,
+  generateQuiz,
+  gradeAnswer,
+  detectConfusion,
+  type ExtractFactsResult,
+  type ExtractedFact,
+  type GenerateQuizResult,
+  type GradeAnswerResult,
+  type DetectConfusionResult,
 } from "./ai-service";
 import {
   parseBoardQuestion,
@@ -73,6 +83,18 @@ import {
   CardBrowserSort,
   referenceRangeQueries,
   ReferenceRange,
+  // Notebook v2 (v24)
+  intakeQuizQueries,
+  topicQuizQueries,
+  confusionPatternQueries,
+  blockTopicAssignmentQueries,
+  DbIntakeQuizAttempt,
+  DbTopicQuizAttempt,
+  DbConfusionPattern,
+  DbBlockTopicAssignment,
+  ActivationStatus,
+  ActivationTier,
+  SuspendReason,
 } from "./database";
 import {
   scheduleReview,
@@ -124,6 +146,19 @@ import {
   addTopicAlias,
   mergeTopics,
 } from "./topic-service";
+import {
+  getClaudeDevStatus,
+  captureScreenshot,
+  sendMessage as sendClaudeDevMessage,
+  startSession as startClaudeDevSession,
+  endSession as endClaudeDevSession,
+  getSessionMessages,
+  clearSessionMessages,
+  resetClaudeDevClient,
+  type ClaudeDevMessage,
+  type ClaudeDevStatus,
+  type ElementInfo,
+} from "./claude-dev-service";
 
 // ============================================================================
 // In-flight capture lock to prevent race conditions during async processing
@@ -643,6 +678,434 @@ export function registerIpcHandlers(): void {
       try {
         const duplicates = cardQueries.findDuplicateFrontBack();
         return success(duplicates);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // --------------------------------------------------------------------------
+  // Card Activation Handlers (Notebook v2)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "cards:activate",
+    async (
+      _,
+      id: string,
+      tier?: ActivationTier,
+      reasons?: string[],
+    ): Promise<IpcResult<DbCard | null>> => {
+      try {
+        cardQueries.activate(id, tier, reasons);
+        const card = cardQueries.getById(id);
+        return success(card);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "cards:suspend",
+    async (
+      _,
+      id: string,
+      reason: SuspendReason,
+    ): Promise<IpcResult<DbCard | null>> => {
+      try {
+        cardQueries.suspend(id, reason);
+        const card = cardQueries.getById(id);
+        return success(card);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "cards:bulkActivate",
+    async (
+      _,
+      ids: string[],
+      tier?: ActivationTier,
+      reasons?: string[],
+    ): Promise<IpcResult<void>> => {
+      try {
+        cardQueries.bulkActivate(ids, tier, reasons);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "cards:bulkSuspend",
+    async (
+      _,
+      ids: string[],
+      reason: SuspendReason,
+    ): Promise<IpcResult<void>> => {
+      try {
+        cardQueries.bulkSuspend(ids, reason);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "cards:getByActivationStatus",
+    async (_, status: ActivationStatus): Promise<IpcResult<DbCard[]>> => {
+      try {
+        const cards = cardQueries.getByActivationStatus(status);
+        return success(cards);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "cards:getActiveByTopicPage",
+    async (_, topicPageId: string): Promise<IpcResult<DbCard[]>> => {
+      try {
+        const cards = cardQueries.getActiveByTopicPage(topicPageId);
+        return success(cards);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "cards:getDormantByTopicPage",
+    async (_, topicPageId: string): Promise<IpcResult<DbCard[]>> => {
+      try {
+        const cards = cardQueries.getDormantByTopicPage(topicPageId);
+        return success(cards);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "cards:checkAndSuspendLeech",
+    async (_, id: string): Promise<IpcResult<boolean>> => {
+      try {
+        const wasSuspended = cardQueries.checkAndSuspendLeech(id);
+        return success(wasSuspended);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // --------------------------------------------------------------------------
+  // Intake Quiz Handlers (Notebook v2)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "intakeQuiz:saveAttempt",
+    async (_, attempt: DbIntakeQuizAttempt): Promise<IpcResult<void>> => {
+      try {
+        intakeQuizQueries.saveAttempt(attempt);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "intakeQuiz:getBySource",
+    async (
+      _,
+      sourceItemId: string,
+    ): Promise<IpcResult<DbIntakeQuizAttempt[]>> => {
+      try {
+        const attempts = intakeQuizQueries.getBySource(sourceItemId);
+        return success(attempts);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "intakeQuiz:getByBlock",
+    async (_, blockId: string): Promise<IpcResult<DbIntakeQuizAttempt[]>> => {
+      try {
+        const attempts = intakeQuizQueries.getByBlock(blockId);
+        return success(attempts);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // --------------------------------------------------------------------------
+  // Topic Entry Quiz Handlers (Notebook v2)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "topicQuiz:saveAttempt",
+    async (_, attempt: DbTopicQuizAttempt): Promise<IpcResult<void>> => {
+      try {
+        topicQuizQueries.saveAttempt(attempt);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "topicQuiz:getRecentForTopic",
+    async (
+      _,
+      topicPageId: string,
+      limit?: number,
+    ): Promise<IpcResult<DbTopicQuizAttempt[]>> => {
+      try {
+        const attempts = topicQuizQueries.getRecentForTopic(topicPageId, limit);
+        return success(attempts);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "topicQuiz:shouldPrompt",
+    async (
+      _,
+      topicPageId: string,
+    ): Promise<IpcResult<{ shouldPrompt: boolean; daysSince: number }>> => {
+      try {
+        const result = topicQuizQueries.shouldPromptEntryQuiz(topicPageId);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "topicQuiz:updateLastVisited",
+    async (_, topicPageId: string): Promise<IpcResult<void>> => {
+      try {
+        topicQuizQueries.updateLastVisited(topicPageId);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "topicQuiz:getForgottenBlockIds",
+    async (
+      _,
+      topicPageId: string,
+      sinceDate?: string,
+    ): Promise<IpcResult<string[]>> => {
+      try {
+        const blockIds = topicQuizQueries.getForgottenBlockIds(
+          topicPageId,
+          sinceDate,
+        );
+        return success(blockIds);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // --------------------------------------------------------------------------
+  // Confusion Pattern Handlers (Notebook v2)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "confusionPatterns:create",
+    async (_, pattern: DbConfusionPattern): Promise<IpcResult<void>> => {
+      try {
+        confusionPatternQueries.create(pattern);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "confusionPatterns:increment",
+    async (_, id: string, newTopicId?: string): Promise<IpcResult<void>> => {
+      try {
+        confusionPatternQueries.increment(id, newTopicId);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "confusionPatterns:find",
+    async (
+      _,
+      conceptA: string,
+      conceptB: string,
+    ): Promise<IpcResult<DbConfusionPattern | null>> => {
+      try {
+        const pattern = confusionPatternQueries.find(conceptA, conceptB);
+        return success(pattern);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "confusionPatterns:getAll",
+    async (): Promise<IpcResult<DbConfusionPattern[]>> => {
+      try {
+        const patterns = confusionPatternQueries.getAll();
+        return success(patterns);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "confusionPatterns:getHighOccurrence",
+    async (_, minCount?: number): Promise<IpcResult<DbConfusionPattern[]>> => {
+      try {
+        const patterns = confusionPatternQueries.getHighOccurrence(minCount);
+        return success(patterns);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "confusionPatterns:setDisambiguationCard",
+    async (_, patternId: string, cardId: string): Promise<IpcResult<void>> => {
+      try {
+        confusionPatternQueries.setDisambiguationCard(patternId, cardId);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // --------------------------------------------------------------------------
+  // Block Topic Assignment Handlers (Notebook v2)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "blockTopicAssignments:create",
+    async (_, assignment: DbBlockTopicAssignment): Promise<IpcResult<void>> => {
+      try {
+        blockTopicAssignmentQueries.create(assignment);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "blockTopicAssignments:getByBlock",
+    async (
+      _,
+      blockId: string,
+    ): Promise<IpcResult<DbBlockTopicAssignment[]>> => {
+      try {
+        const assignments = blockTopicAssignmentQueries.getByBlock(blockId);
+        return success(assignments);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "blockTopicAssignments:getByTopicPage",
+    async (
+      _,
+      topicPageId: string,
+    ): Promise<IpcResult<DbBlockTopicAssignment[]>> => {
+      try {
+        const assignments =
+          blockTopicAssignmentQueries.getByTopicPage(topicPageId);
+        return success(assignments);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "blockTopicAssignments:setPrimary",
+    async (
+      _,
+      blockId: string,
+      topicPageId: string,
+    ): Promise<IpcResult<void>> => {
+      try {
+        blockTopicAssignmentQueries.setPrimary(blockId, topicPageId);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "blockTopicAssignments:remove",
+    async (
+      _,
+      blockId: string,
+      topicPageId: string,
+    ): Promise<IpcResult<void>> => {
+      try {
+        blockTopicAssignmentQueries.remove(blockId, topicPageId);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "blockTopicAssignments:bulkCreate",
+    async (
+      _,
+      assignments: DbBlockTopicAssignment[],
+    ): Promise<IpcResult<void>> => {
+      try {
+        blockTopicAssignmentQueries.bulkCreate(assignments);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "blockTopicAssignments:getTopicPageIds",
+    async (_, blockId: string): Promise<IpcResult<string[]>> => {
+      try {
+        const topicPageIds =
+          blockTopicAssignmentQueries.getTopicPageIds(blockId);
+        return success(topicPageIds);
       } catch (error) {
         return failure(error);
       }
@@ -1374,7 +1837,11 @@ export function registerIpcHandlers(): void {
       reextractBackupFile = null;
 
       try {
-        const { ids, overwrite = false, sourceTypes = ["qbank"] } = options || {};
+        const {
+          ids,
+          overwrite = false,
+          sourceTypes = ["qbank"],
+        } = options || {};
         const sender = event.sender;
 
         // Helper to send progress updates
@@ -1695,6 +2162,22 @@ export function registerIpcHandlers(): void {
     async (_, id: string): Promise<IpcResult<DbNotebookTopicPage | null>> => {
       try {
         const page = notebookTopicPageQueries.getById(id);
+        return success(page);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "notebookPages:getByTopic",
+    async (
+      _,
+      canonicalTopicId: string,
+    ): Promise<IpcResult<DbNotebookTopicPage | null>> => {
+      try {
+        const page =
+          notebookTopicPageQueries.getByCanonicalTopicId(canonicalTopicId);
         return success(page);
       } catch (error) {
         return failure(error);
@@ -2600,6 +3083,107 @@ export function registerIpcHandlers(): void {
   });
 
   // --------------------------------------------------------------------------
+  // Notebook v2: Quiz System AI Handlers (v24)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "ai:extractFacts",
+    async (
+      _,
+      sourceContent: string,
+      sourceType: string,
+      topicContext?: string,
+    ): Promise<IpcResult<ExtractFactsResult>> => {
+      try {
+        const cacheKey = aiCache.key(
+          "extractFacts",
+          sourceContent,
+          sourceType,
+          topicContext || "",
+        );
+        const cached = aiCache.get<ExtractFactsResult>(cacheKey);
+        if (cached) {
+          console.log("[IPC] ai:extractFacts cache hit");
+          return success(cached);
+        }
+
+        const result = await extractFacts(
+          sourceContent,
+          sourceType,
+          topicContext,
+        );
+        aiCache.set(cacheKey, result, 600000); // 10 min cache
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "ai:generateQuiz",
+    async (
+      _,
+      facts: ExtractedFact[],
+      topicContext: string,
+      maxQuestions?: number,
+    ): Promise<IpcResult<GenerateQuizResult>> => {
+      try {
+        const result = await generateQuiz(facts, topicContext, maxQuestions);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "ai:gradeAnswer",
+    async (
+      _,
+      userAnswer: string,
+      correctAnswer: string,
+      acceptableAnswers: string[],
+      questionContext: string,
+    ): Promise<IpcResult<GradeAnswerResult>> => {
+      try {
+        const result = await gradeAnswer(
+          userAnswer,
+          correctAnswer,
+          acceptableAnswers,
+          questionContext,
+        );
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "ai:detectConfusion",
+    async (
+      _,
+      userAnswer: string,
+      correctAnswer: string,
+      topicContext: string,
+      relatedConcepts?: string[],
+    ): Promise<IpcResult<DetectConfusionResult>> => {
+      try {
+        const result = await detectConfusion(
+          userAnswer,
+          correctAnswer,
+          topicContext,
+          relatedConcepts,
+        );
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // --------------------------------------------------------------------------
   // Settings Handlers
   // --------------------------------------------------------------------------
 
@@ -2949,6 +3533,113 @@ export function registerIpcHandlers(): void {
       return failure(e);
     }
   });
+
+  // ============================================================================
+  // Claude Dev Integration
+  // ============================================================================
+
+  ipcMain.handle(
+    "claudeDev:getStatus",
+    async (): Promise<IpcResult<ClaudeDevStatus>> => {
+      try {
+        const status = await getClaudeDevStatus();
+        return success(status);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "claudeDev:captureScreenshot",
+    async (
+      _,
+      rect?: { x: number; y: number; width: number; height: number },
+    ): Promise<IpcResult<string | null>> => {
+      try {
+        const screenshot = await captureScreenshot(rect);
+        return success(screenshot);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "claudeDev:sendMessage",
+    async (
+      _,
+      content: string,
+      options: {
+        screenshot?: string;
+        elementInfo?: ElementInfo;
+        currentView: string;
+      },
+    ): Promise<IpcResult<{ response: string; error?: string }>> => {
+      try {
+        const result = await sendClaudeDevMessage(content, options);
+        return success(result);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "claudeDev:startSession",
+    async (): Promise<IpcResult<string>> => {
+      try {
+        const sessionId = startClaudeDevSession();
+        return success(sessionId);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle("claudeDev:endSession", async (): Promise<IpcResult<void>> => {
+    try {
+      endClaudeDevSession();
+      return success(undefined);
+    } catch (error) {
+      return failure(error);
+    }
+  });
+
+  ipcMain.handle(
+    "claudeDev:getMessages",
+    async (): Promise<IpcResult<ClaudeDevMessage[]>> => {
+      try {
+        return success(getSessionMessages());
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "claudeDev:clearMessages",
+    async (): Promise<IpcResult<void>> => {
+      try {
+        clearSessionMessages();
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "claudeDev:resetClient",
+    async (): Promise<IpcResult<void>> => {
+      try {
+        resetClaudeDevClient();
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
 
   console.log("[IPC] All handlers registered");
 }

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Rating } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { ClozeDisplay, ClozeAnswer } from "@/lib/cloze-renderer";
@@ -18,15 +19,37 @@ import { MistakesReviewModal } from "./MistakesReviewModal";
 import { WeakPointsPanel } from "./WeakPointsPanel";
 import { ReferenceRangesSheet } from "@/components/shared/ReferenceRangesSheet";
 import { getWindowApi } from "@/lib/safeWindowApi";
+import {
+  shouldAutoSuspend,
+  getLeechSuspendFields,
+  createLeechNotification,
+  LEECH_THRESHOLD,
+} from "@/lib/leech-detection";
 
 const CONTINUE_LOCKOUT_MS = 400; // Prevent accidental double-taps
 
 export function ReviewInterface() {
-  const { cards, notes, isHydrated, setCurrentView, scheduleCardReview } =
-    useAppStore();
+  const {
+    cards,
+    notes,
+    isHydrated,
+    setCurrentView,
+    scheduleCardReview,
+    deleteCard,
+  } = useAppStore();
   const { toast } = useToast();
 
   const isMounted = useRef(true);
+
+  const handleRewriteCard = useCallback(
+    (cardId: string) => {
+      const card = cards.find((c) => c.id === cardId);
+      if (card?.notebookTopicPageId) {
+        setCurrentView("notebook", card.notebookTopicPageId);
+      }
+    },
+    [cards, setCurrentView],
+  );
 
   // Session queue: card IDs in review order
   const [reviewQueue, setReviewQueue] = useState<string[]>([]);
@@ -242,12 +265,78 @@ export function ReviewInterface() {
           return false;
         }
 
+        // T203-D: Leech check for failed reviews
+        let isLeech = false;
+        if (rating === Rating.Again && isMounted.current) {
+          const { suspend, reason } = shouldAutoSuspend(
+            currentCard.lapses,
+            true,
+          );
+
+          if (suspend && reason === "leech") {
+            isLeech = true;
+            const api = getWindowApi();
+            if (api) {
+              const suspendFields = getLeechSuspendFields();
+              // Auto-suspend the leech in DB
+              await api.cards.update(currentCard.id, suspendFields);
+
+              const notification = createLeechNotification(
+                currentCard.id,
+                currentCard.front,
+                currentCard.lapses + 1,
+              );
+
+              toast({
+                title: "Card Suspended",
+                description: notification.message,
+                action: (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRewriteCard(currentCard.id)}
+                    >
+                      Rewrite
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={async () => {
+                        const delResult = await deleteCard(currentCard.id);
+                        if (delResult.success) {
+                          toast({
+                            title: "Card Deleted",
+                            description:
+                              "The leech card has been removed from your notebook.",
+                          });
+                        } else {
+                          toast({
+                            title: "Delete Failed",
+                            description:
+                              delResult.error || "Could not delete card",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                ),
+                duration: 10000,
+              });
+            }
+          }
+        }
+
         if (isMounted.current) {
           setReviewedCount((prev) => prev + 1);
           setConfidenceRating(null); // Reset for next card
 
           // Handle learning cards: if rated Again, re-add to end of queue
-          if (rating === Rating.Again && result.data) {
+          // T203-D: Don't re-add if the card was just suspended as a leech
+          if (rating === Rating.Again && result.data && !isLeech) {
             // Track mistake (T117.1)
             setMistakeCardIds((prev) =>
               prev.includes(currentCard.id) ? prev : [...prev, currentCard.id],
@@ -555,6 +644,19 @@ export function ReviewInterface() {
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
         <div className="text-center space-y-6">
+          {/* Leech warning indicator */}
+          {currentCard.lapses >= LEECH_THRESHOLD - 2 &&
+            currentCard.lapses < LEECH_THRESHOLD && (
+              <div className="flex justify-center mb-2">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] uppercase tracking-tighter text-warning border-warning bg-warning/5 font-bold"
+                >
+                  {LEECH_THRESHOLD - currentCard.lapses} misses until suspension
+                </Badge>
+              </div>
+            )}
+
           {/* Card Image Display (T113) */}
           {cardImagePath && (
             <div className="mx-auto mb-4 rounded-xl overflow-hidden border bg-muted/20 shadow-sm max-w-fit">

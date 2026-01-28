@@ -29,6 +29,14 @@ export type SourceItemStatus = "inbox" | "processed" | "curated";
 export type CorrectnessType = "correct" | "incorrect" | null;
 export type ConfidenceRating = "forgot" | "struggled" | "knew_it";
 
+// Notebook v2: Card Activation System
+export type ActivationStatus = "dormant" | "suggested" | "active" | "suspended" | "graduated";
+export type ActivationTier = "auto" | "suggested" | "user_manual";
+export type SuspendReason = "user" | "leech" | "rotation_end";
+
+// Notebook v2: Intake Quiz
+export type IntakeQuizResult = "correct" | "wrong" | "skipped";
+
 // Notebook Links (v17)
 export type NotebookLinkType =
   | "same_concept"
@@ -69,6 +77,13 @@ export interface DbCard {
   targetedConfusion?: string; // e.g., "Methotrexate vs Methylnaltrexone"
   relevanceScore?: "high" | "medium" | "low" | "unknown";
   relevanceReason?: string; // e.g., "Targets your weak area"
+  // Notebook v2: Card Activation (v24)
+  activationStatus: ActivationStatus;
+  activationTier?: ActivationTier;
+  activationReasons?: string[]; // Stored as JSON in DB
+  activatedAt?: string;
+  suspendReason?: SuspendReason;
+  suspendedAt?: string;
 }
 
 export interface DbNote {
@@ -159,6 +174,8 @@ export interface DbNotebookTopicPage {
   cardIds: string[];
   createdAt: string;
   updatedAt: string;
+  // Notebook v2: Topic Entry Quiz tracking (v24)
+  lastVisitedAt?: string;
 }
 
 export interface DbNotebookBlock {
@@ -179,6 +196,11 @@ export interface DbNotebookBlock {
   calloutType?: "pearl" | "trap" | "caution" | null;
   // v22: High yield toggle for board prep filtering
   isHighYield: boolean;
+  // Notebook v2: Intake Quiz tracking (v24)
+  intakeQuizResult?: IntakeQuizResult;
+  intakeQuizAnswer?: string;
+  priorityScore: number;
+  priorityReasons?: string[]; // Stored as JSON in DB
 }
 
 export interface DbNotebookLink {
@@ -198,6 +220,50 @@ export interface DbMedicalAcronym {
   acronym: string;
   expansion: string;
   category?: string;
+}
+
+// ============================================================================
+// Notebook v2: New Table Interfaces (v24)
+// ============================================================================
+
+export interface DbBlockTopicAssignment {
+  id: string;
+  blockId: string;
+  topicPageId: string;
+  isPrimaryTopic: boolean;
+  createdAt: string;
+}
+
+export interface DbIntakeQuizAttempt {
+  id: string;
+  sourceItemId: string;
+  notebookTopicPageId: string;
+  blockId: string;
+  questionText: string;
+  userAnswer?: string;
+  isCorrect?: boolean;
+  wasSkipped: boolean;
+  attemptedAt: string;
+}
+
+export interface DbTopicQuizAttempt {
+  id: string;
+  notebookTopicPageId: string;
+  blockId: string;
+  questionText: string;
+  isCorrect?: boolean;
+  attemptedAt: string;
+  daysSinceLastVisit?: number;
+}
+
+export interface DbConfusionPattern {
+  id: string;
+  conceptA: string;
+  conceptB: string;
+  topicIds: string[]; // Stored as JSON in DB
+  occurrenceCount: number;
+  lastOccurrence: string;
+  disambiguationCardId?: string;
 }
 
 export interface DbSmartView {
@@ -264,6 +330,13 @@ export interface CardRow {
   targetedConfusion: string | null;
   relevanceScore: string | null;
   relevanceReason: string | null;
+  // Notebook v2: Card Activation (v24)
+  activationStatus: string;
+  activationTier: string | null;
+  activationReasons: string | null; // JSON string
+  activatedAt: string | null;
+  suspendReason: string | null;
+  suspendedAt: string | null;
 }
 
 export interface CardBrowserFilters {
@@ -379,6 +452,8 @@ export interface NotebookTopicPageRow {
   cardIds: string; // JSON
   createdAt: string;
   updatedAt: string;
+  // Notebook v2: Topic Entry Quiz tracking (v24)
+  lastVisitedAt: string | null;
 }
 
 export interface NotebookBlockRow {
@@ -397,6 +472,11 @@ export interface NotebookBlockRow {
   relevanceReason: string | null;
   calloutType: string | null;
   isHighYield: number; // SQLite INTEGER: 0 or 1
+  // Notebook v2: Intake Quiz tracking (v24)
+  intakeQuizResult: string | null;
+  intakeQuizAnswer: string | null;
+  priorityScore: number;
+  priorityReasons: string | null; // JSON string
 }
 
 export interface NotebookLinkRow {
@@ -418,6 +498,50 @@ export interface SmartViewRow {
   filter: string; // JSON
   sortBy: string;
   isSystem: number; // SQLite INTEGER for boolean
+}
+
+// ============================================================================
+// Notebook v2: New Row Types (v24)
+// ============================================================================
+
+export interface BlockTopicAssignmentRow {
+  id: string;
+  blockId: string;
+  topicPageId: string;
+  isPrimaryTopic: number; // SQLite INTEGER: 0 or 1
+  createdAt: string;
+}
+
+export interface IntakeQuizAttemptRow {
+  id: string;
+  sourceItemId: string;
+  notebookTopicPageId: string;
+  blockId: string;
+  questionText: string;
+  userAnswer: string | null;
+  isCorrect: number | null; // SQLite INTEGER: 0 or 1
+  wasSkipped: number; // SQLite INTEGER: 0 or 1
+  attemptedAt: string;
+}
+
+export interface TopicQuizAttemptRow {
+  id: string;
+  notebookTopicPageId: string;
+  blockId: string;
+  questionText: string;
+  isCorrect: number | null; // SQLite INTEGER: 0 or 1
+  attemptedAt: string;
+  daysSinceLastVisit: number | null;
+}
+
+export interface ConfusionPatternRow {
+  id: string;
+  conceptA: string;
+  conceptB: string;
+  topicIds: string; // JSON string
+  occurrenceCount: number;
+  lastOccurrence: string;
+  disambiguationCardId: string | null;
 }
 
 // ============================================================================

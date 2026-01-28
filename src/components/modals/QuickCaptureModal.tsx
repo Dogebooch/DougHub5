@@ -28,7 +28,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import { TITLE_MAX_LENGTH } from "@/constants";
 import { detectContentType, type ContentType } from "@/lib/content-detector";
 import { cn } from "@/lib/utils";
-import { AddToNotebookWorkflow } from "@/components/notebook/AddToNotebookWorkflow";
+import { IntakeQuizModal } from "@/components/notebook/intake-quiz";
 import { Label } from "@/components/ui/label";
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
@@ -1000,20 +1000,27 @@ export function QuickCaptureModal({ isOpen, onClose }: QuickCaptureModalProps) {
       </Dialog>
 
       {/* Add to Notebook workflow - opens after quick capture saves */}
-      <AddToNotebookWorkflow
-        open={showAddToNotebook}
-        onOpenChange={(open) => {
-          setShowAddToNotebook(open);
-          if (!open) {
+      {savedItemForNotebook && (
+        <IntakeQuizModal
+          isOpen={showAddToNotebook}
+          onClose={() => {
+            setShowAddToNotebook(false);
             setSavedItemForNotebook(null);
-          }
-        }}
-        sourceItem={savedItemForNotebook}
-        onSuccess={() => {
-          setSavedItemForNotebook(null);
-          setShowAddToNotebook(false);
-        }}
-      />
+          }}
+          sourceItem={{
+            id: savedItemForNotebook.id,
+            title: savedItemForNotebook.title,
+            content: savedItemForNotebook.content,
+            sourceType: savedItemForNotebook.sourceType,
+            correctness: savedItemForNotebook.correctness,
+          }}
+          suggestedTopics={savedItemForNotebook.metadata?.subject ? [savedItemForNotebook.metadata.subject] : []}
+          onComplete={() => {
+            setSavedItemForNotebook(null);
+            setShowAddToNotebook(false);
+          }}
+        />
+      )}
     </>
   );
 }

@@ -26,6 +26,15 @@ export type {
   SearchFilter,
   SearchResult,
   SearchResultItem,
+  // Notebook v2 (v24)
+  ActivationStatus,
+  ActivationTier,
+  SuspendReason,
+  IntakeQuizResult,
+  DbBlockTopicAssignment,
+  DbIntakeQuizAttempt,
+  DbTopicQuizAttempt,
+  DbConfusionPattern,
 } from "./database/types";
 
 export {
@@ -90,3 +99,9 @@ export { searchQueries } from "./database/search";
 export { settingsQueries } from "./database/settings";
 export { devSettingsQueries } from "./database/dev-settings";
 export { getDatabaseStatus } from "./database/status";
+
+// Notebook v2 query modules (v24)
+export { intakeQuizQueries } from "./database/intake-quiz";
+export { topicQuizQueries } from "./database/topic-quiz";
+export { confusionPatternQueries } from "./database/confusion-patterns";
+export { blockTopicAssignmentQueries } from "./database/block-topic-assignments";

@@ -116,7 +116,7 @@ export function cleanupOldBackups(retentionDays: number = 7): number {
   const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
   const backups = listBackups();
   let deleted = 0;
-  
+
   for (const backup of backups) {
     if (backup.timestamp.getTime() < cutoff) {
       const backupPath = path.join(getBackupsDir(), backup.filename);
@@ -125,11 +125,49 @@ export function cleanupOldBackups(retentionDays: number = 7): number {
       deleted++;
     }
   }
-  
+
   if (deleted > 0) {
-    console.log(`[Backup] Cleaned up ${deleted} old backup(s)`);
+    console.log(`[Backup] Cleaned up ${deleted} old backup(s) based on age`);
   }
-  
+
+  return deleted;
+}
+
+/**
+ * Limit the total number of backups to prevent disk bloat.
+ * Keeps the newest backups and deletes the oldest once maxCount is exceeded.
+ * @param maxCount - Maximum number of backup files to retain (default: 20)
+ * @returns Number of backups deleted
+ */
+export function pruneBackupsToCount(maxCount: number = 20): number {
+  const backups = listBackups();
+  if (backups.length <= maxCount) {
+    return 0;
+  }
+
+  const toDelete = backups.slice(maxCount);
+  let deleted = 0;
+  const dir = getBackupsDir();
+
+  for (const backup of toDelete) {
+    try {
+      const backupPath = path.join(dir, backup.filename);
+      fs.unlinkSync(backupPath);
+      deleted++;
+    } catch (error) {
+      console.error(
+        `[Backup] Failed to delete surplus backup ${backup.filename}:`,
+        error,
+      );
+    }
+  }
+
+  if (deleted > 0) {
+    console.log(
+      `[Backup] Pruned ${deleted} surplus backup(s) (Max allowed: ${maxCount})`,
+    );
+  }
+
   return deleted;
 }
 

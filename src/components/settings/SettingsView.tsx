@@ -919,7 +919,9 @@ export function SettingsView() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-foreground">Purge Raw HTML from Library</p>
+                    <p className="font-medium text-foreground">
+                      Purge Raw HTML from Library
+                    </p>
                     <p className="text-sm text-muted-foreground leading-snug max-w-[400px]">
                       Removes captured webpage source code to free space. Cards
                       and notes are <strong>not</strong> affected.
@@ -979,7 +981,9 @@ export function SettingsView() {
               <div className="grid gap-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-foreground">Duplicate Front/Back Cards</p>
+                    <p className="font-medium text-foreground">
+                      Duplicate Front/Back Cards
+                    </p>
                     <p className="text-sm text-muted-foreground leading-snug max-w-[400px]">
                       Find cards where the question (front) and answer (back)
                       are identical—usually caused by vignette generation
@@ -1098,7 +1102,7 @@ export function SettingsView() {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => handleReextractMetadata(true, ["all"])}
+                        onClick={() => handleReextractMetadata(true)}
                       >
                         Re-extract Everything
                       </AlertDialogAction>
@@ -1107,38 +1111,39 @@ export function SettingsView() {
                 </AlertDialog>
               </div>
 
-                {/* Re-parse Questions Section */}
-                <div className="flex items-center justify-between border-t pt-6">
-                  <div>
-                    <p className="font-medium text-foreground">Re-parse Question HTML</p>
-                    <p className="text-sm text-muted-foreground leading-snug max-w-[400px]">
-                      Re-parses stored raw HTML to update question display
-                      (vignette, answers, explanation). Use after parser fixes.
-                      Preserves attempt history and downloaded images.
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleReparseQuestions("MKSAP 19")}
-                      variant="outline"
-                      size="sm"
-                      disabled={isReparsingQuestions || isReextractingMetadata}
-                      className="gap-2"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      {isReparsingQuestions ? "Running..." : "MKSAP Only"}
-                    </Button>
-                    <Button
-                      onClick={() => handleReparseQuestions()}
-                      variant="outline"
-                      size="sm"
-                      disabled={isReparsingQuestions || isReextractingMetadata}
-                      className="gap-2"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      All Questions
-                    </Button>
-                  </div>
+              {/* Re-parse Questions Section */}
+              <div className="flex items-center justify-between border-t pt-6">
+                <div>
+                  <p className="font-medium text-foreground">
+                    Re-parse Question HTML
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-snug max-w-[400px]">
+                    Re-parses stored raw HTML to update question display
+                    (vignette, answers, explanation). Use after parser fixes.
+                    Preserves attempt history and downloaded images.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleReparseQuestions("MKSAP 19")}
+                    variant="outline"
+                    size="sm"
+                    disabled={isReparsingQuestions || isReextractingMetadata}
+                    className="gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    {isReparsingQuestions ? "Running..." : "MKSAP Only"}
+                  </Button>
+                  <Button
+                    onClick={() => handleReparseQuestions()}
+                    variant="outline"
+                    size="sm"
+                    disabled={isReparsingQuestions || isReextractingMetadata}
+                    className="gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    All Questions
+                  </Button>
                 </div>
               </div>
             </CardContent>

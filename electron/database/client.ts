@@ -4,6 +4,7 @@ import {
   getSchemaVersion,
   initializeConnection,
   setSchemaVersion,
+  vacuumDatabase,
 } from "./db-connection";
 import { createInitialSchema } from "./schema";
 import { runMigrations } from "./migrations";
@@ -31,6 +32,10 @@ export function initDatabase(dbPath: string): Database.Database {
   if (updatedVersion >= 15) {
     seedReferenceRangesFromLocalFile();
   }
+
+  // Optimize file size after initialization and seeding
+  vacuumDatabase();
+
   return db;
 }
 
@@ -43,3 +48,9 @@ export {
   columnExists,
   tableExists,
 } from "./db-connection";
+
+// Notebook v2 query modules (v24)
+export { intakeQuizQueries } from "./intake-quiz";
+export { topicQuizQueries } from "./topic-quiz";
+export { confusionPatternQueries } from "./confusion-patterns";
+export { blockTopicAssignmentQueries } from "./block-topic-assignments";
