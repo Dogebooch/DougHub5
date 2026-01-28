@@ -548,13 +548,23 @@ const api = {
   // Claude Dev Integration
   // ============================================================================
   claudeDev: {
+    // Status & Session
     getStatus: () => ipcRenderer.invoke("claudeDev:getStatus"),
+    startSession: () => ipcRenderer.invoke("claudeDev:startSession"),
+    endSession: () => ipcRenderer.invoke("claudeDev:endSession"),
+    getMessages: () => ipcRenderer.invoke("claudeDev:getMessages"),
+    clearMessages: () => ipcRenderer.invoke("claudeDev:clearMessages"),
+    resetClient: () => ipcRenderer.invoke("claudeDev:resetClient"),
+
+    // Screenshot
     captureScreenshot: (rect?: {
       x: number;
       y: number;
       width: number;
       height: number;
     }) => ipcRenderer.invoke("claudeDev:captureScreenshot", rect),
+
+    // Messaging
     sendMessage: (
       content: string,
       options: {
@@ -575,11 +585,47 @@ const api = {
         currentView: string;
       },
     ) => ipcRenderer.invoke("claudeDev:sendMessage", content, options),
-    startSession: () => ipcRenderer.invoke("claudeDev:startSession"),
-    endSession: () => ipcRenderer.invoke("claudeDev:endSession"),
-    getMessages: () => ipcRenderer.invoke("claudeDev:getMessages"),
-    clearMessages: () => ipcRenderer.invoke("claudeDev:clearMessages"),
-    resetClient: () => ipcRenderer.invoke("claudeDev:resetClient"),
+
+    sendMessageStreaming: (
+      content: string,
+      options: {
+        screenshot?: string;
+        elementInfo?: {
+          selector: string;
+          tagName: string;
+          className: string;
+          id?: string;
+          textContent?: string;
+          boundingRect: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+          };
+        };
+        currentView: string;
+      },
+    ) => ipcRenderer.invoke("claudeDev:sendMessageStreaming", content, options),
+
+    // Model Selection
+    getModels: () => ipcRenderer.invoke("claudeDev:getModels"),
+    getModel: () => ipcRenderer.invoke("claudeDev:getModel"),
+    setModel: (model: string) =>
+      ipcRenderer.invoke("claudeDev:setModel", model),
+
+    // Conversation History
+    getHistory: () => ipcRenderer.invoke("claudeDev:getHistory"),
+    loadConversation: (id: string) =>
+      ipcRenderer.invoke("claudeDev:loadConversation", id),
+    deleteConversation: (id: string) =>
+      ipcRenderer.invoke("claudeDev:deleteConversation", id),
+    renameConversation: (id: string, title: string) =>
+      ipcRenderer.invoke("claudeDev:renameConversation", id, title),
+
+    // Session Stats / Cost Tracking
+    getSessionStats: () => ipcRenderer.invoke("claudeDev:getSessionStats"),
+
+    // IPC Listeners
     onMessage: (
       callback: (message: {
         id: string;
@@ -588,6 +634,17 @@ const api = {
         timestamp: number;
         screenshot?: string;
         elementInfo?: unknown;
+        isStreaming?: boolean;
+        model?: string;
+        usage?: {
+          inputTokens: number;
+          outputTokens: number;
+        };
+        cost?: {
+          inputCost: number;
+          outputCost: number;
+          totalCost: number;
+        };
       }) => void,
     ) => {
       const handler = (
@@ -599,16 +656,47 @@ const api = {
           timestamp: number;
           screenshot?: string;
           elementInfo?: unknown;
+          isStreaming?: boolean;
+          model?: string;
+          usage?: {
+            inputTokens: number;
+            outputTokens: number;
+          };
+          cost?: {
+            inputCost: number;
+            outputCost: number;
+            totalCost: number;
+          };
         },
       ) => callback(message);
       ipcRenderer.on("claudeDev:message", handler);
       return () => ipcRenderer.removeListener("claudeDev:message", handler);
     },
-    onChunk: (callback: (chunk: string) => void) => {
-      const handler = (_event: Electron.IpcRendererEvent, chunk: string) =>
-        callback(chunk);
+
+    onChunk: (
+      callback: (chunk: {
+        messageId: string;
+        content: string;
+        fullContent: string;
+      }) => void,
+    ) => {
+      const handler = (
+        _event: Electron.IpcRendererEvent,
+        chunk: {
+          messageId: string;
+          content: string;
+          fullContent: string;
+        },
+      ) => callback(chunk);
       ipcRenderer.on("claudeDev:chunk", handler);
       return () => ipcRenderer.removeListener("claudeDev:chunk", handler);
+    },
+
+    onStreamEnd: (callback: (messageId: string) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, messageId: string) =>
+        callback(messageId);
+      ipcRenderer.on("claudeDev:streamEnd", handler);
+      return () => ipcRenderer.removeListener("claudeDev:streamEnd", handler);
     },
   },
   reloadApp: () => ipcRenderer.invoke("app:reload"),

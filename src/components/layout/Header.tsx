@@ -18,9 +18,47 @@ export function Header() {
           onClick={() => setCurrentView("inbox")}
           className="flex items-center gap-2.5 text-primary hover:text-primary/80 transition-all group"
         >
-          <div className="w-7 h-7 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center text-primary-foreground text-[11px] font-black shadow-md group-hover:rotate-[-3deg] transition-transform duration-300">
-            DH
-          </div>
+          {/* Abstract geometric logo - interlocking knowledge nodes */}
+          <svg
+            viewBox="0 0 28 28"
+            className="w-7 h-7 group-hover:rotate-[-3deg] transition-transform duration-300"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Background rounded square */}
+            <rect
+              width="28"
+              height="28"
+              rx="6"
+              className="fill-primary"
+            />
+            {/* Three interlocking circles representing connected knowledge */}
+            <circle
+              cx="10"
+              cy="11"
+              r="5"
+              className="fill-primary-foreground/90"
+            />
+            <circle
+              cx="18"
+              cy="11"
+              r="5"
+              className="fill-primary-foreground/70"
+            />
+            <circle
+              cx="14"
+              cy="18"
+              r="5"
+              className="fill-primary-foreground/50"
+            />
+            {/* Center intersection highlight */}
+            <circle
+              cx="14"
+              cy="13"
+              r="2.5"
+              className="fill-primary"
+            />
+          </svg>
           <span className="text-foreground font-bold text-base tracking-tight">
             DougHub
           </span>

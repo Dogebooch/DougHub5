@@ -10,6 +10,7 @@ import {
   FlaskConical,
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
+import { useDevStore } from "@/stores/useDevStore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Rating } from "@/types";
@@ -37,6 +38,7 @@ export function ReviewInterface() {
     scheduleCardReview,
     deleteCard,
   } = useAppStore();
+  const isDevPanelOpen = useDevStore((state) => state.isOpen);
   const { toast } = useToast();
 
   const isMounted = useRef(true);
@@ -992,8 +994,12 @@ export function ReviewInterface() {
         variant="outline"
         size="sm"
         onClick={() => setShowReferenceRanges(true)}
-        className="fixed bottom-6 right-6 h-11 shadow-lg hover:shadow-xl transition-all"
+        className={cn(
+          "fixed top-6 z-50 h-11 shadow-lg hover:shadow-xl transition-all",
+          isDevPanelOpen ? "right-[424px]" : "right-6",
+        )}
         title="Reference Ranges (Shift+R)"
+        aria-label="Reference Ranges (Shift+R)"
       >
         <FlaskConical className="h-4 w-4 mr-2" />
         Ref Ranges

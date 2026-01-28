@@ -135,7 +135,7 @@ function createSplashWindow() {
     frame: false,
     resizable: false,
     center: true,
-    show: false,
+    show: true, // Show immediately with backgroundColor while HTML loads
     backgroundColor: "#343831",
     alwaysOnTop: true,
     skipTaskbar: true,
@@ -148,10 +148,6 @@ function createSplashWindow() {
   splashWindow.loadFile(
     path.join(process.env.VITE_PUBLIC as string, "splash.html"),
   );
-
-  splashWindow.once("ready-to-show", () => {
-    splashWindow.show();
-  });
 
   return splashWindow;
 }
@@ -229,7 +225,7 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 700,
     show: false,
-    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+    icon: path.join(process.env.APP_ROOT, "build", "icon.ico"),
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
       webSecurity: true,

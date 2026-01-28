@@ -144,14 +144,25 @@ import {
   getClaudeDevStatus,
   captureScreenshot,
   sendMessage as sendClaudeDevMessage,
+  sendMessageStreaming as sendClaudeDevMessageStreaming,
   startSession as startClaudeDevSession,
   endSession as endClaudeDevSession,
   getSessionMessages,
   clearSessionMessages,
   resetClaudeDevClient,
+  getAvailableModels,
+  getSelectedModel,
+  setSelectedModel,
+  getConversationHistory,
+  loadConversation,
+  deleteConversation,
+  renameConversation,
+  getSessionStats,
+  AVAILABLE_MODELS,
   type ClaudeDevMessage,
   type ClaudeDevStatus,
   type ElementInfo,
+  type ClaudeModel,
 } from "./claude-dev-service";
 
 // ============================================================================
@@ -3535,6 +3546,130 @@ export function registerIpcHandlers(): void {
       try {
         resetClaudeDevClient();
         return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // Streaming message
+  ipcMain.handle(
+    "claudeDev:sendMessageStreaming",
+    async (
+      _,
+      content: string,
+      options: {
+        screenshot?: string;
+        elementInfo?: ElementInfo;
+        currentView: string;
+      },
+    ): Promise<IpcResult<void>> => {
+      console.log(`[IPC] claudeDev:sendMessageStreaming called with content length: ${content.length}`);
+      try {
+        const result = await sendClaudeDevMessageStreaming(content, options);
+        console.log(`[IPC] claudeDev:sendMessageStreaming completed, error: ${result.error || 'none'}`);
+        if (result.error) {
+          return failure(result.error);
+        }
+        return success(undefined);
+      } catch (error) {
+        console.error(`[IPC] claudeDev:sendMessageStreaming exception:`, error);
+        return failure(error);
+      }
+    },
+  );
+
+  // Model selection
+  ipcMain.handle(
+    "claudeDev:getModels",
+    async (): Promise<IpcResult<typeof AVAILABLE_MODELS>> => {
+      try {
+        return success(getAvailableModels());
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "claudeDev:getModel",
+    async (): Promise<IpcResult<ClaudeModel>> => {
+      try {
+        return success(getSelectedModel());
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "claudeDev:setModel",
+    async (_, model: ClaudeModel): Promise<IpcResult<void>> => {
+      try {
+        setSelectedModel(model);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // Conversation history
+  ipcMain.handle(
+    "claudeDev:getHistory",
+    async (): Promise<IpcResult<ReturnType<typeof getConversationHistory>>> => {
+      try {
+        return success(getConversationHistory());
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "claudeDev:loadConversation",
+    async (
+      _,
+      id: string,
+    ): Promise<IpcResult<ReturnType<typeof loadConversation>>> => {
+      try {
+        return success(loadConversation(id));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "claudeDev:deleteConversation",
+    async (_, id: string): Promise<IpcResult<void>> => {
+      try {
+        deleteConversation(id);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "claudeDev:renameConversation",
+    async (_, id: string, title: string): Promise<IpcResult<void>> => {
+      try {
+        renameConversation(id, title);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // Session stats / cost tracking
+  ipcMain.handle(
+    "claudeDev:getSessionStats",
+    async (): Promise<IpcResult<ReturnType<typeof getSessionStats>>> => {
+      try {
+        return success(getSessionStats());
       } catch (error) {
         return failure(error);
       }

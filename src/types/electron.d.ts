@@ -44,7 +44,17 @@ import type {
   GradeAnswerResult,
   ExtractedFact,
 } from "./ai";
-import type { AILogEntry, DevSettings } from "./dev";
+import type {
+  AILogEntry,
+  DevSettings,
+  ClaudeDevMessage,
+  ClaudeDevStatus,
+  ClaudeModel,
+  ElementInfo,
+  SessionStats,
+  SavedConversation,
+  StreamChunk,
+} from "./dev";
 
 export interface CapturePayload {
   timestamp: string;
@@ -499,6 +509,60 @@ export interface ElectronAPI {
     getSettings: () => Promise<IpcResult<Record<string, string>>>;
     updateSetting: (key: string, value: string) => Promise<IpcResult<void>>;
     onAILog: (callback: (payload: AILogEntry) => void) => () => void;
+  };
+  claudeDev: {
+    // Status & Session
+    getStatus: () => Promise<IpcResult<ClaudeDevStatus>>;
+    startSession: () => Promise<IpcResult<string>>;
+    endSession: () => Promise<IpcResult<void>>;
+    getMessages: () => Promise<IpcResult<ClaudeDevMessage[]>>;
+    clearMessages: () => Promise<IpcResult<void>>;
+    resetClient: () => Promise<IpcResult<void>>;
+    // Screenshot
+    captureScreenshot: (rect?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }) => Promise<IpcResult<string | null>>;
+    // Messaging
+    sendMessage: (
+      content: string,
+      options: {
+        screenshot?: string;
+        elementInfo?: ElementInfo;
+        currentView: string;
+      },
+    ) => Promise<IpcResult<{ response: string; error?: string }>>;
+    sendMessageStreaming: (
+      content: string,
+      options: {
+        screenshot?: string;
+        elementInfo?: ElementInfo;
+        currentView: string;
+      },
+    ) => Promise<IpcResult<void>>;
+    // Model Selection
+    getModels: () => Promise<
+      IpcResult<
+        readonly { id: ClaudeModel; name: string; description: string }[]
+      >
+    >;
+    getModel: () => Promise<IpcResult<ClaudeModel>>;
+    setModel: (model: ClaudeModel) => Promise<IpcResult<void>>;
+    // Conversation History
+    getHistory: () => Promise<IpcResult<Omit<SavedConversation, "messages">[]>>;
+    loadConversation: (
+      id: string,
+    ) => Promise<IpcResult<SavedConversation | null>>;
+    deleteConversation: (id: string) => Promise<IpcResult<void>>;
+    renameConversation: (id: string, title: string) => Promise<IpcResult<void>>;
+    // Cost Tracking
+    getSessionStats: () => Promise<IpcResult<SessionStats>>;
+    // IPC Listeners
+    onMessage: (callback: (message: ClaudeDevMessage) => void) => () => void;
+    onChunk: (callback: (chunk: StreamChunk) => void) => () => void;
+    onStreamEnd: (callback: (messageId: string) => void) => () => void;
   };
   reloadApp: () => Promise<void>;
 }
