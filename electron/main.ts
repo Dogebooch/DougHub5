@@ -498,8 +498,14 @@ app.whenReady().then(async () => {
 });
 
 // Clean up database connection on quit
-app.on("before-quit", () => {
+app.on("before-quit", async (e) => {
+  e.preventDefault(); // Wait for async cleanup
   stopCaptureServer();
   closeDatabase();
   console.log("[Database] Connection closed");
+  
+  const { processManager } = await import("./process-manager");
+  await processManager.killAll();
+  
+  app.exit();
 });

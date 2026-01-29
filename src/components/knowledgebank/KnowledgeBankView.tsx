@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSourceItems } from '@/hooks/useSourceItems';
 import { Database, Loader2 } from 'lucide-react';
 import { useAppStore } from '@/stores/useAppStore';
 import { SourceItem } from '@/types';
@@ -27,8 +28,8 @@ export const KnowledgeBankView = () => {
     batchDeleteInbox,
   } = useAppStore();
 
-  const [items, setItems] = useState<SourceItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { items, isLoading, refresh: refreshItems, deleteItem } = useSourceItems();
+  
   const [sourceTypeFilter, setSourceTypeFilter] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [targetItem, setTargetItem] = useState<SourceItem | null>(null);
@@ -58,19 +59,6 @@ export const KnowledgeBankView = () => {
       }
     }
   }, [selectedItemId, items, setCurrentView]);
-
-  const fetchItems = useCallback(async () => {
-    setIsLoading(true);
-    const result = await window.api.sourceItems.getAll();
-    if (result.data) {
-      setItems(result.data);
-    }
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
 
   const toggleGroup = (group: keyof typeof expandedGroups) => {
     setExpandedGroups((prev) => ({
@@ -112,22 +100,13 @@ export const KnowledgeBankView = () => {
   }, [items, sourceTypeFilter]);
 
   const handleDelete = async (id: string) => {
-    try {
-      const result = await window.api.sourceItems.delete(id);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: result.error,
-          variant: "destructive",
-        });
-      } else {
-        toast({ description: "Item deleted" });
-        fetchItems();
-      }
-    } catch (error) {
+    const result = await deleteItem(id);
+    if (result.success) {
+      toast({ description: "Item deleted" });
+    } else {
       toast({
         title: "Error",
-        description: "Failed to delete item",
+        description: result.error || "Failed to delete item",
         variant: "destructive",
       });
     }
@@ -138,7 +117,7 @@ export const KnowledgeBankView = () => {
       const count = selectedInboxItems.size;
       await batchDeleteInbox(Array.from(selectedInboxItems));
       toast({ description: `Deleted ${count} item${count > 1 ? "s" : ""}` });
-      fetchItems();
+      refreshItems();
     } catch (error) {
       toast({
         title: "Error",
@@ -175,7 +154,7 @@ export const KnowledgeBankView = () => {
   };
 
   const handleAddSuccess = () => {
-    fetchItems();
+    refreshItems();
     // clearInboxSelection is handled by store but good to ensure local sync if needed
   };
 
@@ -355,7 +334,7 @@ export const KnowledgeBankView = () => {
           sourceItem={{
             id: targetItem.id,
             title: targetItem.title,
-            content: targetItem.content,
+            content: targetItem.rawContent,
             sourceType: targetItem.sourceType,
             correctness: targetItem.correctness,
           }}

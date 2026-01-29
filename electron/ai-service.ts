@@ -270,6 +270,10 @@ export async function ensureOllamaRunning(): Promise<boolean> {
       windowsHide: true, // Prevent console window on Windows
     });
 
+    // Track for cleanup on exit
+    const { processManager } = await import("./process-manager");
+    processManager.track(ollamaProcess);
+
     ollamaProcess.unref();
 
     // 3. Retry connection check (10 times with 500ms delay)

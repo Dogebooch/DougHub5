@@ -592,6 +592,11 @@ async function checkCliAvailable(): Promise<boolean> {
       env: { ...process.env },
     });
 
+    // Track for cleanup
+    import("./process-manager").then(({ processManager }) => {
+      processManager.track(proc);
+    });
+
     let output = "";
     let stderr = "";
 
@@ -1231,6 +1236,11 @@ function runClaudeCli(
       env: { ...process.env },
     });
 
+    // Track for cleanup
+    import("./process-manager").then(({ processManager }) => {
+      processManager.track(proc);
+    });
+
     let stdout = "";
     let stderr = "";
 
@@ -1336,6 +1346,11 @@ function runClaudeCliStreaming(
       shell: true,
       windowsHide: true,
       env: { ...process.env },
+    });
+
+    // Track for cleanup
+    import("./process-manager").then(({ processManager }) => {
+      processManager.track(proc);
     });
 
     // Write prompt to stdin and close it
