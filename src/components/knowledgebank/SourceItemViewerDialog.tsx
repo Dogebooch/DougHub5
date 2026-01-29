@@ -17,7 +17,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { BookPlus, Archive, X, FileText, ExternalLink } from "lucide-react";
+import { BookPlus, Archive, X, FileText, ExternalLink, Sparkles } from "lucide-react";
+import { FlashcardAnalysisDashboard } from "@/components/flashcards/FlashcardAnalysisDashboard";
 
 interface SourceItemViewerDialogProps {
   open: boolean;
@@ -34,6 +35,13 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
   onAddToNotebook,
   onArchiveToKB,
 }) => {
+  const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+
+  // Reset analysis state when dialog opens/closes or item changes
+  React.useEffect(() => {
+    setIsAnalyzing(false);
+  }, [open, item]);
+
   if (!item) return null;
 
   // For qbank items: use AI summary as title if available
@@ -42,19 +50,18 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
       ? item.metadata.summary
       : item.title;
 
-  const renderContent = () => {
-    // Specialized viewer for structured QBank questions
+  // Parse content for QBank items
+  const qbankContent = React.useMemo(() => {
     if (item.sourceType === "qbank" && item.rawContent) {
       try {
         const content = JSON.parse(item.rawContent) as BoardQuestionContent;
-        // Validate that this is actually structured QBank content
         if (
           content &&
           typeof content === "object" &&
           content.source &&
           Array.isArray(content.answers)
         ) {
-          return <BoardQuestionView content={content} />;
+          return content;
         }
       } catch (e) {
         console.warn(
@@ -62,6 +69,122 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
           e,
         );
       }
+    }
+    return null;
+  }, [item]);
+
+  const handleDraftAccept = async (front: string, back: string) => {
+    try {
+      // Validate card quality before creation
+      // In a real flow, the dashboard/AI sends the type too. Defaulting to 'qa' for now.
+      await window.api.ai.validateCard(front, back, "qa");
+      
+      const cardId = crypto.randomUUID();
+      const noteId = crypto.randomUUID();
+
+      // Create a Note wrapper first (1:N relationship) or just a card if architecture allows
+      // Assuming we need a Note for the card
+      await window.api.notes.create({
+          id: noteId,
+          title: displayTitle,
+          content: `Generated from ${item.title || "QBank Question"}`,
+          cardIds: [],
+          tags: item.tags || [],
+          createdAt: new Date().toISOString()
+      });
+
+      // Create the card
+      await window.api.cards.create({
+          front,
+          back,
+          cardType: "qa",
+          tags: item.tags || [],
+          sourceBlockId: item.id, // Link to source for tracebility
+          
+          // Default FSRS Data
+          stability: 0,
+          difficulty: 0,
+          elapsedDays: 0,
+          scheduledDays: 0,
+          reps: 0,
+          lapses: 0,
+          state: 0,
+          lastReview: null,
+          
+          activationStatus: "active",
+          createdAt: new Date().toISOString(),
+          dueDate: new Date().toISOString(),
+          id: cardId,
+          noteId: noteId,
+          notebookTopicPageId: null,
+          aiTitle: displayTitle,
+          parentListId: null,
+          listPosition: null,
+      });
+
+      setIsAnalyzing(false);
+      onClose();
+    } catch (e) {
+      console.error("Failed to create card", e);
+      // Ideally show a toast here
+    }
+  };
+
+  const handleSaveReference = async () => {
+    if (!qbankContent) return;
+
+    try {
+      const noteId = crypto.randomUUID();
+      const content = `
+# Question
+${qbankContent.questionStemHtml || ""}
+
+# Answer
+${qbankContent.answers.find(a => a.isCorrect)?.html || "Unknown"}
+
+# Explanation
+${qbankContent.explanationHtml || ""}
+`.trim();
+
+      await window.api.notes.create({
+        id: noteId,
+        title: displayTitle || "Reference Note",
+        content: content,
+        tags: ["reference", "qbank"],
+        createdAt: new Date().toISOString(),
+        cardIds: []
+      });
+      
+      setIsAnalyzing(false);
+      onClose();
+    } catch (e) {
+      console.error("Failed to create reference note", e);
+    }
+  };
+
+  const renderContent = () => {
+    // Analysis Dashboard Mode
+    if (isAnalyzing && qbankContent) {
+        const latestAttempt = qbankContent.attempts?.[qbankContent.attempts.length - 1];
+        const correctAnswer = qbankContent.answers.find(a => a.isCorrect);
+        
+        return (
+            <FlashcardAnalysisDashboard
+                stem={qbankContent.questionStemHtml || "No stem available"}
+                userAnswer={latestAttempt?.chosenAnswer || "Unknown"}
+                correctAnswer={correctAnswer?.html || "Unknown"}
+                explanation={qbankContent.explanationHtml || "No explanation available"}
+                sourceItemTitle={displayTitle}
+                onDraftAccept={handleDraftAccept}
+                onSaveReference={handleSaveReference}
+                onCancel={() => setIsAnalyzing(false)}
+            />
+        );
+    }
+
+    // Specialized viewer for structured QBank questions
+    if (qbankContent) {
+       return <BoardQuestionView content={qbankContent} />;
     }
 
     // Default viewer for all other types or fallback
@@ -125,7 +248,7 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0">
+      <DialogContent className={`max-w-4xl h-[90vh] flex flex-col p-0 gap-0 ${isAnalyzing ? "max-w-6xl" : ""}`}>
         <DialogHeader className="p-6 pb-2 border-b flex-none">
           <div className="flex items-center gap-2 mb-2">
             <Badge variant="outline" className="capitalize">
@@ -145,61 +268,74 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
 
         <ScrollArea className="flex-1 p-6">{renderContent()}</ScrollArea>
 
-        {/* Action Footer */}
-        <TooltipProvider delayDuration={300}>
-          <div className="p-4 border-t bg-background flex items-center justify-between flex-none">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  onClick={onClose}
-                  className="text-muted-foreground"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Close
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p>Close without taking action</p>
-              </TooltipContent>
-            </Tooltip>
+        {/* Action Footer - Hide during analysis */}
+        {!isAnalyzing && (
+            <TooltipProvider delayDuration={300}>
+            <div className="p-4 border-t bg-background flex items-center justify-between flex-none">
+                <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                    variant="ghost"
+                    onClick={onClose}
+                    className="text-muted-foreground"
+                    >
+                    <X className="h-4 w-4 mr-2" />
+                    Close
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                    <p>Close without taking action</p>
+                </TooltipContent>
+                </Tooltip>
 
-            <div className="flex items-center gap-3">
-              {onArchiveToKB && item.status !== "curated" && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
+                <div className="flex items-center gap-3">
+                {/* AI Analysis Trigger */}
+                {qbankContent && (
                     <Button
-                      variant="outline"
-                      onClick={() => onArchiveToKB(item)}
+                        onClick={() => setIsAnalyzing(true)}
+                        className="bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/20"
                     >
-                      <Archive className="h-4 w-4 mr-2" />
-                      Keep in Library
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Analyze Gap
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p>Keep for reference, no cards needed</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-              {onAddToNotebook && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => onAddToNotebook(item)}
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      <BookPlus className="h-4 w-4 mr-2" />
-                      Add to Notebook
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p>I want to learn this — add notes and make cards</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
+                )}
+
+                {onArchiveToKB && item.status !== "curated" && (
+                    <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                        variant="outline"
+                        onClick={() => onArchiveToKB(item)}
+                        >
+                        <Archive className="h-4 w-4 mr-2" />
+                        Keep in Library
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                        <p>Keep for reference, no cards needed</p>
+                    </TooltipContent>
+                    </Tooltip>
+                )}
+                {onAddToNotebook && (
+                    <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                        onClick={() => onAddToNotebook(item)}
+                        className="bg-primary hover:bg-primary/90"
+                        >
+                        <BookPlus className="h-4 w-4 mr-2" />
+                        Add to Notebook
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                        <p>I want to learn this — add notes and make cards</p>
+                    </TooltipContent>
+                    </Tooltip>
+                )}
+                </div>
             </div>
-          </div>
-        </TooltipProvider>
+            </TooltipProvider>
+        )}
       </DialogContent>
     </Dialog>
   );

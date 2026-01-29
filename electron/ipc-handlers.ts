@@ -21,11 +21,14 @@ import {
   generateQuiz,
   gradeAnswer,
   detectConfusion,
+  analyzeFlashcard,
   type ExtractFactsResult,
   type ExtractedFact,
   type GenerateQuizResult,
   type GradeAnswerResult,
   type DetectConfusionResult,
+  type FlashcardAnalysisResult,
+  type FlashcardAnalysisContext,
 } from "./ai-service";
 import {
   parseBoardQuestion,

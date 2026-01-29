@@ -43,6 +43,7 @@ import type {
   GenerateQuizResult,
   GradeAnswerResult,
   ExtractedFact,
+  FlashcardAnalysisResult,
 } from "./ai";
 import type {
   AILogEntry,
@@ -424,6 +425,14 @@ export interface ElectronAPI {
       acceptableAnswers: string[],
       questionContext: string,
     ) => Promise<IpcResult<GradeAnswerResult>>;
+    analyzeFlashcard: (
+      stem: string,
+      userAnswer: string,
+      correctAnswer: string,
+      explanation: string,
+      top3VectorMatches: string,
+      userRole?: string
+    ) => Promise<IpcResult<FlashcardAnalysisResult | null>>;
   };
   insights: {
     getBoardRelevance: (topicTags: string[]) => Promise<

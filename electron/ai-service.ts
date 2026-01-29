@@ -25,12 +25,10 @@ import type {
   ElaboratedFeedback,
   CaptureAnalysisResult,
 } from "../src/types/ai";
-import {
-  type DbNote,
-  settingsQueries,
-  devSettingsQueries,
-  NotebookBlockAiEvaluation,
-} from "./database";
+import { type DbNote, type NotebookBlockAiEvaluation } from "./database/types";
+import { settingsQueries } from "./database/settings";
+import { noteQueries } from "./database/notes";
+import { devSettingsQueries } from "./database/dev-settings";
 import * as crypto from "node:crypto";
 import OpenAI from "openai";
 import * as http from "node:http";
@@ -1558,8 +1556,6 @@ export function findRelatedNotes(
 // Generic Source Metadata Extraction (non-qbank items)
 // ============================================================================
 
-import { captureAnalysisTask } from "./ai/tasks/capture-analysis";
-
 /**
  * Extract metadata for non-qbank source items (articles, quickcapture, pdf, etc.)
  * Uses the capture-analysis task to generate title, domain, and tags.
@@ -1732,6 +1728,175 @@ async function extractGenericSourceMetadata(
   } catch (error) {
     console.error(`[AI Service] ❌ Failed to extract ${sourceType} metadata:`, error);
     return null;
+  }
+}
+
+// ============================================================================
+// Flashcard Integrated Analysis (v1.1)
+// ============================================================================
+
+import { flashcardAnalysisTask } from "./ai/tasks/flashcard-analysis";
+import type {
+  FlashcardAnalysisResult,
+  FlashcardAnalysisContext,
+} from "./ai/tasks/types";
+
+export type { FlashcardAnalysisResult, FlashcardAnalysisContext };
+
+export async function analyzeFlashcard(
+  stem: string,
+  userAnswer: string,
+  correctAnswer: string,
+  explanation: string,
+  top3VectorMatches: string,
+  userRole?: string
+): Promise<FlashcardAnalysisResult | null> {
+  const task = flashcardAnalysisTask;
+  const config = await getProviderConfig();
+  const devSettings = devSettingsQueries.getAll();
+  const effectiveModel = devSettings["aiModel"] || config.model;
+
+  // Auto-detect user role from settings if not explicitly provided
+  const effectiveRole = userRole || settingsQueries.get("userProfile") || "medical student";
+
+  // Interference Detection: If no vector matches provided, run internal search
+  let vectorContext = top3VectorMatches;
+  if (!vectorContext || vectorContext === "[]") {
+    try {
+      // 1. Fetch all notes (MVP approach - post-MVP use vector DB)
+      const allNotes = noteQueries.getAll();
+      
+      // 2. Find semantic matches
+      const matches = findRelatedNotes(stem, allNotes, 0.15, 3);
+      
+      // 3. Hydrate matches with full content for the AI to analyze
+      const hydratedMatches = matches.map(match => {
+        const note = allNotes.find(n => n.id === match.noteId);
+        return {
+          id: match.noteId,
+          title: note?.title || "Unknown",
+          content: note?.content?.substring(0, 300) || "", // Truncate content
+          similarity: match.similarity
+        };
+      });
+
+      vectorContext = JSON.stringify(hydratedMatches);
+      console.log(`[AI Service] Interference Detection found ${matches.length} matches`);
+    } catch (err) {
+      console.warn("[AI Service] Failed to run interference detection:", err);
+      // Fallback to empty context on error
+      vectorContext = "[]";
+    }
+  }
+
+  // Build prompt
+  const userPrompt = task.buildUserPrompt({
+    stem,
+    userAnswer,
+    correctAnswer,
+    explanation,
+    top3VectorMatches: vectorContext,
+    userRole: effectiveRole,
+  });
+
+  try {
+    const startTime = Date.now();
+    const client = await getClient();
+    const temperature = devSettings["aiTemperature"]
+      ? parseFloat(devSettings["aiTemperature"])
+      : task.temperature;
+    const maxTokens = devSettings["aiMaxTokens"]
+      ? parseInt(devSettings["aiMaxTokens"])
+      : task.maxTokens;
+
+    console.log(
+      `[AI Service] Using model: ${effectiveModel} | Task: ${task.name}`
+    );
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), task.timeoutMs);
+
+    const requestId = crypto.randomUUID();
+    notifyAILog({
+      id: requestId,
+      timestamp: startTime,
+      endpoint: "chat/completions",
+      model: effectiveModel,
+      latencyMs: 0,
+      status: "pending",
+      request: {
+        messages: [
+          { role: "system", content: task.systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature,
+        max_tokens: maxTokens,
+      },
+      reason: "analyzeFlashcard",
+    });
+
+    try {
+      const completion = await client.chat.completions.create(
+        {
+          model: effectiveModel,
+          messages: [
+            { role: "system", content: task.systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature,
+          max_tokens: maxTokens,
+        },
+        { signal: controller.signal as any }
+      );
+
+      clearTimeout(timeoutId);
+      const endTime = Date.now();
+      const elapsedMs = endTime - startTime;
+
+      notifyAILog({
+        id: requestId,
+        timestamp: endTime,
+        endpoint: "chat/completions",
+        model: effectiveModel,
+        latencyMs: elapsedMs,
+        status: "success",
+        tokens: completion.usage
+          ? {
+              prompt: completion.usage.prompt_tokens,
+              completion: completion.usage.completion_tokens,
+              total: completion.usage.total_tokens,
+            }
+          : undefined,
+        response: completion,
+        reason: "analyzeFlashcard",
+      });
+
+      const responseText =
+        completion.choices[0]?.message?.content?.trim() || "";
+
+      // Parse JSON response
+      const parsed = parseAIResponse<FlashcardAnalysisResult>(responseText);
+      const result = task.normalizeResult ? task.normalizeResult(parsed) : parsed;
+
+      return result;
+    } catch (aiError) {
+      clearTimeout(timeoutId);
+      const endTime = Date.now();
+      notifyAILog({
+        id: requestId,
+        timestamp: endTime,
+        endpoint: "chat/completions",
+        model: effectiveModel,
+        latencyMs: endTime - startTime,
+        status: "error",
+        error: (aiError as any)?.message,
+        reason: "analyzeFlashcard",
+      });
+      throw aiError;
+    }
+  } catch (error) {
+    console.error(`[AI Service] ❌ Failed to analyze flashcard:`, error);
+    return task.fallbackResult || null;
   }
 }
 

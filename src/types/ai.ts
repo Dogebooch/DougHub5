@@ -89,6 +89,8 @@ export interface ValidationResult {
   warnings: string[];
   /** Suggestions for improvement */
   suggestions: string[];
+  /** True if AI failed and fallback was used */
+  usedFallback?: boolean;
 }
 
 // ============================================================================
@@ -103,6 +105,8 @@ export interface MedicalListDetection {
   listType: 'differential' | 'procedure' | 'algorithm' | null;
   /** Extracted list items */
   items: string[];
+  /** True if AI failed and fallback was used */
+  usedFallback?: boolean;
 }
 
 /** Converted vignette from medical list */
@@ -270,5 +274,45 @@ export interface DetectConfusionResult {
     conceptB: string;
   };
   /** True if AI failed and fallback was used */
+  usedFallback?: boolean;
+}
+
+// ============================================================================
+// Flashcard Analysis (Integrated Dashboard)
+// ============================================================================
+
+/**
+ * Context for the "Integrated Analysis" prompt
+ */
+export interface FlashcardAnalysisContext {
+  stem: string;
+  userAnswer: string;
+  correctAnswer: string;
+  explanation: string;
+  top3VectorMatches: string; // JSON string
+  userRole?: string;
+}
+
+/**
+ * Result of the integrated analysis
+ */
+export interface FlashcardAnalysisResult {
+  gapAnalysis: {
+    type: "PURE_RECALL" | "PARTIAL_RECALL" | "INTERFERENCE" | "INTEGRATION_FAILURE" | "MISREAD" | null;
+    confidence: number;
+    reasoning: string;
+  };
+  worthiness: {
+    score: number;
+    rationale: string;
+  };
+  interference: {
+    isDuplicate: boolean;
+    similarityNote: string;
+  };
+  draftCard: {
+    front: string;
+    back: string;
+  };
   usedFallback?: boolean;
 }

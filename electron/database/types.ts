@@ -10,6 +10,8 @@ import {
   RelevanceScore,
 } from "../../src/types/index";
 
+export type { NotebookBlockAiEvaluation, RelevanceScore };
+
 // ============================================================================
 // Enums and String Literal Types
 // ============================================================================

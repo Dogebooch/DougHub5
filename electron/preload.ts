@@ -1,4 +1,5 @@
 import { ipcRenderer, contextBridge, webUtils } from "electron";
+import type { IpcResult } from "../src/types/index";
 
 // ============================================================================
 // Typed API for renderer process
@@ -383,6 +384,23 @@ const api = {
         correctAnswer,
         topicContext,
         relatedConcepts,
+      ),
+    analyzeFlashcard: (
+      stem: string,
+      userAnswer: string,
+      correctAnswer: string,
+      explanation: string,
+      top3VectorMatches: string,
+      userRole?: string
+    ) =>
+      ipcRenderer.invoke(
+        "ai:analyzeFlashcard",
+        stem,
+        userAnswer,
+        correctAnswer,
+        explanation,
+        top3VectorMatches,
+        userRole
       ),
   },
   insights: {
