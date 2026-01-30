@@ -13,7 +13,7 @@ export default function App() {
     initialize();
 
     // Listen for Ollama status updates
-    const cleanupOllama = window.api.ai.onOllamaStatus((payload) => {
+    const cleanupOllama = window.api?.ai?.onOllamaStatus?.((payload) => {
       switch (payload.status) {
         case "starting":
           toast.info(payload.message, { id: "ollama-status" });
@@ -49,7 +49,7 @@ export default function App() {
     }
 
     return () => {
-      cleanupOllama();
+      if (cleanupOllama) cleanupOllama();
       if (cleanupLog) cleanupLog();
       if (handleKeyDown) window.removeEventListener("keydown", handleKeyDown);
     };

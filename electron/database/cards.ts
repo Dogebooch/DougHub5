@@ -448,32 +448,44 @@ export const cardQueries = {
       sortMap[sortField]
     } ${sortDir.toUpperCase()} NULLS LAST`;
 
-    const stmt = db.prepare(`
-      SELECT 
-        c.*,
-        ct.canonicalName as topicName,
-        (SELECT COUNT(*) FROM cards c2 
-         WHERE c2.sourceBlockId = c.sourceBlockId 
-         AND c.sourceBlockId IS NOT NULL) as siblingCount,
-        CASE WHEN c.lapses >= 5 
-          OR (c.lapses >= 3 AND c.difficulty > 0.7) 
-          OR (c.reps >= 5 AND c.stability < 7)
-          THEN 1 ELSE 0 END as isLeech
-      FROM cards c
-      LEFT JOIN notebook_topic_pages ntp ON c.notebookTopicPageId = ntp.id
-      LEFT JOIN canonical_topics ct ON ntp.canonicalTopicId = ct.id
-      ${whereClause}
-      ${orderClause}
-    `);
+    // OPTIMIZATION (v25): Use indexed subqueries
+    console.log("[DB] getBrowserList execution started", { filters, sort });
+    const start = Date.now();
+    try {
+      const stmt = db.prepare(`
+        SELECT 
+          c.*,
+          ct.canonicalName as topicName,
+          (SELECT COUNT(*) FROM cards c2 WHERE c2.sourceBlockId = c.sourceBlockId AND c.sourceBlockId IS NOT NULL) as siblingCount,
+          (SELECT COUNT(*) FROM cards c3 WHERE c3.parentListId = c.parentListId AND c.parentListId IS NOT NULL) as listSiblingCount,
+          CASE WHEN c.lapses >= 5 
+            OR (c.lapses >= 3 AND c.difficulty > 0.7) 
+            OR (c.reps >= 5 AND c.stability < 7)
+            THEN 1 ELSE 0 END as isLeech
+        FROM cards c
+        LEFT JOIN notebook_topic_pages ntp ON c.notebookTopicPageId = ntp.id
+        LEFT JOIN canonical_topics ct ON ntp.canonicalTopicId = ct.id
+        ${whereClause}
+        ${orderClause}
+      `);
 
-    const rows = stmt.all(params) as CardBrowserRow[];
+      const rows = stmt.all(params) as any[];
+      console.log(`[DB] getBrowserList query took ${Date.now() - start}ms for ${rows.length} rows`);
 
-    return rows.map((row) => ({
-      ...parseCardRow(row as unknown as CardRow),
-      topicName: row.topicName,
-      siblingCount: row.siblingCount || 0,
-      isLeech: row.isLeech === 1,
-    })) as DbCard[];
+      const result = rows.map((row) => ({
+        ...parseCardRow(row as unknown as CardRow),
+        topicName: row.topicName,
+        siblingCount: row.siblingCount || 0,
+        isLeech: row.isLeech === 1,
+        listSiblingCount: row.listSiblingCount || 0,
+      })) as DbCard[];
+      
+      console.log(`[DB] getBrowserList mapping took ${Date.now() - start}ms total`);
+      return result;
+    } catch (error) {
+      console.error("[DB] getBrowserList failed:", error);
+      throw error;
+    }
   },
 
   getLowEaseTopics(): LowEaseTopic[] {

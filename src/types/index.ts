@@ -335,6 +335,8 @@ export interface CardBrowserItem extends CardWithFSRS {
   topicName: string | null; // From canonical_topics.canonicalName via JOIN
   siblingCount: number; // COUNT of cards with same sourceBlockId
   isLeech: boolean; // Computed: struggling card needing rewrite
+  // Cloze grouping: COUNT of cards with same parentListId
+  listSiblingCount: number;
 }
 
 // IPC result wrapper for error handling

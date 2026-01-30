@@ -591,10 +591,14 @@ export function registerIpcHandlers(): void {
       filters?: CardBrowserFilters,
       sort?: CardBrowserSort,
     ): Promise<IpcResult<DbCard[]>> => {
+      console.log("[IPC] cards:getBrowserList request received", { filters, sort });
       try {
+        const start = Date.now();
         const items = cardQueries.getBrowserList(filters, sort);
+        console.log(`[IPC] cards:getBrowserList success in ${Date.now() - start}ms`);
         return success(items);
       } catch (error) {
+        console.error("[IPC] cards:getBrowserList failure:", error);
         return failure(error);
       }
     },

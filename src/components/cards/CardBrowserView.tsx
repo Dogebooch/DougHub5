@@ -91,6 +91,10 @@ interface CardRowData {
   selectedCardIds: Set<string>;
   onToggleSelect: (cardId: string) => void;
   isSelectionMode: boolean;
+  // Cloze grouping props
+  expandedClozeGroupIds: Set<string>;
+  onToggleClozeGroup: (parentListId: string) => void;
+  clozeChildCards: Map<string, CardBrowserItem[]>; // parentListId -> child cards
 }
 
 // Full props received by CardRow component
@@ -118,6 +122,10 @@ function CardRow({
   selectedCardIds,
   onToggleSelect,
   isSelectionMode,
+  // Cloze grouping props
+  expandedClozeGroupIds,
+  onToggleClozeGroup,
+  clozeChildCards,
 }: CardRowProps) {
   const setCurrentView = useAppStore((state) => state.setCurrentView);
 
@@ -127,6 +135,18 @@ function CardRow({
   const isSelected = selectedCardIds.has(card.id);
   // Suspended cards have state = 4 (FSRS convention)
   const isSuspended = card.state === 4;
+
+  // Cloze grouping: Check if this is a parent cloze card
+  const isClozeParent = 
+    card.parentListId && 
+    (card.listPosition === 0 || card.listPosition === null) && 
+    (card.listSiblingCount ?? 0) > 1;
+  const isClozeGroupExpanded = card.parentListId 
+    ? expandedClozeGroupIds.has(card.parentListId) 
+    : false;
+  const clozeChildren = card.parentListId 
+    ? clozeChildCards.get(card.parentListId) ?? [] 
+    : [];
 
   // Status badge color mapping
   const statusConfig: Record<
@@ -208,14 +228,20 @@ function CardRow({
       style={style}
       onClick={handleClick}
       className={cn(
-        "relative flex flex-col border-b border-border transition-colors cursor-pointer group",
-        isExpanded
+        "relative flex flex-col border-b border-border cursor-pointer group",
+        "transition-all duration-150 ease-out",
+        // Suspended cards: reduced opacity + dashed border for clear visual distinction
+        isSuspended && !isExpanded && "opacity-55 border-l-2 border-l-muted-foreground/40 border-dashed",
+        // Normal state conditions
+        !isSuspended && isExpanded
           ? "bg-muted/30 border-l-2 border-l-primary"
-          : isSelected
+          : !isSuspended && isSelected
           ? "bg-primary/5 border-l-2 border-l-primary"
-          : card.isLeech
+          : !isSuspended && card.isLeech
           ? "bg-amber-500/5 hover:bg-amber-500/10 border-l-2 border-l-amber-500"
-          : "hover:bg-muted/50 border-l-2 border-l-transparent"
+          : !isSuspended && "hover:bg-muted/50 border-l-2 border-l-transparent",
+        // Suspending animation
+        isSuspending && "animate-pulse"
       )}
     >
       {/* Collapsed view - always visible */}
@@ -278,22 +304,59 @@ function CardRow({
                 Leech
               </Badge>
             )}
+            {/* Cloze group indicator */}
+            {isClozeParent && !isExpanded && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "bg-primary/10 text-primary border-primary/20 uppercase tracking-tighter cursor-pointer hover:bg-primary/20 transition-colors",
+                  isCompact ? "h-3.5 px-1 text-[8px]" : "h-5 px-1.5 text-[10px]"
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (card.parentListId) {
+                    onToggleClozeGroup(card.parentListId);
+                  }
+                }}
+              >
+                {card.listSiblingCount} cloze
+              </Badge>
+            )}
           </div>
 
           {!isCompact && (
             <div className="flex items-center gap-3 mt-1">
               {card.topicName && (
-                <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate max-w-[150px]">
+                <button
+                  onClick={handleTopicClick}
+                  className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors truncate max-w-[150px]"
+                >
                   <Layers className="w-3 h-3 shrink-0" />
                   <span className="truncate">{card.topicName}</span>
-                </div>
+                </button>
               )}
 
-              {card.dueDate && (
+              {card.dueDate && !isSuspended && (
                 <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                   <Calendar className="w-3 h-3 shrink-0" />
                   <span>{new Date(card.dueDate).toLocaleDateString()}</span>
                 </div>
+              )}
+
+              {/* Sibling count indicator for connected facts scanning */}
+              {card.siblingCount > 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (card.sourceBlockId) {
+                      onViewSource(card);
+                    }
+                  }}
+                  className="flex items-center gap-1 text-[11px] text-primary/70 hover:text-primary transition-colors"
+                >
+                  <Layers className="w-3 h-3 shrink-0" />
+                  <span className="font-medium">{card.siblingCount} connected</span>
+                </button>
               )}
             </div>
           )}
@@ -324,7 +387,8 @@ function CardRow({
         {/* Hover action buttons */}
         <div
           className={cn(
-            "flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mr-2",
+            "flex items-center gap-1 opacity-0 group-hover:opacity-100 shrink-0 mr-2",
+            "transition-all duration-150 ease-out",
             card.siblingCount > 1 && "mr-10" // Make room for deck visual
           )}
         >
@@ -571,6 +635,60 @@ function CardRow({
           </div>
         </div>
       )}
+
+      {/* Cloze group expansion (v2.3) - Rendered as indented child cards */}
+      {isClozeGroupExpanded && clozeChildren.length > 0 && (
+        <div className="ml-8 border-l-2 border-primary/30 pl-4 py-3 space-y-1.5 mb-3 animate-in fade-in slide-in-from-left-3 duration-300">
+          <div className="flex items-center gap-2 mb-2 px-2">
+            <Layers className="w-3 h-3 text-primary/70" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
+              {card.listSiblingCount} cloze cards in group
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            {clozeChildren.map((child, idx) => (
+              <div
+                key={child.id}
+                className="flex items-center gap-3 p-2.5 rounded-md hover:bg-primary/5 transition-all cursor-pointer group/cloze border border-transparent hover:border-primary/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const childIndex = cards.findIndex((c) => c.id === child.id);
+                  if (childIndex !== -1) {
+                    onSetFocus(childIndex);
+                    onToggleExpand(child.id);
+                  }
+                }}
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex flex-col items-center shrink-0">
+                    <span className="text-[9px] font-mono text-muted-foreground/60 leading-none">
+                      #{idx + 2}
+                    </span>
+                  </div>
+                  <span className="text-xs font-medium truncate text-foreground/90">
+                    {child.front.replace(/\{\{c\d+::/g, "").replace(/\}\}/g, "")}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge
+                    variant="outline"
+                    className="text-[8px] h-4 px-1 uppercase tracking-tighter font-semibold opacity-70"
+                  >
+                    {child.state === 0
+                      ? "New"
+                      : child.state === 4
+                      ? "Susp"
+                      : "Study"}
+                  </Badge>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground/40 group-hover/cloze:text-primary group-hover/cloze:translate-x-0.5 transition-all" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -587,18 +705,35 @@ function CardPreviewPane({ card }: { card: CardBrowserItem | null }) {
     );
   }
 
+  const isSuspended = card.state === 4;
   const truncatedFront =
     card.front.length > 120 ? card.front.substring(0, 120) + "..." : card.front;
   const truncatedBack =
     card.back.length > 120 ? card.back.substring(0, 120) + "..." : card.back;
 
   return (
-    <div className="h-[130px] border-t bg-surface-elevated flex flex-col p-4 gap-3 overflow-hidden shadow-inner">
+    <div className={cn(
+      "h-[130px] border-t bg-surface-elevated flex flex-col p-4 gap-3 overflow-hidden shadow-inner",
+      "transition-all duration-150",
+      isSuspended && "opacity-60 bg-surface-elevated/50"
+    )}>
       <div className="flex-1 flex gap-4 min-w-0">
         <div className="flex-1 min-w-0">
-          <span className="text-[10px] font-bold text-primary/70 uppercase tracking-widest block mb-1">
-            Question
-          </span>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold text-primary/70 uppercase tracking-widest">
+              Question
+            </span>
+            {isSuspended && (
+              <Badge variant="outline" className="h-4 px-1.5 text-[8px] uppercase tracking-wider bg-muted/50 text-muted-foreground border-dashed">
+                Suspended
+              </Badge>
+            )}
+            {card.siblingCount > 1 && (
+              <Badge variant="outline" className="h-4 px-1.5 text-[8px] uppercase tracking-wider bg-primary/10 text-primary border-primary/20">
+                {card.siblingCount} connected
+              </Badge>
+            )}
+          </div>
           <p className="text-sm font-semibold text-foreground line-clamp-2 leading-relaxed whitespace-pre-wrap italic">
             {truncatedFront}
           </p>
@@ -670,6 +805,7 @@ function CardPreviewPane({ card }: { card: CardBrowserItem | null }) {
 export function CardBrowserView() {
   const [cards, setCards] = useState<CardBrowserItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"due" | "leeches" | "all">("all");
@@ -719,6 +855,14 @@ export function CardBrowserView() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [isBatchProcessing, setIsBatchProcessing] = useState(false);
 
+  // Cloze grouping state
+  const [expandedClozeGroupIds, setExpandedClozeGroupIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [clozeChildCards, setClozeChildCards] = useState<Map<string, CardBrowserItem[]>>(
+    new Map()
+  );
+
   const getBrowserList = useAppStore((state) => state.getBrowserList);
   const { toast } = useToast();
 
@@ -744,15 +888,44 @@ export function CardBrowserView() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Ref to track method stability
+  const getBrowserListRef = useRef(getBrowserList);
+  useEffect(() => {
+    getBrowserListRef.current = getBrowserList;
+    // Log if getBrowserList identity changes (debugging infinite loop)
+    console.log("[CardBrowser] getBrowserList identity updated");
+  }, [getBrowserList]);
+
+  // Rate limiting to prevent infinite loops
+  const lastFetchTime = useRef(0);
+  const fetchCount = useRef(0);
+
   const fetchCards = useCallback(async () => {
     if (!isMounted.current) return;
 
+    const now = Date.now();
+    if (now - lastFetchTime.current < 1000) {
+      fetchCount.current++;
+      if (fetchCount.current > 3) {
+        console.warn("[CardBrowser] Infinite loop detected? Throttle active.");
+        return;
+      }
+    } else {
+      fetchCount.current = 0;
+    }
+    lastFetchTime.current = now;
+
+    console.log("[CardBrowser] fetchCards started", { activeTab, debouncedSearch, sortField, sortDirection });
     setIsLoading(true);
+    const start = Date.now();
     try {
       const api = getWindowApi();
       if (!api) {
         console.warn("[CardBrowser] window.api unavailable - fetch skipped");
-        if (isMounted.current) setIsLoading(false);
+        if (isMounted.current) {
+             setCards([]); // Clear cards on browser
+             setIsLoading(false);
+        }
         return;
       }
 
@@ -765,32 +938,56 @@ export function CardBrowserView() {
         filters.search = debouncedSearch.trim();
       }
 
-      const result = await getBrowserList(filters, {
+      console.log("[CardBrowser] Calling getBrowserList with filters:", filters);
+      // Use ref to ensure stability
+      const result = await getBrowserListRef.current(filters, {
         field: sortField,
         direction: sortDirection,
       });
+      
+      console.log(`[CardBrowser] getBrowserList returned ${result?.length || 0} cards in ${Date.now() - start}ms`);
+      
       if (isMounted.current) {
         setCards(result || []);
+        setError(null);
       }
-    } catch (error) {
-      console.error("Failed to fetch cards:", error);
+    } catch (err: any) {
+      console.error("[CardBrowser] Failed to fetch cards:", err);
+      if (isMounted.current) {
+        setError(err.message || String(err));
+      }
     } finally {
+      console.log(`[CardBrowser] fetchCards finished total time: ${Date.now() - start}ms`);
       if (isMounted.current) {
         setIsLoading(false);
       }
     }
-  }, [getBrowserList, activeTab, debouncedSearch, sortField, sortDirection]);
+  }, [activeTab, debouncedSearch, sortField, sortDirection]); // Removed getBrowserList from deps
 
   useEffect(() => {
+    // Debug: trace who is triggering this effect
+    // console.trace("[CardBrowser] Triggering fetchCards effect");
     fetchCards();
   }, [fetchCards]);
 
   const filteredCards = useMemo(() => {
+    let result = cards;
+
+    // Filter by due date if on "due" tab
     if (activeTab === "due") {
       const today = new Date().toISOString().split("T")[0];
-      return cards.filter((card) => card.dueDate && card.dueDate <= today);
+      result = result.filter((card) => card.dueDate && card.dueDate <= today);
     }
-    return cards;
+
+    // Hide child cloze cards (cards with parentListId and listPosition > 0)
+    // Only show parent cloze cards (listPosition = 0 or null) in the main list
+    result = result.filter((card) => {
+      if (!card.parentListId) return true; // Non-cloze cards
+      if (card.listPosition === null || card.listPosition === 0) return true; // Parent cloze
+      return false; // Hide child cloze cards
+    });
+
+    return result;
   }, [cards, activeTab]);
 
   // Height calculator for VariableSizeList
@@ -813,6 +1010,16 @@ export function CardBrowserView() {
         height += siblingHeight;
       }
 
+      // Add cloze group expansion height
+      if (card.parentListId && expandedClozeGroupIds.has(card.parentListId)) {
+        const childCount = clozeChildCards.get(card.parentListId)?.length ?? 0;
+        if (childCount > 0) {
+          // header + each child row + padding
+          const clozeHeight = childCount * 44 + 40;
+          height += clozeHeight;
+        }
+      }
+
       return height;
     },
     [
@@ -821,6 +1028,8 @@ export function CardBrowserView() {
       expandedSiblingsCardId,
       siblingCards,
       compactMode,
+      expandedClozeGroupIds,
+      clozeChildCards,
     ]
   );
 
@@ -895,6 +1104,28 @@ export function CardBrowserView() {
     setSelectedCardIds(new Set());
     setIsSelectionMode(false);
   }, []);
+
+  // Cloze group toggle handler
+  const handleToggleClozeGroup = useCallback((parentListId: string) => {
+    setExpandedClozeGroupIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(parentListId)) {
+        next.delete(parentListId);
+      } else {
+        next.add(parentListId);
+        // Load child cards for this group from the already-fetched cards
+        const childCards = cards.filter(
+          (c) => c.parentListId === parentListId && (c.listPosition ?? 0) > 0
+        );
+        setClozeChildCards((prevMap) => {
+          const nextMap = new Map(prevMap);
+          nextMap.set(parentListId, childCards);
+          return nextMap;
+        });
+      }
+      return next;
+    });
+  }, [cards]);
 
   const handleBatchSuspend = useCallback(async () => {
     if (selectedCardIds.size === 0) return;
@@ -1461,13 +1692,27 @@ export function CardBrowserView() {
         </Tabs>
       </div>
 
-      {/* Main List Area */}
-      <div className="flex-1 relative min-h-0 bg-background/50">
-        {isLoading ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground gap-3">
-            <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-h-0 bg-background/50 relative">
+        {error ? (
+           <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+             <div className="p-6 max-w-md w-full bg-destructive/10 border border-destructive/20 rounded-lg shadow-lg text-destructive text-center space-y-2">
+               <AlertTriangle className="w-10 h-10 mx-auto" />
+               <h3 className="font-semibold text-lg">Failed to load cards</h3>
+               <p className="text-sm opacity-90 font-mono break-all">{error}</p>
+               <button
+                 onClick={() => fetchCards()}
+                 className="px-4 py-2 bg-background border border-destructive/30 hover:bg-destructive/10 rounded text-sm transition-colors mt-4"
+               >
+                 Retry
+               </button>
+             </div>
+           </div>
+        ) : isLoading ? (
+          <div className="flex h-full flex-col items-center justify-center p-8 text-center text-muted-foreground gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-sm animate-pulse-subtle">
-              Analyzing board cards...
+              Loading your cards...
             </p>
           </div>
         ) : filteredCards.length === 0 ? (
@@ -1532,6 +1777,10 @@ export function CardBrowserView() {
                   selectedCardIds,
                   onToggleSelect: handleToggleSelect,
                   isSelectionMode,
+                  // Cloze grouping props
+                  expandedClozeGroupIds,
+                  onToggleClozeGroup: handleToggleClozeGroup,
+                  clozeChildCards,
                 }}
                 className="scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
               />
@@ -1817,7 +2066,7 @@ export function CardBrowserView() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Source Context Sheet */}
+      {/* Connections Drawer - shows source block and related cards */}
       <Sheet open={sourceDrawerOpen} onOpenChange={setSourceDrawerOpen}>
         <SheetContent
           side="right"
@@ -1825,8 +2074,10 @@ export function CardBrowserView() {
         >
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
-              <Layers className="w-4 h-4" />
-              Source Block
+              <Layers className="w-4 h-4 text-primary" />
+              {sourceBlockData?.cards.length 
+                ? `${sourceBlockData.cards.length} Connected Cards`
+                : "Connections"}
             </SheetTitle>
           </SheetHeader>
 

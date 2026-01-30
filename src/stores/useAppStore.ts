@@ -450,18 +450,27 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       direction: "asc" | "desc";
     },
   ) => {
+    console.log("[Store] getBrowserList called", { filters, sort });
     const api = getWindowApi();
     if (!api) {
       console.warn("[Store] window.api unavailable - browser list skipped");
       return [];
     }
 
-    const result = await api.cards.getBrowserList(filters, sort);
-    if (result.error) {
-      console.error("[Store] Failed to get browser list:", result.error);
+    try {
+      const start = Date.now();
+      const result = await api.cards.getBrowserList(filters, sort);
+      console.log(`[Store] api.cards.getBrowserList returned in ${Date.now() - start}ms`, result);
+      
+      if (result.error) {
+        console.error("[Store] Failed to get browser list:", result.error);
+        return [];
+      }
+      return result.data || [];
+    } catch (error) {
+      console.error("[Store] getBrowserList exception:", error);
       return [];
     }
-    return result.data || [];
   },
 
   addNote: async (note: Note) => {

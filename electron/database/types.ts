@@ -358,6 +358,7 @@ export interface CardBrowserRow extends CardRow {
   topicName: string | null;
   siblingCount: number;
   isLeech: number; // 0 or 1 in SQLite
+  listSiblingCount: number; // COUNT of cards with same parentListId
 }
 
 export interface NoteRow {
