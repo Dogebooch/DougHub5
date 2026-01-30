@@ -1033,6 +1033,20 @@ export function CardBrowserView() {
     ]
   );
 
+  // Reset virtual list cache when row heights change due to expansion
+  useEffect(() => {
+    if (listRef.current) {
+      (listRef.current as any).resetAfterIndex(0);
+    }
+  }, [
+    expandedCardId,
+    expandedSiblingsCardId,
+    siblingCards,
+    expandedClozeGroupIds,
+    clozeChildCards,
+    compactMode,
+  ]);
+
   const handleToggleExpand = useCallback((cardId: string) => {
     setExpandedCardId((prev) => (prev === cardId ? null : cardId));
 
