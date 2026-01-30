@@ -29,15 +29,17 @@ import {
   CapturePayload,
 } from "./capture-server";
 import { ensureOllamaRunning, getProviderStatus } from "./ai-service";
+import { processManager } from "./process-manager";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-process.on("uncaughtException", (error) => {
+process.on("uncaughtException", async (error) => {
   console.error("[Main] Uncaught Exception:", error);
   // Perform cleanup
   try {
     stopCaptureServer();
     closeDatabase();
+    await processManager.killAll();
   } catch (err) {
     console.error("[Main] Cleanup failed:", err);
   }
@@ -504,8 +506,24 @@ app.on("before-quit", async (e) => {
   closeDatabase();
   console.log("[Database] Connection closed");
   
-  const { processManager } = await import("./process-manager");
+  // Use the statically imported processManager
   await processManager.killAll();
   
   app.exit();
 });
+
+// Handle Ctrl+C (SIGINT) and SIGTERM for graceful shutdown
+const handleSignal = async (signal: string) => {
+  console.log(`[Main] Received ${signal}, cleaning up...`);
+  try {
+    stopCaptureServer();
+    closeDatabase();
+    await processManager.killAll();
+  } catch (err) {
+    console.error(`[Main] ${signal} cleanup failed:`, err);
+  }
+  app.quit();
+};
+
+process.on("SIGINT", () => handleSignal("SIGINT"));
+process.on("SIGTERM", () => handleSignal("SIGTERM"));
