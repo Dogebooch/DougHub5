@@ -98,6 +98,13 @@ import {
   ActivationStatus,
   ActivationTier,
   SuspendReason,
+  // Medical Knowledge Archetypes (v26)
+  knowledgeEntityQueries,
+  knowledgeEntityLinkQueries,
+  DbKnowledgeEntity,
+  DbKnowledgeEntityLink,
+  KnowledgeEntityType,
+  KnowledgeLinkType,
 } from "./database";
 import {
   scheduleReview,
@@ -413,7 +420,9 @@ export async function processCapture(
         const now = new Date().toISOString();
         const sourceItem: DbSourceItem = {
           id,
-          title: truncateTitle(`Board Question - ${content.category || content.source}`),
+          title: truncateTitle(
+            `Board Question - ${content.category || content.source}`,
+          ),
           sourceType: "qbank",
           sourceName: payload.siteName,
           sourceUrl: payload.url, // Store original URL
@@ -591,11 +600,16 @@ export function registerIpcHandlers(): void {
       filters?: CardBrowserFilters,
       sort?: CardBrowserSort,
     ): Promise<IpcResult<DbCard[]>> => {
-      console.log("[IPC] cards:getBrowserList request received", { filters, sort });
+      console.log("[IPC] cards:getBrowserList request received", {
+        filters,
+        sort,
+      });
       try {
         const start = Date.now();
         const items = cardQueries.getBrowserList(filters, sort);
-        console.log(`[IPC] cards:getBrowserList success in ${Date.now() - start}ms`);
+        console.log(
+          `[IPC] cards:getBrowserList success in ${Date.now() - start}ms`,
+        );
         return success(items);
       } catch (error) {
         console.error("[IPC] cards:getBrowserList failure:", error);
@@ -3571,10 +3585,14 @@ export function registerIpcHandlers(): void {
         currentView: string;
       },
     ): Promise<IpcResult<void>> => {
-      console.log(`[IPC] claudeDev:sendMessageStreaming called with content length: ${content.length}`);
+      console.log(
+        `[IPC] claudeDev:sendMessageStreaming called with content length: ${content.length}`,
+      );
       try {
         const result = await sendClaudeDevMessageStreaming(content, options);
-        console.log(`[IPC] claudeDev:sendMessageStreaming completed, error: ${result.error || 'none'}`);
+        console.log(
+          `[IPC] claudeDev:sendMessageStreaming completed, error: ${result.error || "none"}`,
+        );
         if (result.error) {
           return failure(result.error);
         }
@@ -3677,6 +3695,293 @@ export function registerIpcHandlers(): void {
     async (): Promise<IpcResult<ReturnType<typeof getSessionStats>>> => {
       try {
         return success(getSessionStats());
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // --------------------------------------------------------------------------
+  // Knowledge Entity Handlers (v26 - Medical Archetypes)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "knowledge-entity:get-all",
+    async (): Promise<IpcResult<DbKnowledgeEntity[]>> => {
+      try {
+        return success(knowledgeEntityQueries.getAll());
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:get-by-id",
+    async (_, id: string): Promise<IpcResult<DbKnowledgeEntity | null>> => {
+      try {
+        return success(knowledgeEntityQueries.getById(id));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:get-by-type",
+    async (
+      _,
+      entityType: KnowledgeEntityType,
+    ): Promise<IpcResult<DbKnowledgeEntity[]>> => {
+      try {
+        return success(knowledgeEntityQueries.getByType(entityType));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:get-by-domain",
+    async (_, domain: string): Promise<IpcResult<DbKnowledgeEntity[]>> => {
+      try {
+        return success(knowledgeEntityQueries.getByDomain(domain));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:get-children",
+    async (
+      _,
+      parentEntityId: string,
+    ): Promise<IpcResult<DbKnowledgeEntity[]>> => {
+      try {
+        return success(knowledgeEntityQueries.getChildren(parentEntityId));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:get-ancestors",
+    async (_, entityId: string): Promise<IpcResult<DbKnowledgeEntity[]>> => {
+      try {
+        return success(knowledgeEntityQueries.getAncestors(entityId));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:insert",
+    async (_, entity: DbKnowledgeEntity): Promise<IpcResult<void>> => {
+      try {
+        knowledgeEntityQueries.insert(entity);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:update",
+    async (
+      _,
+      id: string,
+      updates: Partial<DbKnowledgeEntity>,
+    ): Promise<IpcResult<void>> => {
+      try {
+        knowledgeEntityQueries.update(id, updates);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:delete",
+    async (_, id: string): Promise<IpcResult<void>> => {
+      try {
+        knowledgeEntityQueries.delete(id);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:find-similar",
+    async (
+      _,
+      title: string,
+      entityType?: KnowledgeEntityType,
+    ): Promise<IpcResult<DbKnowledgeEntity[]>> => {
+      try {
+        return success(knowledgeEntityQueries.findSimilar(title, entityType));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:find-exact-duplicate",
+    async (
+      _,
+      title: string,
+      entityType: KnowledgeEntityType,
+    ): Promise<IpcResult<DbKnowledgeEntity | null>> => {
+      try {
+        return success(
+          knowledgeEntityQueries.findExactDuplicate(title, entityType),
+        );
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:set-golden-ticket",
+    async (_, id: string, value: string): Promise<IpcResult<void>> => {
+      try {
+        knowledgeEntityQueries.setGoldenTicketValue(id, value);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:reveal-hint",
+    async (_, id: string): Promise<IpcResult<string | null>> => {
+      try {
+        return success(knowledgeEntityQueries.revealAiHint(id));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:search",
+    async (
+      _,
+      query: string,
+      limit?: number,
+    ): Promise<IpcResult<DbKnowledgeEntity[]>> => {
+      try {
+        return success(knowledgeEntityQueries.search(query, limit));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // Knowledge Entity Link Handlers
+
+  ipcMain.handle(
+    "knowledge-entity:get-links",
+    async (
+      _,
+      entityId: string,
+    ): Promise<IpcResult<DbKnowledgeEntityLink[]>> => {
+      try {
+        return success(knowledgeEntityLinkQueries.getLinksForEntity(entityId));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:get-linked-entities",
+    async (_, entityId: string): Promise<IpcResult<DbKnowledgeEntity[]>> => {
+      try {
+        return success(knowledgeEntityLinkQueries.getLinkedEntities(entityId));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:get-linked-by-type",
+    async (
+      _,
+      entityId: string,
+      linkType: KnowledgeLinkType,
+    ): Promise<IpcResult<DbKnowledgeEntity[]>> => {
+      try {
+        return success(
+          knowledgeEntityLinkQueries.getLinkedByType(entityId, linkType),
+        );
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:link",
+    async (
+      _,
+      id: string,
+      sourceEntityId: string,
+      targetEntityId: string,
+      linkType: KnowledgeLinkType,
+    ): Promise<IpcResult<void>> => {
+      try {
+        knowledgeEntityLinkQueries.linkEntities(
+          id,
+          sourceEntityId,
+          targetEntityId,
+          linkType,
+        );
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:unlink",
+    async (_, linkId: string): Promise<IpcResult<void>> => {
+      try {
+        knowledgeEntityLinkQueries.unlinkEntities(linkId);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "knowledge-entity:link-exists",
+    async (
+      _,
+      sourceEntityId: string,
+      targetEntityId: string,
+      linkType?: KnowledgeLinkType,
+    ): Promise<IpcResult<boolean>> => {
+      try {
+        return success(
+          knowledgeEntityLinkQueries.linkExists(
+            sourceEntityId,
+            targetEntityId,
+            linkType,
+          ),
+        );
       } catch (error) {
         return failure(error);
       }

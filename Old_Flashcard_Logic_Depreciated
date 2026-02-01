@@ -1,0 +1,46 @@
+# To AI agents: Don't delete this file or change its contents. It is used for reference by me. I can delete it later.
+
+Flashcard Generation Logic: Current State (v2.x & v3.0 Foundation)
+DougHub currently employs a multi-tiered AI pipeline for flashcard generation, moving from simple capture to high-fidelity pedological analysis.
+
+1. Integrated QBank Analysis ("The Zero-Click Trigger")
+The primary entry point for high-yield cards is the Flashcard Analysis Dashboard, which activates automatically upon a QBank miss.
+
+Gap Diagnosis: The AI categorizes the failure into types:
+PURE_RECALL: Forgot the core fact.
+INTEGRATION_FAILURE: Knew facts but failed to connect them in a vignette.
+INTERFERENCE: Confused the concept with a similar one.
+MISREAD: User error (marked as low worthiness).
+Worthiness Scoring (0-10): Evaluates whether the missed fact is a "Board Favorite" vs. niche trivia.
+Interference Checking: Performs a real-time vector search against the user's existing cards to prevent duplicate content or conflicting facts.
+Hero Card Draft: Generates a single, optimized clinical vignette or fact-based card specifically targeting the identified gap.
+2. Notebook-to-Card Pipeline
+For manual curation from articles and notes, the system uses a more flexible heuristic-based generator.
+
+Automatic Format Detection: The AI analyzes the text structure to choose the best card format:
+Procedural: Steps/Techniques.
+Overlapping Cloze: Sequential lists (prevents list-memorization by testing items individually).
+Q&A: Clinical scenarios and reasoning.
+Standard Cloze: Single atomic facts.
+Traffic-Light Critique: Every suggested card is evaluated against three core principles:
+🟢/🟡/🔴 Testable: Is there one clear answer?
+🟢/🟡/🔴 One Concept: Is it atomic? (Minimum Information Principle).
+🟢/🟡/🔴 Discriminative: Does it distinguish between similar entities?
+3. Intelligent Synthesis (v3.0 Foundations)
+The codebase includes foundational schemas and AI task definitions for the upcoming Intelligent Learning Suite:
+
+Collision Engine: A system designed to find "Semantic Clusters" in knowledge gaps. It identifies where a user repeatedly confuses two topics (e.g., Ulcerative Colitis vs. Crohn's Disease) and generates "Collision Cards" that focus specifically on the clinical pivot points.
+Med-Pattern Researcher: Analyzes structural performance patterns, such as whether a user consistently fails questions with long stems or specific types of distractors.
+Key Implementation Files
+
+FlashcardAnalysisDashboard.tsx
+: The main UI for gap analysis.
+
+flashcard-analysis.ts
+: The AI prompt logic for QBank misses.
+
+card-generation.ts
+: The heuristic-based generator for notebook blocks.
+
+collision-patterns.ts
+: The database layer for the Intelligent Learning Suite.

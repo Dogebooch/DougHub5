@@ -1,0 +1,23 @@
+Database: C:\Users\drumm\AppData\Roaming\doughub\doughub.db
+Exists: True
+============================================================
+
+=== STATUS COUNTS ===
+  inbox: 1
+  TOTAL: 1
+
+=== CURRENT INBOX ITEMS ===
+  1. [qbank] Board Question - peerprep
+     Created: 2026-02-01T20:12:38.324Z
+
+=== RECENTLY CURATED (may have been inbox) ===
+  (No curated items)
+
+=== ITEMS CREATED LAST 14 DAYS (by status) ===
+  inbox: 1
+
+=== ITEMS CREATED TODAY ===
+  1. [inbox][qbank] Board Question - peerprep
+
+============================================================
+Diagnostic complete.

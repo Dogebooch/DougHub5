@@ -1,0 +1,34 @@
+Backups directory: C:\Users\drumm\AppData\Roaming\doughub\backups
+Exists: True
+============================================================
+Found 10 backup database files
+
+--- doughub-2026-01-28T14-50-16-514Z.db (4.0 KB) ---
+  (source_items table not found)
+--- doughub-2026-01-28T14-50-16-517Z.db (4.0 KB) ---
+  (source_items table not found)
+--- doughub-2026-01-28T14-50-16-519Z.db (4.0 KB) ---
+  (source_items table not found)
+--- doughub-2026-01-28T14-50-16-522Z.db (4.0 KB) ---
+  (source_items table not found)
+--- doughub-2026-01-28T14-50-16-523Z.db (4.0 KB) ---
+  (source_items table not found)
+--- doughub-2026-01-28T14-50-16-524Z.db (4.0 KB) ---
+  (source_items table not found)
+--- doughub-2026-01-28T14-50-16-526Z.db (4.0 KB) ---
+  (source_items table not found)
+--- doughub-2026-01-28T14-50-16-527Z.db (4.0 KB) ---
+  (source_items table not found)
+--- doughub-2026-01-28T14-50-16-529Z.db (4.0 KB) ---
+  (source_items table not found)
+--- doughub-2026-01-28T14-50-16-530Z.db (4.0 KB) ---
+  (source_items table not found)
+
+============================================================
+Found template database: C:\Users\drumm\AppData\Roaming\doughub---template-react-ts\doughub.db
+Size: 1556.0 KB
+  Total items: 13
+  By status: {'curated': 2, 'inbox': 10, 'processed': 1}
+
+============================================================
+Backup scan complete.

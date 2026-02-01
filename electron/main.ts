@@ -9,6 +9,7 @@ import {
 } from "electron";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
+import fs from "node:fs";
 import {
   initDatabase,
   closeDatabase,
@@ -86,9 +87,9 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 let win: BrowserWindow | null;
 let splash: BrowserWindow | null = null;
 
-const AUTO_BACKUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour (increased from 15m)
+const AUTO_BACKUP_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes for frequent protection
 const BACKUP_RETENTION_DAYS = 7; // Keep 7 days of backups
-const MAX_BACKUP_COUNT = 20; // Hard limit on total files
+const MAX_BACKUP_COUNT = 50; // Increased to accommodate more frequent backups
 
 let autoBackupInterval: NodeJS.Timeout | null = null;
 
@@ -431,10 +432,23 @@ app.whenReady().then(async () => {
       console.log(`[Backup] Cleaned up ${deleted} old backup(s)`);
     }
 
-    // 2. Database
-    updateSplashStatus("Initializing database...");
+    // 2. Database - Create startup backup BEFORE initialization/migrations
+    updateSplashStatus("Creating startup backup...");
     await sleep(100);
     const dbPath = path.join(app.getPath("userData"), "doughub.db");
+
+    // Startup backup: Capture database state before any schema changes
+    if (fs.existsSync(dbPath)) {
+      try {
+        createBackup(dbPath);
+        console.log("[Backup] Startup backup created successfully");
+      } catch (backupError) {
+        console.warn("[Backup] Startup backup failed:", backupError);
+        // Non-fatal - continue with initialization
+      }
+    }
+
+    updateSplashStatus("Initializing database...");
     try {
       initDatabase(dbPath);
       console.log("[Database] Initialized successfully at:", dbPath);
@@ -502,13 +516,28 @@ app.whenReady().then(async () => {
 // Clean up database connection on quit
 app.on("before-quit", async (e) => {
   e.preventDefault(); // Wait for async cleanup
+
+  // Shutdown backup: Capture database state before closing
+  try {
+    const dbPath = getDbPath();
+    if (dbPath && fs.existsSync(dbPath)) {
+      createBackup(dbPath);
+      console.log("[Backup] Shutdown backup created successfully");
+      cleanupOldBackups(BACKUP_RETENTION_DAYS);
+      pruneBackupsToCount(MAX_BACKUP_COUNT);
+    }
+  } catch (backupError) {
+    console.warn("[Backup] Shutdown backup failed:", backupError);
+    // Non-fatal - continue with shutdown
+  }
+
   stopCaptureServer();
   closeDatabase();
   console.log("[Database] Connection closed");
-  
+
   // Use the statically imported processManager
   await processManager.killAll();
-  
+
   app.exit();
 });
 

@@ -105,3 +105,25 @@ export { intakeQuizQueries } from "./database/intake-quiz";
 export { topicQuizQueries } from "./database/topic-quiz";
 export { confusionPatternQueries } from "./database/confusion-patterns";
 export { blockTopicAssignmentQueries } from "./database/block-topic-assignments";
+
+// Medical Knowledge Archetypes (v26)
+export {
+  knowledgeEntityQueries,
+  knowledgeEntityLinkQueries,
+} from "./database/knowledge-entities";
+export type {
+  DbKnowledgeEntity,
+  DbKnowledgeEntityLink,
+  KnowledgeEntityType,
+  KnowledgeLinkType,
+  IllnessScriptData,
+  DrugData,
+  PathogenData,
+  PresentationData,
+  DiagnosticData,
+  ProcedureData,
+  AnatomyData,
+  AlgorithmData,
+  GenericConceptData,
+} from "./database/types";
+export { GOLDEN_TICKET_FIELDS } from "./database/types";

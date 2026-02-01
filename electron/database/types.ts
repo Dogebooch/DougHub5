@@ -1,6 +1,6 @@
 /**
  * Database Type Definitions
- * 
+ *
  * All TypeScript interfaces and types for the database layer.
  * Separated from database.ts for better maintainability and AI comprehension.
  */
@@ -32,7 +32,12 @@ export type CorrectnessType = "correct" | "incorrect" | null;
 export type ConfidenceRating = "forgot" | "struggled" | "knew_it";
 
 // Notebook v2: Card Activation System
-export type ActivationStatus = "dormant" | "suggested" | "active" | "suspended" | "graduated";
+export type ActivationStatus =
+  | "dormant"
+  | "suggested"
+  | "active"
+  | "suspended"
+  | "graduated";
 export type ActivationTier = "auto" | "suggested" | "user_manual";
 export type SuspendReason = "user" | "leech" | "rotation_end";
 
@@ -585,3 +590,173 @@ export interface SearchResult {
   };
   queryTimeMs: number;
 }
+
+// ============================================================================
+// Medical Knowledge Archetypes (v26)
+// ============================================================================
+
+export type KnowledgeEntityType =
+  | "illness_script"
+  | "drug"
+  | "pathogen"
+  | "presentation"
+  | "diagnostic"
+  | "procedure"
+  | "anatomy"
+  | "algorithm"
+  | "generic_concept";
+
+export type KnowledgeLinkType =
+  | "treats" // Drug -> Disease
+  | "causes" // Pathogen -> Disease
+  | "diagnoses" // Diagnostic -> Disease
+  | "presents_as" // Disease -> Presentation
+  | "related" // Generic bidirectional
+  | "builds_on"; // Prerequisite relationship
+
+// Base interface for all entities
+export interface DbKnowledgeEntity {
+  id: string;
+  entityType: KnowledgeEntityType;
+  title: string;
+  domains?: string[]; // Multi-system diseases (e.g., Lupus: ['Rheumatology', 'Nephrology'])
+  canonicalTopicId?: string;
+  parentEntityId?: string; // Hierarchy (Metoprolol -> Beta Blockers -> Antihypertensives)
+  structuredData: Record<string, unknown>;
+  goldenTicketField?: string;
+  goldenTicketValue?: string;
+  aiHintGoldenTicket?: string;
+  visualMnemonicTags?: string[];
+  sourceItemId?: string;
+  notebookBlockId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Archetype-specific structured data shapes
+export interface IllnessScriptData {
+  epidemiology?: string;
+  pathophysiology?: string;
+  presentation?: { symptoms: string[]; signs: string[] };
+  diagnostics?: { goldStandard?: string; initialTest?: string; labs: string[] };
+  treatment?: { acute?: string; chronic?: string };
+  keyDiscriminator?: string; // GOLDEN TICKET
+}
+
+export interface DrugData {
+  class?: string;
+  mechanismOfAction?: string; // GOLDEN TICKET
+  indications?: string[];
+  dosing?: { standard?: string; renalAdjustment?: boolean };
+  adverseEffects?: string[];
+  contraindications?: string[];
+  blackBoxWarning?: string;
+}
+
+export interface PathogenData {
+  morphology?: string;
+  virulenceFactors?: string[];
+  transmissionRoute?: string; // GOLDEN TICKET
+  diseasesCaused?: string[];
+  antibioticSensitivity?: string[];
+}
+
+export interface PresentationData {
+  // History & Symptoms
+  history?: string;
+  symptoms?: string[];
+  // Physical Exam & Signs
+  signs?: string[];
+  physicalExamFindings?: {
+    finding: string;
+    technique?: string;
+    significance?: string;
+  }[];
+  // Clinical Reasoning
+  differentialDiagnosis?: string[];
+  immediateLifeThreats?: string; // GOLDEN TICKET
+  diagnosticAlgorithm?: string;
+  redFlags?: string[];
+}
+
+export interface DiagnosticData {
+  whatItMeasures?: string;
+  diagnosticUtility?: { lrPositive?: number; lrNegative?: number };
+  indications?: string[];
+}
+
+export interface ProcedureData {
+  indications?: string[];
+  contraindications?: string[];
+  equipment?: string[];
+  steps?: string[];
+  complications?: string[];
+}
+
+export interface AnatomyData {
+  borders?: string;
+  contents?: string[];
+  vascularSupply?: string;
+  clinicalRelevance?: string;
+}
+
+export interface AlgorithmData {
+  components?: string[];
+  scoringInterpretation?: string;
+  nextSteps?: string;
+}
+
+export interface GenericConceptData {
+  definition?: string;
+  importance?: string;
+  oneSentenceSummary?: string; // GOLDEN TICKET for fallback
+}
+
+// Link table
+export interface DbKnowledgeEntityLink {
+  id: string;
+  sourceEntityId: string;
+  targetEntityId: string;
+  linkType: KnowledgeLinkType;
+  createdAt: string;
+}
+
+// Row types for SQLite (JSON fields are strings)
+export interface KnowledgeEntityRow {
+  id: string;
+  entityType: string;
+  title: string;
+  domains: string | null;
+  canonicalTopicId: string | null;
+  parentEntityId: string | null;
+  structuredData: string;
+  goldenTicketField: string | null;
+  goldenTicketValue: string | null;
+  aiHintGoldenTicket: string | null;
+  visualMnemonicTags: string | null;
+  sourceItemId: string | null;
+  notebookBlockId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KnowledgeEntityLinkRow {
+  id: string;
+  sourceEntityId: string;
+  targetEntityId: string;
+  linkType: string;
+  createdAt: string;
+}
+
+// Golden Ticket field mapping per archetype (for validation)
+export const GOLDEN_TICKET_FIELDS: Record<KnowledgeEntityType, string> = {
+  illness_script: "keyDiscriminator",
+  drug: "mechanismOfAction",
+  pathogen: "transmissionRoute",
+  presentation: "immediateLifeThreats",
+  diagnostic: "whatItMeasures",
+  procedure: "indications",
+  anatomy: "clinicalRelevance",
+  algorithm: "scoringInterpretation",
+  generic_concept: "oneSentenceSummary",
+};
