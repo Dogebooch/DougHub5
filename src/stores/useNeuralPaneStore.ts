@@ -35,9 +35,13 @@ export const useNeuralPaneStore = create<NeuralPaneState>()(
 - [ ] One-Click Extract chips in SourceItemViewerDialog
 - [ ] Keyboard shortcuts (E, Ctrl+Enter, Ctrl+Shift+Enter)
 - [ ] Save-as-Draft without Golden Ticket
+- [ ] "Reveal Hint" button for Golden Ticket
+
+DEFER (HIGH PRIORITY):
+- [ ] Version History / Undo for entity edits (preserve AI draft)
+- [ ] Batch extraction "Extract All" stepper
 
 DEFER (POLISH):
-- [ ] Batch extraction "Extract All" stepper
 - [ ] Archetype-specific visual themes (icons, colors)
 - [ ] Live preview card in extraction dialog
 - [ ] Copy-to-clipboard for Golden Ticket

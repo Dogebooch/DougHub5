@@ -391,7 +391,7 @@ const api = {
       correctAnswer: string,
       explanation: string,
       top3VectorMatches: string,
-      userRole?: string
+      userRole?: string,
     ) =>
       ipcRenderer.invoke(
         "ai:analyzeFlashcard",
@@ -400,7 +400,7 @@ const api = {
         correctAnswer,
         explanation,
         top3VectorMatches,
-        userRole
+        userRole,
       ),
   },
   insights: {
@@ -531,6 +531,71 @@ const api = {
         "confusionPatterns:setDisambiguationCard",
         patternId,
         cardId,
+      ),
+  },
+  // ============================================================================
+  // Medical Knowledge Archetypes (v26/v27)
+  // ============================================================================
+  knowledgeEntities: {
+    getAll: () => ipcRenderer.invoke("knowledge-entity:get-all"),
+    getById: (id: string) =>
+      ipcRenderer.invoke("knowledge-entity:get-by-id", id),
+    getByType: (entityType: string) =>
+      ipcRenderer.invoke("knowledge-entity:get-by-type", entityType),
+    getByDomain: (domain: string) =>
+      ipcRenderer.invoke("knowledge-entity:get-by-domain", domain),
+    getChildren: (parentId: string) =>
+      ipcRenderer.invoke("knowledge-entity:get-children", parentId),
+    getAncestors: (id: string) =>
+      ipcRenderer.invoke("knowledge-entity:get-ancestors", id),
+    insert: (entity: unknown) =>
+      ipcRenderer.invoke("knowledge-entity:insert", entity),
+    update: (id: string, updates: unknown) =>
+      ipcRenderer.invoke("knowledge-entity:update", id, updates),
+    delete: (id: string) => ipcRenderer.invoke("knowledge-entity:delete", id),
+    findSimilar: (title: string, threshold?: number) =>
+      ipcRenderer.invoke("knowledge-entity:find-similar", title, threshold),
+    findExactDuplicate: (entityType: string, title: string) =>
+      ipcRenderer.invoke(
+        "knowledge-entity:find-exact-duplicate",
+        entityType,
+        title,
+      ),
+    setGoldenTicket: (id: string, value: string) =>
+      ipcRenderer.invoke("knowledge-entity:set-golden-ticket", id, value),
+    revealHint: (id: string) =>
+      ipcRenderer.invoke("knowledge-entity:reveal-hint", id),
+    search: (
+      query: string,
+      options?: { entityType?: string; domain?: string; limit?: number },
+    ) => ipcRenderer.invoke("knowledge-entity:search", query, options),
+    getLinks: (
+      entityId: string,
+      direction?: "outgoing" | "incoming" | "both",
+    ) => ipcRenderer.invoke("knowledge-entity:get-links", entityId, direction),
+    getLinkedEntities: (entityId: string) =>
+      ipcRenderer.invoke("knowledge-entity:get-linked-entities", entityId),
+    getLinkedByType: (
+      entityId: string,
+      linkType: string,
+      direction?: "outgoing" | "incoming",
+    ) =>
+      ipcRenderer.invoke(
+        "knowledge-entity:get-linked-by-type",
+        entityId,
+        linkType,
+        direction,
+      ),
+    link: (sourceId: string, targetId: string, linkType: string) =>
+      ipcRenderer.invoke("knowledge-entity:link", sourceId, targetId, linkType),
+    unlink: (linkId: string) =>
+      ipcRenderer.invoke("knowledge-entity:unlink", linkId),
+    linkExists: (sourceId: string, targetId: string, linkType?: string) =>
+      ipcRenderer.invoke(
+        "knowledge-entity:link-exists",
+        sourceId,
+        targetId,
+        linkType,
       ),
   },
   blockTopicAssignments: {
