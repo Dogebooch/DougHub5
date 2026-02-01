@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useDevStore } from "@/stores/useDevStore";
 import { AIDevPanelContent } from "@/components/dev/AIDevPanel";
+import { NeuralPane } from "@/components/neural-pane/NeuralPane";
 
 export function AppLayout() {
   const currentView = useAppStore((state) => state.currentView);
@@ -152,6 +153,8 @@ export function AppLayout() {
             {renderView()}
           </div>
         </main>
+
+        <NeuralPane />
         {isDevPanelOpen && (
           <div className="w-[400px] border-l bg-background shrink-0 flex flex-col">
             <AIDevPanelContent />
