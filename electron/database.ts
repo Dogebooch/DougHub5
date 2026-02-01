@@ -121,6 +121,7 @@ export type {
   PathogenData,
   PresentationData,
   DiagnosticData,
+  ImagingFindingData,
   ProcedureData,
   AnatomyData,
   AlgorithmData,

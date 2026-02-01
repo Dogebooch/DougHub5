@@ -5,13 +5,25 @@ export type CardType = "standard" | "qa" | "cloze" | "vignette" | "list-cloze";
 export type ExtractionStatus = "pending" | "processing" | "completed";
 
 // v2 Archive - Source types
-export type SourceType = 'qbank' | 'article' | 'pdf' | 'image' | 'audio' | 'quickcapture' | 'manual';
+export type SourceType =
+  | "qbank"
+  | "article"
+  | "pdf"
+  | "image"
+  | "audio"
+  | "quickcapture"
+  | "manual";
 
 // v2 Archive - Source processing status
-export type SourceItemStatus = 'inbox' | 'processed' | 'curated';
+export type SourceItemStatus = "inbox" | "processed" | "curated";
 
 // Notebook v2: Card Activation System (v24)
-export type ActivationStatus = "dormant" | "suggested" | "active" | "suspended" | "graduated";
+export type ActivationStatus =
+  | "dormant"
+  | "suggested"
+  | "active"
+  | "suspended"
+  | "graduated";
 export type ActivationTier = "auto" | "suggested" | "user_manual";
 export type SuspendReason = "user" | "leech" | "rotation_end";
 
@@ -250,6 +262,7 @@ export interface GlobalCardStats {
 
 // v2 Architecture - Smart Views
 export type AppView =
+  | "learn"
   | "review"
   | "settings"
   | "inbox"
@@ -260,7 +273,8 @@ export type AppView =
   | "topics"
   | "stats"
   | "knowledgebank"
-  | "cards";
+  | "cards"
+  | "picture-mnemonic";
 
 export interface AppViewOptions {
   filter?: string;
@@ -377,11 +391,11 @@ export interface ScheduleResult {
 }
 
 // Search types
-export type SearchFilter = 'all' | 'cards' | 'notes' | 'inbox';
+export type SearchFilter = "all" | "cards" | "notes" | "inbox";
 
 export interface SearchResultItem {
   id: string;
-  type: 'card' | 'note' | 'source_item';
+  type: "card" | "note" | "source_item";
   title: string;
   snippet: string;
   createdAt: string;
@@ -404,14 +418,14 @@ export interface CapturePayload {
   timestamp: string;
   url: string;
   hostname: string;
-  siteName: 'ACEP PeerPrep' | 'MKSAP 19';
+  siteName: "ACEP PeerPrep" | "MKSAP 19";
   pageHTML: string;
   bodyText: string;
   images: {
     url: string;
     title: string;
-    type: 'fancybox-gallery' | 'inline-image';
-    source: 'question' | 'feedback' | 'keypoints' | 'references' | 'other';
+    type: "fancybox-gallery" | "inline-image";
+    source: "question" | "feedback" | "keypoints" | "references" | "other";
   }[];
 }
 

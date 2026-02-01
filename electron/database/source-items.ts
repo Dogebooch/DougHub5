@@ -80,12 +80,12 @@ export const sourceItemQueries = {
         id, sourceType, sourceName, sourceUrl, title, rawContent,
         mediaPath, transcription, canonicalTopicIds, tags, questionId,
         metadata, status, createdAt, processedAt, updatedAt,
-        correctness, notes, testedConcepts
+        correctness, notes, testedConcepts, suggestedArchetypes
       ) VALUES (
         @id, @sourceType, @sourceName, @sourceUrl, @title, @rawContent,
         @mediaPath, @transcription, @canonicalTopicIds, @tags, @questionId,
         @metadata, @status, @createdAt, @processedAt, @updatedAt,
-        @correctness, @notes, @testedConcepts
+        @correctness, @notes, @testedConcepts, @suggestedArchetypes
       )
     `);
     stmt.run({
@@ -109,6 +109,9 @@ export const sourceItemQueries = {
       notes: item.notes || null,
       testedConcepts: item.testedConcepts
         ? JSON.stringify(item.testedConcepts)
+        : null,
+      suggestedArchetypes: item.suggestedArchetypes
+        ? JSON.stringify(item.suggestedArchetypes)
         : null,
     });
   },
@@ -163,7 +166,8 @@ export const sourceItemQueries = {
         updatedAt = @updatedAt,
         correctness = @correctness,
         notes = @notes,
-        testedConcepts = @testedConcepts
+        testedConcepts = @testedConcepts,
+        suggestedArchetypes = @suggestedArchetypes
       WHERE id = @id
     `);
     stmt.run({
@@ -187,6 +191,9 @@ export const sourceItemQueries = {
       notes: merged.notes || null,
       testedConcepts: merged.testedConcepts
         ? JSON.stringify(merged.testedConcepts)
+        : null,
+      suggestedArchetypes: merged.suggestedArchetypes
+        ? JSON.stringify(merged.suggestedArchetypes)
         : null,
     });
   },
@@ -289,6 +296,10 @@ export function parseSourceItemRow(row: SourceItemRow): DbSourceItem {
     testedConcepts: row.testedConcepts
       ? JSON.parse(row.testedConcepts)
       : undefined,
+    // Medical Knowledge Archetypes (v27)
+    suggestedArchetypes: row.suggestedArchetypes
+      ? JSON.parse(row.suggestedArchetypes)
+      : undefined,
   };
 }
 
@@ -324,7 +335,7 @@ export function getBoardRelevanceForTopic(topicTags: string[]): {
     .prepare(
       `
     SELECT id, correctness, testedConcepts, tags
-    FROM source_items 
+    FROM source_items
     WHERE sourceType = 'qbank'
   `,
     )

@@ -8,6 +8,7 @@ import {
   Layers,
   PanelLeftClose,
   PanelLeftOpen,
+  Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/useAppStore";
@@ -61,7 +62,7 @@ export function Sidebar({ className }: SidebarProps) {
       implemented: true,
     },
     {
-      id: "review",
+      id: "learn",
       label: "Learn",
       icon: Play,
       badge: dueCount,
@@ -86,6 +87,12 @@ export function Sidebar({ className }: SidebarProps) {
       id: "cards",
       label: "Cards",
       icon: Layers,
+      implemented: true,
+    },
+    {
+      id: "picture-mnemonic",
+      label: "Mnemonics",
+      icon: ImageIcon,
       implemented: true,
     },
   ];
@@ -115,7 +122,7 @@ export function Sidebar({ className }: SidebarProps) {
           !isActive && "text-muted-foreground hover:text-foreground",
           !item.implemented &&
             "opacity-40 cursor-not-allowed hover:bg-transparent",
-          collapsed && "justify-center px-0"
+          collapsed && "justify-center px-0",
         )}
       >
         <Icon
@@ -132,8 +139,8 @@ export function Sidebar({ className }: SidebarProps) {
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : item.id === "inbox"
-                    ? "bg-primary/15 text-primary"
-                    : "bg-white/10 text-muted-foreground"
+                      ? "bg-primary/15 text-primary"
+                      : "bg-white/10 text-muted-foreground",
                 )}
               >
                 {item.badge}
@@ -174,7 +181,7 @@ export function Sidebar({ className }: SidebarProps) {
         className={cn(
           "flex flex-col h-[calc(100vh-80px)] m-3 bg-surface-elevated border border-border/20 rounded-xl elevation-2 transition-all duration-200 z-20",
           collapsed ? "w-14" : "w-52",
-          className
+          className,
         )}
       >
         {/* Nav sections */}
@@ -184,7 +191,7 @@ export function Sidebar({ className }: SidebarProps) {
             <div
               className={cn(
                 "flex items-center px-3 py-2",
-                collapsed ? "justify-center" : "justify-between"
+                collapsed ? "justify-center" : "justify-between",
               )}
             >
               {!collapsed && (
@@ -197,7 +204,7 @@ export function Sidebar({ className }: SidebarProps) {
                 className={cn(
                   "flex items-center justify-center rounded-md transition-all duration-200",
                   "text-muted-foreground/20 hover:text-muted-foreground/100 hover:bg-white/5",
-                  collapsed ? "h-8 w-8" : "h-5 w-5"
+                  collapsed ? "h-8 w-8" : "h-5 w-5",
                 )}
                 title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               >

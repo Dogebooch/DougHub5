@@ -4,12 +4,13 @@ import { getDatabase, setSchemaVersion } from "../db-connection";
  * Migration v26: Medical Knowledge Archetypes
  *
  * This migration adds:
- * 1. knowledge_entities table - Polymorphic storage for 8 medical archetypes:
+ * 1. knowledge_entities table - Polymorphic storage for 9 medical archetypes:
  *    - illness_script (Diseases/Syndromes)
  *    - drug (Medications)
  *    - pathogen (Bacteria/Viruses/Fungi)
  *    - presentation (Chief Complaints + Physical Exam)
- *    - diagnostic (Labs/Imaging)
+ *    - diagnostic (Labs/Imaging Tests)
+ *    - imaging_finding (EKG/Radiology Interpretations)
  *    - procedure (Skills/Interventions)
  *    - anatomy (Structures)
  *    - algorithm (Scores/Guidelines)

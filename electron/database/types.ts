@@ -164,6 +164,8 @@ export interface DbSourceItem {
   correctness?: "correct" | "incorrect" | null;
   notes?: string;
   testedConcepts?: string[]; // JSON array of testable concepts
+  // Medical Knowledge Archetypes (v27)
+  suggestedArchetypes?: string[]; // AI-detected archetype types for one-click extraction
 }
 
 export interface DbCanonicalTopic {
@@ -431,6 +433,8 @@ export interface SourceItemRow {
   correctness: string | null;
   notes: string | null;
   testedConcepts: string | null; // JSON string
+  // Medical Knowledge Archetypes (v27)
+  suggestedArchetypes: string | null; // JSON string
 }
 
 export interface CanonicalTopicRow {
@@ -601,6 +605,7 @@ export type KnowledgeEntityType =
   | "pathogen"
   | "presentation"
   | "diagnostic"
+  | "imaging_finding"
   | "procedure"
   | "anatomy"
   | "algorithm"
@@ -685,6 +690,23 @@ export interface DiagnosticData {
   indications?: string[];
 }
 
+export interface ImagingFindingData {
+  modality?:
+    | "EKG"
+    | "CXR"
+    | "CT"
+    | "MRI"
+    | "US"
+    | "Fluoro"
+    | "Nuclear"
+    | "Other";
+  findingDescription?: string;
+  clinicalSignificance?: string; // GOLDEN TICKET
+  associatedConditions?: string[];
+  urgency?: "critical" | "urgent" | "routine";
+  exampleImagePath?: string;
+}
+
 export interface ProcedureData {
   indications?: string[];
   contraindications?: string[];
@@ -755,6 +777,7 @@ export const GOLDEN_TICKET_FIELDS: Record<KnowledgeEntityType, string> = {
   pathogen: "transmissionRoute",
   presentation: "immediateLifeThreats",
   diagnostic: "whatItMeasures",
+  imaging_finding: "clinicalSignificance",
   procedure: "indications",
   anatomy: "clinicalRelevance",
   algorithm: "scoringInterpretation",

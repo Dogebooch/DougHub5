@@ -1,11 +1,7 @@
 // src/lib/system-views.ts
 
-import { SmartViewFilter } from './filter-engine';
-import {
-  Inbox,
-  BookOpen,
-  LucideIcon,
-} from "lucide-react";
+import { SmartViewFilter } from "./filter-engine";
+import { Inbox, BookOpen, LucideIcon, Image as ImageIcon } from "lucide-react";
 
 export interface SystemView {
   id: string;
@@ -33,8 +29,16 @@ export const SYSTEM_VIEWS: SystemView[] = [
     viewKey: "notebook",
     description: "Curated topic pages and notes",
   },
+  {
+    id: "picture-mnemonic",
+    name: "Mnemonics",
+    icon: ImageIcon,
+    filter: {},
+    viewKey: "picture-mnemonic",
+    description: "Visual memory anchors",
+  },
 ];
 
 export function getSystemViewById(id: string): SystemView | undefined {
-  return SYSTEM_VIEWS.find(v => v.id === id);
+  return SYSTEM_VIEWS.find((v) => v.id === id);
 }

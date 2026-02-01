@@ -11,6 +11,7 @@ import { NotebookView } from "@/components/notebook/NotebookView";
 import { WeakTopicsView } from "@/components/smartviews/WeakTopicsView";
 import { CardBrowserView } from "@/components/cards/CardBrowserView";
 import { SettingsView } from "@/components/settings/SettingsView";
+import { MnemonicsView } from "@/components/mnemonics/MnemonicsView";
 import { useAppStore } from "@/stores/useAppStore";
 import type { SourceItem } from "@/types";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { useDevStore } from "@/stores/useDevStore";
 import { AIDevPanelContent } from "@/components/dev/AIDevPanel";
 import { NeuralPane } from "@/components/neural-pane/NeuralPane";
+
+import { LearningDashboard } from "@/components/learn/LearningDashboard";
 
 export function AppLayout() {
   const currentView = useAppStore((state) => state.currentView);
@@ -85,6 +88,8 @@ export function AppLayout() {
 
   const renderView = () => {
     switch (currentView) {
+      case "learn":
+        return <LearningDashboard />;
       case "review":
         return <ReviewInterface />;
       case "notebook":
@@ -121,6 +126,8 @@ export function AppLayout() {
         return <CardBrowserView />;
       case "settings":
         return <SettingsView />;
+      case "picture-mnemonic":
+        return <MnemonicsView />;
       default:
         // Fallback: redirect to inbox if unknown view
         console.warn(`Unknown view: ${currentView}, redirecting to inbox`);
