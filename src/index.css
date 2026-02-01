@@ -1,16 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap");
 @import "tailwindcss";
 @config "../tailwind.config.ts";
 
-:root, .dark {
+:root,
+.dark {
   --background: 105 8% 20%;
   --foreground: 40 10% 92%;
-  
+
   /* Elevation system */
   --surface-base: var(--background);
   --surface-elevated: 105 8% 24%;
   --surface-overlay: 105 8% 28%;
-  
+
   --card: 38 28% 82%;
   --card-foreground: 120 25% 10%;
   --card-muted-foreground: 42 15% 35%;
@@ -54,11 +55,54 @@
   --chart-3: 38 45% 42%;
   --chart-4: 195 25% 48%;
   --chart-5: 12 40% 48%;
-  
+
   /* Animation tokens */
   --transition-fast: 150ms ease-out;
   --transition-normal: 250ms ease-out;
   --transition-slow: 400ms ease-out;
+}
+
+/* Explicit Manila Theme Overrides */
+.theme-manila {
+  --background: 38 28% 82%; /* Slightly desaturated paper */
+  --foreground: 120 25% 10%; /* Dark strong ink */
+
+  --surface-base: var(--background);
+  --surface-elevated: 38 25% 85%;
+  --surface-overlay: 38 25% 90%;
+
+  --card: 38 30% 88%;
+  --card-foreground: 120 25% 10%;
+  --card-muted-foreground: 120 15% 35%;
+
+  --popover: var(--surface-overlay);
+  --popover-foreground: var(--foreground);
+
+  --primary: 175 40% 35%; /* Darker teal for contrast */
+  --primary-foreground: 38 28% 90%;
+
+  --secondary: 38 20% 75%;
+  --secondary-foreground: 120 25% 15%;
+
+  --muted: 38 15% 75%;
+  --muted-foreground: 120 10% 40%;
+
+  --accent: 35 40% 50%;
+  --accent-foreground: 38 28% 90%;
+
+  --destructive: 12 50% 45%;
+  --destructive-foreground: 38 28% 90%;
+
+  --border: 38 20% 70%;
+  --input: 38 20% 75%;
+
+  /* Notebook specific overrides for Manila */
+  --notebook-bg: var(--background);
+  --notebook-card: var(--surface-elevated);
+  --notebook-sidebar: var(--surface-base);
+  --notebook-text: var(--foreground);
+  --notebook-muted: var(--muted-foreground);
+  --notebook-board: 210 20% 30%; /* Keep board dark-ish or adjust per preference */
 }
 
 @layer utilities {
@@ -97,7 +141,12 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-weight: 600;
     letter-spacing: -0.01em;
   }
@@ -114,39 +163,44 @@
   .elevation-1 {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
-  
+
   .elevation-2 {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
-  
+
   .elevation-3 {
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   }
-  
+
   .shadow-subtle {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
-  
+
   .shadow-soft {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
-  
+
   .shadow-heavy {
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   }
-  
+
   /* Smooth transitions by default */
   .transition-fast {
     transition-duration: var(--transition-fast);
   }
-  
+
   .transition-normal {
     transition-duration: var(--transition-normal);
   }
 
   @keyframes pulse-subtle {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
   }
 
   .animate-pulse-subtle {
@@ -154,21 +208,24 @@
   }
 
   /* List styles for medical content rendered in .prose containers */
-  .prose ul, ul.prose {
+  .prose ul,
+  ul.prose {
     list-style-type: disc !important;
     margin-left: 1.5rem !important;
     margin-top: 0.75rem;
     margin-bottom: 0.75rem;
   }
 
-  .prose ol, ol.prose {
+  .prose ol,
+  ol.prose {
     list-style-type: decimal !important;
     margin-left: 1.5rem !important;
     margin-top: 0.75rem;
     margin-bottom: 0.75rem;
   }
 
-  .prose li, li.prose {
+  .prose li,
+  li.prose {
     margin-bottom: 0.5rem;
     padding-left: 0.25rem;
     display: list-item !important;
@@ -222,7 +279,7 @@
   /* Lab Values Table Styling */
   .lab-values-table {
     @apply w-full border-collapse my-4 bg-muted/30 rounded-lg overflow-hidden;
-    border: 1px solid theme('colors.border');
+    border: 1px solid theme("colors.border");
     margin-top: 0.5rem !important;
     margin-bottom: 0.5rem !important;
   }
@@ -233,7 +290,7 @@
 
   .lab-values-table th {
     @apply text-left p-2 pl-4 font-medium text-muted-foreground w-1/2 align-top text-sm;
-    background-color: theme('colors.muted / 0.2');
+    background-color: theme("colors.muted / 0.2");
   }
 
   .lab-values-table td {

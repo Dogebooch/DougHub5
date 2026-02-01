@@ -44,11 +44,11 @@ export function LearningDashboard() {
   };
 
   return (
-    <div className="h-full w-full bg-slate-950 text-slate-100 overflow-hidden relative font-sans">
+    <div className="h-full w-full bg-background text-foreground overflow-hidden relative font-sans">
       {/* Background Gradients */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-900/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-teal-900/10 rounded-full blur-[100px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-teal-500/10 rounded-full blur-[100px]" />
       </div>
 
       {/* Content Layer */}
@@ -56,10 +56,10 @@ export function LearningDashboard() {
         {viewMode === "dashboard" ? (
           <div className="p-8 h-full flex flex-col gap-6 animate-in fade-in slide-in-from-left-4 duration-500">
             <div className="flex flex-col gap-1">
-              <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
+              <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground">
                 Learning Center
               </h1>
-              <p className="text-slate-400">
+              <p className="text-muted-foreground">
                 Master your medical knowledge with active recall and spaced
                 repetition.
               </p>
