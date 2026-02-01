@@ -6,33 +6,36 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   ChevronLeft,
   ChevronRight,
-  BrainCircuit,
-  Activity,
-  ArrowRightLeft,
-  Zap,
+  BookOpen,
+  Terminal,
+  ClipboardList,
+  User,
 } from "lucide-react";
 
 export function NeuralPane() {
   const {
     isOpen,
     toggle,
-    notes,
-    setNotes,
+    backendLogic,
+    todos,
+    userNotes,
+    setUserNotes,
     activePhase,
-    anxietyAntidote,
-    sortingLogic,
-    cognitiveScience,
   } = useNeuralPaneStore();
 
-  const notesRef = useRef<HTMLTextAreaElement>(null);
+  const userNotesRef = useRef<HTMLTextAreaElement>(null);
+  const backendLogicRef = useRef<HTMLTextAreaElement>(null);
+  const todosRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize notes textarea
+  // Auto-resize textareas
   useEffect(() => {
-    if (notesRef.current) {
-      notesRef.current.style.height = "auto";
-      notesRef.current.style.height = notesRef.current.scrollHeight + "px";
-    }
-  }, [notes]);
+    [userNotesRef, backendLogicRef, todosRef].forEach((ref) => {
+      if (ref.current) {
+        ref.current.style.height = "auto";
+        ref.current.style.height = ref.current.scrollHeight + "px";
+      }
+    });
+  }, [backendLogic, todos, userNotes]);
 
   if (!isOpen) {
     return (
@@ -49,24 +52,24 @@ export function NeuralPane() {
           className="mt-8 [writing-mode:vertical-rl] rotate-180 text-xs font-mono font-bold text-slate-500 tracking-widest flex items-center gap-2 cursor-pointer"
           onClick={toggle}
         >
-          <BrainCircuit className="w-4 h-4 mb-2 rotate-90" />
-          NEURAL DEBUGGER
+          <BookOpen className="w-4 h-4 mb-2 rotate-90" />
+          DEVELOPER NOTEPAD
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full w-[450px] bg-slate-950 border-l border-slate-800 flex flex-col shrink-0 shadow-2xl transition-all duration-300 relative font-sans">
+    <div className="h-full w-[450px] bg-slate-950 border-l border-slate-800 flex flex-col shrink-0 shadow-2xl transition-all duration-300 relative font-sans text-slate-200">
       {/* Header */}
       <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center shrink-0">
         <h2 className="text-teal-400 font-mono text-sm font-bold flex items-center gap-2">
           <span className="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></span>
-          NEURAL DEBUGGER
+          DEVELOPER NOTEPAD
         </h2>
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-            Cognitive State Monitor
+            {activePhase}
           </span>
           <Button
             variant="ghost"
@@ -80,73 +83,47 @@ export function NeuralPane() {
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-6 space-y-6 font-mono">
-          {/* Phase Indicator */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-            <div>
-              <div className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">
-                CURRENT PROTOCOL
-              </div>
-              <div className="text-xl font-bold text-white">{activePhase}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">
-                STATUS
-              </div>
-              <div className="text-teal-400 text-xs font-bold">ACTIVE</div>
-            </div>
-          </div>
-
-          {/* Cognitive Nodes */}
-          <div className="space-y-4">
-            {/* Anxiety Antidote */}
-            <div className="bg-blue-950/30 border-l-4 border-blue-500 p-4 rounded-r-lg">
-              <div className="text-blue-400 text-[10px] uppercase tracking-widest mb-2 font-bold flex items-center gap-2">
-                <Activity className="w-3 h-3" />
-                ANXIETY ANTIDOTE
-              </div>
-              <div className="text-slate-300 italic text-sm leading-relaxed">
-                "{anxietyAntidote}"
-              </div>
-            </div>
-
-            {/* Sorting Logic */}
-            <div className="bg-teal-950/30 border-l-4 border-teal-500 p-4 rounded-r-lg">
-              <div className="text-teal-400 text-[10px] uppercase tracking-widest mb-2 font-bold flex items-center gap-2">
-                <ArrowRightLeft className="w-3 h-3" />
-                INTERNAL SORTING
-              </div>
-              <div className="text-slate-300 text-sm leading-relaxed">
-                {sortingLogic}
-              </div>
-            </div>
-
-            {/* Cognitive Mechanism */}
-            <div className="pt-4 border-t border-slate-800">
-              <div className="text-purple-400 text-[10px] uppercase tracking-widest mb-2 flex items-center gap-2">
-                <Zap className="w-3 h-3" />
-                COGNITIVE MECHANISM
-              </div>
-              <div className="text-slate-400 text-xs leading-relaxed">
-                {cognitiveScience}
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Notes / Scratchpad */}
-          <div className="pt-6 border-t border-slate-800">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-slate-400 text-[10px] uppercase tracking-widest font-bold">
-                NEURAL SCRATCHPAD
-              </span>
-              <span className="text-[10px] text-slate-600">Auto-saved</span>
+        <div className="p-6 space-y-8">
+          {/* Section 1: Backend Logic */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-teal-400 text-[10px] uppercase font-bold tracking-widest border-b border-teal-500/20 pb-2">
+              <Terminal className="w-3.5 h-3.5" />
+              Backend Logic
             </div>
             <Textarea
-              ref={notesRef}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="// Type thoughts, backend triggers, or fluff here..."
-              className="w-full min-h-[150px] bg-slate-900/50 border-slate-800 text-slate-300 font-mono text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500 resize-none overflow-hidden"
+              ref={backendLogicRef}
+              value={backendLogic}
+              readOnly
+              className="w-full bg-slate-900/40 border-slate-800/50 text-slate-300 font-mono text-xs leading-relaxed resize-none focus-visible:ring-0 focus-visible:ring-offset-0 border-none p-0 min-h-[50px]"
+            />
+          </div>
+
+          {/* Section 2: ToDo's */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-blue-400 text-[10px] uppercase font-bold tracking-widest border-b border-blue-500/20 pb-2">
+              <ClipboardList className="w-3.5 h-3.5" />
+              ToDo's
+            </div>
+            <Textarea
+              ref={todosRef}
+              value={todos}
+              readOnly
+              className="w-full bg-slate-900/40 border-slate-800/50 text-slate-300 font-mono text-xs leading-relaxed resize-none focus-visible:ring-0 focus-visible:ring-offset-0 border-none p-0 min-h-[50px]"
+            />
+          </div>
+
+          {/* Section 3: User Notes */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-purple-400 text-[10px] uppercase font-bold tracking-widest border-b border-purple-500/20 pb-2">
+              <User className="w-3.5 h-3.5" />
+              User Notes
+            </div>
+            <Textarea
+              ref={userNotesRef}
+              value={userNotes}
+              onChange={(e) => setUserNotes(e.target.value)}
+              placeholder="// Type your personal notes here..."
+              className="w-full bg-slate-900/60 border-slate-800 text-slate-200 font-mono text-sm leading-relaxed focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 resize-none min-h-[200px] p-3 rounded-md"
             />
           </div>
         </div>
