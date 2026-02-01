@@ -1,13 +1,9 @@
 import { SearchBar } from "./SearchBar";
 import { useAppStore } from "@/stores/useAppStore";
-import { useDevStore } from "@/stores/useDevStore";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Bot, Bug } from "lucide-react";
 
 export function Header() {
   const setCurrentView = useAppStore((state) => state.setCurrentView);
-  const { isOpen, togglePanel } = useDevStore();
   const isBrowserMode = typeof window !== "undefined" && !window.api;
 
   return (
@@ -26,12 +22,7 @@ export function Header() {
             xmlns="http://www.w3.org/2000/svg"
           >
             {/* Background rounded square */}
-            <rect
-              width="28"
-              height="28"
-              rx="6"
-              className="fill-primary"
-            />
+            <rect width="28" height="28" rx="6" className="fill-primary" />
             {/* Three interlocking circles representing connected knowledge */}
             <circle
               cx="10"
@@ -52,12 +43,7 @@ export function Header() {
               className="fill-primary-foreground/50"
             />
             {/* Center intersection highlight */}
-            <circle
-              cx="14"
-              cy="13"
-              r="2.5"
-              className="fill-primary"
-            />
+            <circle cx="14" cy="13" r="2.5" className="fill-primary" />
           </svg>
           <span className="text-foreground font-bold text-base tracking-tight">
             DougHub
@@ -75,20 +61,6 @@ export function Header() {
             <Badge variant="outline" className="text-[11px] h-6">
               Browser Mode
             </Badge>
-          )}
-
-          {!isBrowserMode && window.api?.dev && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className={
-                isOpen ? "text-primary bg-primary/10" : "text-muted-foreground"
-              }
-              onClick={togglePanel}
-              title="Toggle AI Dev Panel (Cmd+Shift+D)"
-            >
-              <Bug className="h-4 w-4" />
-            </Button>
           )}
         </div>
       </div>

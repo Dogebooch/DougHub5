@@ -1,7 +1,10 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Activity, Brain, TrendingUp } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import type { GlobalCardStats } from "@/types";
+import { useAppStore } from "@/stores/useAppStore";
 
 const mockData = [
   { name: "Mon", score: 40 },
@@ -14,10 +17,29 @@ const mockData = [
 ];
 
 export function InsightsCard({ className }: { className?: string }) {
+  const [stats, setStats] = useState<GlobalCardStats | null>(null);
+  const isHydrated = useAppStore((state) => state.isHydrated);
+
+  useEffect(() => {
+    if (isHydrated && window.api?.cards?.getGlobalStats) {
+      window.api.cards.getGlobalStats().then((result) => {
+        if (result.success) {
+          setStats(result.data);
+        }
+      });
+    }
+  }, [isHydrated]);
+
+  // Calculate mastery (Mature / Total)
+  const totalCards = stats ? stats.total : 0;
+  const matureCards = stats ? stats.byState.mature : 0;
+  const masteryPercentage =
+    totalCards > 0 ? Math.round((matureCards / totalCards) * 100) : 0;
+
   return (
     <Card
       className={cn(
-        "bg-white/5 backdrop-blur-sm border-white/10 overflow-hidden relative group",
+        "bg-background/40 backdrop-blur-sm border-border/50 overflow-hidden relative group",
         className,
       )}
     >
@@ -35,12 +57,22 @@ export function InsightsCard({ className }: { className?: string }) {
         {/* Mastery Circle Placeholder */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <p className="text-2xl font-bold">87%</p>
+            <p className="text-2xl font-bold">{masteryPercentage}%</p>
             <p className="text-xs text-muted-foreground">Mastery Score</p>
+            {stats && (
+              <p className="text-[10px] text-muted-foreground/60">
+                {matureCards} / {totalCards} cards mature
+              </p>
+            )}
           </div>
 
           <div className="h-16 w-16 rounded-full border-4 border-primary/20 flex items-center justify-center relative">
-            <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full rotate-45" />
+            <div
+              className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full rotate-45 transition-all duration-1000"
+              style={{
+                strokeDasharray: `${masteryPercentage}, 100`, // Simple visual proxy
+              }}
+            />
             <TrendingUp className="h-6 w-6 text-primary" />
           </div>
         </div>
@@ -51,15 +83,16 @@ export function InsightsCard({ className }: { className?: string }) {
             <BarChart data={mockData}>
               <XAxis
                 dataKey="name"
-                stroke="#888888"
+                stroke="hsl(var(--muted-foreground))"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
               />
               <Tooltip
                 contentStyle={{
-                  background: "#18181b",
-                  border: "1px solid #27272a",
+                  background: "hsl(var(--popover))",
+                  border: "1px solid hsl(var(--border))",
+                  color: "hsl(var(--popover-foreground))",
                   borderRadius: "6px",
                 }}
                 cursor={{ fill: "transparent" }}

@@ -17,8 +17,6 @@ import type { SourceItem } from "@/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { useDevStore } from "@/stores/useDevStore";
-import { AIDevPanelContent } from "@/components/dev/AIDevPanel";
 import { NeuralPane } from "@/components/neural-pane/NeuralPane";
 
 import { LearningDashboard } from "@/components/learn/LearningDashboard";
@@ -28,7 +26,6 @@ export function AppLayout() {
   const setCurrentView = useAppStore((state) => state.setCurrentView);
   const refreshCounts = useAppStore((state) => state.refreshCounts);
   const onNewSourceItem = useAppStore((state) => state.onNewSourceItem);
-  const isDevPanelOpen = useDevStore((state) => state.isOpen);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
   const { toast } = useToast();
@@ -162,11 +159,6 @@ export function AppLayout() {
         </main>
 
         <NeuralPane />
-        {isDevPanelOpen && (
-          <div className="w-[400px] border-l bg-background shrink-0 flex flex-col">
-            <AIDevPanelContent />
-          </div>
-        )}
       </div>
 
       {/* Floating Quick Capture button */}

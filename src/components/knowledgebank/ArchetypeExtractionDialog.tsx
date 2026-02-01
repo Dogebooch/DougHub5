@@ -194,17 +194,17 @@ export const ArchetypeExtractionDialog: React.FC<
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-2xl bg-gray-950 border-gray-800 text-gray-100">
-        <DialogHeader className="border-b border-gray-800 pb-4">
+      <DialogContent className="max-w-2xl bg-background border-border text-foreground">
+        <DialogHeader className="border-b border-border pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30">
               {ARCHETYPE_ICONS[entityType]}
             </div>
             <div>
-              <DialogTitle className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <DialogTitle className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Extract Knowledge Entity
               </DialogTitle>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Create a structured medical concept from this source
               </p>
             </div>
@@ -214,23 +214,23 @@ export const ArchetypeExtractionDialog: React.FC<
         <div className="space-y-6 py-4">
           {/* Archetype Selector */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-300">
+            <Label className="text-sm font-medium text-foreground">
               Entity Type
             </Label>
             <Select
               value={entityType}
               onValueChange={(v) => setEntityType(v as KnowledgeEntityType)}
             >
-              <SelectTrigger className="bg-gray-900 border-gray-700 text-white">
+              <SelectTrigger className="bg-muted/30 border-border text-foreground">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-gray-900 border-gray-700">
+              <SelectContent className="bg-popover border-border">
                 {(Object.keys(ARCHETYPE_LABELS) as KnowledgeEntityType[]).map(
                   (type) => (
                     <SelectItem
                       key={type}
                       value={type}
-                      className="text-gray-100 focus:bg-gray-800"
+                      className="text-foreground focus:bg-muted"
                     >
                       <div className="flex items-center gap-2">
                         {ARCHETYPE_ICONS[type]}
@@ -245,14 +245,14 @@ export const ArchetypeExtractionDialog: React.FC<
 
           {/* Title */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-300">
+            <Label className="text-sm font-medium text-foreground">
               Title / Name
             </Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Pulmonary Embolism, Metoprolol, S. aureus..."
-              className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+              className="bg-muted/30 border-border text-foreground placeholder:text-muted-foreground"
               autoFocus
             />
           </div>
@@ -260,10 +260,10 @@ export const ArchetypeExtractionDialog: React.FC<
           {/* Golden Ticket Field */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-yellow-400" />
+              <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-warning" />
                 Golden Ticket
-                <span className="text-xs text-yellow-400/70">
+                <span className="text-xs text-warning/70">
                   (Required for recall)
                 </span>
               </Label>
@@ -272,7 +272,7 @@ export const ArchetypeExtractionDialog: React.FC<
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowHint(!showHint)}
-                  className="text-xs text-gray-400 hover:text-gray-200"
+                  className="text-xs text-muted-foreground hover:text-foreground"
                 >
                   {showHint ? (
                     <>
@@ -289,8 +289,8 @@ export const ArchetypeExtractionDialog: React.FC<
               )}
             </div>
 
-            <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700/50 mb-2">
-              <p className="text-sm text-gray-400 italic">
+            <div className="bg-muted/20 rounded-lg p-3 border border-border/50 mb-2">
+              <p className="text-sm text-muted-foreground italic">
                 "{goldenTicketPrompt}"
               </p>
             </div>
@@ -299,19 +299,19 @@ export const ArchetypeExtractionDialog: React.FC<
               value={goldenTicketValue}
               onChange={(e) => setGoldenTicketValue(e.target.value)}
               placeholder="Type your answer here... (typing activates Generation Effect for memory)"
-              className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500 min-h-[100px]"
+              className="bg-muted/30 border-border text-foreground placeholder:text-muted-foreground min-h-[100px]"
             />
 
             {/* AI Hint (collapsible) */}
             {showHint && aiHint && (
-              <div className="mt-2 p-3 bg-yellow-900/20 border border-yellow-800/50 rounded-lg">
+              <div className="mt-2 p-3 bg-warning/10 border border-warning/30 rounded-lg">
                 <div className="flex items-start gap-2">
-                  <Sparkles className="w-4 h-4 text-yellow-400 mt-0.5" />
+                  <Sparkles className="w-4 h-4 text-warning mt-0.5" />
                   <div>
-                    <p className="text-xs text-yellow-400/70 mb-1">
+                    <p className="text-xs text-warning/70 mb-1">
                       AI Suggestion
                     </p>
-                    <p className="text-sm text-yellow-100">{aiHint}</p>
+                    <p className="text-sm text-foreground">{aiHint}</p>
                   </div>
                 </div>
               </div>
@@ -319,18 +319,18 @@ export const ArchetypeExtractionDialog: React.FC<
           </div>
         </div>
 
-        <DialogFooter className="border-t border-gray-800 pt-4 flex justify-between gap-4">
+        <DialogFooter className="border-t border-border pt-4 flex justify-between gap-4">
           {/* Left: Save as Draft */}
           {onSaveAsDraft && (
             <Button
               variant="ghost"
               onClick={handleSaveAsDraft}
               disabled={!canSaveAsDraft || isSaving}
-              className="mr-auto text-gray-400 hover:text-gray-200"
+              className="mr-auto text-muted-foreground hover:text-foreground"
             >
               <FileText className="w-4 h-4 mr-2" />
               Save as Draft
-              <kbd className="ml-2 hidden sm:inline-flex h-5 items-center gap-1 rounded border border-gray-700 bg-gray-800 px-1.5 font-mono text-[10px] text-gray-400">
+              <kbd className="ml-2 hidden sm:inline-flex h-5 items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground">
                 Ctrl+Shift+↵
               </kbd>
             </Button>
@@ -342,21 +342,21 @@ export const ArchetypeExtractionDialog: React.FC<
               variant="ghost"
               onClick={onClose}
               disabled={isSaving}
-              className="text-gray-400 hover:text-white"
+              className="text-muted-foreground hover:text-foreground"
             >
               Cancel
-              <kbd className="ml-2 hidden sm:inline-flex h-5 items-center gap-1 rounded border border-gray-700 bg-gray-800 px-1.5 font-mono text-[10px] text-gray-400">
+              <kbd className="ml-2 hidden sm:inline-flex h-5 items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground">
                 ESC
               </kbd>
             </Button>
             <Button
               onClick={handleSave}
               disabled={!isValid || isSaving}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium"
+              className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-medium"
             >
               <CheckCircle className="w-4 h-4 mr-2" />
               {isSaving ? "Saving..." : "Save Entity"}
-              <kbd className="ml-2 hidden sm:inline-flex h-5 items-center gap-1 rounded border border-blue-400/30 bg-blue-500/20 px-1.5 font-mono text-[10px] text-blue-100">
+              <kbd className="ml-2 hidden sm:inline-flex h-5 items-center gap-1 rounded border border-primary/30 bg-primary/20 px-1.5 font-mono text-[10px] text-primary-foreground">
                 Ctrl+↵
               </kbd>
             </Button>
