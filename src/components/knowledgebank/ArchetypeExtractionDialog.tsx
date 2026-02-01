@@ -331,7 +331,7 @@ export const ArchetypeExtractionDialog: React.FC<
               <FileText className="w-4 h-4 mr-2" />
               Save as Draft
               <kbd className="ml-2 hidden sm:inline-flex h-5 items-center gap-1 rounded border border-gray-700 bg-gray-800 px-1.5 font-mono text-[10px] text-gray-400">
-                ⇧⌘↵
+                Ctrl+Shift+↵
               </kbd>
             </Button>
           )}
@@ -357,7 +357,7 @@ export const ArchetypeExtractionDialog: React.FC<
               <CheckCircle className="w-4 h-4 mr-2" />
               {isSaving ? "Saving..." : "Save Entity"}
               <kbd className="ml-2 hidden sm:inline-flex h-5 items-center gap-1 rounded border border-blue-400/30 bg-blue-500/20 px-1.5 font-mono text-[10px] text-blue-100">
-                ⌘↵
+                Ctrl+↵
               </kbd>
             </Button>
           </div>
