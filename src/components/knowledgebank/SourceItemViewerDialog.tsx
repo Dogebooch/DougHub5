@@ -17,15 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  BookPlus,
-  Archive,
-  X,
-  FileText,
-  ExternalLink,
-  Sparkles,
-  Brain,
-} from "lucide-react";
+import { X, FileText, ExternalLink, Sparkles, Brain } from "lucide-react";
 import { FlashcardAnalysisDashboard } from "@/components/flashcards/FlashcardAnalysisDashboard";
 import { ArchetypeExtractionDialog } from "./ArchetypeExtractionDialog";
 import { type KnowledgeEntityType } from "@/types/knowledge-entities";
@@ -34,16 +26,12 @@ interface SourceItemViewerDialogProps {
   open: boolean;
   onClose: () => void;
   item: SourceItem | null;
-  onAddToNotebook?: (item: SourceItem) => void;
-  onArchiveToKB?: (item: SourceItem) => void;
 }
 
 export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
   open,
   onClose,
   item,
-  onAddToNotebook,
-  onArchiveToKB,
 }) => {
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
   const [isExtracting, setIsExtracting] = React.useState(false);
@@ -322,7 +310,7 @@ ${qbankContent.explanationHtml || ""}
                     </Button>
                   )}
 
-                  {/* Extract Knowledge Button */}
+                  {/* Extract Knowledge - Primary Action */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -331,8 +319,7 @@ ${qbankContent.explanationHtml || ""}
                           setExtractTitle(displayTitle || "");
                           setIsExtracting(true);
                         }}
-                        variant="outline"
-                        className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+                        className="bg-primary hover:bg-primary/90"
                       >
                         <Brain className="h-4 w-4 mr-2" />
                         Extract Knowledge
@@ -340,44 +327,10 @@ ${qbankContent.explanationHtml || ""}
                     </TooltipTrigger>
                     <TooltipContent side="top">
                       <p>
-                        Create a structured Knowledge Entity (Drug, Disease,
-                        etc.)
+                        Create a structured Knowledge Entity and save to Library
                       </p>
                     </TooltipContent>
                   </Tooltip>
-
-                  {onArchiveToKB && item.status !== "curated" && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          onClick={() => onArchiveToKB(item)}
-                        >
-                          <Archive className="h-4 w-4 mr-2" />
-                          Keep in Library
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        <p>Keep for reference, no cards needed</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                  {onAddToNotebook && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          onClick={() => onAddToNotebook(item)}
-                          className="bg-primary hover:bg-primary/90"
-                        >
-                          <BookPlus className="h-4 w-4 mr-2" />
-                          Add to Notebook
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        <p>I want to learn this — add notes and make cards</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
                 </div>
               </div>
             </TooltipProvider>

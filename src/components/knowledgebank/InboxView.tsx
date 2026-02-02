@@ -1,21 +1,25 @@
-import { useState } from 'react';
-import { useSourceItems } from '@/hooks/useSourceItems';
-import { useInboxFilters } from '@/hooks/useInboxFilters';
-import { useSelection } from '@/hooks/useSelection';
-import { useAppStore } from '@/stores/useAppStore';
-import { useToast } from '@/hooks/use-toast';
-import { SourceItem } from '@/types';
+import { useState } from "react";
+import { useSourceItems } from "@/hooks/useSourceItems";
+import { useInboxFilters } from "@/hooks/useInboxFilters";
+import { useSelection } from "@/hooks/useSelection";
+import { useAppStore } from "@/stores/useAppStore";
+import { useToast } from "@/hooks/use-toast";
+import { SourceItem } from "@/types";
 
 // Sub-components
-import { InboxHeader, InboxToolbar, InboxItemList, InboxEmptyState } from './inbox';
-import { BatchActions } from './BatchActions';
-import { SourceItemViewerDialog } from './SourceItemViewerDialog';
-import { IntakeQuizModal } from '../notebook/intake-quiz';
+import {
+  InboxHeader,
+  InboxToolbar,
+  InboxItemList,
+  InboxEmptyState,
+} from "./inbox";
+import { BatchActions } from "./BatchActions";
+import { SourceItemViewerDialog } from "./SourceItemViewerDialog";
 
 /**
  * Main Inbox view component.
  * Orchestrates data fetching, filtering, selection, and user actions.
- * 
+ *
  * Refactored to use extracted hooks and sub-components for maintainability.
  */
 export function InboxView() {
@@ -27,7 +31,7 @@ export function InboxView() {
     refresh: refreshInbox,
     deleteItem,
     updateItemStatus,
-  } = useSourceItems({ status: 'inbox' });
+  } = useSourceItems({ status: "inbox" });
 
   // Filtering & sorting
   const {
@@ -52,8 +56,6 @@ export function InboxView() {
   const { toast } = useToast();
 
   // Dialog state
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [targetItem, setTargetItem] = useState<SourceItem | null>(null);
   const [viewingItem, setViewingItem] = useState<SourceItem | null>(null);
 
   // ---------- Event Handlers ----------
@@ -71,17 +73,24 @@ export function InboxView() {
     if (result.success) {
       refreshCounts();
     } else {
-      console.error('Delete failed:', result.error);
+      console.error("Delete failed:", result.error);
     }
   };
 
   const handleArchive = async (item: SourceItem) => {
-    const result = await updateItemStatus(item.id, 'curated');
+    const result = await updateItemStatus(item.id, "curated");
     if (result.success) {
-      toast({ title: 'Saved to Library', description: 'Item saved to Library.' });
+      toast({
+        title: "Saved to Library",
+        description: "Item saved to Library.",
+      });
       refreshCounts();
     } else {
-      toast({ title: 'Save Failed', description: result.error, variant: 'destructive' });
+      toast({
+        title: "Save Failed",
+        description: result.error,
+        variant: "destructive",
+      });
     }
   };
 
@@ -89,42 +98,22 @@ export function InboxView() {
     setViewingItem(item);
   };
 
-  const handleArchiveFromViewer = async (item: SourceItem) => {
-    const result = await updateItemStatus(item.id, 'curated');
-    if (result.success) {
-      toast({ title: 'Saved to Library', description: 'Item reviewed and saved.' });
-      setViewingItem(null);
-      refreshCounts();
-    } else {
-      toast({ title: 'Save Failed', description: result.error, variant: 'destructive' });
-    }
-  };
-
-  const handleAddToNotebook = (item: SourceItem) => {
-    setTargetItem(item);
-    setIsAddDialogOpen(true);
-  };
-
-  const handleAddToNotebookFromViewer = (item: SourceItem) => {
-    setViewingItem(null);
-    handleAddToNotebook(item);
-  };
-
-  const handleAddSuccess = () => {
-    refreshInbox();
-    selection.clear();
-    setIsAddDialogOpen(false);
-  };
-
   // Batch actions
   const handleBatchDelete = async () => {
     const count = selection.selectedCount;
     const result = await batchDeleteInbox(Array.from(selection.selectedIds));
     if (result.success) {
-      toast({ title: 'Batch Delete Successful', description: `Removed ${count} items.` });
+      toast({
+        title: "Batch Delete Successful",
+        description: `Removed ${count} items.`,
+      });
       refreshInbox();
     } else {
-      toast({ title: 'Batch Delete Failed', description: result.error || 'Error occurred.', variant: 'destructive' });
+      toast({
+        title: "Batch Delete Failed",
+        description: result.error || "Error occurred.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -135,7 +124,9 @@ export function InboxView() {
 
     for (const id of ids) {
       try {
-        const result = await window.api.sourceItems.update(id, { status: 'curated' });
+        const result = await window.api.sourceItems.update(id, {
+          status: "curated",
+        });
         if (!result.error) successCount++;
         else failCount++;
       } catch {
@@ -144,9 +135,16 @@ export function InboxView() {
     }
 
     if (failCount === 0) {
-      toast({ title: 'Saved to Library', description: `Saved ${successCount} items.` });
+      toast({
+        title: "Saved to Library",
+        description: `Saved ${successCount} items.`,
+      });
     } else {
-      toast({ title: 'Partial Save', description: `${successCount} saved, ${failCount} failed.`, variant: 'destructive' });
+      toast({
+        title: "Partial Save",
+        description: `${successCount} saved, ${failCount} failed.`,
+        variant: "destructive",
+      });
     }
 
     selection.clear();
@@ -217,28 +215,7 @@ export function InboxView() {
         open={!!viewingItem}
         item={viewingItem}
         onClose={() => setViewingItem(null)}
-        onAddToNotebook={handleAddToNotebookFromViewer}
-        onArchiveToKB={handleArchiveFromViewer}
       />
-
-      {targetItem && (
-        <IntakeQuizModal
-          isOpen={isAddDialogOpen}
-          onClose={() => setIsAddDialogOpen(false)}
-          sourceItem={{
-            id: targetItem.id,
-            title: targetItem.title,
-            content: targetItem.rawContent,
-            sourceType: targetItem.sourceType,
-            correctness: targetItem.correctness,
-          }}
-          suggestedTopics={targetItem.metadata?.subject ? [targetItem.metadata.subject] : []}
-          onComplete={() => {
-            handleAddSuccess();
-            setIsAddDialogOpen(false);
-          }}
-        />
-      )}
     </div>
   );
 }
