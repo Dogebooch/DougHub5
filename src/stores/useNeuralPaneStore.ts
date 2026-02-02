@@ -31,24 +31,28 @@ export const useNeuralPaneStore = create<NeuralPaneState>()(
 - Topic Engine: Automatically manages medical topics, aliases, and merges to prevent duplicate entries.
 - Golden Ticket: Forces user to manually type key discriminator for each entity to activate Generation Effect. Generates 1 active + 4-5 banked cards per entity.
 - Robust Backup: Creates snapshots of your knowledge base on startup, shutdown, and every 15 minutes to prevent data loss.`,
-      todos: `IMPLEMENT NOW:
+      todos: `PHASE 3-4 COMPLETE:
 - [x] v28 Migration: Practice Bank flashcards table
 - [x] Practice Bank query module (CRUD, activation, resurrection)
-- [ ] FlashcardTemplateEngine class (generate cards from entity)
-- [ ] Hook card generation into ArchetypeExtractionDialog
-- [ ] Practice Bank card list in Entity Viewer
+- [x] FlashcardTemplateEngine class (generate cards from entity)
+- [x] Hook card generation into ArchetypeExtractionDialog
+- [x] Practice Bank card list component (PracticeBankCardList)
+- [x] Failure Attribution UI (FailureAttributionDialog)
+- [x] Simulator card component (SimulatorCard)
+- [x] Preload API bindings for practiceBank/simulator
 
-DEFER (HIGH PRIORITY):
-- [ ] Simulator engine (vignette generation, Ghost Distractors)
-- [ ] Failure Attribution UI (checkboxes after failure)
-- [ ] RCS color highlighting in Notebook articles
+INTEGRATION NEEDED:
+- [ ] Embed PracticeBankCardList in entity detail view
+- [ ] Add Simulator entry point to Learn Dashboard
+- [ ] Wire FailureAttributionDialog into review flow
+
+DEFER (v1.1):
+- [ ] Vignette AI generation (GPT-4 prompts)
+- [ ] Ghost Distractors for Simulator
+- [ ] RCS color highlighting in Notebook
 - [ ] Duplicate entity detection/merging
-
-DEFER (POLISH):
 - [ ] Practice Bank Global Browser
-- [ ] Compare & Contrast card auto-generator
-- [ ] Deep Dive mode (unlimited practice bypass)
-- [ ] Version History / Undo for entity edits`,
+- [ ] Compare & Contrast card auto-generator`,
       userNotes: "",
 
       toggle: () => set((state) => ({ isOpen: !state.isOpen })),
