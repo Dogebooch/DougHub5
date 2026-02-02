@@ -18,6 +18,23 @@ const mockInvoke = async (channel: string, ...args: any[]) => {
     return overrides[channel];
   }
 
+  // HTTP Bridge to Dev Server
+  try {
+    const response = await fetch("http://localhost:3001/api/ipc", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ channel, args }),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      // console.log(`[MockAPI] Bridge success: ${channel}`, result);
+      return result;
+    }
+  } catch (error) {
+    // Dev server not running, fall back to default mocks
+  }
+
   return success(null); // Default success
 };
 

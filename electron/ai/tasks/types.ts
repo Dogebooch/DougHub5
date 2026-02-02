@@ -10,7 +10,10 @@
  * Configuration for a single AI task.
  * Each task file exports one AITaskConfig object.
  */
-export interface AITaskConfig<TContext = Record<string, unknown>, TResult = unknown> {
+export interface AITaskConfig<
+  TContext = Record<string, unknown>,
+  TResult = unknown,
+> {
   /** Unique identifier for the task (e.g., "identify-tested-concept") */
   id: string;
 
@@ -360,7 +363,12 @@ export interface CardGenerationContext {
  * Result type for card-generation task (single suggestion)
  */
 export interface CardGenerationSuggestion {
-  format: "qa" | "cloze" | "overlapping-cloze" | "image-occlusion" | "procedural";
+  format:
+    | "qa"
+    | "cloze"
+    | "overlapping-cloze"
+    | "image-occlusion"
+    | "procedural";
   front: string;
   back: string;
   confidence: number;
@@ -522,7 +530,13 @@ export interface FlashcardAnalysisContext {
  */
 export interface FlashcardAnalysisResult {
   gapAnalysis: {
-    type: "PURE_RECALL" | "PARTIAL_RECALL" | "INTERFERENCE" | "INTEGRATION_FAILURE" | "MISREAD" | null;
+    type:
+      | "PURE_RECALL"
+      | "PARTIAL_RECALL"
+      | "INTERFERENCE"
+      | "INTEGRATION_FAILURE"
+      | "MISREAD"
+      | null;
     confidence: number;
     reasoning: string;
   };
@@ -538,5 +552,29 @@ export interface FlashcardAnalysisResult {
     front: string;
     back: string;
   };
+  usedFallback?: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Article Synthesis Task Types (Phase 4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Context type for article-synthesis task
+ */
+export interface ArticleSynthesisContext {
+  topicTitle: string;
+  blocks: {
+    content: string;
+    sourceItemId: string;
+  }[];
+}
+
+/**
+ * Result type for article-synthesis task
+ */
+export interface ArticleSynthesisResult {
+  markdown: string;
+  /** True if AI failed and fallback was used */
   usedFallback?: boolean;
 }

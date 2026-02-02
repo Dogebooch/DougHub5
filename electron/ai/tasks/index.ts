@@ -32,6 +32,7 @@ import { generateQuizTask } from "./generate-quiz";
 import { gradeAnswerTask } from "./grade-answer";
 import { detectConfusionTask } from "./detect-confusion";
 import { flashcardAnalysisTask } from "./flashcard-analysis";
+import { articleSynthesisTask } from "./article-synthesis";
 
 // Export individual tasks for direct import
 export { identifyTestedConceptTask };
@@ -51,6 +52,7 @@ export { generateQuizTask };
 export { gradeAnswerTask };
 export { detectConfusionTask };
 export { flashcardAnalysisTask };
+export { articleSynthesisTask };
 
 // All context/result types are re-exported from types.ts via the * export above
 
@@ -82,6 +84,7 @@ export const AI_TASKS: Record<string, AITaskConfig> = {
   "grade-answer": gradeAnswerTask,
   "detect-confusion": detectConfusionTask,
   "flashcard-analysis": flashcardAnalysisTask,
+  "article-synthesis": articleSynthesisTask,
 } as const;
 
 /**

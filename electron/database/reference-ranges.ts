@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "node:url";
 import { getDatabase } from "./db-connection";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// __dirname removed
 
 export interface ReferenceRange {
   id?: number;
@@ -18,13 +18,15 @@ export interface ReferenceRange {
 
 export const referenceRangeQueries = {
   getAll(): ReferenceRange[] {
-    const stmt = getDatabase().prepare("SELECT * FROM reference_ranges ORDER BY category, test_name");
+    const stmt = getDatabase().prepare(
+      "SELECT * FROM reference_ranges ORDER BY category, test_name",
+    );
     return stmt.all() as ReferenceRange[];
   },
 
   getByCategory(category: string): ReferenceRange[] {
     const stmt = getDatabase().prepare(
-      "SELECT * FROM reference_ranges WHERE category = ? ORDER BY test_name"
+      "SELECT * FROM reference_ranges WHERE category = ? ORDER BY test_name",
     );
     return stmt.all(category) as ReferenceRange[];
   },
@@ -66,7 +68,7 @@ export const referenceRangeQueries = {
       range.units,
       range.si_range,
       range.notes,
-      range.source || "MKSAP19"
+      range.source || "MKSAP19",
     );
     invalidateReferenceRangeCache();
   },
@@ -86,7 +88,7 @@ export const referenceRangeQueries = {
           item.units,
           item.si_range,
           item.notes,
-          item.source || "MKSAP19"
+          item.source || "MKSAP19",
         );
       }
     });
@@ -145,27 +147,34 @@ export function seedReferenceRangesFromLocalFile(): void {
   console.log("[Database] Seeding reference ranges...");
 
   let loadedRanges: Omit<ReferenceRange, "id">[] = [];
+  const scriptDir = __dirname;
 
   try {
     // Load from compiled location (dist-electron)
-    const dataPath = path.join(__dirname, "../../src/data/reference-ranges.json");
+    const dataPath = path.join(
+      scriptDir,
+      "../../src/data/reference-ranges.json",
+    );
     const rawData = fs.readFileSync(dataPath, "utf-8");
     loadedRanges = JSON.parse(rawData);
   } catch (error) {
-    console.error("[Database] Failed to load reference ranges from dist-electron:", error);
+    console.error(
+      "[Database] Failed to load reference ranges from dist-electron:",
+      error,
+    );
 
     try {
       // Fallback: Load from source location (development)
       const sourcePath = path.join(
         process.cwd(),
-        "src/data/reference-ranges.json"
+        "src/data/reference-ranges.json",
       );
       const rawData = fs.readFileSync(sourcePath, "utf-8");
       loadedRanges = JSON.parse(rawData);
     } catch (fallbackError) {
       console.error(
         "[Database] Failed to seed reference ranges (both locations failed):",
-        fallbackError
+        fallbackError,
       );
       return;
     }
@@ -177,5 +186,7 @@ export function seedReferenceRangesFromLocalFile(): void {
   }
 
   referenceRangeQueries.bulkInsert(loadedRanges);
-  console.log(`[Database] Seeded ${loadedRanges.length} reference ranges successfully`);
+  console.log(
+    `[Database] Seeded ${loadedRanges.length} reference ranges successfully`,
+  );
 }

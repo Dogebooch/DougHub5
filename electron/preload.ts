@@ -402,6 +402,11 @@ const api = {
         top3VectorMatches,
         userRole,
       ),
+    // Notebook v4.1: Article Synthesis (Phase 4)
+    synthesizeArticle: (
+      topicTitle: string,
+      blocks: { content: string; sourceItemId: string }[],
+    ) => ipcRenderer.invoke("ai:synthesizeArticle", topicTitle, blocks),
   },
   insights: {
     getBoardRelevance: (topicTags: string[]) =>

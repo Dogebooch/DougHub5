@@ -316,14 +316,14 @@ export const cardQueries = {
 
   getBySiblings(sourceBlockId: string): DbCard[] {
     const stmt = getDatabase().prepare(`
-      SELECT 
+      SELECT
         c.*,
         ct.canonicalName as topicName,
-        (SELECT COUNT(*) FROM cards c2 
-         WHERE c2.sourceBlockId = c.sourceBlockId 
+        (SELECT COUNT(*) FROM cards c2
+         WHERE c2.sourceBlockId = c.sourceBlockId
          AND c.sourceBlockId IS NOT NULL) as siblingCount,
-        CASE WHEN c.lapses >= 5 
-          OR (c.lapses >= 3 AND c.difficulty > 0.7) 
+        CASE WHEN c.lapses >= 5
+          OR (c.lapses >= 3 AND c.difficulty > 0.7)
           OR (c.reps >= 5 AND c.stability < 7)
           THEN 1 ELSE 0 END as isLeech
       FROM cards c
@@ -343,11 +343,11 @@ export const cardQueries = {
 
   getTopicMetadata(pageId: string): { name: string; cardCount: number } | null {
     const stmt = getDatabase().prepare(`
-      SELECT 
+      SELECT
         ct.canonicalName as name,
         (SELECT COUNT(*) FROM cards WHERE notebookTopicPageId = ntp.id) as cardCount
-      FROM notebook_topic_pages ntp 
-      JOIN canonical_topics ct ON ntp.canonicalTopicId = ct.id 
+      FROM notebook_topic_pages ntp
+      JOIN canonical_topics ct ON ntp.canonicalTopicId = ct.id
       WHERE ntp.id = ?
     `);
     const row = stmt.get(pageId) as
@@ -358,17 +358,17 @@ export const cardQueries = {
 
   getWeakTopicSummaries(): WeakTopicSummary[] {
     const stmt = getDatabase().prepare(`
-      SELECT 
+      SELECT
         ct.id as topicId,
         ntp.id as notebookPageId,
         ct.canonicalName as topicName,
         COUNT(c.id) as cardCount,
         AVG(c.difficulty) as avgDifficulty,
         MAX(c.difficulty) as worstDifficulty,
-        (SELECT id FROM cards 
-         WHERE notebookTopicPageId = ntp.id 
-         AND difficulty >= 8.0 
-         ORDER BY difficulty DESC, lastReview DESC, id ASC 
+        (SELECT id FROM cards
+         WHERE notebookTopicPageId = ntp.id
+         AND difficulty >= 8.0
+         ORDER BY difficulty DESC, lastReview DESC, id ASC
          LIMIT 1) as worstCardId,
         MAX(c.lastReview) as lastReviewDate
       FROM cards c
@@ -384,10 +384,10 @@ export const cardQueries = {
 
   findDuplicateFrontBack(): DbCard[] {
     const stmt = getDatabase().prepare(`
-      SELECT * FROM cards 
-      WHERE TRIM(front) = TRIM(back) 
-      AND front IS NOT NULL 
-      AND back IS NOT NULL 
+      SELECT * FROM cards
+      WHERE TRIM(front) = TRIM(back)
+      AND front IS NOT NULL
+      AND back IS NOT NULL
       AND TRIM(front) != ''
       ORDER BY createdAt DESC
     `);
@@ -422,8 +422,8 @@ export const cardQueries = {
 
     if (filters?.leechesOnly) {
       whereClauses.push(`(
-        c.lapses >= 5 
-        OR (c.lapses >= 3 AND c.difficulty > 0.7) 
+        c.lapses >= 5
+        OR (c.lapses >= 3 AND c.difficulty > 0.7)
         OR (c.reps >= 5 AND c.stability < 7)
       )`);
     }
@@ -453,13 +453,13 @@ export const cardQueries = {
     const start = Date.now();
     try {
       const stmt = db.prepare(`
-        SELECT 
+        SELECT
           c.*,
           ct.canonicalName as topicName,
           (SELECT COUNT(*) FROM cards c2 WHERE c2.sourceBlockId = c.sourceBlockId AND c.sourceBlockId IS NOT NULL) as siblingCount,
           (SELECT COUNT(*) FROM cards c3 WHERE c3.parentListId = c.parentListId AND c.parentListId IS NOT NULL) as listSiblingCount,
-          CASE WHEN c.lapses >= 5 
-            OR (c.lapses >= 3 AND c.difficulty > 0.7) 
+          CASE WHEN c.lapses >= 5
+            OR (c.lapses >= 3 AND c.difficulty > 0.7)
             OR (c.reps >= 5 AND c.stability < 7)
             THEN 1 ELSE 0 END as isLeech
         FROM cards c
@@ -470,7 +470,9 @@ export const cardQueries = {
       `);
 
       const rows = stmt.all(params) as any[];
-      console.log(`[DB] getBrowserList query took ${Date.now() - start}ms for ${rows.length} rows`);
+      console.log(
+        `[DB] getBrowserList query took ${Date.now() - start}ms for ${rows.length} rows`,
+      );
 
       const result = rows.map((row) => ({
         ...parseCardRow(row as unknown as CardRow),
@@ -479,8 +481,10 @@ export const cardQueries = {
         isLeech: row.isLeech === 1,
         listSiblingCount: row.listSiblingCount || 0,
       })) as DbCard[];
-      
-      console.log(`[DB] getBrowserList mapping took ${Date.now() - start}ms total`);
+
+      console.log(
+        `[DB] getBrowserList mapping took ${Date.now() - start}ms total`,
+      );
       return result;
     } catch (error) {
       console.error("[DB] getBrowserList failed:", error);
@@ -496,16 +500,17 @@ export const cardQueries = {
     // - OR lapses >= 3
     // - OR (reps >= 5 AND stability < 7)
     const sql = `
-      SELECT 
+      SELECT
         ntp.id as topicId,
-        ntp.title as topicName,
+        ct.canonicalName as topicName,
         COUNT(c.id) as strugglingCardCount,
         AVG(c.difficulty) as avgDifficulty,
         MAX(c.difficulty) as worstDifficulty
       FROM cards c
       JOIN notebook_topic_pages ntp ON c.notebookTopicPageId = ntp.id
-      WHERE c.difficulty >= 0.7 
-         OR c.lapses >= 3 
+      JOIN canonical_topics ct ON ntp.canonicalTopicId = ct.id
+      WHERE c.difficulty >= 0.7
+         OR c.lapses >= 3
          OR (c.reps >= 5 AND c.stability < 7)
       GROUP BY ntp.id
       HAVING strugglingCardCount > 0

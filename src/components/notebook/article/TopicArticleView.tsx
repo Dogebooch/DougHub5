@@ -1,21 +1,5 @@
-import React, {
-  useCallback,
-  useEffect,
-  useState,
-  useMemo,
-  useRef,
-} from "react";
-import {
-  ArrowLeft,
-  Plus,
-  Sparkles,
-  Loader2,
-  BarChart3,
-  ChevronDown,
-  Star,
-  Layers,
-  PenLine,
-} from "lucide-react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
+import { Loader2, BarChart3, ChevronDown } from "lucide-react";
 import {
   NotebookTopicPage,
   NotebookBlock,
@@ -23,24 +7,23 @@ import {
   SourceItem,
 } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
-import { TopicHeader } from "./TopicHeader";
-import { ArticleContent, BlockCardSummary } from "./ArticleContent";
-import { SourceFootnotes } from "./SourceFootnotes";
+import { TopicEntryQuizPrompt, TopicQuizModal } from "../topic-quiz";
 import { AddBlockModal } from "../AddBlockModal";
 import { BlockEditModal } from "../BlockEditModal";
 import { DirectAuthorModal } from "../DirectAuthorModal";
-import { SourcePreviewPanel } from "../SourcePreviewPanel";
-import { TopicEntryQuizPrompt, TopicQuizModal } from "../topic-quiz";
+import { SourceItemViewerDialog } from "../../knowledgebank/SourceItemViewerDialog";
+import { NotebookArticleLayout } from "../layout/NotebookArticleLayout";
+import { NodeModeView } from "./NodeModeView";
+import { ReaderModeView } from "./ReaderModeView";
+import { TopicHeader } from "./TopicHeader";
 
 interface TopicArticleViewProps {
   pageId: string;
@@ -64,8 +47,7 @@ interface BoardRelevanceData {
  */
 export function TopicArticleView({
   pageId,
-  onBack,
-  onRefresh,
+  // onBack is handled by parent/layout
 }: TopicArticleViewProps) {
   const { toast } = useToast();
   const mountedRef = useRef(true);
@@ -79,9 +61,6 @@ export function TopicArticleView({
   );
   const [boardRelevance, setBoardRelevance] =
     useState<BoardRelevanceData | null>(null);
-  const [blockCardSummaries, setBlockCardSummaries] = useState<
-    Map<string, BlockCardSummary>
-  >(new Map());
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -89,197 +68,108 @@ export function TopicArticleView({
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [boardPanelOpen, setBoardPanelOpen] = useState(true);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"all" | "highYield">("all");
-  const [togglingBlockIds, setTogglingBlockIds] = useState<Set<string>>(
-    new Set(),
-  );
+
+  // Layout State
+  const [layoutMode, setLayoutMode] = useState<"reader" | "node">("reader");
+  const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
 
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<NotebookBlock | null>(null);
 
+  // Add Block State
+  const [addBlockIndex, setAddBlockIndex] = useState<number | undefined>(
+    undefined,
+  );
+  const [addBlockMode, setAddBlockMode] = useState<
+    "library" | "manual" | "trap"
+  >("library");
+
   // Direct author modal state
   const [directAuthorOpen, setDirectAuthorOpen] = useState(false);
 
-  // Topic entry quiz state
+  // Quiz state
   const [showEntryPrompt, setShowEntryPrompt] = useState(false);
   const [showEntryQuiz, setShowEntryQuiz] = useState(false);
   const [entryQuizDaysSince, setEntryQuizDaysSince] = useState(0);
-  const hasCheckedQuizRef = useRef<string | null>(null);
 
-  // Fetch card summaries for all blocks
-  const fetchCardSummaries = useCallback(
-    async (blocksToFetch: NotebookBlock[]) => {
-      if (!blocksToFetch.length) {
-        setBlockCardSummaries(new Map());
-        return;
-      }
-
-      const summaries = new Map<string, BlockCardSummary>();
-
-      await Promise.all(
-        blocksToFetch.map(async (block) => {
-          try {
-            const result = await window.api.cards.getBySiblings(block.id);
-            if (result.data && result.data.length > 0) {
-              const cards = result.data;
-              // Aggregate: use most "important" status and count all cards
-              // Priority: active > suggested > suspended > dormant > graduated
-              const statusPriority: Record<string, number> = {
-                active: 5,
-                suggested: 4,
-                suspended: 3,
-                dormant: 2,
-                graduated: 1,
-              };
-              const primaryCard = cards.reduce((best, card) =>
-                (statusPriority[card.activationStatus] || 0) >
-                (statusPriority[best.activationStatus] || 0)
-                  ? card
-                  : best,
-              );
-
-              summaries.set(block.id, {
-                activationStatus: primaryCard.activationStatus,
-                activationReasons: primaryCard.activationReasons,
-                cardCount: cards.length,
-                activatedAt: primaryCard.activatedAt,
-                suspendReason: primaryCard.suspendReason,
-              });
-            }
-          } catch (err) {
-            console.error(`Failed to fetch cards for block ${block.id}:`, err);
-          }
-        }),
-      );
-
-      if (mountedRef.current) {
-        setBlockCardSummaries(summaries);
-      }
-    },
-    [],
-  );
-
-  // Fetch all data
   const fetchData = useCallback(async () => {
+    if (!mountedRef.current) return;
     setLoading(true);
-    setError(null);
     try {
-      // 1. Fetch page
       const pageResult = await window.api.notebookPages.getById(pageId);
-      if (pageResult.error) throw new Error(pageResult.error);
-      if (!pageResult.data) throw new Error("Page not found");
+      if (!pageResult) throw new Error("Notebook page not found");
+      setPage(pageResult);
 
-      const pageData = pageResult.data;
-      setPage(pageData);
-
-      // 2. Fetch topic and blocks in parallel
-      const [topicResult, blocksResult] = await Promise.all([
-        window.api.canonicalTopics.getById(pageData.canonicalTopicId),
-        window.api.notebookBlocks.getByPage(pageId, {
-          highYieldOnly: viewMode === "highYield",
-        }),
-      ]);
-
-      if (topicResult.error) throw new Error(topicResult.error);
-      if (blocksResult.error) throw new Error(blocksResult.error);
-
-      const topicData = topicResult.data;
-      const blocksData = blocksResult.data || [];
-
-      setTopic(topicData);
-      setBlocks(blocksData);
-
-      // 3. Check for topic entry quiz if we haven't checked this session
-      if (hasCheckedQuizRef.current !== pageId) {
-        const promptResult = await window.api.topicQuiz.shouldPrompt(pageId);
-        if (promptResult.data?.shouldPrompt) {
-          setEntryQuizDaysSince(promptResult.data.daysSince);
-          setShowEntryPrompt(true);
-        } else {
-          // No quiz needed, update last visited immediately
-          await window.api.topicQuiz.updateLastVisited(pageId);
-        }
-        hasCheckedQuizRef.current = pageId;
-      }
-
-      // 4. Fetch card summaries for blocks
-      fetchCardSummaries(blocksData);
-
-      // 5. Fetch source items for footnotes
-      const sourceIds = [...new Set(blocksData.map((b) => b.sourceItemId))];
-      const sourceMap = new Map<string, SourceItem>();
-
-      await Promise.all(
-        sourceIds.map(async (id) => {
-          const result = await window.api.sourceItems.getById(id);
-          if (result.data) {
-            sourceMap.set(id, result.data);
-          }
-        }),
+      const topicResult = await window.api.canonicalTopics.getById(
+        pageResult.topicId,
       );
-      setSourceItems(sourceMap);
+      setTopic(topicResult);
 
-      // 6. Fetch board relevance if we have topic tags
-      if (topicData) {
-        const tags = [topicData.canonicalName, ...topicData.aliases];
-        const relevanceResult =
-          await window.api.insights.getBoardRelevance(tags);
-        if (relevanceResult.data) {
-          setBoardRelevance(relevanceResult.data);
-        }
+      const blocksResult = await window.api.notebookBlocks.getByPage(pageId);
+      setBlocks(blocksResult);
+
+      // Fetch source items
+      const sourceIds = Array.from(
+        new Set(blocksResult.map((b) => b.sourceItemId).filter(Boolean)),
+      ) as string[];
+      const itemsMap = new Map();
+      for (const sId of sourceIds) {
+        const item = await window.api.sourceItems.getById(sId);
+        if (item) itemsMap.set(sId, item);
+      }
+      setSourceItems(itemsMap);
+
+      // Board relevance
+      if (topicResult) {
+        const relevance = await window.api.insights.getBoardRelevance([
+          topicResult.canonicalName,
+          ...(topicResult.aliases || []),
+        ]);
+        setBoardRelevance(relevance);
       }
 
-      onRefresh?.();
+      // Quiz prompt logic
+      const promptStatus = await window.api.topicQuiz.shouldPrompt(pageId);
+      setShowEntryPrompt(promptStatus.shouldPrompt);
+      setEntryQuizDaysSince(promptStatus.daysSince);
     } catch (err) {
-      console.error("Error fetching topic article:", err);
-      setError(err instanceof Error ? err.message : "Failed to load topic");
+      console.error("fetchData failed:", err);
+      setError(err instanceof Error ? err.message : "Load failed");
     } finally {
       setLoading(false);
     }
-  }, [pageId, onRefresh, viewMode, fetchCardSummaries]);
+  }, [pageId]);
 
   useEffect(() => {
     mountedRef.current = true;
+    fetchData();
     return () => {
       mountedRef.current = false;
     };
-  }, []);
-
-  useEffect(() => {
-    fetchData();
   }, [fetchData]);
 
-  // Build footnotes from blocks and source items
-  const footnotes = useMemo(() => {
-    return blocks.map((block, index) => {
-      const source = sourceItems.get(block.sourceItemId);
-      return {
-        number: index + 1,
-        sourceItemId: block.sourceItemId,
-        title: source?.summary || source?.title || "Unknown source",
-        siteName: source?.siteName || undefined,
-      };
-    });
-  }, [blocks, sourceItems]);
-
-  // Calculate stats
-  const totalCards = useMemo(
-    () => blocks.reduce((sum, b) => sum + (b.cardCount || 0), 0),
-    [blocks],
-  );
-
-  const highYieldCount = useMemo(
-    () => blocks.filter((b) => b.isHighYield).length,
-    [blocks],
-  );
-
-  const handleFootnoteClick = (sourceItemId: string) => {
-    setSelectedSourceId(sourceItemId);
+  // Handlers
+  const handleAddBlock = (index?: number) => {
+    setAddBlockIndex(index);
+    setAddBlockMode("library");
+    setAddBlockOpen(true);
   };
 
-  const handleViewSource = (sourceItemId: string) => {
-    setSelectedSourceId(sourceItemId);
+  const handleAddContrast = (blockId: string) => {
+    const index = blocks.findIndex((b) => b.id === blockId);
+    if (index !== -1) {
+      setAddBlockIndex(index + 1);
+      setAddBlockMode("trap");
+      setAddBlockOpen(true);
+    }
+  };
+
+  const handleAddFlashcard = (blockId: string) => {
+    toast({
+      title: "Flashcard Creator",
+      description: `Creating flashcard for block ${blockId.substring(0, 8)}... (Phase 2 WIP)`,
+    });
   };
 
   const handleBlockEdit = (block: NotebookBlock) => {
@@ -287,72 +177,23 @@ export function TopicArticleView({
     setEditModalOpen(true);
   };
 
-  const handleStarToggle = async (blockId: string, currentValue: boolean) => {
-    // Add to toggling set (disables button)
-    setTogglingBlockIds((prev) => new Set(prev).add(blockId));
-
-    // Optimistic update - instant UI feedback
-    setBlocks((prev) =>
-      prev.map((b) =>
-        b.id === blockId ? { ...b, isHighYield: !currentValue } : b,
-      ),
-    );
-
+  const handleBlockSave = async (updates: Partial<NotebookBlock>) => {
+    if (!editingBlock) return;
     try {
-      // Persist to database using toggleHighYield handler
-      const result = await window.api.notebookBlocks.toggleHighYield(blockId);
-
-      if (result.error) {
-        throw new Error(result.error);
-      }
-
-      // Update with server response (in case of any sync issues)
-      if (mountedRef.current && result.data) {
-        setBlocks((prev) =>
-          prev.map((b) => (b.id === blockId ? result.data : b)),
-        );
-      }
+      await window.api.notebookBlocks.update(editingBlock.id, updates);
+      toast({ title: "Updated", description: "Changes saved to the block." });
+      fetchData();
     } catch (err) {
-      // Revert optimistic update on error
-      if (mountedRef.current) {
-        setBlocks((prev) =>
-          prev.map((b) =>
-            b.id === blockId ? { ...b, isHighYield: currentValue } : b,
-          ),
-        );
-        toast({
-          title: "Error",
-          description:
-            err instanceof Error ? err.message : "Failed to update block",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      // Remove from toggling set
-      if (mountedRef.current) {
-        setTogglingBlockIds((prev) => {
-          const next = new Set(prev);
-          next.delete(blockId);
-          return next;
-        });
-      }
+      toast({
+        title: "Error",
+        description: "Failed to update block.",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleBlockSave = async (
-    blockId: string,
-    updates: {
-      content?: string;
-      userInsight?: string;
-      calloutType?: "pearl" | "trap" | "caution" | null;
-    },
-  ) => {
-    const result = await window.api.notebookBlocks.update(blockId, updates);
-    if (result.error) {
-      throw new Error(result.error);
-    }
-    // Refresh data to show changes
-    await fetchData();
+  const handleViewSource = (sourceId: string) => {
+    setSelectedSourceId(sourceId);
   };
 
   const handleEntryQuizStart = () => {
@@ -360,269 +201,194 @@ export function TopicArticleView({
     setShowEntryQuiz(true);
   };
 
-  const handleEntryQuizSkip = async () => {
+  const handleEntryQuizSkip = () => {
     setShowEntryPrompt(false);
-    await window.api.topicQuiz.updateLastVisited(pageId);
+    window.api.topicQuiz.updateLastVisited(pageId);
   };
 
-  const handleEntryQuizComplete = async (forgottenBlockIds: string[]) => {
+  const handleEntryQuizComplete = () => {
     setShowEntryQuiz(false);
-    await window.api.topicQuiz.updateLastVisited(pageId);
-    // Refresh card summaries if concepts were "forgotten" and cards might have been activated
-    if (forgottenBlockIds.length > 0) {
-      await fetchCardSummaries(blocks);
-    }
+    fetchData();
   };
 
-  // Loading state
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-        <Loader2 className="w-8 h-8 animate-spin mb-2" />
-        <p className="text-sm">Loading article...</p>
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
       </div>
     );
   }
 
-  // Error state
-  if (error || !topic || !page) {
+  if (error || !page || !topic) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-destructive p-8 text-center">
-        <p className="font-semibold mb-2">Error Loading Article</p>
-        <p className="text-sm opacity-80 mb-4">
-          {error || "Something went wrong"}
+      <div className="flex h-64 flex-col items-center justify-center gap-4 text-center">
+        <p className="text-destructive font-medium">
+          {error || "Failed to load topic"}
         </p>
-        <Button variant="outline" onClick={fetchData}>
-          Try Again
-        </Button>
+        <Button onClick={() => fetchData()}>Retry</Button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-notebook-bg overflow-hidden">
-      {/* Top Bar */}
-      <div className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-b border-border/30 bg-notebook-card">
-        {onBack && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2 text-muted-foreground hover:text-foreground"
-            onClick={onBack}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Topics
-          </Button>
-        )}
-
-        {/* View Mode Toggle */}
-        <ToggleGroup
-          type="single"
-          value={viewMode}
-          onValueChange={(value) =>
-            value && setViewMode(value as "all" | "highYield")
-          }
-          size="sm"
-        >
-          <ToggleGroupItem value="all" aria-label="Show all blocks">
-            <Layers className="h-4 w-4 mr-1" />
-            All ({blocks.length})
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value="highYield"
-            aria-label="Show only high-yield blocks"
-          >
-            <Star className="h-4 w-4 mr-1" />
-            High-Yield ({highYieldCount})
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
-
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-6 py-8">
-          {/* Board Relevance Panel */}
-          {boardRelevance && boardRelevance.questionsAttempted > 0 && (
-            <Collapsible
-              open={boardPanelOpen}
-              onOpenChange={setBoardPanelOpen}
-              className="mb-8"
-            >
-              <div className="rounded-lg bg-notebook-board border border-primary/20 overflow-hidden">
-                <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-semibold text-primary uppercase tracking-wide">
-                      Board Relevance
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge
-                      variant="secondary"
-                      className="bg-primary/10 text-primary"
-                    >
-                      {boardRelevance.questionsAttempted} questions
-                    </Badge>
-                    <ChevronDown
-                      className={cn(
-                        "h-4 w-4 text-muted-foreground transition-transform",
-                        boardPanelOpen && "rotate-180",
-                      )}
-                    />
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="px-4 pb-4 space-y-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">
-                        Your accuracy:
-                      </span>
-                      <span className="font-semibold">
-                        {Math.round(boardRelevance.accuracy)}% (
-                        {boardRelevance.correctCount}/
-                        {boardRelevance.questionsAttempted})
-                      </span>
-                    </div>
-                    {boardRelevance.missedConcepts.length > 0 && (
-                      <div>
-                        <span className="text-muted-foreground">
-                          Common exam traps:
-                        </span>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {boardRelevance.missedConcepts
-                            .slice(0, 3)
-                            .map((mc) => (
-                              <Badge
-                                key={mc.concept}
-                                variant="outline"
-                                className="text-xs bg-notebook-trap/10 text-notebook-trap border-notebook-trap/30"
-                              >
-                                {mc.concept}
-                              </Badge>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </div>
-            </Collapsible>
-          )}
-
-          {/* Topic Header */}
+    <NotebookArticleLayout
+      viewMode={layoutMode}
+      onViewModeChange={setLayoutMode}
+      activeNodeId={activeNodeId}
+      onNodeSelect={setActiveNodeId}
+      title={topic.canonicalName}
+      onAddFlashcard={handleAddFlashcard}
+      onViewSource={handleViewSource}
+    >
+      {/* Render relevant view based on mode */}
+      {layoutMode === "reader" ? (
+        <div className="space-y-8">
           <TopicHeader
             title={topic.canonicalName}
             aliases={topic.aliases}
-            cardCount={totalCards}
-            sourceCount={blocks.length}
+            cardCount={blocks.length} // Simplified for now
+            sourceCount={sourceItems.size}
             lastUpdated={page.updatedAt}
           />
 
-          {/* Article Content */}
-          {blocks.length === 0 && viewMode === "highYield" ? (
-            <div className="text-center py-16 text-muted-foreground">
-              <Star className="h-16 w-16 mx-auto mb-4 opacity-20" />
-              <p className="text-lg font-medium mb-2">
-                No high-yield blocks yet
-              </p>
-              <p className="text-sm">
-                Click the star icon on any block to mark it as high-yield
-              </p>
-            </div>
-          ) : (
-            <ArticleContent
-              blocks={blocks}
-              blockCardSummaries={blockCardSummaries}
-              onFootnoteClick={handleFootnoteClick}
-              onBlockEdit={handleBlockEdit}
-              onStarToggle={handleStarToggle}
-              onCardStatusChange={() => fetchCardSummaries(blocks)}
-              togglingBlockIds={togglingBlockIds}
-            />
-          )}
-
-          {/* Source Footnotes */}
-          <SourceFootnotes
-            footnotes={footnotes}
-            onViewSource={handleViewSource}
+          <ReaderModeView
+            blocks={blocks}
+            sourceItems={sourceItems}
+            archetype={topic.domain}
+            topicTitle={topic.canonicalName}
+            onNodeSelect={setActiveNodeId}
           />
         </div>
-      </div>
+      ) : (
+        <NodeModeView
+          blocks={blocks}
+          activeNodeId={activeNodeId}
+          onNodeSelect={setActiveNodeId}
+          archetype={topic.domain}
+          onAddBlock={handleAddBlock}
+          onAddContrast={handleAddContrast}
+          onEditBlock={handleBlockEdit}
+        />
+      )}
 
-      {/* Footer */}
-      <footer className="flex-shrink-0 p-4 border-t border-border/30 bg-notebook-card flex justify-between items-center px-6">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="default"
-            className="gap-2"
-            onClick={() => setAddBlockOpen(true)}
-          >
-            <Plus className="w-4 h-4" />
-            Add from Library
-          </Button>
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => setDirectAuthorOpen(true)}
-          >
-            <PenLine className="w-4 h-4" />
-            Write Note
-          </Button>
-        </div>
-      </footer>
-
-      {/* Modals */}
+      {/* Persistent Modals */}
       <AddBlockModal
         open={addBlockOpen}
         onOpenChange={setAddBlockOpen}
         notebookTopicPageId={pageId}
         onSuccess={fetchData}
+        insertionIndex={addBlockIndex}
+        defaultMode={addBlockMode}
       />
-
-      {selectedSourceId && (
-        <SourcePreviewPanel
-          sourceItemId={selectedSourceId}
-          onClose={() => setSelectedSourceId(null)}
-        />
-      )}
-
       <BlockEditModal
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
         block={editingBlock}
-        topicName={topic?.canonicalName || ""}
+        topicName={topic.canonicalName}
         onSave={handleBlockSave}
         displayField="userInsight"
       />
-
       <DirectAuthorModal
         open={directAuthorOpen}
         onOpenChange={setDirectAuthorOpen}
-        topicName={topic?.canonicalName || ""}
+        topicName={topic.canonicalName}
         pageId={pageId}
-        onSave={() => {
-          fetchData();
-        }}
+        onSave={fetchData}
       />
 
-      {/* Topic Entry Quiz */}
+      {/* Board Relevance Panel */}
+      <Collapsible
+        open={boardPanelOpen}
+        onOpenChange={setBoardPanelOpen}
+        className="fixed bottom-4 right-4 z-50 w-80 rounded-lg border bg-card p-4 shadow-lg"
+      >
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="outline"
+            className="absolute -top-12 right-0 flex items-center gap-2 rounded-b-none rounded-t-lg border-b-0"
+          >
+            <BarChart3 className="h-4 w-4" />
+            Board Relevance
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform duration-200",
+                boardPanelOpen ? "rotate-180" : "rotate-0",
+              )}
+            />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          {boardRelevance ? (
+            <div className="space-y-2 text-sm pt-2">
+              <h3 className="font-semibold">Board Relevance</h3>
+              <p>
+                Questions Attempted:{" "}
+                <span className="font-medium">
+                  {boardRelevance.questionsAttempted}
+                </span>
+              </p>
+              <p>
+                Correct:{" "}
+                <span className="font-medium">
+                  {boardRelevance.correctCount} (
+                  {(boardRelevance.accuracy * 100).toFixed(1)}%)
+                </span>
+              </p>
+              {boardRelevance.testedConcepts.length > 0 && (
+                <div>
+                  <p className="font-medium">Tested Concepts:</p>
+                  <ul className="list-disc pl-5">
+                    {boardRelevance.testedConcepts.map((c, i) => (
+                      <li key={i}>
+                        {c.concept} ({c.count})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {boardRelevance.missedConcepts.length > 0 && (
+                <div>
+                  <p className="font-medium">Missed Concepts:</p>
+                  <ul className="list-disc pl-5">
+                    {boardRelevance.missedConcepts.map((c, i) => (
+                      <li key={i}>{c.concept}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground pt-2">
+              No board relevance data available for this topic.
+            </p>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+
+      {selectedSourceId && (
+        <SourceItemViewerDialog
+          open={!!selectedSourceId}
+          item={sourceItems.get(selectedSourceId) || null}
+          onClose={() => setSelectedSourceId(null)}
+        />
+      )}
+
       <TopicEntryQuizPrompt
         isOpen={showEntryPrompt}
         onClose={() => setShowEntryPrompt(false)}
         daysSince={entryQuizDaysSince}
-        topicName={topic?.canonicalName || ""}
+        topicName={topic.canonicalName}
         onStartQuiz={handleEntryQuizStart}
         onSkip={handleEntryQuizSkip}
       />
-
       <TopicQuizModal
         isOpen={showEntryQuiz}
         onClose={() => setShowEntryQuiz(false)}
         topicPageId={pageId}
-        topicName={topic?.canonicalName || ""}
+        topicName={topic.canonicalName}
         daysSince={entryQuizDaysSince}
         onComplete={handleEntryQuizComplete}
       />
-    </div>
+    </NotebookArticleLayout>
   );
 }

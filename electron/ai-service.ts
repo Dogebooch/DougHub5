@@ -1,9 +1,9 @@
 /**
  * AI Service Provider Abstraction
- * 
+ *
  * Local-first AI service with Ollama auto-detection and cloud fallbacks.
  * Uses OpenAI-compatible SDK for Ollama, OpenAI, and DeepSeek.
- * 
+ *
  * Environment Variables:
  * - AI_PROVIDER: 'ollama' | 'openai' | 'deepseek' | 'anthropic'
  * - AI_BASE_URL: Override base URL for provider
@@ -23,7 +23,10 @@ import type {
   SemanticMatch,
   CardSuggestion,
   ElaboratedFeedback,
+  ElaboratedFeedback,
   CaptureAnalysisResult,
+  ArticleSynthesisContext, // Phase 4
+  ArticleSynthesisResult, // Phase 4
 } from "../src/types/ai";
 import { type DbNote, type NotebookBlockAiEvaluation } from "./database/types";
 import { settingsQueries } from "./database/settings";
@@ -1726,7 +1729,10 @@ async function extractGenericSourceMetadata(
       throw aiError;
     }
   } catch (error) {
-    console.error(`[AI Service] ❌ Failed to extract ${sourceType} metadata:`, error);
+    console.error(
+      `[AI Service] ❌ Failed to extract ${sourceType} metadata:`,
+      error,
+    );
     return null;
   }
 }
@@ -1749,7 +1755,7 @@ export async function analyzeFlashcard(
   correctAnswer: string,
   explanation: string,
   top3VectorMatches: string,
-  userRole?: string
+  userRole?: string,
 ): Promise<FlashcardAnalysisResult | null> {
   const task = flashcardAnalysisTask;
   const config = await getProviderConfig();
@@ -1757,7 +1763,8 @@ export async function analyzeFlashcard(
   const effectiveModel = devSettings["aiModel"] || config.model;
 
   // Auto-detect user role from settings if not explicitly provided
-  const effectiveRole = userRole || settingsQueries.get("userProfile") || "medical student";
+  const effectiveRole =
+    userRole || settingsQueries.get("userProfile") || "medical student";
 
   // Interference Detection: If no vector matches provided, run internal search
   let vectorContext = top3VectorMatches;
@@ -1765,23 +1772,25 @@ export async function analyzeFlashcard(
     try {
       // 1. Fetch all notes (MVP approach - post-MVP use vector DB)
       const allNotes = noteQueries.getAll();
-      
+
       // 2. Find semantic matches
       const matches = findRelatedNotes(stem, allNotes, 0.15, 3);
-      
+
       // 3. Hydrate matches with full content for the AI to analyze
-      const hydratedMatches = matches.map(match => {
-        const note = allNotes.find(n => n.id === match.noteId);
+      const hydratedMatches = matches.map((match) => {
+        const note = allNotes.find((n) => n.id === match.noteId);
         return {
           id: match.noteId,
           title: note?.title || "Unknown",
           content: note?.content?.substring(0, 300) || "", // Truncate content
-          similarity: match.similarity
+          similarity: match.similarity,
         };
       });
 
       vectorContext = JSON.stringify(hydratedMatches);
-      console.log(`[AI Service] Interference Detection found ${matches.length} matches`);
+      console.log(
+        `[AI Service] Interference Detection found ${matches.length} matches`,
+      );
     } catch (err) {
       console.warn("[AI Service] Failed to run interference detection:", err);
       // Fallback to empty context on error
@@ -1810,7 +1819,7 @@ export async function analyzeFlashcard(
       : task.maxTokens;
 
     console.log(
-      `[AI Service] Using model: ${effectiveModel} | Task: ${task.name}`
+      `[AI Service] Using model: ${effectiveModel} | Task: ${task.name}`,
     );
 
     const controller = new AbortController();
@@ -1846,7 +1855,7 @@ export async function analyzeFlashcard(
           temperature,
           max_tokens: maxTokens,
         },
-        { signal: controller.signal as any }
+        { signal: controller.signal as any },
       );
 
       clearTimeout(timeoutId);
@@ -1876,7 +1885,9 @@ export async function analyzeFlashcard(
 
       // Parse JSON response
       const parsed = parseAIResponse<FlashcardAnalysisResult>(responseText);
-      const result = task.normalizeResult ? task.normalizeResult(parsed) : parsed;
+      const result = task.normalizeResult
+        ? task.normalizeResult(parsed)
+        : parsed;
 
       return result;
     } catch (aiError) {
@@ -2158,7 +2169,11 @@ export async function extractFacts(
   }
 
   const task = extractFactsTask;
-  const context: ExtractFactsContext = { sourceContent, sourceType, topicContext };
+  const context: ExtractFactsContext = {
+    sourceContent,
+    sourceType,
+    topicContext,
+  };
 
   try {
     const response = await withRetry(async () => {
@@ -2338,7 +2353,50 @@ export async function detectConfusion(
 }
 
 // ============================================================================
-// Exports
+// Notebook v4.1: Article Synthesis (Phase 4)
+// ============================================================================
+
+/**
+ * Synthesize distinct notebook blocks into a cohesive, cited article.
+ *
+ * @param topicTitle Title of the topic being synthesized
+ * @param blocks Array of blocks with content and source IDs
+ * @returns Synthesized markdown content
+ */
+export async function synthesizeArticle(
+  topicTitle: string,
+  blocks: { content: string; sourceItemId: string }[],
+): Promise<ArticleSynthesisResult> {
+  const context: ArticleSynthesisContext = {
+    topicTitle,
+    blocks: blocks.map((b) => ({
+      content: b.content,
+      sourceItemId: b.sourceItemId,
+    })),
+  };
+  const task = articleSynthesisTask;
+
+  try {
+    const response = await withRetry(async () => {
+      const userPrompt = task.buildUserPrompt(context);
+      return await callAI(task.systemPrompt, userPrompt);
+    });
+
+    // Synthesis returns a JSON object with a "markdown" field
+    const parsed = parseAIResponse<ArticleSynthesisResult>(response);
+    const normalized = task.normalizeResult
+      ? task.normalizeResult(parsed)
+      : { markdown: "" };
+
+    return normalized;
+  } catch (error) {
+    console.error("[AI Service] synthesizeArticle failed:", error);
+    return task.fallbackResult || { markdown: "", usedFallback: true };
+  }
+}
+
+// ============================================================================
+// AI Utilities
 // ============================================================================
 
 export {
@@ -2354,6 +2412,9 @@ export {
   type CardSuggestion,
   type WorthinessResult,
   type ElaboratedFeedback,
+  type CaptureAnalysisResult,
+  type ArticleSynthesisContext, // Phase 4
+  type ArticleSynthesisResult, // Phase 4
 } from "../src/types/ai";
 
 // Notebook v2: Quiz System Types (v24)

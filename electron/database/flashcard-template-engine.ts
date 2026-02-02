@@ -10,7 +10,7 @@
  * - Image/Audio entities get special card types as Golden Ticket override
  */
 
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID as uuidv4 } from "node:crypto";
 import type {
   DbKnowledgeEntity,
   DbPracticeBankFlashcard,

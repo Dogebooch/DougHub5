@@ -22,11 +22,13 @@ import {
   gradeAnswer,
   detectConfusion,
   analyzeFlashcard,
+  synthesizeArticle, // Phase 4
   type ExtractFactsResult,
   type ExtractedFact,
   type GenerateQuizResult,
   type GradeAnswerResult,
   type DetectConfusionResult,
+  type ArticleSynthesisResult, // Phase 4
   type FlashcardAnalysisResult,
   type FlashcardAnalysisContext,
 } from "./ai-service";
@@ -1455,9 +1457,17 @@ export function registerIpcHandlers(): void {
     "sourceItems:getByStatus",
     async (_, status: SourceItemStatus): Promise<IpcResult<DbSourceItem[]>> => {
       try {
+        console.log(`[IPC] sourceItems:getByStatus('${status}') requested`);
         const items = sourceItemQueries.getByStatus(status);
+        console.log(
+          `[IPC] sourceItems:getByStatus('${status}') returned ${items.length} items`,
+        );
         return success(items);
       } catch (error) {
+        console.error(
+          `[IPC] sourceItems:getByStatus('${status}') failed:`,
+          error,
+        );
         return failure(error);
       }
     },
@@ -2775,6 +2785,22 @@ export function registerIpcHandlers(): void {
       try {
         const status = await getProviderStatus();
         return success(status);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "ai:synthesizeArticle",
+    async (
+      _,
+      topicTitle: string,
+      blocks: { content: string; sourceItemId: string }[],
+    ): Promise<IpcResult<ArticleSynthesisResult>> => {
+      try {
+        const result = await synthesizeArticle(topicTitle, blocks);
+        return success(result);
       } catch (error) {
         return failure(error);
       }

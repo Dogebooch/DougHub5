@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { getDatabase } from "./db-connection";
 import type { DbMedicalAcronym } from "./types";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// __dirname removed
 
 export const medicalAcronymQueries = {
   getAll(): DbMedicalAcronym[] {
@@ -14,7 +14,7 @@ export const medicalAcronymQueries = {
 
   getByAcronym(acronym: string): DbMedicalAcronym[] {
     const stmt = getDatabase().prepare(
-      "SELECT * FROM medical_acronyms WHERE acronym = ?"
+      "SELECT * FROM medical_acronyms WHERE acronym = ?",
     );
     return stmt.all(acronym.toUpperCase()) as DbMedicalAcronym[];
   },
@@ -27,7 +27,7 @@ export const medicalAcronymQueries = {
     stmt.run(
       entry.acronym.toUpperCase(),
       entry.expansion,
-      entry.category || null
+      entry.category || null,
     );
     invalidateAcronymCache();
   },
@@ -43,7 +43,7 @@ export const medicalAcronymQueries = {
         stmt.run(
           item.acronym.toUpperCase(),
           item.expansion,
-          item.category || null
+          item.category || null,
         );
       }
     });
@@ -97,11 +97,13 @@ export function seedMedicalAcronymsFromLocalFile(): void {
     category?: string;
   }[] = [];
 
+  const scriptDir = __dirname;
+
   try {
     const possiblePaths = [
       path.join(process.cwd(), "src", "data", "medical-acronyms.json"),
-      path.join(__dirname, "..", "src", "data", "medical-acronyms.json"),
-      path.join(__dirname, "assets", "medical-acronyms.json"),
+      path.join(scriptDir, "..", "src", "data", "medical-acronyms.json"),
+      path.join(scriptDir, "assets", "medical-acronyms.json"),
     ];
 
     let foundPath = "";
@@ -116,13 +118,13 @@ export function seedMedicalAcronymsFromLocalFile(): void {
       const content = fs.readFileSync(foundPath, "utf8");
       loadedAcronyms = JSON.parse(content);
       console.log(
-        `[Database] Loaded ${loadedAcronyms.length} acronyms from ${foundPath}`
+        `[Database] Loaded ${loadedAcronyms.length} acronyms from ${foundPath}`,
       );
     }
   } catch (error) {
     console.warn(
       "[Database] Failed to load acronyms from file, using fallback list:",
-      error
+      error,
     );
   }
 
@@ -146,9 +148,15 @@ export function seedMedicalAcronymsFromLocalFile(): void {
         acronym: "SIADH",
         expansion: "Syndrome of Inappropriate Antidiuretic Hormone",
       },
-      { acronym: "TIPS", expansion: "Transjugular Intrahepatic Portosystemic Shunt" },
+      {
+        acronym: "TIPS",
+        expansion: "Transjugular Intrahepatic Portosystemic Shunt",
+      },
       { acronym: "DIC", expansion: "Disseminated Intravascular Coagulation" },
-      { acronym: "HELLP", expansion: "Hemolysis, Elevated Liver enzymes, Low Platelets" },
+      {
+        acronym: "HELLP",
+        expansion: "Hemolysis, Elevated Liver enzymes, Low Platelets",
+      },
       { acronym: "MODS", expansion: "Multiple Organ Dysfunction Syndrome" },
       { acronym: "SIRS", expansion: "Systemic Inflammatory Response Syndrome" },
       { acronym: "ARDS", expansion: "Acute Respiratory Distress Syndrome" },
@@ -157,12 +165,16 @@ export function seedMedicalAcronymsFromLocalFile(): void {
       { acronym: "PT", expansion: "Prothrombin Time", category: "Labs" },
       { acronym: "PT", expansion: "Physical Therapy", category: "Rehab" },
       { acronym: "PE", expansion: "Pulmonary Embolism", category: "Pulmonary" },
-      { acronym: "PE", expansion: "Physical Examination", category: "Clinical" },
+      {
+        acronym: "PE",
+        expansion: "Physical Examination",
+        category: "Clinical",
+      },
     ];
   }
 
   medicalAcronymQueries.bulkInsert(loadedAcronyms);
   console.log(
-    `[Database] Seeded ${loadedAcronyms.length} medical acronyms total`
+    `[Database] Seeded ${loadedAcronyms.length} medical acronyms total`,
   );
 }
