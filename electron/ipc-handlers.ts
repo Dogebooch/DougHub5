@@ -4068,9 +4068,14 @@ export function registerIpcHandlers(): void {
     "practice-bank:generate-cards",
     async (
       _,
-      entity: DbKnowledgeEntity,
+      entityId: string,
     ): Promise<IpcResult<DbPracticeBankFlashcard[]>> => {
       try {
+        // Fetch the full entity from the database using the entityId
+        const entity = knowledgeEntityQueries.getById(entityId);
+        if (!entity) {
+          return failure(new Error(`Entity not found: ${entityId}`));
+        }
         const cards = generateCardsForEntity(entity);
         if (cards.length > 0) {
           practiceBankQueries.insertMany(cards);
