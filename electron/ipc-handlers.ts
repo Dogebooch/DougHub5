@@ -105,7 +105,18 @@ import {
   DbKnowledgeEntityLink,
   KnowledgeEntityType,
   KnowledgeLinkType,
+  // Practice Bank (v28)
+  practiceBankQueries,
+  simulatorAttemptQueries,
+  DbPracticeBankFlashcard,
+  DbSimulatorAttempt,
+  PracticeBankCardType,
 } from "./database";
+import {
+  generateCardsForEntity,
+  getExpectedCardCount,
+  isEntityReadyForForging,
+} from "./database/flashcard-template-engine";
 import {
   scheduleReview,
   getIntervalPreviews,
@@ -3982,6 +3993,287 @@ export function registerIpcHandlers(): void {
             linkType,
           ),
         );
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // --------------------------------------------------------------------------
+  // Practice Bank Flashcard Handlers (v28)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "practice-bank:get-by-entity",
+    async (
+      _,
+      entityId: string,
+    ): Promise<IpcResult<DbPracticeBankFlashcard[]>> => {
+      try {
+        return success(practiceBankQueries.getByEntityId(entityId));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:get-by-id",
+    async (
+      _,
+      id: string,
+    ): Promise<IpcResult<DbPracticeBankFlashcard | null>> => {
+      try {
+        return success(practiceBankQueries.getById(id));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:get-active-cards",
+    async (): Promise<IpcResult<DbPracticeBankFlashcard[]>> => {
+      try {
+        return success(practiceBankQueries.getActiveCards());
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:get-due-cards",
+    async (): Promise<IpcResult<DbPracticeBankFlashcard[]>> => {
+      try {
+        return success(practiceBankQueries.getDueCards());
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:get-mature-entity-ids",
+    async (): Promise<IpcResult<string[]>> => {
+      try {
+        return success(practiceBankQueries.getMatureEntityIds());
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:generate-cards",
+    async (
+      _,
+      entity: DbKnowledgeEntity,
+    ): Promise<IpcResult<DbPracticeBankFlashcard[]>> => {
+      try {
+        const cards = generateCardsForEntity(entity);
+        if (cards.length > 0) {
+          practiceBankQueries.insertMany(cards);
+        }
+        return success(cards);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:activate-card",
+    async (_, id: string): Promise<IpcResult<void>> => {
+      try {
+        practiceBankQueries.activateCard(id);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:deactivate-card",
+    async (_, id: string): Promise<IpcResult<void>> => {
+      try {
+        practiceBankQueries.deactivateCard(id);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:retire-card",
+    async (_, id: string): Promise<IpcResult<void>> => {
+      try {
+        practiceBankQueries.retireCard(id);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:resurrect-card",
+    async (_, id: string): Promise<IpcResult<void>> => {
+      try {
+        practiceBankQueries.resurrectCard(id);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:update-fsrs-state",
+    async (
+      _,
+      id: string,
+      fsrsState: {
+        stability: number;
+        difficulty: number;
+        elapsedDays: number;
+        scheduledDays: number;
+        reps: number;
+        lapses: number;
+        state: number;
+        dueDate: string;
+        lastReview: string;
+      },
+    ): Promise<IpcResult<void>> => {
+      try {
+        practiceBankQueries.updateFsrsState(id, fsrsState);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:get-card-counts",
+    async (
+      _,
+      entityId: string,
+    ): Promise<
+      IpcResult<{
+        total: number;
+        active: number;
+        banked: number;
+        retired: number;
+      }>
+    > => {
+      try {
+        return success(practiceBankQueries.getCardCountsByEntity(entityId));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:find-by-entity-and-type",
+    async (
+      _,
+      entityId: string,
+      cardType: PracticeBankCardType,
+    ): Promise<IpcResult<DbPracticeBankFlashcard | null>> => {
+      try {
+        return success(
+          practiceBankQueries.findByEntityAndType(entityId, cardType),
+        );
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:delete-by-entity",
+    async (_, entityId: string): Promise<IpcResult<void>> => {
+      try {
+        practiceBankQueries.deleteByEntityId(entityId);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:get-expected-card-count",
+    async (
+      _,
+      entity: DbKnowledgeEntity,
+    ): Promise<IpcResult<{ goldenTicket: number; practiceBank: number }>> => {
+      try {
+        return success(getExpectedCardCount(entity));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "practice-bank:is-entity-ready",
+    async (_, entity: DbKnowledgeEntity): Promise<IpcResult<boolean>> => {
+      try {
+        return success(isEntityReadyForForging(entity));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  // --------------------------------------------------------------------------
+  // Simulator Attempt Handlers (v28)
+  // --------------------------------------------------------------------------
+
+  ipcMain.handle(
+    "simulator:record-attempt",
+    async (_, attempt: DbSimulatorAttempt): Promise<IpcResult<void>> => {
+      try {
+        simulatorAttemptQueries.insert(attempt);
+        return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "simulator:get-by-entity",
+    async (_, entityId: string): Promise<IpcResult<DbSimulatorAttempt[]>> => {
+      try {
+        return success(simulatorAttemptQueries.getByEntityId(entityId));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "simulator:get-today-count",
+    async (): Promise<IpcResult<number>> => {
+      try {
+        return success(simulatorAttemptQueries.getTodayAttemptCount());
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "simulator:get-failure-rate",
+    async (_, entityId: string): Promise<IpcResult<number>> => {
+      try {
+        return success(simulatorAttemptQueries.getFailureRate(entityId));
       } catch (error) {
         return failure(error);
       }

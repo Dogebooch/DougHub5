@@ -126,5 +126,28 @@ export type {
   AnatomyData,
   AlgorithmData,
   GenericConceptData,
+  // Practice Bank (v28)
+  DbPracticeBankFlashcard,
+  PracticeBankFlashcardRow,
+  PracticeBankCardType,
+  PracticeBankMaturityState,
+  DbSimulatorAttempt,
+  SimulatorAttemptRow,
+  CardGenerationTemplate,
+  FailureAttributionOption,
 } from "./database/types";
-export { GOLDEN_TICKET_FIELDS } from "./database/types";
+export {
+  GOLDEN_TICKET_FIELDS,
+  FAILURE_ATTRIBUTION_OPTIONS,
+} from "./database/types";
+
+// Practice Bank (v28)
+export {
+  practiceBankQueries,
+  simulatorAttemptQueries,
+} from "./database/practice-bank";
+export {
+  generateCardsForEntity,
+  getExpectedCardCount,
+  isEntityReadyForForging,
+} from "./database/flashcard-template-engine";
