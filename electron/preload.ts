@@ -628,6 +628,50 @@ const api = {
       ipcRenderer.invoke("blockTopicAssignments:getTopicPageIds", blockId),
   },
   // ============================================================================
+  // Practice Bank & Simulator (v28)
+  // ============================================================================
+  practiceBank: {
+    // Card CRUD & Queries
+    getByEntityId: (entityId: string) =>
+      ipcRenderer.invoke("practice-bank:get-by-entity-id", entityId),
+    getById: (id: string) => ipcRenderer.invoke("practice-bank:get-by-id", id),
+    getActive: () => ipcRenderer.invoke("practice-bank:get-active"),
+    getDueToday: () => ipcRenderer.invoke("practice-bank:get-due-today"),
+    getByMaturityState: (state: string) =>
+      ipcRenderer.invoke("practice-bank:get-by-maturity-state", state),
+
+    // Card Generation
+    generateCards: (entityId: string) =>
+      ipcRenderer.invoke("practice-bank:generate-cards", entityId),
+    getExpectedCardCount: (entityId: string) =>
+      ipcRenderer.invoke("practice-bank:get-expected-card-count", entityId),
+    isEntityReadyForForging: (entityId: string) =>
+      ipcRenderer.invoke("practice-bank:is-entity-ready-for-forging", entityId),
+
+    // Card Lifecycle
+    activate: (id: string) => ipcRenderer.invoke("practice-bank:activate", id),
+    deactivate: (id: string) =>
+      ipcRenderer.invoke("practice-bank:deactivate", id),
+    retire: (id: string) => ipcRenderer.invoke("practice-bank:retire", id),
+    resurrect: (id: string) =>
+      ipcRenderer.invoke("practice-bank:resurrect", id),
+
+    // FSRS State Updates
+    updateFsrsState: (id: string, fsrsState: unknown) =>
+      ipcRenderer.invoke("practice-bank:update-fsrs-state", id, fsrsState),
+  },
+  simulator: {
+    // Attempt Recording
+    recordAttempt: (attempt: unknown) =>
+      ipcRenderer.invoke("simulator:record-attempt", attempt),
+    getByEntityId: (entityId: string) =>
+      ipcRenderer.invoke("simulator:get-by-entity-id", entityId),
+    getDailyCountByEntity: (entityId: string, date?: string) =>
+      ipcRenderer.invoke("simulator:get-daily-count", entityId, date),
+    getFailureRateByEntity: (entityId: string) =>
+      ipcRenderer.invoke("simulator:get-failure-rate", entityId),
+  },
+  // ============================================================================
   // Claude Dev Integration
   // ============================================================================
   claudeDev: {

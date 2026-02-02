@@ -347,8 +347,11 @@ ${qbankContent.explanationHtml || ""}
         sourceItemId={item.id}
         onSave={async (entity) => {
           try {
+            const entityId = crypto.randomUUID();
+
+            // Insert the knowledge entity
             await window.api.knowledgeEntities.insert({
-              id: crypto.randomUUID(),
+              id: entityId,
               entityType: entity.entityType,
               title: entity.title,
               goldenTicketField:
@@ -377,6 +380,25 @@ ${qbankContent.explanationHtml || ""}
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             });
+
+            // Generate Practice Bank flashcards for the new entity
+            // This creates 1 Golden Ticket (active) + 4-5 Practice Bank cards (suspended)
+            const cardResult =
+              await window.api.practiceBank.generateCards(entityId);
+            if (cardResult?.success) {
+              console.log(
+                "[SourceItemViewer] Generated Practice Bank cards for entity:",
+                entity.title,
+                cardResult.data?.length || 0,
+                "cards",
+              );
+            } else {
+              console.warn(
+                "[SourceItemViewer] Failed to generate cards:",
+                cardResult?.error,
+              );
+            }
+
             console.log(
               "[SourceItemViewer] Knowledge entity created:",
               entity.title,
