@@ -1,6 +1,6 @@
 import React, { useState, ReactNode } from "react";
 import { ConnectedContentPanel } from "./ConnectedContentPanel";
-import { ViewToggle } from "../ViewToggle";
+import { ViewToggle } from "./ViewToggle";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
