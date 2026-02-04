@@ -504,7 +504,10 @@ app.whenReady().then(async () => {
         // Small delay to ensure paint
         setTimeout(() => {
           if (splash && !splash.isDestroyed()) splash.close();
-          if (win && !win.isDestroyed()) win.show();
+          // Only show window if not in headless mode
+          if (win && !win.isDestroyed() && !process.env.DOUGHUB_HEADLESS) {
+            win.show();
+          }
         }, 500);
       });
     }

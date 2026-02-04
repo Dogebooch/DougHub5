@@ -2122,6 +2122,168 @@ export async function synthesizeArticle(
 }
 
 // ============================================================================
+// Generic AI Task Runner (v5.0)
+// ============================================================================
+
+import { AI_TASKS } from "./ai/tasks";
+
+/**
+ * Execute any registered AI task dynamically.
+ *
+ * @param taskId ID of the task to run (must exist in AI_TASKS)
+ * @param context Input context for the task
+ * @returns Task result or fallback
+ */
+export async function runAITask(taskId: string, context: any): Promise<any> {
+  const task = AI_TASKS[taskId];
+  if (!task) {
+    throw new Error(`AI Task '${taskId}' not found`);
+  }
+
+  const config = await getProviderConfig();
+  const devSettings = devSettingsQueries.getAll();
+  const effectiveModel = devSettings["aiModel"] || config.model;
+
+  // Check cache first
+  let cacheKey = "";
+  if (task.cacheTTLMs > 0) {
+    // Create a deterministic cache key from input context
+    // Note: We include task ID and model to invalidate if those change
+    cacheKey = aiCache.key(task.id, effectiveModel, JSON.stringify(context));
+    const cached = aiCache.get(cacheKey);
+    if (cached) {
+      console.log(`[AI Service] ✓ Cache hit for task '${taskId}'`);
+      return cached;
+    }
+  }
+
+  // Build prompt
+  const userPrompt = task.buildUserPrompt(context);
+
+  try {
+    const startTime = Date.now();
+    const client = await getClient();
+
+    const temperature = devSettings["aiTemperature"]
+      ? parseFloat(devSettings["aiTemperature"])
+      : task.temperature;
+    const maxTokens = devSettings["aiMaxTokens"]
+      ? parseInt(devSettings["aiMaxTokens"])
+      : task.maxTokens;
+
+    console.log(
+      `[AI Service] Running task '${taskId}' on model '${effectiveModel}'`,
+    );
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), task.timeoutMs);
+
+    const requestId = crypto.randomUUID();
+    notifyAILog({
+      id: requestId,
+      timestamp: startTime,
+      endpoint: "chat/completions",
+      model: effectiveModel,
+      latencyMs: 0,
+      status: "pending",
+      request: {
+        messages: [
+          { role: "system", content: task.systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature,
+        max_tokens: maxTokens,
+      },
+      reason: `runTask:${taskId}`,
+    });
+
+    try {
+      const completion = await client.chat.completions.create(
+        {
+          model: effectiveModel,
+          messages: [
+            { role: "system", content: task.systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature,
+          max_tokens: maxTokens,
+        },
+        { signal: controller.signal as any },
+      );
+
+      clearTimeout(timeoutId);
+      const endTime = Date.now();
+      const elapsedMs = endTime - startTime;
+
+      notifyAILog({
+        id: requestId,
+        timestamp: endTime,
+        endpoint: "chat/completions",
+        model: effectiveModel,
+        latencyMs: elapsedMs,
+        status: "success",
+        tokens: completion.usage
+          ? {
+              prompt: completion.usage.prompt_tokens,
+              completion: completion.usage.completion_tokens,
+              total: completion.usage.total_tokens,
+            }
+          : undefined,
+        response: completion,
+        reason: `runTask:${taskId}`,
+      });
+
+      const responseText =
+        completion.choices[0]?.message?.content?.trim() || "";
+
+      console.log(
+        `[AI Service] Response received for '${taskId}' (${elapsedMs}ms)`,
+      );
+
+      // Parse and Normalize
+      // Note: Generic runner assumes JSON output is expected if normalizeResult is present
+      // If a task returns raw text, it should handle that in its normalizeResult
+      const parsed = parseAIResponse<any>(responseText);
+
+      const result = task.normalizeResult
+        ? task.normalizeResult(parsed)
+        : parsed || task.fallbackResult;
+
+      // Cache result
+      if (task.cacheTTLMs > 0) {
+        aiCache.set(cacheKey, result, task.cacheTTLMs);
+      }
+
+      return result;
+    } catch (aiError) {
+      clearTimeout(timeoutId);
+      const endTime = Date.now();
+      notifyAILog({
+        id: requestId,
+        timestamp: endTime,
+        endpoint: "chat/completions",
+        model: effectiveModel,
+        latencyMs: endTime - startTime,
+        status: "error",
+        error: (aiError as any)?.message,
+        reason: `runTask:${taskId}`,
+      });
+      throw aiError;
+    }
+  } catch (error) {
+    console.error(`[AI Service] Task '${taskId}' failed:`, error);
+    if (task.fallbackResult) {
+      return {
+        ...task.fallbackResult,
+        usedFallback: true,
+        error: String(error),
+      };
+    }
+    throw error;
+  }
+}
+
+// ============================================================================
 // AI Utilities
 // ============================================================================
 

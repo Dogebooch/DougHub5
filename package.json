@@ -10,6 +10,7 @@
     "clean": "npx rimraf dist dist-electron node_modules/.vite",
     "icons:generate": "node scripts/generate-icons.js",
     "dev": "npm run cleanup && npm run clean && vite",
+    "dev:headless": "set DOUGHUB_HEADLESS=1 && npm run dev",
     "build": "npm run icons:generate && tsc && vite build && electron-builder",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",

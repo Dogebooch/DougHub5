@@ -1,6 +1,7 @@
 import { SearchBar } from "./SearchBar";
 import { useAppStore } from "@/stores/useAppStore";
 import { Badge } from "@/components/ui/badge";
+import { WindowModeToggle } from "./WindowModeToggle";
 
 export function Header() {
   const setCurrentView = useAppStore((state) => state.setCurrentView);
@@ -57,6 +58,7 @@ export function Header() {
 
         {/* Right: Browser badge */}
         <div className="flex items-center gap-2">
+          <WindowModeToggle />
           {isBrowserMode && (
             <Badge variant="outline" className="text-[11px] h-6">
               Browser Mode

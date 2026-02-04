@@ -394,6 +394,8 @@ export interface ElectronAPI {
       topicContext: string,
       responseTimeMs: number | null,
     ) => Promise<IpcResult<ElaboratedFeedback>>;
+    // Generic Task Runner
+    runTask: (taskId: string, context: any) => Promise<any>;
     suggestTags: (content: string) => Promise<IpcResult<string[]>>;
     findRelatedNotes: (
       content: string,
@@ -431,7 +433,7 @@ export interface ElectronAPI {
       correctAnswer: string,
       explanation: string,
       top3VectorMatches: string,
-      userRole?: string
+      userRole?: string,
     ) => Promise<IpcResult<FlashcardAnalysisResult | null>>;
   };
   insights: {

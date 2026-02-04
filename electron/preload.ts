@@ -293,6 +293,11 @@ const api = {
   },
   ai: {
     getProviderStatus: () => ipcRenderer.invoke("ai:getProviderStatus"),
+    // Generic Task Runner
+    runTask: (taskId: string, context: any) =>
+      ipcRenderer.invoke("ai:runTask", taskId, context),
+
+    // Legacy/Specific methods
     extractConcepts: (content: string) =>
       ipcRenderer.invoke("ai:extractConcepts", content),
     identifyTestedConcept: (sourceContent: string, sourceType: string) =>
@@ -469,6 +474,9 @@ const api = {
   },
   app: {
     getUserDataPath: () => ipcRenderer.invoke("app:getUserDataPath"),
+    setWindowVisibility: (visible: boolean) =>
+      ipcRenderer.invoke("app:setWindowVisibility", visible),
+    isWindowVisible: () => ipcRenderer.invoke("app:isWindowVisible"),
   },
   referenceRanges: {
     getAll: () => ipcRenderer.invoke("reference-ranges:getAll"),

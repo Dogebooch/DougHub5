@@ -4,7 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { QuickCaptureFAB } from "./QuickCaptureFAB";
 import { CommandPalette } from "@/components/modals/CommandPalette";
 import { QuickCaptureModal } from "@/components/modals/QuickCaptureModal";
-import { ReviewInterface } from "@/components/review/ReviewInterface";
+import ReviewInterface from "@/components/review/ReviewInterface";
 import { InboxView } from "@/components/knowledgebank/InboxView";
 import { KnowledgeBankView } from "@/components/knowledgebank/KnowledgeBankView";
 import { NotebookView } from "@/components/notebook/NotebookView";

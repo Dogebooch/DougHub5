@@ -3370,6 +3370,42 @@ export function registerIpcHandlers(): void {
     },
   );
 
+  ipcMain.handle(
+    "app:setWindowVisibility",
+    async (event, visible: boolean): Promise<IpcResult<boolean>> => {
+      try {
+        const win = BrowserWindow.fromWebContents(event.sender);
+        if (win) {
+          if (visible) {
+            win.show();
+            win.focus();
+          } else {
+            win.hide();
+          }
+          return success(visible);
+        }
+        return failure(new Error("Window not found"));
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "app:isWindowVisible",
+    async (event): Promise<IpcResult<boolean>> => {
+      try {
+        const win = BrowserWindow.fromWebContents(event.sender);
+        if (win) {
+          return success(win.isVisible());
+        }
+        return success(false);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
   // ============================================================================
   // Reference Ranges
   // ============================================================================
@@ -4168,6 +4204,33 @@ export function registerIpcHandlers(): void {
       }
     },
   );
+
+  // AI: Generic Task Runner
+  ipcMain.handle("ai:runTask", async (_, taskId: string, context: any) => {
+    try {
+      console.log(`[IPC] ai:runTask calling task '${taskId}'`);
+      return await runAITask(taskId, context);
+    } catch (error) {
+      console.error(`[IPC] ai:runTask failed for '${taskId}':`, error);
+      return { error: String(error) };
+    }
+  });
+
+  // Practice Bank: Generate Cards
+  ipcMain.handle("practiceBank:generateCards", async (_, entityId: string) => {
+    try {
+      console.log(`[IPC] practiceBank:generateCards for ${entityId}`);
+      // Assuming generateCardsForEntity is available here or imported
+      // return await generateCardsForEntity(entityId);
+      // NOTE: This was referencing an unavailable function in the context provided
+      throw new Error(
+        "generateCardsForEntity not implemented in this context yet",
+      );
+    } catch (error) {
+      console.error("[IPC] practiceBank:generateCards failed:", error);
+      throw error;
+    }
+  });
 
   ipcMain.handle(
     "practice-bank:get-expected-card-count",

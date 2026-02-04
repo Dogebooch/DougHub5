@@ -358,6 +358,9 @@ export function setupElectronMock() {
     },
     app: {
       getUserDataPath: () => mockInvoke("app:getUserDataPath"),
+      setWindowVisibility: (visible: boolean) =>
+        mockInvoke("app:setWindowVisibility", visible),
+      isWindowVisible: () => mockInvoke("app:isWindowVisible"),
       reload: () => {
         console.log("[MockAPI] Reload called");
         return Promise.resolve();
