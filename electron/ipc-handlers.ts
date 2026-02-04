@@ -9,28 +9,15 @@ import {
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
-// @ts-ignore
+// @ts-expect-error - pdf-parse types
 import * as pdfParseRaw from "pdf-parse";
 const pdfParse = pdfParseRaw.default ?? pdfParseRaw;
 import {
   resetAIClient,
   getAvailableOllamaModels,
   extractQuestionSummary,
-  // Notebook v2: Quiz System AI functions (v24)
-  extractFacts,
-  generateQuiz,
-  gradeAnswer,
-  detectConfusion,
-  analyzeFlashcard,
   synthesizeArticle, // Phase 4
-  type ExtractFactsResult,
-  type ExtractedFact,
-  type GenerateQuizResult,
-  type GradeAnswerResult,
-  type DetectConfusionResult,
   type ArticleSynthesisResult, // Phase 4
-  type FlashcardAnalysisResult,
-  type FlashcardAnalysisContext,
 } from "./ai-service";
 import {
   parseBoardQuestion,
@@ -46,17 +33,9 @@ import {
 } from "./capture-server";
 import { notifyAIExtraction, notifyNewSourceItem } from "./ipc-utils";
 import {
-  cardQueries,
-  noteQueries,
-  reviewLogQueries,
   quickCaptureQueries,
-  connectionQueries,
   sourceItemQueries,
   canonicalTopicQueries,
-  notebookTopicPageQueries,
-  notebookBlockQueries,
-  notebookLinkQueries,
-  smartViewQueries,
   searchQueries,
   settingsQueries,
   devSettingsQueries,
@@ -65,43 +44,19 @@ import {
   getDbPath,
   initDatabase,
   closeDatabase,
-  DbCard,
-  DbNote,
-  DbReviewLog,
   DbQuickCapture,
-  DbConnection,
   DbSourceItem,
   DbCanonicalTopic,
-  DbNotebookTopicPage,
-  DbNotebookBlock,
-  DbNotebookLink,
-  DbSmartView,
-  ConfidenceRating,
-  WeakTopicSummary,
-  TopicWithStats,
-  LowEaseTopic,
-  GlobalCardStats,
   ExtractionStatus,
   SourceItemStatus,
   DbStatus,
   SearchFilter,
   SearchResult,
-  CardBrowserFilters,
-  CardBrowserSort,
   referenceRangeQueries,
   ReferenceRange,
-  // Notebook v2 (v24)
-  intakeQuizQueries,
-  topicQuizQueries,
+  // Keep confusion patterns for AI context
   confusionPatternQueries,
-  blockTopicAssignmentQueries,
-  DbIntakeQuizAttempt,
-  DbTopicQuizAttempt,
   DbConfusionPattern,
-  DbBlockTopicAssignment,
-  ActivationStatus,
-  ActivationTier,
-  SuspendReason,
   // Medical Knowledge Archetypes (v26)
   knowledgeEntityQueries,
   knowledgeEntityLinkQueries,
@@ -109,24 +64,7 @@ import {
   DbKnowledgeEntityLink,
   KnowledgeEntityType,
   KnowledgeLinkType,
-  // Practice Bank (v28)
-  practiceBankQueries,
-  simulatorAttemptQueries,
-  DbPracticeBankFlashcard,
-  DbSimulatorAttempt,
-  PracticeBankCardType,
 } from "./database";
-import {
-  generateCardsForEntity,
-  getExpectedCardCount,
-  isEntityReadyForForging,
-} from "./database/flashcard-template-engine";
-import {
-  scheduleReview,
-  getIntervalPreviews,
-  formatInterval,
-  Rating,
-} from "./fsrs-service";
 import {
   createBackup,
   restoreBackup,
@@ -146,7 +84,6 @@ import {
   suggestTags,
   identifyTestedConcept,
   generateElaboratedFeedback,
-  findRelatedNotes,
   aiCache,
   type AIProviderStatus,
   type ConceptExtractionResult,
@@ -154,41 +91,9 @@ import {
   type ValidationResult,
   type MedicalListDetection,
   type VignetteConversion,
-  type CardSuggestion,
   type ElaboratedFeedback,
   type TestedConceptResult,
 } from "./ai-service";
-import {
-  resolveTopicAlias,
-  createOrGetTopic,
-  suggestTopicMatches,
-  addTopicAlias,
-  mergeTopics,
-} from "./topic-service";
-import {
-  getClaudeDevStatus,
-  captureScreenshot,
-  sendMessage as sendClaudeDevMessage,
-  sendMessageStreaming as sendClaudeDevMessageStreaming,
-  startSession as startClaudeDevSession,
-  endSession as endClaudeDevSession,
-  getSessionMessages,
-  clearSessionMessages,
-  resetClaudeDevClient,
-  getAvailableModels,
-  getSelectedModel,
-  setSelectedModel,
-  getConversationHistory,
-  loadConversation,
-  deleteConversation,
-  renameConversation,
-  getSessionStats,
-  AVAILABLE_MODELS,
-  type ClaudeDevMessage,
-  type ClaudeDevStatus,
-  type ElementInfo,
-  type ClaudeModel,
-} from "./claude-dev-service";
 
 // ============================================================================
 // In-flight capture lock to prevent race conditions during async processing
