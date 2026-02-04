@@ -1,6 +1,6 @@
 /**
  * AI Provider Type Definitions
- * 
+ *
  * Defines types for AI-powered features: concept extraction, card validation,
  * medical list detection, and semantic search.
  */
@@ -10,12 +10,12 @@
 // ============================================================================
 
 /** Supported AI providers */
-export type AIProviderType = 'ollama' | 'openai' | 'deepseek' | 'anthropic';
+export type AIProviderType = "ollama" | "openai" | "deepseek" | "anthropic";
 
 /** Provider configuration for API clients */
 export interface AIProviderConfig {
   /** Provider API type */
-  type: 'openai-compatible' | 'anthropic';
+  type: "openai-compatible" | "anthropic";
   /** Base URL for API endpoint */
   baseURL: string;
   /** API key for authentication (empty for local providers) */
@@ -66,7 +66,7 @@ export interface ExtractedConcept {
   /** AI confidence score (0-1) */
   confidence: number;
   /** AI-suggested card format */
-  suggestedFormat: 'qa' | 'cloze';
+  suggestedFormat: "qa" | "cloze";
 }
 
 /** Result from concept extraction including list detection */
@@ -102,7 +102,7 @@ export interface MedicalListDetection {
   /** Whether content is a medical list */
   isList: boolean;
   /** Type of medical list */
-  listType: 'differential' | 'procedure' | 'algorithm' | null;
+  listType: "differential" | "procedure" | "algorithm" | null;
   /** Extracted list items */
   items: string[];
   /** True if AI failed and fallback was used */
@@ -134,10 +134,15 @@ export interface SemanticMatch {
 // ============================================================================
 
 /** Supported card formats for generation */
-export type CardFormat = 'qa' | 'cloze' | 'overlapping-cloze' | 'image-occlusion' | 'procedural';
+export type CardFormat =
+  | "qa"
+  | "cloze"
+  | "overlapping-cloze"
+  | "image-occlusion"
+  | "procedural";
 
 /** Worthiness evaluation levels */
-export type WorthinessLevel = 'green' | 'yellow' | 'red';
+export type WorthinessLevel = "green" | "yellow" | "red";
 
 /** AI evaluation of card worthiness */
 export interface WorthinessResult {
@@ -190,7 +195,7 @@ export interface CaptureAnalysisResult {
   /** Short title (<10 words) */
   title: string;
   /** Detected source type */
-  sourceType: 'qbank' | 'article' | 'pdf' | 'image' | 'quickcapture' | 'manual';
+  sourceType: "qbank" | "article" | "pdf" | "image" | "quickcapture" | "manual";
   /** Primary medical domain/specialty */
   domain: string;
   /** Secondary domains for cross-topic relevance */
@@ -216,7 +221,7 @@ export interface ExtractedFact {
   /** Context sentence around the fact */
   context: string;
   /** How central is this to the content */
-  importance: 'core' | 'supporting' | 'peripheral';
+  importance: "core" | "supporting" | "peripheral";
 }
 
 /** Result from extractFacts AI call */
@@ -237,7 +242,7 @@ export interface QuizQuestion {
   /** The original fact this came from */
   sourceFact: string;
   /** Difficulty based on specificity */
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
 }
 
 /** Result from generateQuiz AI call */
@@ -298,7 +303,13 @@ export interface FlashcardAnalysisContext {
  */
 export interface FlashcardAnalysisResult {
   gapAnalysis: {
-    type: "PURE_RECALL" | "PARTIAL_RECALL" | "INTERFERENCE" | "INTEGRATION_FAILURE" | "MISREAD" | null;
+    type:
+      | "PURE_RECALL"
+      | "PARTIAL_RECALL"
+      | "INTERFERENCE"
+      | "INTEGRATION_FAILURE"
+      | "MISREAD"
+      | null;
     confidence: number;
     reasoning: string;
   };
@@ -314,5 +325,21 @@ export interface FlashcardAnalysisResult {
     front: string;
     back: string;
   };
+  usedFallback?: boolean;
+}
+
+// ============================================================================
+// Article Synthesis (Phase 4)
+// ============================================================================
+
+/** Context for article synthesis AI task */
+export interface ArticleSynthesisContext {
+  topicTitle: string;
+  blocks: { content: string; sourceItemId: string }[];
+}
+
+/** Result from article synthesis AI task */
+export interface ArticleSynthesisResult {
+  synthesizedArticle: string;
   usedFallback?: boolean;
 }

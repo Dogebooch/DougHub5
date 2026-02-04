@@ -1,14 +1,8 @@
 /**
- * AI Task Registry
+ * AI Task Registry (CLEANED UP)
  *
  * Central index of all AI task configurations.
- * Each task has its own file with prompts, settings, and response handling.
- *
- * To add a new AI task:
- * 1. Create a new file in this directory (e.g., my-new-task.ts)
- * 2. Export the task config implementing AITaskConfig
- * 3. Import and add to AI_TASKS below
- * 4. Create a test file in scripts/ai-tests/tests/
+ * Removed: Quiz tasks (generate-quiz, grade-answer, detect-confusion, extract-facts)
  */
 
 // Re-export types for convenience
@@ -26,13 +20,9 @@ import { medicalListDetectionTask } from "./medical-list-detection";
 import { vignetteConversionTask } from "./vignette-conversion";
 import { tagSuggestionTask } from "./tag-suggestion";
 import { cardGenerationTask } from "./card-generation";
-// Notebook v2: Quiz System Tasks (v24)
-import { extractFactsTask } from "./extract-facts";
-import { generateQuizTask } from "./generate-quiz";
-import { gradeAnswerTask } from "./grade-answer";
-import { detectConfusionTask } from "./detect-confusion";
 import { flashcardAnalysisTask } from "./flashcard-analysis";
 import { articleSynthesisTask } from "./article-synthesis";
+import { advisorTask } from "./advisor-task";
 
 // Export individual tasks for direct import
 export { identifyTestedConceptTask };
@@ -46,15 +36,9 @@ export { medicalListDetectionTask };
 export { vignetteConversionTask };
 export { tagSuggestionTask };
 export { cardGenerationTask };
-// Notebook v2: Quiz System Tasks (v24)
-export { extractFactsTask };
-export { generateQuizTask };
-export { gradeAnswerTask };
-export { detectConfusionTask };
 export { flashcardAnalysisTask };
 export { articleSynthesisTask };
-
-// All context/result types are re-exported from types.ts via the * export above
+export { advisorTask };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Task Registry
@@ -78,13 +62,9 @@ export const AI_TASKS: Record<string, AITaskConfig> = {
   "vignette-conversion": vignetteConversionTask,
   "tag-suggestion": tagSuggestionTask,
   "card-generation": cardGenerationTask,
-  // Notebook v2: Quiz System Tasks (v24)
-  "extract-facts": extractFactsTask,
-  "generate-quiz": generateQuizTask,
-  "grade-answer": gradeAnswerTask,
-  "detect-confusion": detectConfusionTask,
   "flashcard-analysis": flashcardAnalysisTask,
   "article-synthesis": articleSynthesisTask,
+  advisor: advisorTask,
 } as const;
 
 /**

@@ -23,15 +23,13 @@ import type {
   SemanticMatch,
   CardSuggestion,
   ElaboratedFeedback,
-  ElaboratedFeedback,
   CaptureAnalysisResult,
   ArticleSynthesisContext, // Phase 4
   ArticleSynthesisResult, // Phase 4
 } from "../src/types/ai";
-import { type DbNote, type NotebookBlockAiEvaluation } from "./database/types";
 import { settingsQueries } from "./database/settings";
-import { noteQueries } from "./database/notes";
 import { devSettingsQueries } from "./database/dev-settings";
+import { articleSynthesisTask } from "./ai/tasks";
 import * as crypto from "node:crypto";
 import OpenAI from "openai";
 import * as http from "node:http";
@@ -39,7 +37,6 @@ import { spawn } from "node:child_process";
 import * as path from "node:path";
 import * as os from "node:os";
 import * as fs from "node:fs";
-import { app } from "electron";
 import { notifyOllamaStatus, notifyAILog } from "./ipc-utils";
 import { augmentAndSyncDevStatus } from "./ai/dev-status-sync";
 
@@ -1512,47 +1509,16 @@ function cosineSimilarity(
 
 /**
  * Find notes semantically related to the given content.
- * Uses TF-IDF-style keyword matching for MVP (vector embeddings post-MVP).
- *
- * @param content Content to find related notes for
- * @param existingNotes Array of existing notes to search
- * @param minSimilarity Minimum similarity threshold (default 0.1)
- * @param maxResults Maximum number of results (default 5)
- * @returns Array of semantic matches sorted by similarity
+ * DEPRECATED: Notes module removed. Returns empty array.
  */
 export function findRelatedNotes(
-  content: string,
-  existingNotes: DbNote[],
-  minSimilarity = 0.1,
-  maxResults = 5,
+  _content: string,
+  _existingNotes: unknown[],
+  _minSimilarity = 0.1,
+  _maxResults = 5,
 ): SemanticMatch[] {
-  if (!content.trim() || existingNotes.length === 0) {
-    return [];
-  }
-
-  const contentTF = getTermFrequency(content);
-
-  const matches: SemanticMatch[] = [];
-
-  for (const note of existingNotes) {
-    // Combine title and content for comparison
-    const noteText = `${note.title} ${note.content}`;
-    const noteTF = getTermFrequency(noteText);
-
-    const similarity = cosineSimilarity(contentTF, noteTF);
-
-    if (similarity >= minSimilarity) {
-      matches.push({
-        noteId: note.id,
-        similarity: Math.round(similarity * 1000) / 1000, // Round to 3 decimal places
-      });
-    }
-  }
-
-  // Sort by similarity descending and limit results
-  return matches
-    .sort((a, b) => b.similarity - a.similarity)
-    .slice(0, maxResults);
+  // Notes module removed - semantic search disabled
+  return [];
 }
 
 // ============================================================================
@@ -1769,33 +1735,8 @@ export async function analyzeFlashcard(
   // Interference Detection: If no vector matches provided, run internal search
   let vectorContext = top3VectorMatches;
   if (!vectorContext || vectorContext === "[]") {
-    try {
-      // 1. Fetch all notes (MVP approach - post-MVP use vector DB)
-      const allNotes = noteQueries.getAll();
-
-      // 2. Find semantic matches
-      const matches = findRelatedNotes(stem, allNotes, 0.15, 3);
-
-      // 3. Hydrate matches with full content for the AI to analyze
-      const hydratedMatches = matches.map((match) => {
-        const note = allNotes.find((n) => n.id === match.noteId);
-        return {
-          id: match.noteId,
-          title: note?.title || "Unknown",
-          content: note?.content?.substring(0, 300) || "", // Truncate content
-          similarity: match.similarity,
-        };
-      });
-
-      vectorContext = JSON.stringify(hydratedMatches);
-      console.log(
-        `[AI Service] Interference Detection found ${matches.length} matches`,
-      );
-    } catch (err) {
-      console.warn("[AI Service] Failed to run interference detection:", err);
-      // Fallback to empty context on error
-      vectorContext = "[]";
-    }
+    // Notes module removed - interference detection disabled
+    vectorContext = "[]";
   }
 
   // Build prompt
@@ -2136,223 +2077,6 @@ export async function extractQuestionSummary(
 }
 
 // ============================================================================
-// Notebook v2: Quiz System Functions (v24)
-// ============================================================================
-
-import {
-  extractFactsTask,
-  generateQuizTask,
-  gradeAnswerTask,
-  detectConfusionTask,
-  type ExtractFactsResult,
-  type ExtractFactsContext,
-  type GenerateQuizResult,
-  type GenerateQuizContext,
-  type GradeAnswerResult,
-  type GradeAnswerContext,
-  type DetectConfusionResult,
-  type DetectConfusionContext,
-  type ExtractedFact,
-} from "./ai/tasks";
-
-/**
- * Extract testable facts from source content.
- * Used by the Intake Quiz system to generate quiz questions.
- */
-export async function extractFacts(
-  sourceContent: string,
-  sourceType: string,
-  topicContext?: string,
-): Promise<ExtractFactsResult> {
-  if (!sourceContent.trim()) {
-    return { facts: [], usedFallback: true };
-  }
-
-  const task = extractFactsTask;
-  const context: ExtractFactsContext = {
-    sourceContent,
-    sourceType,
-    topicContext,
-  };
-
-  try {
-    const response = await withRetry(async () => {
-      const userPrompt = task.buildUserPrompt(context);
-      return await callAI(task.systemPrompt, userPrompt);
-    });
-
-    const parsed = parseAIResponse<ExtractFactsResult>(response);
-    const normalized = task.normalizeResult
-      ? task.normalizeResult(parsed)
-      : { facts: [] };
-
-    console.log(
-      `[AI Service] Extracted ${normalized.facts.length} facts from content`,
-    );
-    return normalized;
-  } catch (error) {
-    console.error("[AI Service] extractFacts failed:", error);
-    return task.fallbackResult || { facts: [], usedFallback: true };
-  }
-}
-
-/**
- * Generate quiz questions from extracted facts.
- * Creates fill-in-the-blank style questions with key terms removed.
- */
-export async function generateQuiz(
-  facts: ExtractedFact[],
-  topicContext: string,
-  maxQuestions = 3,
-): Promise<GenerateQuizResult> {
-  if (facts.length === 0) {
-    return { questions: [], usedFallback: true };
-  }
-
-  const task = generateQuizTask;
-  const context: GenerateQuizContext = { facts, topicContext, maxQuestions };
-
-  try {
-    const response = await withRetry(async () => {
-      const userPrompt = task.buildUserPrompt(context);
-      return await callAI(task.systemPrompt, userPrompt);
-    });
-
-    const parsed = parseAIResponse<GenerateQuizResult>(response);
-    const normalized = task.normalizeResult
-      ? task.normalizeResult(parsed)
-      : { questions: [] };
-
-    console.log(
-      `[AI Service] Generated ${normalized.questions.length} quiz questions`,
-    );
-    return normalized;
-  } catch (error) {
-    console.error("[AI Service] generateQuiz failed:", error);
-    return task.fallbackResult || { questions: [], usedFallback: true };
-  }
-}
-
-/**
- * Grade a user's answer against the correct answer using fuzzy matching.
- * Handles synonyms, abbreviations, and partial matches.
- */
-export async function gradeAnswer(
-  userAnswer: string,
-  correctAnswer: string,
-  acceptableAnswers: string[],
-  questionContext: string,
-): Promise<GradeAnswerResult> {
-  if (!userAnswer.trim()) {
-    return {
-      isCorrect: false,
-      matchScore: 0,
-      feedback: "No answer provided",
-      usedFallback: true,
-    };
-  }
-
-  // Quick exact match check (case-insensitive)
-  const normalizedUser = userAnswer.trim().toLowerCase();
-  const normalizedCorrect = correctAnswer.trim().toLowerCase();
-  const normalizedAcceptable = acceptableAnswers.map((a) =>
-    a.trim().toLowerCase(),
-  );
-
-  if (
-    normalizedUser === normalizedCorrect ||
-    normalizedAcceptable.includes(normalizedUser)
-  ) {
-    return {
-      isCorrect: true,
-      matchScore: 1.0,
-      feedback: "Correct!",
-    };
-  }
-
-  // Use AI for fuzzy matching
-  const task = gradeAnswerTask;
-  const context: GradeAnswerContext = {
-    userAnswer,
-    correctAnswer,
-    acceptableAnswers,
-    questionContext,
-  };
-
-  try {
-    const response = await withRetry(async () => {
-      const userPrompt = task.buildUserPrompt(context);
-      return await callAI(task.systemPrompt, userPrompt);
-    });
-
-    const parsed = parseAIResponse<GradeAnswerResult>(response);
-    const normalized = task.normalizeResult
-      ? task.normalizeResult(parsed)
-      : { isCorrect: false, matchScore: 0, feedback: "Unable to grade" };
-
-    console.log(
-      `[AI Service] Graded answer: ${normalized.isCorrect ? "correct" : "incorrect"} (score: ${normalized.matchScore})`,
-    );
-    return normalized;
-  } catch (error) {
-    console.error("[AI Service] gradeAnswer failed:", error);
-    return (
-      task.fallbackResult || {
-        isCorrect: false,
-        matchScore: 0,
-        feedback: "Unable to grade answer",
-        usedFallback: true,
-      }
-    );
-  }
-}
-
-/**
- * Detect if a wrong answer indicates confusion between similar concepts.
- * Used to track confusion patterns for disambiguation card generation.
- */
-export async function detectConfusion(
-  userAnswer: string,
-  correctAnswer: string,
-  topicContext: string,
-  relatedConcepts?: string[],
-): Promise<DetectConfusionResult> {
-  if (!userAnswer.trim()) {
-    return { hasConfusion: false };
-  }
-
-  const task = detectConfusionTask;
-  const context: DetectConfusionContext = {
-    userAnswer,
-    correctAnswer,
-    topicContext,
-    relatedConcepts,
-  };
-
-  try {
-    const response = await withRetry(async () => {
-      const userPrompt = task.buildUserPrompt(context);
-      return await callAI(task.systemPrompt, userPrompt);
-    });
-
-    const parsed = parseAIResponse<DetectConfusionResult>(response);
-    const normalized = task.normalizeResult
-      ? task.normalizeResult(parsed)
-      : { hasConfusion: false };
-
-    if (normalized.hasConfusion) {
-      console.log(
-        `[AI Service] Detected confusion: ${normalized.confusedWith} (${normalized.confusionReason})`,
-      );
-    }
-    return normalized;
-  } catch (error) {
-    console.error("[AI Service] detectConfusion failed:", error);
-    return task.fallbackResult || { hasConfusion: false, usedFallback: true };
-  }
-}
-
-// ============================================================================
 // Notebook v4.1: Article Synthesis (Phase 4)
 // ============================================================================
 
@@ -2386,12 +2110,14 @@ export async function synthesizeArticle(
     const parsed = parseAIResponse<ArticleSynthesisResult>(response);
     const normalized = task.normalizeResult
       ? task.normalizeResult(parsed)
-      : { markdown: "" };
+      : { synthesizedArticle: "" };
 
     return normalized;
   } catch (error) {
     console.error("[AI Service] synthesizeArticle failed:", error);
-    return task.fallbackResult || { markdown: "", usedFallback: true };
+    return (
+      task.fallbackResult || { synthesizedArticle: "", usedFallback: true }
+    );
   }
 }
 
@@ -2416,13 +2142,3 @@ export {
   type ArticleSynthesisContext, // Phase 4
   type ArticleSynthesisResult, // Phase 4
 } from "../src/types/ai";
-
-// Notebook v2: Quiz System Types (v24)
-export {
-  type ExtractFactsResult,
-  type ExtractedFact,
-  type GenerateQuizResult,
-  type QuizQuestion,
-  type GradeAnswerResult,
-  type DetectConfusionResult,
-} from "./ai/tasks";

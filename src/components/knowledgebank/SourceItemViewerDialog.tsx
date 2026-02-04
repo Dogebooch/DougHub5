@@ -17,10 +17,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { X, FileText, ExternalLink, Sparkles, Brain } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  X,
+  FileText,
+  ExternalLink,
+  Sparkles,
+  Brain,
+  NotebookPen,
+} from "lucide-react";
 import { FlashcardAnalysisDashboard } from "@/components/flashcards/FlashcardAnalysisDashboard";
 import { ArchetypeExtractionDialog } from "./ArchetypeExtractionDialog";
 import { type KnowledgeEntityType } from "@/types/knowledge-entities";
+import { SourceNotepad } from "./notepad/SourceNotepad";
+import { AdvisorPanel } from "./notepad/AdvisorPanel";
 
 interface SourceItemViewerDialogProps {
   open: boolean;
@@ -38,11 +48,13 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
   const [extractType, setExtractType] =
     React.useState<KnowledgeEntityType>("generic_concept");
   const [extractTitle, setExtractTitle] = React.useState("");
+  const [activeTab, setActiveTab] = React.useState("notes");
 
   // Reset analysis state when dialog opens/closes or item changes
   React.useEffect(() => {
     setIsAnalyzing(false);
     setIsExtracting(false);
+    setActiveTab("notes");
   }, [open, item]);
 
   // For qbank items: use AI summary as title if available
@@ -77,6 +89,17 @@ export const SourceItemViewerDialog: React.FC<SourceItemViewerDialogProps> = ({
 
   // Early return after hooks (React rules satisfied)
   if (!item) return null;
+
+  const handleSaveNotes = async (notes: string) => {
+    try {
+      const result = await window.api.sourceItems.update(item.id, {
+        notes,
+      });
+      return result;
+    } catch (e) {
+      return { error: String(e) };
+    }
+  };
 
   const handleDraftAccept = async (front: string, back: string) => {
     try {
@@ -258,7 +281,7 @@ ${qbankContent.explanationHtml || ""}
     <>
       <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
         <DialogContent
-          className={`max-w-4xl h-[90vh] flex flex-col p-0 gap-0 ${isAnalyzing ? "max-w-6xl" : ""}`}
+          className={`w-[95vw] max-w-[1600px] h-[90vh] flex flex-col p-0 gap-0 ${isAnalyzing ? "max-w-6xl" : ""}`}
         >
           <DialogHeader className="p-6 pb-2 border-b flex-none">
             <div className="flex items-center gap-2 mb-2">
@@ -277,64 +300,117 @@ ${qbankContent.explanationHtml || ""}
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 p-6">{renderContent()}</ScrollArea>
+          {/* Main Content Area - Split View */}
+          <div className="flex flex-1 min-h-0">
+            {/* Left: Source Content */}
+            <div className="flex-1 border-r flex flex-col min-w-0">
+              <ScrollArea className="flex-1 p-6">{renderContent()}</ScrollArea>
 
-          {/* Action Footer - Hide during analysis */}
-          {!isAnalyzing && (
-            <TooltipProvider delayDuration={300}>
-              <div className="p-4 border-t bg-background flex items-center justify-between flex-none">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      onClick={onClose}
-                      className="text-muted-foreground"
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Close
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p>Close without taking action</p>
-                  </TooltipContent>
-                </Tooltip>
+              {/* Action Footer - Only on left side */}
+              {!isAnalyzing && (
+                <TooltipProvider delayDuration={300}>
+                  <div className="p-4 border-t bg-background flex items-center justify-between flex-none">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          onClick={onClose}
+                          className="text-muted-foreground"
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Close
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>Close without taking action</p>
+                      </TooltipContent>
+                    </Tooltip>
 
-                <div className="flex items-center gap-3">
-                  {qbankContent && (
-                    <Button
-                      onClick={() => setIsAnalyzing(true)}
-                      className="bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/20"
-                    >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Analyze Gap
-                    </Button>
-                  )}
+                    <div className="flex items-center gap-3">
+                      {qbankContent && (
+                        <Button
+                          onClick={() => setIsAnalyzing(true)}
+                          className="bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/20"
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Analyze Gap
+                        </Button>
+                      )}
 
-                  {/* Extract Knowledge - Primary Action */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => {
-                          setExtractType("generic_concept");
-                          setExtractTitle(displayTitle || "");
-                          setIsExtracting(true);
-                        }}
-                        className="bg-primary hover:bg-primary/90"
-                      >
-                        <Brain className="h-4 w-4 mr-2" />
-                        Extract Knowledge
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p>
-                        Create a structured Knowledge Entity and save to Library
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            onClick={() => {
+                              setExtractType("generic_concept");
+                              setExtractTitle(displayTitle || "");
+                              setIsExtracting(true);
+                            }}
+                            className="bg-primary hover:bg-primary/90"
+                          >
+                            <Brain className="h-4 w-4 mr-2" />
+                            Extract Knowledge
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p>
+                            Create a structured Knowledge Entity and save to
+                            Library
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </TooltipProvider>
+              )}
+            </div>
+
+            {/* Right: Notepad & Advisor - Tabs */}
+            {!isAnalyzing && (
+              <div className="w-[350px] flex-none border-l bg-muted/5 flex flex-col">
+                <Tabs
+                  value={activeTab}
+                  onValueChange={setActiveTab}
+                  className="flex flex-col h-full"
+                >
+                  <div className="flex-none px-4 pt-2 border-b bg-background">
+                    <TabsList className="w-full">
+                      <TabsTrigger value="notes" className="flex-1 gap-2">
+                        <NotebookPen className="h-4 w-4" />
+                        Notes
+                      </TabsTrigger>
+                      <TabsTrigger value="advisor" className="flex-1 gap-2">
+                        <Sparkles className="h-4 w-4 text-purple-500" />
+                        Advisor
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+
+                  <TabsContent
+                    value="notes"
+                    className="flex-1 min-h-0 mt-0 data-[state=inactive]:hidden"
+                  >
+                    <SourceNotepad
+                      itemId={item.id}
+                      initialNotes={item.notes || ""}
+                      onSave={handleSaveNotes}
+                    />
+                  </TabsContent>
+
+                  <TabsContent
+                    value="advisor"
+                    className="flex-1 min-h-0 mt-0 overflow-hidden data-[state=inactive]:hidden"
+                  >
+                    <AdvisorPanel
+                      content={item.rawContent}
+                      userNotes={item.notes || ""}
+                      sourceType={item.sourceType}
+                      sourceItemId={item.id}
+                    />
+                  </TabsContent>
+                </Tabs>
               </div>
-            </TooltipProvider>
-          )}
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

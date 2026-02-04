@@ -478,6 +478,10 @@ const api = {
       ipcRenderer.invoke("reference-ranges:getByCategory", category),
     getCategories: () => ipcRenderer.invoke("reference-ranges:getCategories"),
   },
+  remnote: {
+    export: (sourceItemId: string, advisorResult?: unknown) =>
+      ipcRenderer.invoke("remnote:export", sourceItemId, advisorResult),
+  },
   dev: {
     getSettings: () => ipcRenderer.invoke("dev:getSettings"),
     updateSetting: (key: string, value: string) =>

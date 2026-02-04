@@ -37,6 +37,8 @@ import {
   BoardQuestionContent,
 } from "./parsers/board-question-parser";
 import { downloadBoardQuestionImages } from "./services/image-service";
+import { exportToRemNote } from "./services/remnote-service";
+import { AdvisorResult } from "./ai/tasks/advisor-task";
 import {
   CapturePayload,
   isCaptureServerRunning,
@@ -1551,6 +1553,31 @@ export function registerIpcHandlers(): void {
       try {
         sourceItemQueries.update(id, updates);
         return success(undefined);
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "remnote:export",
+    async (
+      _,
+      sourceItemId: string,
+      advisorResult?: AdvisorResult,
+    ): Promise<IpcResult<{ success: boolean; error?: string }>> => {
+      try {
+        const item = sourceItemQueries.getById(sourceItemId);
+        if (!item) {
+          return failure(`Source item not found: ${sourceItemId}`);
+        }
+
+        const result = await exportToRemNote(item, advisorResult);
+        if (result.success) {
+          return success(result);
+        } else {
+          return failure(result.error || "Unknown export error");
+        }
       } catch (error) {
         return failure(error);
       }
