@@ -2,117 +2,61 @@
 
 ## Vision Statement
 
-FOR medical residents with ADHD WHO lose 10+ minutes per study session to organizational decisions, DougHub is an active encoding tool THAT makes concept extraction the learning moment. UNLIKE Anki, our product guides extraction with AI confirmation, surfaces weak topics via Board Relevance, and delivers 20-30% review time reduction through FSRS.
+**FOR** medical residents preparing for boards **WHO** need to capture and learn from QBank mistakes, **DougHub is** an AI-powered capture and preprocessing hub **THAT** extracts knowledge from board questions and exports flashcard candidates to Remnote. **UNLIKE** all-in-one flashcard apps, our product focuses solely on high-quality capture and AI analysis, letting Remnote handle spaced repetition.
 
-## Problem
+## Core Philosophy
 
-The bottleneck isn't content quality—it's decisions:
-- "Where does this go?"
-- "Is this worth a flashcard?"
-- "What format should this card be?"
+**DougHub is the kitchen. Remnote is the dining room.**
 
-These prevent studying from starting.
+- **Kitchen (DougHub):** Capture, store, analyze, prep flashcard ingredients
+- **Dining room (Remnote):** Consume, review, space out repetition
 
-## Core Insight
+## What DougHub Does
 
-**Extraction IS the learning.** Active recall during capture embeds knowledge better than passive saving. Quick Capture ensures capture happens when energy is zero; Board Relevance surfaces what matters when energy returns.
+| Capability    | Description                                                             |
+| ------------- | ----------------------------------------------------------------------- |
+| 📥 Capture    | Tampermonkey script grabs MKSAP/PeerPrep questions                      |
+| 💾 Store      | SQLite database with full question data + images                        |
+| 🤖 AI Analyze | Ollama extracts key concepts, explains "why wrong", suggests flashcards |
+| 📤 Export     | Copy formatted flashcard candidates to clipboard for Remnote            |
 
----
+## What DougHub Does NOT Do
 
-## 6-Step QBank Flow (MVP)
+- ❌ Flashcard review sessions
+- ❌ Spaced repetition scheduling
+- ❌ Card creation UI (Knowledge Forging)
+- ❌ FSRS or any scheduling algorithm
+- ❌ Practice mode or grading
+
+## Data Flow
 
 ```
-1. Capture → 2. Inbox → 3. Add to Notebook → 4. Topic Page → 5. Generate Card → 6. Review
+1. CAPTURE: Tampermonkey → POST → Parse → SQLite
+2. AI ANALYSIS: Question → Ollama → Flashcard candidates + "Why Wrong"
+3. USER REVIEW: Browse questions → See AI suggestions → Select cards
+4. EXPORT: Selected cards → Remnote-format → Clipboard → Paste in Remnote
 ```
 
-See `docs/Workflow_Guide.ini` for detailed mockups and implementation.
+## Success Criteria
 
----
-
-## 3-Layer Architecture
-
-```
-LAYER 1: LIBRARY
-├── Raw captures, status: inbox → processed → curated
-├── High-Yield toggle (⭐) marks board-critical content
-└── CANNOT create cards here (enforced)
-         ↓
-LAYER 2: NOTEBOOK (Curated Topics)
-├── User insights deep-linked to sources
-├── Board Relevance Panel shows weak topics
-├── High-Yield blocks prioritized in card generation
-└── Card-worthiness gate before creation
-         ↓
-LAYER 3: FLASHCARDS
-├── Cards linked to Notebook (provenance)
-└── FSRS scheduling, zero-decision review
-```
-
-**Constraints:** Notebook-only card creation, deep links everywhere, CanonicalTopic normalization.
-
----
-
-## Anti-Patterns
-
-- **No folder hierarchies** — Tags only, search-first
-- **No grading buttons** — FSRS auto-schedules
-- **No feature decisions during capture** — AI confirms, user decides
-- **No manual scheduling** — Complete automation
-- **Avoid Placeholders** -- I am likely to forget hard coded placeholders, try to make rudimentary hook ups for functions that rely on actual data, even if they don't work. Include hard stops, not silent errors or fallbacks without letting the user know in the UI.
-
----
-
-## Interaction Design Principles
-
-### 1. Action Placement by Cognitive Load
-
-| Load Level | Examples | Placement |
-|------------|----------|-----------|
-| Zero-thought | keep in library, delete, select, star/flag | Hover or batch bar |
-| Light-decision | open, confirm | Visible buttons in detail view |
-| Deliberate-work | categorize, write, generate | Modal or dedicated screen |
-
-**Rule:** If it needs a dropdown, text input, or "which one?" → not on hover
-
-### 2. Progressive Disclosure
-
-- Show only what's needed at each layer
-- Simple first, complex one level deeper
-- Exception: If users do it every session → ≤2 clicks
-
-### 3. Consistent Interaction Patterns
-
-- **Click row** = open detail (never require a button)
-- **Hover** = quick triage actions only
-- **Modals** = focused, single-purpose tasks
-- **Escape** = close/cancel at any level
-
-### 4. Reference Apps
-
-| App | Pattern to Steal |
-|-----|------------------|
-| Gmail | triage → detail → organize |
-| Things 3 | inbox → project → task detail |
-| Superhuman | keyboard-first, minimal UI |
-| Anki Browse | **Anti-pattern:** too dense, overwhelming |
-
-### 5. ADHD/Fatigue-Specific
-
-- Fewer choices = faster action
-- Default to most common choice (pre-select when obvious)
-- Undo over "Are you sure?" (no confirmation for reversible actions)
-- No dead-ends (always a clear next step or escape)
-- Auto-save everywhere
-- Visual feedback within 500ms
+- ✅ Capture and store board questions reliably
+- ✅ Show AI-generated flashcard suggestions
+- ✅ Allow export to Remnote via clipboard
+- ✅ Be simpler and faster to navigate
+- ✅ Feel like a "capture tool" not a "learning app"
 
 ---
 
 ## Technical Stack
 
-Electron + React + TypeScript + SQLite (local-first) + ts-fsrs
+Electron + React + TypeScript + SQLite (local-first) + Ollama
 
 ---
 
-## Out of Scope (MVP)
+## Reference
 
-Mobile, cloud sync, Anki import, graph view, analytics dashboard (data collected, not displayed)
+See `docs/PHILOSOPHY.md` for full architecture details and migration path.
+
+---
+
+_Updated: 2026-02-04 — Capture Hub Redesign_
