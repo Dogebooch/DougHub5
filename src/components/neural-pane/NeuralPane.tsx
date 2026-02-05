@@ -115,7 +115,11 @@ export function NeuralPane() {
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         type: "assistant",
-        content: result.recommendation || result.message || "Task completed.",
+        content:
+          result.advice ||
+          result.recommendation ||
+          result.message ||
+          "Task completed.",
         timestamp: Date.now(),
         metadata: { taskId: "advisor" },
       };

@@ -44,11 +44,10 @@ export const advisorTask: AITaskConfig<
   description:
     "Analyzes content and user notes to recommend flashcard strategy and filing",
 
-  modelConfig: {
-    temperature: 0.3, // Lower temperature for consistent, structured advice
-    maxTokens: 1000,
-    responseFormat: { type: "json_object" },
-  },
+  temperature: 0.3,
+  maxTokens: 1000,
+  timeoutMs: 60000,
+  cacheTTLMs: 0,
 
   systemPrompt: `You are an expert Medical Education Advisor for a resident physician.
 Your goal is to help the user curate a High-Yield Knowledge Bank in RemNote.
@@ -63,7 +62,22 @@ Your job is to analyze this and advise:
 3. Where should it be filed in RemNote? (Propose a logical topic hierarchy)
 
 CRITICAL: Trust the user's notes. If they marked something as important, prioritize that.
-Don't generate the actual flashcards yet—just advise on the STRATEGY.`,
+Don't generate the actual flashcards yet—just advise on the STRATEGY.
+
+Response Format (JSON):
+{
+  "relevance": "board_high_yield" | "clinical_reference" | "low_yield",
+  "summary": "1-sentence summary",
+  "cardRecommendations": [
+    {
+      "type": "cloze" | "basic" | "image_occlusion" | "list",
+      "rationale": "Why this format?",
+      "contentSuggestion": "Brief content idea"
+    }
+  ],
+  "filingPath": ["Topic", "Subtopic"],
+  "advice": "Brief strategy advice"
+}`,
 
   buildUserPrompt: (context) => `
 CONTENT TYPE: ${context.sourceType}
@@ -77,10 +91,10 @@ ${context.userNotes || "(No specific notes added, rely on content importance)"}
 Provide your advice in the specified JSON format.
 `,
 
-  parseResponse: async (response) => {
+  normalizeResult: (parsed) => {
     try {
-      const json = JSON.parse(response);
-      return advisorResultSchema.parse(json);
+      // parsed is already an object from ai-service
+      return advisorResultSchema.parse(parsed);
     } catch (e) {
       console.error("Failed to parse advisor response", e);
       // Fallback for malformed JSON
